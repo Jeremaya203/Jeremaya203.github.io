@@ -1571,3 +1571,32 @@ a.ancla:visited:active{
   color: #000000;
   
 }
+
+/* --- Ajustes Origen Nacional y Descargas --- */
+
+.notas_img_encabezado {
+  text-align: center;
+  margin-top: 15px;
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.notas_img_encabezado img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.recurso-item {
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  border-color: #dee2e6 !important;
+}
+
+.recurso-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+  border-color: var(--azul-igac) !important;
+  background-color: #f8f9fa !important;
+}
