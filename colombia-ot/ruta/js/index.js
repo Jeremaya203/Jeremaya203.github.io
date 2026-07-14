@@ -57,7 +57,6 @@ $(function() {
         var numeropasos = $('.paso').length
         var el = [...document.getElementsByClassName("paso")];
         //document.getElementById("circle0").style.background = "#D38424";
-        document.getElementById("paso0").style.border = "1px solid gray";
         
 
         var test = function(el) {
@@ -96,7 +95,6 @@ $(function() {
   $('.mapa-paso').click(function() {
       var clasemapapaso = $(this).attr('id');
       //document.getElementById("circle0").style.background = "#D38424";
-      document.getElementById("paso0").style.border = "1px solid gray";
       if (clasemapapaso == 'mapa-paso-1')
       {
         console.log(clasemapapaso)
@@ -208,7 +206,6 @@ $(function() {
         var clasecirculo = $(this).find('div').first();
         var clasename = clasecirculo.attr('class');
         var clasepaso = $(this).attr('class');
-        document.getElementById("paso0").style.border = "1px solid gray";
         var numeropasos = $('.paso').length
         //var notasdiv = $('.notas')            
         //notasdiv.css({"width": "25%"});
@@ -259,9 +256,25 @@ $(function() {
 
 });
 
+$.get( "Paso1.html", function( data ) {
+  $( ".containertarjetas" ).html( data );
+  //alert( "Load was performed." );
+});
+$.get("Notas1.html", function(data){
+  $(".notas").html(data);
+});
+
 /* Funcion para actulizar el contenido*/
 
 $(function(){
+    $('#goSteps').on('click', function() {
+      $('.instrucciones-container').hide();
+      $('.super-container').removeClass('modal-open').addClass('overflow-auto');
+      $('#paso_1').addClass('pasoclic');
+    })
+    $('.paso:not(#paso_1)').on('click', function() {
+      $('#paso_1').addClass('pasoclicked');
+    })
     $('body').on('click', '.paso', function() {
         var idpaso = $(this).attr('id');
         console.log('logro obtener el id para cargar el contenido ' + idpaso);
@@ -719,8 +732,6 @@ $(function(){
     $('body').on('click', '.boton_back', function() {
         var idpaso = $(this).attr('id');
         console.log('logro obtener el id para cargar el contenido ' + idpaso);
-        document.getElementById("notas").style.height = "100%";
-        document.getElementById("notas").style.width = "25%";
         if(idpaso == 'back-paso-1')
         {
           var paso = document.getElementById('paso_1');   
