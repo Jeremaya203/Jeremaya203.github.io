@@ -10,6 +10,7 @@
 
   <div class="tarjetas">
     <a href="https://igac.azurewebsites.net/sigot/docuvisor/" target="blank">
+    <img src="images/Encabezado_icono_8.png" class="icono-paso" alt="">
   </a>
     <div class="informacion-paso">
       <h2>Paso 8</h2>
@@ -36,28 +37,23 @@
           - Contar con la concordancia entre la estrategia de gestión del plan de ordenamiento y los decretos reglamentarios de los instrumentos que se seleccionen. <br>
           - Medir el impacto de la aplicación de los diferentes mecanismos de gestión y financiación. <br>
         </p>
-        <div class="row bg-light p-4 pt-3 align-items-center justify-content-between">
-          <div class="col-md-6">
-            <ul>
-              <li>Paso normativo del POT: <span class="si">Si</span></li>
-              <li>Actividades: <u>9</u></li>
-              <li>Recursos relacionados: <u>16</u></li>
-            </ul>
-          </div>
-          <div class="convenciones-container border-start col-md-6">
-            <h4 class="convencionestitulo">Convenciones:</h4>
-            <div class="convenciones">
-              <div class="convtecnico">
-                <img src="images/tecnico_image.png" alt="">
-                <span class="convencionesp">Componente técnico</span>
-              </div>
-              <div class="convadmin">
-                <img src="images/administrativo_image.png" alt="">
-                <span class="convencionesp">Componente administrativo de participación y concertación</span>
-              </div>
-            </div>
-          </div>
-        </div>        
+      <ul>
+        <li>Paso normativo del POT: <span class="si">Si</span></li>
+        <li>Actividades: <u>9</u></li>
+        <li>Recursos relacionados: <u>16</u></li>
+      </ul>  
+
+      <h4 class="convencionestitulo">Convenciones:</h4>
+      <div class="convenciones">
+        <div class="convtecnico">
+        <img src="images/tecnico_image.png" alt="">
+        <span class="convencionesp">Componente técnico</span>
+        </div>
+        <div class="convadmin">
+          <img src="images/administrativo_image.png" alt="">
+          <span class="convencionesp">Componente administrativo de participación y concertación</span>
+        </div>
+      </div>
       <h3 class="actividades-h3">ACTIVIDADES (3)</h3>
       <div class="lineaactividades"></div>
     </div>
@@ -538,7 +534,7 @@
             $("#pagin li a").eq(i).removeClass("current");
             $("#pagin li a").eq(i).css({"color": '#000000'});
             showPage(i);
-            $("#pagin li a").eq(i-1).css({"color": 'var(--azul-igac)'});
+            $("#pagin li a").eq(i-1).css({"color": '#3595E0'});
             $("#pagin li a").eq(i-1).addClass("current");
 
             /*if (i < ($('.line-content').length)/7) {
@@ -561,7 +557,7 @@
             $("#pagin li a").eq(i-2).removeClass("current");
             $("#pagin li a").eq(i-2).css({"color": '#000000'});
             showPage(i);
-            $("#pagin li a").eq(i-1).css({"color": 'var(--azul-igac)'});
+            $("#pagin li a").eq(i-1).css({"color": '#3595E0'});
             $("#pagin li a").eq(i-1).addClass("current");
 
             /*if (i < ($('.line-content').length)/7) {
@@ -606,12 +602,12 @@
       
   showPage(i);
 
-  $("#pagin li a").eq(0).css({"color": 'var(--azul-igac)'});
+  $("#pagin li a").eq(0).css({"color": '#3595E0'});
   $("#pagin li a").eq(0).addClass("current");
   
   $("#pagin li a").click(function() {
     $("#pagin li a").css({"color": '#000000'});
-    $(this).css({"color": 'var(--azul-igac)'});
+    $(this).css({"color": '#3595E0'});
 
     $(this).siblings("#pagin li a").css({"color": 'red'});
     $("#pagin li a").removeClass("current");

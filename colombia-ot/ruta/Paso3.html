@@ -23,29 +23,23 @@
                 municipio o distrito acorde con las políticas sociales y económicas definidas en el Plan de Desarrollo; y la formulación de
                 la estrategia de articulación con el Plan de Desarrollo y otros planes sectoriales.
               </p>
-              <div class="row bg-light p-4 pt-3 align-items-center justify-content-between">
-                <div class="col-md-6">
-                  <ul>
-                    <li>Paso normativo del POT: <span class="no">No</span></li>
-                    <li>Actividades: <u>6</u></li>
-                    <li>Recursos relacionados: <u>32</u></li>
-                  </ul>
+              <ul>
+                <li>Paso normativo del POT: <span class="no">No</span></li>
+                <li>Actividades: <u>6</u></li>
+                <li>Recursos relacionados: <u>32</u></li>
+              </ul>  
+    
+              <h4 class="convencionestitulo">Convenciones:</h4>
+              <div class="convenciones">
+                <div class="convtecnico">
+                  <img src="images/tecnico_image.png" alt="">
+                  <span class="convencionesp">Componente técnico</span>
                 </div>
-                <div class="convenciones-container border-start col-md-6">
-                  <h4 class="convencionestitulo">Convenciones:</h4>
-                  <div class="convenciones">
-                    <div class="convtecnico">
-                      <img src="images/tecnico_image.png" alt="">
-                      <span class="convencionesp">Componente técnico</span>
-                    </div>
-                    <div class="convadmin">
-                      <img src="images/administrativo_image.png" alt="">
-                      <span class="convencionesp">Componente administrativo de participación y concertación</span>
-                    </div>
-                  </div>
+                <div class="convadmin">
+                  <img src="images/administrativo_image.png" alt="">
+                  <span class="convencionesp">Componente administrativo de participación y concertación</span>
                 </div>
               </div>
-              
               <h3 class="actividades-h3">ACTIVIDADES (6)</h3>
               <div class="lineaactividades"></div>
             </div>
@@ -621,7 +615,7 @@
                       $("#pagin li a").eq(i).removeClass("current");
                       $("#pagin li a").eq(i).css({"color": '#000000'});
                       showPage(i);
-                      $("#pagin li a").eq(i-1).css({"color": 'var(--azul-igac)'});
+                      $("#pagin li a").eq(i-1).css({"color": '#3595E0'});
                       $("#pagin li a").eq(i-1).addClass("current");
           
                       /*if (i < ($('.line-content').length)/7) {
@@ -645,7 +639,7 @@
                       $("#pagin li a").eq(i-2).removeClass("current");
                       $("#pagin li a").eq(i-2).css({"color": '#000000'});
                       showPage(i);
-                      $("#pagin li a").eq(i-1).css({"color": 'var(--azul-igac)'});
+                      $("#pagin li a").eq(i-1).css({"color": '#3595E0'});
                       $("#pagin li a").eq(i-1).addClass("current");
           
                       /*if (i < ($('.line-content').length)/7) {
@@ -690,12 +684,12 @@
                 
             showPage(i);
           
-            $("#pagin li a").eq(0).css({"color": 'var(--azul-igac)'});
+            $("#pagin li a").eq(0).css({"color": '#3595E0'});
             $("#pagin li a").eq(0).addClass("current");
             
             $("#pagin li a").click(function() {
               $("#pagin li a").css({"color": '#000000'});
-              $(this).css({"color": 'var(--azul-igac)'});
+              $(this).css({"color": '#3595E0'});
           
               $(this).siblings("#pagin li a").css({"color": 'red'});
               $("#pagin li a").removeClass("current");

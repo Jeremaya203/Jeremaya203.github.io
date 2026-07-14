@@ -1,411 +1,457 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-    <meta name="description" content="" />
-    <meta name="title" property="og:title" content="">
-    <meta property="og:type" content="website">
-    <meta name="image" property="og:image" content="">
-    <meta name="keywords" content="" />
-    <meta name="author" content="Instituto Geográfico Agustín Codazzi - IGAC" />
-    <meta http-equiv="content-language" content="es" />
-    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"
-      integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous">
-    <link rel="canonical" href="" />
-    <link rel="shortcut icon" href="./images/favicon.ico" />
-    <title>Colombia OT</title>
-    <link type="text/css" async rel="stylesheet"
-      href="https://www.gstatic.com/firebasejs/ui/4.5.0/firebase-ui-auth.css" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="./js/lib/dist/css/calcite-maps-bootstrap.min-v0.10.css">
-    <link rel="stylesheet" href="./js/lib/dist/css/calcite-maps-arcgis-3.x.min-v0.10.css">
-    <link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.20/css/dataTables.bootstrap.min.css" />
-    <link rel="stylesheet" href="./oot-complementario.css">
-    <link rel="stylesheet" href="./css/maestra.css">
-    <link rel="stylesheet" href="./navbar-footer.css">
-    <link rel="stylesheet" href="./css/sigot.css">
-    <link rel="stylesheet" href="ruta/css/estilos.css">
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-78PPLF47WW"></script>
-  
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-<link rel="stylesheet" href="./maestra.css">
-<style>
-.navbarigac, .navbarnavigac, .barra_gov, nav.navbar, #navbarNav, .container-fluid > nav {
-  display: none !important;
-}
-.super-container {
-  top: var(--oot-navbar-h, 140px) !important;
-  height: calc(100vh - var(--oot-navbar-h, 140px)) !important;
-  height: calc(100dvh - var(--oot-navbar-h, 140px)) !important;
-}
-.container-2 {
-  height: calc(100vh - var(--oot-navbar-h, 140px)) !important;
-  height: calc(100dvh - var(--oot-navbar-h, 140px)) !important;
-}
-</style>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="description" content="" />
+  <meta name="title" property="og:title" content="">
+  <meta property="og:type" content="website">
+  <meta name="image" property="og:image" content="">
+  <meta name="keywords" content="" />
+  <meta name="author" content="Instituto Geográfico Agustín Codazzi - IGAC" />
+  <meta http-equiv="content-language" content="es" />
+  <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"
+    integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous">
+  <link rel="canonical" href="" />
+  <link rel="shortcut icon" href="/images/favicon.ico" />
+  <title>Colombia OT</title>
+
+  <link type="text/css" async rel="stylesheet"
+    href="https://www.gstatic.com/firebasejs/ui/4.5.0/firebase-ui-auth.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.css" />
+  <link rel="stylesheet" href="/js/lib/dist/css/calcite-maps-bootstrap.min-v0.10.css">
+  <link rel="stylesheet" href="/js/lib/dist/css/calcite-maps-arcgis-3.x.min-v0.10.css">
+
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.20/css/dataTables.bootstrap.min.css" />
+
+  <link rel="stylesheet" href="/css/home.css">
+  <link rel="stylesheet" href="/css/maestra.css">
+  <link rel="stylesheet" href="/css/navbar-footer.css">
+  <link rel="stylesheet" href="/css/sigot.css">
+  <link rel="stylesheet" href="css/estilos.css">
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-78PPLF47WW"></script>
 </head>
-  <body>
-    <div class="barra_gov">
-      <a class="logo-gov" href="https://www.gov.co/home/" target="_blank">
-      <img alt="Logo Gov.co" src="./images/nav/header_govco.png">
-      </a>
-    </div>
-    <nav>
-      <div class="navbarigac">
-        <div class="logos">
-          <a href="https://www.igac.gov.co" class="navbar-brand-igac" target="_blank">
-          <img alt="Logo IGAC" src="./images/nav/logo.png">
+
+<body>
+  <div class="barra_gov">
+    <a class="logo-gov" href="https://www.gov.co/home/" target="_blank">
+      <img alt="Logo Gov.co" src="/images/nav/header_govco.png">
+    </a>
+  </div>
+
+  <nav>
+    <div class="navbarigac">
+      <div class="logos">
+        <a href="https://www.igac.gov.co" class="navbar-brand-igac" target="_blank">
+          <img alt="Logo IGAC" src="/images/nav/logo.png">
+        </a>
+        <img src="/images/nav/colombiaOT.svg" alt="Colombia OT">
+      </div>
+      <ul id="link-list">
+        <li>
+          <a href="/" rel="noopener">Inicio</a>
+        </li>
+        <li>
+          <a href="/pot/" rel="noopener">Los POT del país</a>
+        </li>
+        <li id="optionCargue" style="display: none;">
+          <a href="/cargue/" rel="noopener">Cargue</a>
+        </li>
+        <li>
+          <a class="collapse-button-1 active">Otros recursos
+            <img src="/images/nav/ico-arrow.png" alt="">
           </a>
-          <img src="./images/nav/colombiaOT.svg" alt="Colombia OT">
-        </div>
-        <ul id="link-list">
-          <li>
-            <a href="./" rel="noopener">Inicio</a>
-          </li>
-          <li>
-            <a href="./pot/" rel="noopener">Los POT del país</a>
-          </li>
-          <li>
-            <a href="./vigencias/" rel="noopener">Visor  Vigencias POTs</a>
-          </li>
-          <li id="optionCargue" style="display: none;">
-            <a href="./cargue/" rel="noopener">Cargue</a>
-          </li>
-          <li>
-            <a class="collapse-button-1 active">Otros recursos
-            <img src="./images/nav/ico-arrow.png" alt="">
-            </a>
-            <ul id="collapse-menu-1" class="collapse-menu-1">
-              <li>
-                <a href="./cartillas/">Cartillas, gu&iacute;as y manuales</a>
-                <img src="./images/nav/ico-arrow.png" alt="Cartillas, gu&iacute;as y manuales">
-              </div>
-              <li>
-                <a href="./normatividad/">Normatividad</a>
-                <img src="./images/nav/ico-arrow.png" alt="Normatividad">
-              </li>
-              <li>
-                <a href="./datosot/">Datos para el OT</a>
-                <img src="./images/nav/ico-arrow.png" alt="Datos para el OT">
-              </li>
-              <li>
-                <a href="./aplicaciones/">Aplicaciones y herramientas</a>
-                <img src="./images/nav/ico-arrow.png" alt="Aplicaciones y herramientas">
-              </li>
-              <li>
-                <a href="./documentos/">Documentos t&eacute;cnicos</a>
-                <img src="./images/nav/ico-arrow.png" alt="Documentos t&eacute;cnicos">
-              </li>
-              <li>
-                <a href="./ruta/">La Ruta del POT</a>
-                <img src="./images/nav/ico-arrow.png" alt="La Ruta del POT">
-              </li>
-            </ul>
-          </li>
-          <li>
-            <a class="collapse-button-2">Acerca de
-            <img src="./images/nav/ico-arrow.png" alt="Acerca de">
-            </a>
-            <ul id="collapse-menu-2" class="collapse-menu-2">
-              <li>
-                <a href="./acerca-de/">Qu&eacute; es el ordenamiento territorial (OT)</a>
-                <img src="./images/nav/ico-arrow.png" alt="Que es">
-              </li>
-              <li>
-                <a href="./acerca-de/colombia-ot-del-igac.html">Colombia OT del IGAC</a>
-                <img src="./images/nav/ico-arrow.png" alt="Colombia OT">
-              </li>
-              <li>
-                <a href="./acerca-de/actores-de-colombia-ot.html">Actores de Colombia OT</a>
-                <img src="./images/nav/ico-arrow.png" alt="Actores">
-              </li>
-              <li>
-                <a href="./acerca-de/ot_del_pais_en_cifras.html">El OT del pa&iacute;s en cifras</a>
-                <img src="./images/nav/ico-arrow.png" alt="Cifras">
-              </li>
-            </ul>
-          </li>
-          <li>
-            <a id="loginBtn" onclick="gotoLogin();">
-            <img id="userPhoto" src="./images/icono_ingreso.png" alt="Iniciar sesion" />
+
+          <ul id="collapse-menu-1" class="collapse-menu-1">
+            <li>
+              <a href="/cartillas/">Cartillas, gu&iacute;as y manuales</a>
+              <img src="/images/nav/ico-arrow.png" alt="Cartillas, gu&iacute;as y manuales">
+            </li>
+            <li>
+              <a href="/normatividad/">Normatividad</a>
+              <img src="/images/nav/ico-arrow.png" alt="Normatividad">
+            </li>
+            <li>
+              <a href="/datosot/">Datos para el OT</a>
+              <img src="/images/nav/ico-arrow.png" alt="Datos para el OT">
+            </li>
+            <li>
+              <a href="/aplicaciones/">Aplicaciones y herramientas</a>
+              <img src="/images/nav/ico-arrow.png" alt="Aplicaciones y herramientas">
+            </li>
+            <li>
+              <a href="/documentos/">Documentos t&eacute;cnicos</a>
+              <img src="/images/nav/ico-arrow.png" alt="Documentos t&eacute;cnicos">
+            </li>
+            <li>
+              <a href="/ruta/">La Ruta del POT</a>
+              <img src="/images/nav/ico-arrow.png" alt="La Ruta del POT">
+            </li>
+          </ul>
+        </li>
+        <li>
+          <a class="collapse-button-2">Acerca de
+            <img src="/images/nav/ico-arrow.png" alt="Acerca de">
+          </a>
+
+          <ul id="collapse-menu-2" class="collapse-menu-2">
+            <li>
+              <a href="/acerca-de/">Qu&eacute; es el ordenamiento territorial (OT)</a>
+              <img src="/images/nav/ico-arrow.png" alt="Que es">
+            </li>
+            <li>
+              <a href="/acerca-de/colombia-ot-del-igac.html">Colombia OT del IGAC</a>
+              <img src="/images/nav/ico-arrow.png" alt="Colombia OT">
+            </li>
+            <li>
+              <a href="/acerca-de/actores-de-colombia-ot.html">Actores de Colombia OT</a>
+              <img src="/images/nav/ico-arrow.png" alt="Actores">
+            </li>
+            <li>
+              <a href="/acerca-de/ot_del_pais_en_cifras.html">El OT del pa&iacute;s en cifras</a>
+              <img src="/images/nav/ico-arrow.png" alt="Cifras">
+            </li>
+          </ul>
+        </li>
+        <li>
+          <a id="loginBtn" onclick="gotoLogin();">
+            <img id="userPhoto" src="/images/icono_ingreso.png" onerror="defaultUserPhoto();" alt="Iniciar sesion" />
             <span id="userName" style="display: none;">Iniciar sesion</span>
+          </a>
+        </li>
+      </ul>
+      <button class='nav-bar-toggle-igac'>
+        <div class='icon-bar'></div>
+        <div class='icon-bar'></div>
+        <div class='icon-bar'></div>
+        <div class='icon-bar'></div>
+      </button>
+    </div>
+    <div class='navbarnavigac'>
+    </div>
+  </nav>
+
+  <div class="mobile-image" id="mobile-image">
+    <img src="images/dispositivo.png" alt="Imagen movil">
+  </div>
+  <div class="container-2" id="container">
+    <div class="ruta" id="ruta">
+      <img width="100%" src="images/ruta_image.png" alt="">
+
+      <div class="mensaje">
+        <h1>¡HOLA!</h1>
+        <h2>Estos son los pasos de la ruta del POT</h2>
+        <p>Una guía para tomar la dirección adecuada. A continuación, se describen
+          cada uno de los pasos de la ruta.
+          Contiene, descripciones, definiciones, recursos y
+          ayudas sobre los procesos técnicos y administrativos
+          que debe hacer una administración municipal en el
+          marco del ordenamiento territorial. También se relacionan
+          los servicios que ofrece la Federación Colombiana de municipios para apoyar los procesos
+          de revisión y ajuste.</p>
+      </div>
+
+      <a href="javascript:window.location.reload(true)">
+        <div class="paso0" id="paso0">
+          <div class="circle" id="circle0">0</div>
+          <h3>Navegue la Ruta</h3>
+          <div class="div-img-paso0">
+            <img class="img-paso0" id="img-paso0" src="images/paso0_image.png" alt="No disponible">
+          </div>
+        </div>
+      </a>
+
+      <!-- Corrección de Slashes en imágenes de los pasos (1 al 9) -->
+      <div class="paso" id="paso_1">
+        <div class="circle" id="circle_1">1</div>
+        <h3>Contexto</h3>
+        <img class="img-paso img-paso-opacity" id="img-paso1" src="images/paso1_image.png" alt="No disponible">
+      </div>
+
+      <div class="paso" id="paso_2">
+        <div class="circle" id="circle_2">2</div>
+        <h3>Decisión de revisar el POT</h3>
+        <img class="img-paso img-paso-opacity" id="img-paso2" src="images/paso1_image.png" alt="No disponible">
+      </div>
+
+      <div class="paso" id="paso_3">
+        <div class="circle" id="circle_3">3</div>
+        <h3>Alistamiento</h3>
+        <img class="img-paso" id="img-paso3" src="images/paso3_image.png" alt="No disponible">
+      </div>
+
+      <div class="paso" id="paso_4">
+        <div class="circle" id="circle_4">4</div>
+        <h3>Seguimiento*</h3>
+        <img class="img-paso" id="img-paso4" src="images/paso4_image.png" alt="No disponible">
+      </div>
+
+      <div class="paso" id="paso_5">
+        <div class="circle" id="circle_5">5</div>
+        <h3>Diagnóstico*</h3>
+        <img class="img-paso" id="img-paso5" src="images/paso5_image.png" alt="No disponible">
+      </div>
+
+      <div class="paso" id="paso_6">
+        <div class="circle" id="circle_6">6</div>
+        <h3>Formulación*</h3>
+        <img class="img-paso" id="img-paso6" src="images/paso6_image.png" alt="No disponible">
+      </div>
+
+      <div class="paso" id="paso_7">
+        <div class="circle" id="circle_7">7</div>
+        <h3>Concertación, consulta y aprobación</h3>
+        <img class="img-paso img-paso-opacity" id="img-paso7" src="images/paso1_image.png" alt="No disponible">
+      </div>
+
+      <div class="paso" id="paso_8">
+        <div class="circle" id="circle_8">8</div>
+        <h3>Implementación del POT*</h3>
+        <img class="img-paso" id="img-paso8" src="images/paso7_image.png" alt="No disponible">
+      </div>
+
+      <div class="paso" id="paso_9">
+        <div class="circle" id="circle_9">9</div>
+        <h3>Seguimiento del POT*</h3>
+        <img class="img-paso" id="img-paso9" src="images/paso8_image.png" alt="No disponible">
+      </div>
+
+      <p class="encuenta">*Tenga en cuenta que los pasos marcados con un asterisco son etapas normativas del POT.</p>
+
+      <div class="cooperantes">
+        <h1>COOPERANTES</h1>
+        <div class="lineacooperantes"></div>
+        <img src="images/Municipios_paz.png" class="muni-paz-img" alt="">
+        <div class="lineacooperantesvertical"></div>
+        <img src="images/Fede_municipios.png" class="fede-muni-img" alt="">
+        <div class="lineacooperantesopaca"></div>
+        <img src="images/Hoja_ruta.png" class="hoja-ruta-img" alt="">
+        <div class="lineacooperantesvertical-2da-linea"></div>
+        <img src="images/Union_europea.png" class="UE-img" alt="">
+        <div class="lineacooperantesopaca"></div>
+        <img src="images/igac.png" class="igac-img" alt="">
+      </div>
+
+      <div class="creditos">
+        <h1>CRÉDITOS</h1>
+        <div class="lineacooperantes"></div>
+        <h2>Director ejecutivo de la federación</h2>
+        <h3>Gilberto Toro Giraldo</h3>
+        <h2>Directora de Gestión Técnica</h2>
+        <h3>Sandra Milena Castro Torres</h3>
+        <h2>Documento elaborado por el equipo técnico del Resultado 3 del proyecto</h2>
+        <h3>Municipios Visibles para la Paz</h3>
+        <h2>Líder del resultado</h2>
+        <h3>Luis Felipe Márquez Duque</h3>
+        <h2>Profesional urbanista</h2>
+        <h3>Jorge Enrique Angel Villada</h3>
+        <h2>Profesional ambiental</h2>
+        <h3>Victoria Eugenia Puerta González</h3>
+        <h2>Profesional en gestión de riesgos</h2>
+        <h3>Liliana Elizabeth Caicedo Mora</h3>
+        <h2>Profesional en Sistemas de información</h2>
+        <h3>Leidy Maritza Bernal Vargas</h3>
+        <h2>Profesional en economía urbana</h2>
+        <h3>Mauricio Cortes Garzón</h3>
+        <h2>Profesional en derecho urbano</h2>
+        <h3>Milena Inés Guevara Triana</h3>
+        <h2 class="tegusto">¿Te gustó la plataforma? <a
+            href="https://bit.ly/3DHLLdI?typeform-source=igac.azurewebsites.net" target="blank">Déjanos tu opinión.</a>
+        </h2>
+      </div>
+    </div>
+
+    <div class="super-container" id="super-container">
+      <div class="containertarjetas" id="containertarjetas">
+        <div id="instruccionesDiv">
+          <div class="instrucciones-introduccion">
+            <a class="btn btn-primary" data-toggle="collapse" href="#collapseExample" role="button"
+              aria-expanded="false" aria-controls="collapseExample">
+              &#191;Qu&#233; es la Ruta del POT?
             </a>
-          </li>
-        </ul>
-        <button class='nav-bar-toggle-igac'>
-          <div class='icon-bar'></div>
-          <div class='icon-bar'></div>
-          <div class='icon-bar'></div>
-          <div class='icon-bar'></div>
-        </button>
-      </div>
-      <div class='navbarnavigac'>
-      </div>
-    </nav>
-    <div class="mobile-image" id="mobile-image">
-      <img src="ruta/images/dispositivo.png" alt="Imagen movil">
-    </div>
-    <div class="container-fluid" id="container">
-      <div class="row">
-        <div class="ruta col-md-3" id="ruta">
-          <div class="mensaje">
-            <h1>¡HOLA!</h1>
-            <h2>Estos son los pasos de la ruta del POT</h2>
-            <p>Una guía para tomar la dirección adecuada. A continuación, se describen
-              cada uno de los pasos de la ruta.
-              Contiene, descripciones, definiciones, recursos y
-              ayudas sobre los procesos técnicos y administrativos
-              que debe hacer una administración municipal en el
-              marco del ordenamiento territorial. También se relacionan
-              los servicios que ofrece la Federación Colombiana de municipios para apoyar los procesos
-              de revisión y ajuste.
-            </p>
-          </div>
-          <div class="container-pasos">
-            <div class="pasos">
-              <div class="paso" id="paso_1">
-                <div class="circle circleclic" id="circle_1">1</div>
-                <h3>Contexto</h3>
-                <img class="img-paso img-paso-opacity" id="img-paso1" src="./ruta/images/paso1_image.png" alt="No disponible">
+            <div class="collapse" id="collapseExample">
+              <div class="card card-body">
+                <h3>Bienvenidos</h3>
+                <p>Estamos en la Ruta del POT: Una guía para tomar la dirección adecuada. Este es espacio para que los
+                  municipios tengan un apoyo para realizar los procesos de revisión, ajuste o elaboración de su Plan de
+                  Ordenamiento Territorial – POT. Es el resultado de un proceso minucioso de que busca dar respuestas a
+                  los municipios sobre posibles obstáculos y dificultades que se encontrarán en el proceso. Siendo así,
+                  esta ruta busca dar la información y el acompañamiento necesario, en el momento oportuno, para que los
+                  municipios puedan sortear los retos que se van presentando en las diferentes etapas. </p>
+                <p>Lo primero, es identificar en qué estado de avance se encuentran y hacerse las siguientes preguntas:
+                  ¿Dónde estamos parados? ¿Qué camino hemos recorrido? And, mirar hacia adelante para entender ¿Cuánto nos
+                  falta por recorrer y qué debemos hacer para recorrerlo de la manera más adecuada? Sigan las señales,
+                  hagan los altos en el camino, estén atentos a las alertas para llegar a la meta.</p>
+                <p>Prendan todos los motores. </p>
               </div>
-              <div class="paso" id="paso_2">
-                <div class="circle" id="circle_2">2</div>
-                <h3>Decisión de revisar el POT</h3>
-                <img class="img-paso img-paso-opacity" id="img-paso2" src="./ruta/images/paso1_image.png" alt="No disponible">
-              </div>
-              <div class="paso" id="paso_3">
-                <div class="circle" id="circle_3">3</div>
-                <h3>Alistamiento</h3>
-                <img class="img-paso" id="img-paso3" src="./ruta/images/paso3_image.png" alt="No disponible">
-              </div>
-              <div class="paso" id="paso_4">
-                <div class="circle" id="circle_4">4</div>
-                <h3>Seguimiento*</h3>
-                <img class="img-paso" id="img-paso4" src="./ruta/images/paso4_image.png" alt="No disponible">
-              </div>
-              <div class="paso" id="paso_5">
-                <div class="circle" id="circle_5">5</div>
-                <h3>Diagnóstico*</h3>
-                <img class="img-paso" id="img-paso5" src="./ruta/images/paso5_image.png" alt="No disponible">
-              </div>
-              <div class="paso" id="paso_6">
-                <div class="circle" id="circle_6">6</div>
-                <h3>Formulación*</h3>
-                <img class="img-paso" id="img-paso6" src="./ruta/images/paso6_image.png" alt="No disponible">
-              </div>
-              <div class="paso" id="paso_7">
-                <div class="circle" id="circle_7">7</div>
-                <h3>Concertación, consulta y aprobación</h3>
-                <img class="img-paso img-paso-opacity" id="img-paso7" src="./ruta/images/paso1_image.png" alt="No disponible">
-              </div>
-              <div class="paso" id="paso_8">
-                <div class="circle" id="circle_8">8</div>
-                <h3>Implementación del POT*</h3>
-                <img class="img-paso" id="img-paso8" src="./ruta/images/paso7_image.png" alt="No disponible">
-              </div>
-              <div class="paso" id="paso_9">
-                <div class="circle" id="circle_9">9</div>
-                <h3>Seguimiento del POT*</h3>
-                <img class="img-paso" id="img-paso9" src="./ruta/images/paso8_image.png" alt="No disponible">
-              </div>
+              <a class="btn btn-primary" data-toggle="collapse" href="#collapseExample" role="button"
+                aria-expanded="false" aria-controls="collapseExample">
+                Entendido
+              </a>
             </div>
-          </div>
-          <p class="encuenta">*Tenga en cuenta que los pasos marcados con un asterisco son etapas normativas del POT.</p>
-          <div class="cooperantes">
-            <h1>COOPERANTES</h1>
-            <img src="ruta/images/Municipios_paz.png" class="muni-paz-img" alt="">
-            <img src="ruta/images/Fede_municipios.png" class="fede-muni-img" alt="">
-            <img src="ruta/images/Hoja_ruta.png" class="hoja-ruta-img" alt="">
-            <img src="ruta/images/Union_europea.png" class="UE-img" alt="">
-            <img src="ruta/images/igac.png" class="igac-img" alt="">
-          </div>
-          <div class="creditos">
-            <h1>CRÉDITOS</h1>
-            <h2>Director ejecutivo de la federación</h2>
-            <h3>Gilberto Toro Giraldo</h3>
-            <h2>Directora de Gestión Técnica</h2>
-            <h3>Sandra Milena Castro Torres</h3>
-            <h2>Documento elaborado por el equipo técnico del
-              Resultado 3 del proyecto
-            </h2>
-            <h3>Municipios Visibles para la Paz</h3>
-            <h2>Líder del resultado</h2>
-            <h3>Luis Felipe Márquez Duque</h3>
-            <h2>Profesional urbanista</h2>
-            <h3>Jorge Enrique Angel Villada</h3>
-            <h2>Profesional ambiental</h2>
-            <h3>Victoria Eugenia Puerta González</h3>
-            <h2>Profesional en gestión de riesgos</h2>
-            <h3>Liliana Elizabeth Caicedo Mora</h3>
-            <h2>Profesional en Sistemas de información</h2>
-            <h3>Leidy Maritza Bernal Vargas</h3>
-            <h2>Profesional en economía urbana</h2>
-            <h3>Mauricio Cortes Garzón</h3>
-            <h2>Profesional en derecho urbano</h2>
-            <h3>Milena Inés Guevara Triana</h3>
-            <h2 class="tegusto">¿Te gustó la plataforma? <a
-              href="https://bit.ly/3DHLLdI?typeform-source=igac.azurewebsites.net" target="blank">Déjanos tu opinión.</a>
-            </h2>
           </div>
         </div>
-        <div class="super-container modal-open col-md-9 position-relative" id="super-container">
-          <div class="instrucciones-container position-absolute w-100 h-100 row z-2">
-            <div id="instruccionesDiv" class="w-100">
-              <div class="instrucciones-introduccion modal d-block">
-                <div class="modal-dialog modal-lg">
-                  <div class="modal-content row">
-                    <div class="col-md-8 text-light p-4 card-body">
-                      <h3>Bienvenidos</h3>
-                      <p>Estamos en la Ruta del POT: Una guía para tomar la dirección adecuada. Este es espacio para que los
-                        municipios tengan un apoyo para realizar los procesos de revisión, ajuste o elaboración de su Plan de
-                        Ordenamiento Territorial – POT. Es el resultado de un proceso minucioso de que busca dar respuestas a
-                        los municipios sobre posibles obstáculos y dificultades que se encontrarán en el proceso. Siendo así,
-                        esta ruta busca dar la información y el acompañamiento necesario, en el momento oportuno, para que los
-                        municipios puedan sortear los retos que se van presentando en las diferentes etapas. 
-                      </p>
-                      <p>Lo primero, es identificar en qué estado de avance se encuentran y hacerse las siguientes preguntas:
-                        ¿Dónde estamos parados? ¿Qué camino hemos recorrido? Y, mirar hacia adelante para entender ¿Cuánto nos
-                        falta por recorrer y qué debemos hacer para recorrerlo de la manera más adecuada? Sigan las señales,
-                        hagan los altos en el camino, estén atentos a las alertas para llegar a la meta.
-                      </p>
-                      <p>Prendan todos los motores. </p>
-                      <div class="d-flex mt-5 justify-content-between">
-                        <a role="link" href="docs/Ruta POT_FCM.pdf" class="btn rounded  bg-white">Descargar ruta POT - FCM</a>
-                        <button id="goSteps" class="btn btn-primary rounded">
-                        Entendido
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="row content-contenido">
-            <div class="containertarjetas col-md-8" id="containertarjetas">
-            </div>
-            <div class="notas col-md-4" id="notas"></div>
-          </div>
+
+        <div class="image-home-div">
+          <img class="image-home" id="imagehome" src="images/image_home_724px.png" alt="" usemap="#mapa">
+          <map name="mapa">
+            <area id="mapa-paso-1" class="mapa-paso" shape="circle" coords="378, 272, 40" href="#" alt="Paso 1">
+            <area id="mapa-paso-2" class="mapa-paso" shape="circle" coords="603, 272, 40" href="#" alt="Paso 2">
+            <area id="mapa-paso-3" class="mapa-paso" shape="circle" coords="802, 212, 40" href="#" alt="Paso 3">
+            <area id="mapa-paso-4" class="mapa-paso" shape="circle" coords="737, 379, 40" href="#" alt="Paso 4">
+            <area id="mapa-paso-5" class="mapa-paso" shape="circle" coords="416, 514, 40" href="#" alt="Paso 4">
+            <area id="mapa-paso-6" class="mapa-paso" shape="circle" coords="163, 513, 40" href="#" alt="Paso 5">
+            <area id="mapa-paso-7" class="mapa-paso" shape="circle" coords="280, 637, 40" href="#" alt="Paso 6">
+            <area id="mapa-paso-8" class="mapa-paso" shape="circle" coords="506, 680, 40" href="#" alt="Paso 7">
+            <area id="mapa-paso-9" class="mapa-paso" shape="circle" coords="743, 616, 40" href="#" alt="Paso 8">
+          </map>
         </div>
+        <a class="boton-pdf" href="docs/Ruta POT_FCM.pdf" target="_blank">
+          <button class="desc-pdf-fcm">Descargar ruta POT - FCM</button>
+        </a>
       </div>
+      <div class="notas" id="notas"></div>
     </div>
-    <div id="modalLogin" class="modal fade" role="dialog">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header" style="border: none; padding-bottom: 0px;">
-            <a href="#" class="close" onclick="closeLogin(); return false;" aria-label="Cerrar"><span
+  </div>
+
+  <div id="modalLogin" class="modal fade" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header" style="border: none; padding-bottom: 0px;">
+          <a href="#" class="close" onclick="closeLogin(); return false;" aria-label="Cerrar"><span
               aria-hidden="true">&times;</span></a>
-            <h4 class="modal-title">Iniciar sesi&oacute;n</h4>
-          </div>
-          <div class="modal-body" style="padding-top: 0px;">
-            <div id="loginContainer">
-              <div id="authContainer">
-              </div>
+          <h4 class="modal-title">Iniciar sesi&oacute;n</h4>
+        </div>
+        <div class="modal-body" style="padding-top: 0px;">
+          <div id="loginContainer">
+            <div id="authContainer">
             </div>
-            <div id="logoutContainer" style="text-align: center;padding: 10px;">
-              <img id="userPhoto2" src="./images/icono_ingreso.png" style="width: 64px; height: 64px;border-radius: 50%;"
-                alt="Imagen Usuario" />
-              <h5><span id="userName2"></span></h5>
-              <button id="logoutBtn" type="button" onclick="signOut();" class="btn btn-default btn-danger">
+          </div>
+          <div id="logoutContainer" style="text-align: center;padding: 10px;">
+            <img id="userPhoto2" src="/images/icono_ingreso.png" style="width: 64px; height: 64px;border-radius: 50%;"
+              alt="Imagen Usuario" />
+            <h5><span id="userName2"></span></h5>
+            <button id="logoutBtn" type="button" onclick="signOut();" class="btn btn-default btn-danger">
               Cerrar sesi&oacute;n
-              </button>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="containerf">
+      <div class="footer-container">
+        <div class="rowf">
+          <div class="col-md-6f">
+            <h2 class="footer-titulo">Instituto Geográfico Agustín Codazzi - IGAC</h2>
+          </div>
+          <div class="logos-footer col-md-6f">&nbsp;</div>
+        </div>
+        <div class="rowf">
+          <div class="col-md-6f">
+            <h2 class="sub-titulo-sede-gov-co">Información sede principal</h2>
+            <h3>Dirección:</h3>
+            <p>Bogotá D.C. - Carrera 30 # 48-51</p>
+            <h3>Horarios de atención al ciudadano:</h3>
+            <p>Abierto al público de lunes a viernes de 9:00 a.m. a 4:00 p.m. jornada continua Sede Central y territorial Cundinamarca</p>
+            <h3>Teléfono Conmutador:</h3>
+            <p>
+              <a href="tel:6016531888">+57 601 653 18 88</a>
+            </p>
+            <h3>Correo de contacto:</h3>
+            <p>
+              <a href="mailto:contactenos@igac.gov.co">contactenos@igac.gov.co</a>
+            </p>
+            <h3>Correo de notificaciones judiciales:</h3>
+            <p>
+              <a href="mailto:judiciales@igac.gov.co">judiciales@igac.gov.co</a>
+            </p>
+            <p>NIT: 8999990049</p>
+            <p>©Copyright 2026 - Observatorio de Ordenamiento Territorial</p>
+          </div>
+          <div class="col-md-6f">
+            <h3>Contáctenos en nuestras redes sociales</h3>
+            <div class="redes-sociales">
+              <p>
+                <a href="https://www.facebook.com/IgacColombia" tabindex="-1" target="_blank">
+                  <img alt="Visitar Facebook IGAC" class="icono-redes" src="/images/footer/facebook.svg">
+                  Facebook IGAC
+                </a>
+              </p>
+              <p>
+                <a href="https://twitter.com/igacColombia" tabindex="-1" target="_blank">
+                  <img alt="Visitar Twitter IGAC" class="icono-redes" src="/images/footer/twitter.svg">
+                  Twitter IGAC
+                </a>
+              </p>
+              <p>
+                <a href="https://www.instagram.com/igacColombia/" tabindex="-1" target="_blank">
+                  <img alt="Visitar Instagram IGAC" class="icono-redes" src="/images/footer/instagram.svg">
+                  Instagram IGAC
+                </a>
+              </p>
+            </div>
+            <div class="footer-enlaces"><a class="btn-low">Políticas</a>
+              <a class="btn-low">Mapa del sitio</a>
+              <a class="btn-low">Términos y condiciones</a>
             </div>
           </div>
         </div>
       </div>
     </div>
-    
-    <script type="text/javascript" src="https://www.gstatic.com/firebasejs/7.4.0/firebase-app.js"></script>
-    <script type="text/javascript" src="https://www.gstatic.com/firebasejs/7.4.0/firebase-auth.js"></script>
-    <script type="text/javascript" src="https://www.gstatic.com/firebasejs/ui/4.5.0/firebase-ui-auth__es.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js"
-      integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/parallax.js/1.5.0/parallax.min.js"></script>
-    
-    <script type="text/javascript" src="ruta/js/jquery.connections.js"></script>
-    <script type="text/javascript" src="ruta/js/index.js"></script>
+    <div class="gov-co-footer-pie">
+      <div class="gov-co-footer-auto containerf">
+        <img alt="Logo marca de Colombia" class="gov-co-logo-pie-blanco" src="/images/footer/marca_colombia.png">
+        <img alt="Logo de Gov Co" class="gov-co-logo-pie-mesa" src="/images/footer/header_govco.png">
+        <a class="text-white text-align-right" href="https://www.gov.co" target="_blank">
+          Conoce GOV.CO aquí
+        </a>
+      </div>
+    </div>
+  </footer>
 
-    <footer class="footer">
-        <div class="containerf">
-            <div class="footer-container">
-                <div class="rowf">
-                    <div class="col-md-6f">
-                        <h2 class="footer-titulo">Instituto Geográfico Agustín Codazzi - IGAC</h2>
-                    </div>
-                    <div class="logos-footer col-md-6f">&nbsp;</div>
-                </div>
-                <div class="rowf">
-                    <div class="col-md-6f">
-                        <h2 class="sub-titulo-sede-gov-co">Información sede principal</h2>
+  <script type="text/javascript" src="https://www.gstatic.com/firebasejs/7.4.0/firebase-app.js"></script>
+  <script type="text/javascript" src="https://www.gstatic.com/firebasejs/7.4.0/firebase-auth.js"></script>
+  <script type="text/javascript" src="https://www.gstatic.com/firebasejs/ui/4.5.0/firebase-ui-auth__es.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js"
+    integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous">
+  </script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/parallax.js/1.5.0/parallax.min.js"></script>
+  <script src="https://rawgit.com/jamietre/ImageMapster/master/dist/jquery.imagemapster.min.js"></script>
 
-                        <h3>Dirección:</h3>
-                        <p>Bogotá D.C. - Carrera 30 # 48-51</p>
+  <script>
+    $(document).ready(function () {
+      $('#imagehome').mapster({
+        staticState: false,
+        fillColor: "",
+        stroke: true,
+        strokeColor: "",
+        strokeOpacity: 1.0,
+        strokeWidth: 2,
+        render_highlight: {
+          fillOpacity: 0,
+          fillColor: "FFeedd",
+          stroke: true,
+          strokeOpacity: 1.0,
+          strokeColor: "EC6654",
+          strokeWidth: 2
+        }
+      });
+    });
+  </script>
 
-                        <h3>Horarios de atención al ciudadano:</h3>
-                        <p>Abierto al público de lunes a viernes de 9:00 a.m. a 4:00 p.m. jornada continua Sede Central y territorial Cundinamarca</p>
-                        <h3>Teléfono Conmutador:</h3>
-                        <p>
-                            <a href="tel:6016531888">+57 601 653 18 88</a>
-                        </p>
-                        <h3>Correo de contacto:</h3>
-                        <p>
-                            <a href="mailto:contactenos@igac.gov.co">contactenos@igac.gov.co</a>
-                        </p>
+  <script type="text/javascript" src="/js/navbar.js"></script>
+  <script type="text/javascript" src="/js/maestra.js"></script>
+  <script type="text/javascript" src="js/jquery.connections.js"></script>
+  <script type="text/javascript" src="js/index.js"></script>
 
-                        <h3>Correo de notificaciones judiciales:</h3>
-                        <p>
-                            <a href="mailto:judiciales@igac.gov.co">judiciales@igac.gov.co</a>
-                        </p>
-                        <p>NIT: 8999990049</p>
-
-                        <p>©Copyright 2026 - Observatorio de Ordenamiento Territorial</p>
-                    </div>
-                    <div class="col-md-6f">
-                        <h3>Contáctenos en nuestras redes sociales</h3>
-
-                        <div class="redes-sociales">
-                            <p>
-                                <a href="https://www.facebook.com/IgacColombia" tabindex="-1" target="_blank">
-                                    <img alt="Visitar Facebook IGAC" class="icono-redes" src="./images/footer/facebook.svg">
-                                    Facebook IGAC
-                                </a>
-                            </p>
-
-                            <p>
-                                <a href="https://twitter.com/igacColombia" tabindex="-1" target="_blank">
-                                    <img alt="Visitar Twitter IGAC" class="icono-redes" src="./images/footer/twitter.svg">
-                                    Twitter IGAC
-                                </a>
-                            </p>
-
-                            <p>
-                                <a href="https://www.instagram.com/igacColombia/" tabindex="-1" target="_blank">
-                                    <img alt="Visitar Instagram IGAC" class="icono-redes" src="./images/footer/instagram.svg">
-                                    Instagram IGAC
-                                </a>
-                            </p>
-                        </div>
-                        <div class="footer-enlaces"><a class="btn-low">Políticas</a>
-                            <a class="btn-low">Mapa del sitio</a>
-                            <a class="btn-low">Términos y condiciones</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="gov-co-footer-pie">
-            <div class="gov-co-footer-auto containerf">
-                <img alt="Logo marca de Colombia" class="gov-co-logo-pie-blanco" src="./images/footer/marca_colombia.png">
-                <img alt="Logo de Gov Co" class="gov-co-logo-pie-mesa" src="./images/footer/header_govco.png">
-                <a class="text-white text-align-right" href="https://www.gov.co" target="_blank">
-                    Conoce GOV.CO aquí
-                </a>
-            </div>
-        </div>
-    </footer>
 </body>
+
 </html>

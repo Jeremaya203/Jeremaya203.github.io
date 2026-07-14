@@ -1,4 +1,4 @@
-var web_service = "https://serviciosgeovisor.igac.gov.co:8080/Geovisor/";
+﻿var web_service = "https://serviciosgeovisor.igac.gov.co:8080/Geovisor/";
 var loading;
 
 
@@ -57,6 +57,7 @@ $(function() {
         var numeropasos = $('.paso').length
         var el = [...document.getElementsByClassName("paso")];
         //document.getElementById("circle0").style.background = "#D38424";
+        document.getElementById("paso0").style.border = "1px solid gray";
         
 
         var test = function(el) {
@@ -95,6 +96,7 @@ $(function() {
   $('.mapa-paso').click(function() {
       var clasemapapaso = $(this).attr('id');
       //document.getElementById("circle0").style.background = "#D38424";
+      document.getElementById("paso0").style.border = "1px solid gray";
       if (clasemapapaso == 'mapa-paso-1')
       {
         console.log(clasemapapaso)
@@ -206,6 +208,7 @@ $(function() {
         var clasecirculo = $(this).find('div').first();
         var clasename = clasecirculo.attr('class');
         var clasepaso = $(this).attr('class');
+        document.getElementById("paso0").style.border = "1px solid gray";
         var numeropasos = $('.paso').length
         //var notasdiv = $('.notas')            
         //notasdiv.css({"width": "25%"});
@@ -226,14 +229,14 @@ $(function() {
             console.log("Encontre que tiene clase paso y voy a ponerlo azul")
             console.log("Esta es la clase de las notas" + notas)
             
-            //document.getElementById("containertarjetas").innerHTML = "/colombia-ot/ruta/Paso2.html";
-            //$("#containertarjetas").load("/colombia-ot/ruta/Paso2.html");
-            //$("#notas").load("/colombia-ot/ruta/Notas2.html");
-            //$.get("/colombia-ot/ruta/Paso2.html", {},
+            //document.getElementById("containertarjetas").innerHTML = "Paso2.html";
+            //$("#containertarjetas").load("Paso2.html");
+            //$("#notas").load("Notas2.html");
+            //$.get("pasos/Paso2.html", {},
             //function (returnedHtml) {
             //    $("#containertarjetas").html(returnedHtml);
             //});
-            //$.get( "/colombia-ot/ruta/Paso8.html", function( data ) {
+            //$.get( "Paso8.html", function( data ) {
             //    $( ".containertarjetas" ).html( data );
                 //alert( "Load was performed." );
             //  });
@@ -256,121 +259,666 @@ $(function() {
 
 });
 
-// Carga inicial y helper dinámico (H-10, H-18, H-14)
-function cargarPasoYNotas(num) {
-  var base = "./ruta/";
-  $.get(base + "Paso" + num + ".html", function(data) {
-    $(".containertarjetas").html(data);
-  }).fail(function() {
-    if (window.OOT && window.OOT.notify) {
-      window.OOT.notify('Error al cargar el componente. Por favor reintente.');
-    }
-  });
-
-  $.get(base + "Notas" + num + ".html", function(data) {
-    $(".notas").html(data);
-  }).fail(function() {
-    if (window.OOT && window.OOT.notify) {
-      window.OOT.notify('Error al cargar el componente. Por favor reintente.');
-    }
-  });
-}
-
-// Carga inicial del paso 1
-cargarPasoYNotas(1);
-
 /* Funcion para actulizar el contenido*/
-$(function(){
-    $('#goSteps').on('click', function() {
-      $('.instrucciones-container').hide();
-      $('.super-container').removeClass('modal-open').addClass('overflow-auto');
-      $('#paso_1').addClass('pasoclic');
-    });
-    
-    $('.paso:not(#paso_1)').on('click', function() {
-      $('#paso_1').addClass('pasoclicked');
-    });
 
+$(function(){
     $('body').on('click', '.paso', function() {
         var idpaso = $(this).attr('id');
         console.log('logro obtener el id para cargar el contenido ' + idpaso);
-        var match = idpaso ? idpaso.match(/\d+/) : null;
-        if (match) {
-            cargarPasoYNotas(match[0]);
-        }
-    });
+        if(idpaso == 'paso_1')
+        {
+            $.get( "Paso1.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas1.html", function(data){
+                $(".notas").html(data);
+            });
+    
 
+        }
+        else if (idpaso == 'paso_2')
+        {
+            $.get( "Paso2.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas2.html", function(data){
+                $(".notas").html(data);
+            });
+
+        }
+        else if (idpaso == 'paso_3')
+        {
+            $.get( "Paso3.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                
+                //alert( "Load was performed." );
+              });
+              $.get("Notas3.html", function(data){
+                $(".notas").html(data);
+            });
+
+        }
+        else if (idpaso == 'paso_4')
+        {
+            $.get( "Paso4.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas4.html", function(data){
+                $(".notas").html(data);
+            });
+
+        }
+        else if (idpaso == 'paso_5')
+        {
+            $.get( "Paso5.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas5.html", function(data){
+                $(".notas").html(data);
+            });
+
+        }
+        else if (idpaso == 'paso_6')
+        {
+            $.get( "Paso6.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas6.html", function(data){
+                $(".notas").html(data);
+            });
+
+        }
+        else if (idpaso == 'paso_7')
+        {
+            $.get( "Paso7.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas7.html", function(data){
+                $(".notas").html(data);
+            });
+
+        }
+        else if (idpaso == 'paso_8')
+        {
+            $.get( "Paso8.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas8.html", function(data){
+                $(".notas").html(data);
+            });
+
+        }
+        else if (idpaso == 'paso_9')
+        {
+            $.get( "Paso9.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+
+                //alert( "Load was performed." );
+              });
+            $.get("Notas9.html", function(data){
+                $(".notas").html(data);
+            });
+
+        }
+        else
+        {
+            console.log("---")
+
+        }
+        
+      });
+
+});
+
+
+/* fin de la funcion que cambia el color en el primer clic*/
+
+
+
+
+$(function(){
     $('body').on('click', '.mapa-paso', function() {
         var idpaso = $(this).attr('id');
         console.log('logro obtener el id para cargar el contenido ' + idpaso);
         document.getElementById("notas").style.height = "fit-content";
         document.getElementById("notas").style.width = "33.33%";
         document.getElementById("notas").style.float = "right";
+        //document.getElementById("notas").style.marginTop = "-840.67px";
+        //document.getElementById("notas").style.backgroundColor = "red";
         document.getElementById("containertarjetas").style.width = "66.67%";
-        var match = idpaso ? idpaso.match(/\d+/) : null;
-        if (match) {
-            cargarPasoYNotas(match[0]);
+        if(idpaso == 'mapa-paso-1')
+        {
+            $.get( "Paso1.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas1.html", function(data){
+                $(".notas").html(data);
+            });
+    
+
+        }
+        else if (idpaso == 'mapa-paso-2')
+        {
+            $.get( "Paso2.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas2.html", function(data){
+                $(".notas").html(data);
+            });
+
+        }
+        else if (idpaso == 'mapa-paso-3')
+        {
+            $.get( "Paso3.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas3.html", function(data){
+                $(".notas").html(data);
+            });
+
+        }
+        else if (idpaso == 'mapa-paso-4')
+        {
+            $.get( "Paso4.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas4.html", function(data){
+                $(".notas").html(data);
+            });
+
+        }
+        else if (idpaso == 'mapa-paso-5')
+        {
+            $.get( "Paso5.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas5.html", function(data){
+                $(".notas").html(data);
+            });
+
+        }
+        else if (idpaso == 'mapa-paso-6')
+        {
+            $.get( "Paso6.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas6.html", function(data){
+                $(".notas").html(data);
+            });
+
+        }
+        else if (idpaso == 'mapa-paso-7')
+        {
+            $.get( "Paso7.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas7.html", function(data){
+                $(".notas").html(data);
+            });
+
+        }
+        else if (idpaso == 'mapa-paso-8')
+        {
+            $.get( "Paso8.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas8.html", function(data){
+                $(".notas").html(data);
+            });
+
+        }
+        else if (idpaso == 'mapa-paso-9')
+        {
+            $.get( "Paso9.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+
+                //alert( "Load was performed." );
+              });
+            $.get("Notas9.html", function(data){
+                $(".notas").html(data);
+            });
+
+        }
+        else
+        {
+            console.log("---")
+
         }
     });
+});
 
+
+$(function(){
     $('body').on('click', '.boton_next', function() {
         var idpaso = $(this).attr('id');
         console.log('logro obtener el id para cargar el contenido ' + idpaso);
-        var match = idpaso ? idpaso.match(/\d+/) : null;
-        if (match) {
-            var num = parseInt(match[0], 10);
-            var prevNum = num - 1;
+        //document.getElementById("notas").style.height = "100%";
+        //document.getElementById("notas").style.width = "25%";
+        
+        if(idpaso == 'next-paso-2')
+        {
+          var paso = document.getElementById('paso_2');   
+          var clasecirculo = $(paso).find('div').first();
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclic')
+          $(clasecirculo).addClass('circleclic')
 
-            var paso = document.getElementById('paso_' + num);
-            if (paso) {
-                var clasecirculo = $(paso).find('div').first();
-                $(paso).addClass('pasoclic');
-                $(clasecirculo).addClass('circleclic');
-            }
+          var paso = document.getElementById('paso_1');   
+          var clasecirculo = $(paso).find('div').first();
+          var ident = clasecirculo.attr('id');
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclicked')
+          $(clasecirculo).addClass('circleclicked')
+          document.getElementById(ident).innerHTML= '&#10003;';
 
-            var pasoPrev = document.getElementById('paso_' + prevNum);
-            if (pasoPrev) {
-                var clasecirculoPrev = $(pasoPrev).find('div').first();
-                var ident = clasecirculoPrev.attr('id');
-                $(pasoPrev).addClass('pasoclicked');
-                $(clasecirculoPrev).addClass('circleclicked');
-                if (ident) document.getElementById(ident).innerHTML = '&#10003;';
-            }
+            $.get( "Paso2.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas2.html", function(data){
+                $(".notas").html(data);
+            });
 
-            cargarPasoYNotas(num);
-        } else {
-            console.log('No llegue boton next');
+
         }
-    });
+        if(idpaso == 'next-paso-3')
+        {
+          var paso = document.getElementById('paso_3');   
+          var clasecirculo = $(paso).find('div').first();
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclic')
+          $(clasecirculo).addClass('circleclic')
 
+          var paso = document.getElementById('paso_2');   
+          var clasecirculo = $(paso).find('div').first();
+          var ident = clasecirculo.attr('id');
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclicked')
+          $(clasecirculo).addClass('circleclicked')
+          document.getElementById(ident).innerHTML= '&#10003;';
+
+            $.get( "Paso3.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas3.html", function(data){
+                $(".notas").html(data);
+            });
+        }
+        if(idpaso == 'next-paso-4')
+        {
+          var paso = document.getElementById('paso_4');   
+          var clasecirculo = $(paso).find('div').first();
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclic')
+          $(clasecirculo).addClass('circleclic')
+
+          var paso = document.getElementById('paso_3');   
+          var clasecirculo = $(paso).find('div').first();
+          var ident = clasecirculo.attr('id');
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclicked')
+          $(clasecirculo).addClass('circleclicked')
+          document.getElementById(ident).innerHTML= '&#10003;';
+
+            $.get( "Paso4.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas4.html", function(data){
+                $(".notas").html(data);
+            });
+        }
+        if(idpaso == 'next-paso-5')
+        {
+          var paso = document.getElementById('paso_5');   
+          var clasecirculo = $(paso).find('div').first();
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclic')
+          $(clasecirculo).addClass('circleclic')
+
+          var paso = document.getElementById('paso_4');   
+          var clasecirculo = $(paso).find('div').first();
+          var ident = clasecirculo.attr('id');
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclicked')
+          $(clasecirculo).addClass('circleclicked')
+          document.getElementById(ident).innerHTML= '&#10003;';
+
+            $.get( "Paso5.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas5.html", function(data){
+                $(".notas").html(data);
+            });
+        }
+        if(idpaso == 'next-paso-6')
+        {
+          var paso = document.getElementById('paso_6');   
+          var clasecirculo = $(paso).find('div').first();
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclic')
+          $(clasecirculo).addClass('circleclic')
+
+          var paso = document.getElementById('paso_5');   
+          var clasecirculo = $(paso).find('div').first();
+          var ident = clasecirculo.attr('id');
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclicked')
+          $(clasecirculo).addClass('circleclicked')
+          document.getElementById(ident).innerHTML= '&#10003;';
+
+            $.get( "Paso6.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas6.html", function(data){
+                $(".notas").html(data);
+            });
+        }
+        if(idpaso == 'next-paso-7')
+        {
+          var paso = document.getElementById('paso_7');   
+          var clasecirculo = $(paso).find('div').first();
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclic')
+          $(clasecirculo).addClass('circleclic')
+
+          var paso = document.getElementById('paso_6');   
+          var clasecirculo = $(paso).find('div').first();
+          var ident = clasecirculo.attr('id');
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclicked')
+          $(clasecirculo).addClass('circleclicked')
+          document.getElementById(ident).innerHTML= '&#10003;';
+
+            $.get( "Paso7.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas7.html", function(data){
+                $(".notas").html(data);
+            });
+        }
+        if(idpaso == 'next-paso-8')
+        {
+          var paso = document.getElementById('paso_8');   
+          var clasecirculo = $(paso).find('div').first();
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclic')
+          $(clasecirculo).addClass('circleclic')
+
+          var paso = document.getElementById('paso_7');   
+          var clasecirculo = $(paso).find('div').first();
+          var ident = clasecirculo.attr('id');
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclicked')
+          $(clasecirculo).addClass('circleclicked')
+          document.getElementById(ident).innerHTML= '&#10003;';
+
+            $.get( "Paso8.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas8.html", function(data){
+                $(".notas").html(data);
+            });
+        }
+        if(idpaso == 'next-paso-9')
+        {
+          var paso = document.getElementById('paso_9');   
+          var clasecirculo = $(paso).find('div').first();
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclic')
+          $(clasecirculo).addClass('circleclic')
+
+          var paso = document.getElementById('paso_8');   
+          var clasecirculo = $(paso).find('div').first();
+          var ident = clasecirculo.attr('id');
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclicked')
+          $(clasecirculo).addClass('circleclicked')
+          document.getElementById(ident).innerHTML= '&#10003;';
+
+            $.get( "Paso9.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas9.html", function(data){
+                $(".notas").html(data);
+            });
+        }
+        else
+        {
+            console.log('No llegue boton next')
+        }
+
+
+    });
+});
+
+
+
+$(function(){
     $('body').on('click', '.boton_back', function() {
         var idpaso = $(this).attr('id');
         console.log('logro obtener el id para cargar el contenido ' + idpaso);
-        var match = idpaso ? idpaso.match(/\d+/) : null;
-        if (match) {
-            var num = parseInt(match[0], 10);
-            var nextNum = num + 1;
+        document.getElementById("notas").style.height = "100%";
+        document.getElementById("notas").style.width = "25%";
+        if(idpaso == 'back-paso-1')
+        {
+          var paso = document.getElementById('paso_1');   
+          var clasecirculo = $(paso).find('div').first();
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclic')
+          $(clasecirculo).addClass('circleclic')
 
-            var paso = document.getElementById('paso_' + num);
-            if (paso) {
-                var clasecirculo = $(paso).find('div').first();
-                $(paso).addClass('pasoclic');
-                $(clasecirculo).addClass('circleclic');
-            }
+          var paso = document.getElementById('paso_2');   
+          var clasecirculo = $(paso).find('div').first();
+          var ident = clasecirculo.attr('id');
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclicked')
+          $(clasecirculo).addClass('circleclicked')
+          document.getElementById(ident).innerHTML= '&#10003;';
 
-            var pasoNext = document.getElementById('paso_' + nextNum);
-            if (pasoNext) {
-                var clasecirculoNext = $(pasoNext).find('div').first();
-                var ident = clasecirculoNext.attr('id');
-                $(pasoNext).addClass('pasoclicked');
-                $(clasecirculoNext).addClass('circleclicked');
-                if (ident) document.getElementById(ident).innerHTML = '&#10003;';
-            }
-
-            cargarPasoYNotas(num);
-        } else {
-            console.log('No llegue boton back');
+            $.get( "Paso1.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas1.html", function(data){
+                $(".notas").html(data);
+            });
         }
+        if(idpaso == 'back-paso-2')
+        {
+          var paso = document.getElementById('paso_2');   
+          var clasecirculo = $(paso).find('div').first();
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclic')
+          $(clasecirculo).addClass('circleclic')
+
+          var paso = document.getElementById('paso_3');   
+          var clasecirculo = $(paso).find('div').first();
+          var ident = clasecirculo.attr('id');
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclicked')
+          $(clasecirculo).addClass('circleclicked')
+          document.getElementById(ident).innerHTML= '&#10003;';
+
+            $.get( "Paso2.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas2.html", function(data){
+                $(".notas").html(data);
+            });
+        }
+        if(idpaso == 'back-paso-3')
+        {
+          var paso = document.getElementById('paso_3');   
+          var clasecirculo = $(paso).find('div').first();
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclic')
+          $(clasecirculo).addClass('circleclic')
+
+          var paso = document.getElementById('paso_4');   
+          var clasecirculo = $(paso).find('div').first();
+          var ident = clasecirculo.attr('id');
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclicked')
+          $(clasecirculo).addClass('circleclicked')
+          document.getElementById(ident).innerHTML= '&#10003;';
+
+            $.get( "Paso3.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas3.html", function(data){
+                $(".notas").html(data);
+            });
+        }
+        if(idpaso == 'back-paso-4')
+        {
+          var paso = document.getElementById('paso_4');   
+          var clasecirculo = $(paso).find('div').first();
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclic')
+          $(clasecirculo).addClass('circleclic')
+
+          var paso = document.getElementById('paso_5');   
+          var clasecirculo = $(paso).find('div').first();
+          var ident = clasecirculo.attr('id');
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclicked')
+          $(clasecirculo).addClass('circleclicked')
+          document.getElementById(ident).innerHTML= '&#10003;';
+
+            $.get( "Paso4.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas4.html", function(data){
+                $(".notas").html(data);
+            });
+        }
+        if(idpaso == 'back-paso-5')
+        {
+          var paso = document.getElementById('paso_5');   
+          var clasecirculo = $(paso).find('div').first();
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclic')
+          $(clasecirculo).addClass('circleclic')
+
+          var paso = document.getElementById('paso_6');   
+          var clasecirculo = $(paso).find('div').first();
+          var ident = clasecirculo.attr('id');
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclicked')
+          $(clasecirculo).addClass('circleclicked')
+          document.getElementById(ident).innerHTML= '&#10003;';
+
+            $.get( "Paso5.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas5.html", function(data){
+                $(".notas").html(data);
+            });
+        }
+        if(idpaso == 'back-paso-6')
+        {
+          var paso = document.getElementById('paso_6');   
+          var clasecirculo = $(paso).find('div').first();
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclic')
+          $(clasecirculo).addClass('circleclic')
+
+          var paso = document.getElementById('paso_7');   
+          var clasecirculo = $(paso).find('div').first();
+          var ident = clasecirculo.attr('id');
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclicked')
+          $(clasecirculo).addClass('circleclicked')
+          document.getElementById(ident).innerHTML= '&#10003;';
+
+            $.get( "Paso6.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas6.html", function(data){
+                $(".notas").html(data);
+            });
+        }
+        if(idpaso == 'back-paso-7')
+        {
+          var paso = document.getElementById('paso_7');   
+          var clasecirculo = $(paso).find('div').first();
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclic')
+          $(clasecirculo).addClass('circleclic')
+
+          var paso = document.getElementById('paso_8');   
+          var clasecirculo = $(paso).find('div').first();
+          var ident = clasecirculo.attr('id');
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclicked')
+          $(clasecirculo).addClass('circleclicked')
+          document.getElementById(ident).innerHTML= '&#10003;';
+
+            $.get( "Paso7.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas7.html", function(data){
+                $(".notas").html(data);
+            });
+        }
+        if(idpaso == 'back-paso-8')
+        {
+          var paso = document.getElementById('paso_8');   
+          var clasecirculo = $(paso).find('div').first();
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclic')
+          $(clasecirculo).addClass('circleclic')
+
+          var paso = document.getElementById('paso_9');   
+          var clasecirculo = $(paso).find('div').first();
+          var ident = clasecirculo.attr('id');
+          var clasename = clasecirculo.attr('class');
+          $(paso).addClass('pasoclicked')
+          $(clasecirculo).addClass('circleclicked')
+          document.getElementById(ident).innerHTML= '&#10003;';
+
+            $.get( "Paso8.html", function( data ) {
+                $( ".containertarjetas" ).html( data );
+                //alert( "Load was performed." );
+              });
+              $.get("Notas8.html", function(data){
+                $(".notas").html(data);
+            });
+        }
+        else
+        {
+            console.log('No llegue boton back')
+        }
+
+
     });
 });
 
