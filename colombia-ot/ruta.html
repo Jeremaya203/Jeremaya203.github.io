@@ -432,22 +432,30 @@
 
   <script>
     $(document).ready(function () {
-      $('#imagehome').mapster({
-        staticState: false,
-        fillColor: "",
-        stroke: true,
-        strokeColor: "",
-        strokeOpacity: 1.0,
-        strokeWidth: 2,
-        render_highlight: {
-          fillOpacity: 0,
-          fillColor: "FFeedd",
-          stroke: true,
-          strokeOpacity: 1.0,
-          strokeColor: "EC6654",
-          strokeWidth: 2
+      if ($.fn.mapster) {
+        try {
+          $('#imagehome').mapster({
+            staticState: false,
+            fillColor: "",
+            stroke: true,
+            strokeColor: "",
+            strokeOpacity: 1.0,
+            strokeWidth: 2,
+            render_highlight: {
+              fillOpacity: 0,
+              fillColor: "FFeedd",
+              stroke: true,
+              strokeOpacity: 1.0,
+              strokeColor: "EC6654",
+              strokeWidth: 2
+            }
+          });
+        } catch (e) {
+          console.error("Error al inicializar ImageMapster:", e);
         }
-      });
+      } else {
+        console.warn("Librería ImageMapster no disponible en el DOM.");
+      }
     });
   </script>
 
