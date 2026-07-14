@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Redireccionando...</title>
+  <script>
+    // Obtener la ruta de la URL actual
+    var path = window.location.pathname;
+    
+    // Si la ruta contiene la carpeta antigua "colombiaot", redirigir a "colombia-ot"
+    if (path.includes('/colombiaot/')) {
+      var newPath = path.replace('/colombiaot/', '/colombia-ot/');
+      window.location.replace(newPath);
+    } else {
+      // De lo contrario, redirigir a la página principal del sitio
+      window.location.replace('/index.html');
+    }
+  </script>
+</head>
+<body>
+  <div style="font-family: sans-serif; text-align: center; margin-top: 10%;">
+    <h2>Redireccionando al Observatorio de Ordenamiento Territorial...</h2>
+    <p>Si no es redirigido automáticamente, haga clic en el siguiente enlace:</p>
+    <a href="/colombia-ot/ruta/index.html" style="color: #0d6efd; text-decoration: none; font-weight: bold;">Acceder a la Ruta del POT</a>
+  </div>
+</body>
+</html>
