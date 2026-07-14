@@ -1,4 +1,4 @@
-﻿var currentUser;
+var currentUser;
 var firebase_ui;
 var currentScreen;
 var currentEstado = "init";
@@ -18,9 +18,7 @@ var tablePot;
 var cacheUnidades;
 var cacheUnidadesFiltro;
 
-//var web_service = "http://localhost:8080/Geovisor_IGAC";
 var web_service = "https://serviciosgeovisor.igac.gov.co:8080/Geovisor";
-//var web_service = "http://172.19.3.37:8080/Geovisor";
 var web_service_proxy = "https://serviciosgeovisor.igac.gov.co:8080/Geovisor";
 
 // Solo pruebas locales: fuerza permisos de interfaz (el Geovisor revalida en servidor).
