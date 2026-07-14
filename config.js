@@ -183,7 +183,7 @@ window.OOT_MODULOS = {
 // Rutas prefijadas con OOT_BASE para portabilidad en subpath (a raíz = idénticas).
 window.OOT_COT_WRAPPERS = {
   pot:          (window.OOT_BASE || '') + '/colombia-ot/pot.html',
-  ruta:         (window.OOT_BASE || '') + '/colombia-ot/ruta.html',
+  ruta:         (window.OOT_BASE || '') + '/colombia-ot/ruta/index.html',
   cartillas:    (window.OOT_BASE || '') + '/colombia-ot/cartillas.html',
   // Obs 24: wrappers inertes (aún NO presentes en colombia-ot/). Reactivar cuando exista
   // cada archivo, para no dejar enlaces muertos.

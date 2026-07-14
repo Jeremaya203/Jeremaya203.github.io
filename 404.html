@@ -7,12 +7,21 @@
     // Obtener la ruta de la URL actual
     var path = window.location.pathname;
     
-    // Si la ruta contiene la carpeta antigua "colombiaot", redirigir a "colombia-ot"
+    var newPath = path;
+    // 1. Normalizar carpeta antigua colombiaot -> colombia-ot
     if (path.includes('/colombiaot/')) {
-      var newPath = path.replace('/colombiaot/', '/colombia-ot/');
+      newPath = path.replace('/colombiaot/', '/colombia-ot/');
+    }
+    
+    // 2. Normalizar extensión errónea ruta.html -> ruta/index.html
+    if (newPath.includes('/ruta.html')) {
+      newPath = newPath.replace('/ruta.html', '/ruta/index.html');
+    }
+    
+    // 3. Redirigir si la ruta cambió, o ir a index.html si es un 404 real
+    if (newPath !== path) {
       window.location.replace(newPath);
     } else {
-      // De lo contrario, redirigir a la página principal del sitio
       window.location.replace('/index.html');
     }
   </script>
