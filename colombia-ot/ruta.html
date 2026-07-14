@@ -15,23 +15,27 @@
   <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"
     integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous">
   <link rel="canonical" href="" />
-  <link rel="shortcut icon" href="/images/favicon.ico" />
+  <link rel="shortcut icon" href="ruta/images/favicon.ico" />
   <title>Colombia OT</title>
 
   <link type="text/css" async rel="stylesheet"
     href="https://www.gstatic.com/firebasejs/ui/4.5.0/firebase-ui-auth.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.css" />
-  <link rel="stylesheet" href="/js/lib/dist/css/calcite-maps-bootstrap.min-v0.10.css">
-  <link rel="stylesheet" href="/js/lib/dist/css/calcite-maps-arcgis-3.x.min-v0.10.css">
+  
+  <!-- Rutas globales corregidas para buscar dentro de colombia-ot/ en GitHub Pages -->
+  <link rel="stylesheet" href="js/lib/dist/css/calcite-maps-bootstrap.min-v0.10.css">
+  <link rel="stylesheet" href="js/lib/dist/css/calcite-maps-arcgis-3.x.min-v0.10.css">
 
   <link rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.20/css/dataTables.bootstrap.min.css" />
 
-  <link rel="stylesheet" href="/css/home.css">
-  <link rel="stylesheet" href="/css/maestra.css">
-  <link rel="stylesheet" href="/css/navbar-footer.css">
-  <link rel="stylesheet" href="/css/sigot.css">
-  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/home.css">
+  <link rel="stylesheet" href="css/maestra.css">
+  <link rel="stylesheet" href="css/navbar-footer.css">
+  <link rel="stylesheet" href="css/sigot.css">
+  
+  <!-- Estilos específicos de la subcarpeta ruta/ -->
+  <link rel="stylesheet" href="ruta/css/estilos.css">
 
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-78PPLF47WW"></script>
 </head>
@@ -39,7 +43,7 @@
 <body>
   <div class="barra_gov">
     <a class="logo-gov" href="https://www.gov.co/home/" target="_blank">
-      <img alt="Logo Gov.co" src="/images/nav/header_govco.png">
+      <img alt="Logo Gov.co" src="images/nav/header_govco.png">
     </a>
   </div>
 
@@ -47,79 +51,79 @@
     <div class="navbarigac">
       <div class="logos">
         <a href="https://www.igac.gov.co" class="navbar-brand-igac" target="_blank">
-          <img alt="Logo IGAC" src="/images/nav/logo.png">
+          <img alt="Logo IGAC" src="images/nav/logo.png">
         </a>
-        <img src="/images/nav/colombiaOT.svg" alt="Colombia OT">
+        <img src="images/nav/colombiaOT.svg" alt="Colombia OT">
       </div>
       <ul id="link-list">
         <li>
-          <a href="/" rel="noopener">Inicio</a>
+          <a href="index.html" rel="noopener">Inicio</a>
         </li>
         <li>
-          <a href="/pot/" rel="noopener">Los POT del país</a>
+          <a href="pot/" rel="noopener">Los POT del país</a>
         </li>
         <li id="optionCargue" style="display: none;">
-          <a href="/cargue/" rel="noopener">Cargue</a>
+          <a href="cargue/" rel="noopener">Cargue</a>
         </li>
         <li>
           <a class="collapse-button-1 active">Otros recursos
-            <img src="/images/nav/ico-arrow.png" alt="">
+            <img src="images/nav/ico-arrow.png" alt="">
           </a>
 
           <ul id="collapse-menu-1" class="collapse-menu-1">
             <li>
-              <a href="/cartillas/">Cartillas, gu&iacute;as y manuales</a>
-              <img src="/images/nav/ico-arrow.png" alt="Cartillas, gu&iacute;as y manuales">
+              <a href="cartillas/">Cartillas, gu&iacute;as y manuales</a>
+              <img src="images/nav/ico-arrow.png" alt="Cartillas, gu&iacute;as y manuales">
             </li>
             <li>
-              <a href="/normatividad/">Normatividad</a>
-              <img src="/images/nav/ico-arrow.png" alt="Normatividad">
+              <a href="normatividad/">Normatividad</a>
+              <img src="images/nav/ico-arrow.png" alt="Normatividad">
             </li>
             <li>
-              <a href="/datosot/">Datos para el OT</a>
-              <img src="/images/nav/ico-arrow.png" alt="Datos para el OT">
+              <a href="datosot/">Datos para el OT</a>
+              <img src="images/nav/ico-arrow.png" alt="Datos para el OT">
             </li>
             <li>
-              <a href="/aplicaciones/">Aplicaciones y herramientas</a>
-              <img src="/images/nav/ico-arrow.png" alt="Aplicaciones y herramientas">
+              <a href="aplicaciones/">Aplicaciones y herramientas</a>
+              <img src="images/nav/ico-arrow.png" alt="Aplicaciones y herramientas">
             </li>
             <li>
-              <a href="/documentos/">Documentos t&eacute;cnicos</a>
-              <img src="/images/nav/ico-arrow.png" alt="Documentos t&eacute;cnicos">
+              <a href="documentos/">Documentos t&eacute;cnicos</a>
+              <img src="images/nav/ico-arrow.png" alt="Documentos t&eacute;cnicos">
             </li>
             <li>
-              <a href="/ruta/">La Ruta del POT</a>
-              <img src="/images/nav/ico-arrow.png" alt="La Ruta del POT">
+              <a href="ruta/">La Ruta del POT</a>
+              <img src="images/nav/ico-arrow.png" alt="La Ruta del POT">
             </li>
           </ul>
         </li>
         <li>
           <a class="collapse-button-2">Acerca de
-            <img src="/images/nav/ico-arrow.png" alt="Acerca de">
+            <img src="images/nav/ico-arrow.png" alt="Acerca de">
           </a>
 
           <ul id="collapse-menu-2" class="collapse-menu-2">
             <li>
-              <a href="/acerca-de/">Qu&eacute; es el ordenamiento territorial (OT)</a>
-              <img src="/images/nav/ico-arrow.png" alt="Que es">
+              <a href="acerca-de/">Qu&eacute; es el ordenamiento territorial (OT)</a>
+              <img src="images/nav/ico-arrow.png" alt="Que es">
             </li>
             <li>
-              <a href="/acerca-de/colombia-ot-del-igac.html">Colombia OT del IGAC</a>
-              <img src="/images/nav/ico-arrow.png" alt="Colombia OT">
+              <a href="acerca-de/colombia-ot-del-igac.html">Colombia OT del IGAC</a>
+              <img src="images/nav/ico-arrow.png" alt="Colombia OT">
             </li>
             <li>
-              <a href="/acerca-de/actores-de-colombia-ot.html">Actores de Colombia OT</a>
-              <img src="/images/nav/ico-arrow.png" alt="Actores">
+              <a href="acerca-de/actores-de-colombia-ot.html">Actores de Colombia OT</a>
+              <img src="images/nav/ico-arrow.png" alt="Actores">
             </li>
             <li>
-              <a href="/acerca-de/ot_del_pais_en_cifras.html">El OT del pa&iacute;s en cifras</a>
-              <img src="/images/nav/ico-arrow.png" alt="Cifras">
+              <a href="acerca-de/ot_del_pais_en_cifras.html">El OT del pa&iacute;s en cifras</a>
+              <img src="images/nav/ico-arrow.png" alt="Cifras">
             </li>
           </ul>
         </li>
         <li>
           <a id="loginBtn" onclick="gotoLogin();">
-            <img id="userPhoto" src="/images/icono_ingreso.png" onerror="defaultUserPhoto();" alt="Iniciar sesion" />
+            <img id="userPhoto" src="ruta/images/icono_ingreso.png" onerror="this.src='ruta/images/User.png';" alt="Iniciar sesion" />
             <span id="userName" style="display: none;">Iniciar sesion</span>
           </a>
         </li>
@@ -136,11 +140,11 @@
   </nav>
 
   <div class="mobile-image" id="mobile-image">
-    <img src="images/dispositivo.png" alt="Imagen movil">
+    <img src="ruta/images/dispositivo.png" alt="Imagen movil">
   </div>
   <div class="container-2" id="container">
     <div class="ruta" id="ruta">
-      <img width="100%" src="images/ruta_image.png" alt="">
+      <img width="100%" src="ruta/images/ruta_image.png" alt="">
 
       <div class="mensaje">
         <h1>¡HOLA!</h1>
@@ -160,64 +164,64 @@
           <div class="circle" id="circle0">0</div>
           <h3>Navegue la Ruta</h3>
           <div class="div-img-paso0">
-            <img class="img-paso0" id="img-paso0" src="images/paso0_image.png" alt="No disponible">
+            <img class="img-paso0" id="img-paso0" src="ruta/images/paso0_image.png" alt="No disponible">
           </div>
         </div>
       </a>
 
-      <!-- Corrección de Slashes en imágenes de los pasos (1 al 9) -->
+      <!-- Assets direccionados a la carpeta ruta/images/ -->
       <div class="paso" id="paso_1">
         <div class="circle" id="circle_1">1</div>
         <h3>Contexto</h3>
-        <img class="img-paso img-paso-opacity" id="img-paso1" src="images/paso1_image.png" alt="No disponible">
+        <img class="img-paso img-paso-opacity" id="img-paso1" src="ruta/images/paso1_image.png" alt="No disponible">
       </div>
 
       <div class="paso" id="paso_2">
         <div class="circle" id="circle_2">2</div>
         <h3>Decisión de revisar el POT</h3>
-        <img class="img-paso img-paso-opacity" id="img-paso2" src="images/paso1_image.png" alt="No disponible">
+        <img class="img-paso img-paso-opacity" id="img-paso2" src="ruta/images/paso1_image.png" alt="No disponible">
       </div>
 
       <div class="paso" id="paso_3">
         <div class="circle" id="circle_3">3</div>
         <h3>Alistamiento</h3>
-        <img class="img-paso" id="img-paso3" src="images/paso3_image.png" alt="No disponible">
+        <img class="img-paso" id="img-paso3" src="ruta/images/paso3_image.png" alt="No disponible">
       </div>
 
       <div class="paso" id="paso_4">
         <div class="circle" id="circle_4">4</div>
         <h3>Seguimiento*</h3>
-        <img class="img-paso" id="img-paso4" src="images/paso4_image.png" alt="No disponible">
+        <img class="img-paso" id="img-paso4" src="ruta/images/paso4_image.png" alt="No disponible">
       </div>
 
       <div class="paso" id="paso_5">
         <div class="circle" id="circle_5">5</div>
         <h3>Diagnóstico*</h3>
-        <img class="img-paso" id="img-paso5" src="images/paso5_image.png" alt="No disponible">
+        <img class="img-paso" id="img-paso5" src="ruta/images/paso5_image.png" alt="No disponible">
       </div>
 
       <div class="paso" id="paso_6">
         <div class="circle" id="circle_6">6</div>
         <h3>Formulación*</h3>
-        <img class="img-paso" id="img-paso6" src="images/paso6_image.png" alt="No disponible">
+        <img class="img-paso" id="img-paso6" src="ruta/images/paso6_image.png" alt="No disponible">
       </div>
 
       <div class="paso" id="paso_7">
         <div class="circle" id="circle_7">7</div>
         <h3>Concertación, consulta y aprobación</h3>
-        <img class="img-paso img-paso-opacity" id="img-paso7" src="images/paso1_image.png" alt="No disponible">
+        <img class="img-paso img-paso-opacity" id="img-paso7" src="ruta/images/paso1_image.png" alt="No disponible">
       </div>
 
       <div class="paso" id="paso_8">
         <div class="circle" id="circle_8">8</div>
         <h3>Implementación del POT*</h3>
-        <img class="img-paso" id="img-paso8" src="images/paso7_image.png" alt="No disponible">
+        <img class="img-paso" id="img-paso8" src="ruta/images/paso7_image.png" alt="No disponible">
       </div>
 
       <div class="paso" id="paso_9">
         <div class="circle" id="circle_9">9</div>
         <h3>Seguimiento del POT*</h3>
-        <img class="img-paso" id="img-paso9" src="images/paso8_image.png" alt="No disponible">
+        <img class="img-paso" id="img-paso9" src="ruta/images/paso8_image.png" alt="No disponible">
       </div>
 
       <p class="encuenta">*Tenga en cuenta que los pasos marcados con un asterisco son etapas normativas del POT.</p>
@@ -225,11 +229,11 @@
       <div class="cooperantes">
         <h1>COOPERANTES</h1>
         <div class="lineacooperantes"></div>
-        <img src="images/Municipios_paz.png" class="muni-paz-img" alt="">
+        <img src="ruta/images/Municipios_paz.png" class="muni-paz-img" alt="">
         <div class="lineacooperantesvertical"></div>
-        <img src="images/Fede_municipios.png" class="fede-muni-img" alt="">
+        <img src="ruta/images/Fede_municipios.png" class="fede-muni-img" alt="">
         <div class="lineacooperantesopaca"></div>
-        <img src="images/Hoja_ruta.png" class="hoja-ruta-img" alt="">
+        <img src="ruta/images/Hoja_ruta.png" class="hoja-ruta-img" alt="">
         <div class="lineacooperantesvertical-2da-linea"></div>
         <img src="images/Union_europea.png" class="UE-img" alt="">
         <div class="lineacooperantesopaca"></div>
@@ -268,7 +272,7 @@
     <div class="super-container" id="super-container">
       <div class="containertarjetas" id="containertarjetas">
         <div id="instruccionesDiv">
-          <div class="instrucciones-introduccion">
+          <div class="instrucciones-introduction">
             <a class="btn btn-primary" data-toggle="collapse" href="#collapseExample" role="button"
               aria-expanded="false" aria-controls="collapseExample">
               &#191;Qu&#233; es la Ruta del POT?
@@ -283,7 +287,7 @@
                   esta ruta busca dar la información y el acompañamiento necesario, en el momento oportuno, para que los
                   municipios puedan sortear los retos que se van presentando en las diferentes etapas. </p>
                 <p>Lo primero, es identificar en qué estado de avance se encuentran y hacerse las siguientes preguntas:
-                  ¿Dónde estamos parados? ¿Qué camino hemos recorrido? And, mirar hacia adelante para entender ¿Cuánto nos
+                  ¿Dónde estamos parados? ¿Qué camino hemos recorrido? Y, mirar hacia adelante para entender ¿Cuánto nos
                   falta por recorrer y qué debemos hacer para recorrerlo de la manera más adecuada? Sigan las señales,
                   hagan los altos en el camino, estén atentos a las alertas para llegar a la meta.</p>
                 <p>Prendan todos los motores. </p>
@@ -297,7 +301,7 @@
         </div>
 
         <div class="image-home-div">
-          <img class="image-home" id="imagehome" src="images/image_home_724px.png" alt="" usemap="#mapa">
+          <img class="image-home" id="imagehome" src="ruta/images/image_home_724px.png" alt="" usemap="#mapa">
           <map name="mapa">
             <area id="mapa-paso-1" class="mapa-paso" shape="circle" coords="378, 272, 40" href="#" alt="Paso 1">
             <area id="mapa-paso-2" class="mapa-paso" shape="circle" coords="603, 272, 40" href="#" alt="Paso 2">
@@ -310,7 +314,7 @@
             <area id="mapa-paso-9" class="mapa-paso" shape="circle" coords="743, 616, 40" href="#" alt="Paso 8">
           </map>
         </div>
-        <a class="boton-pdf" href="docs/Ruta POT_FCM.pdf" target="_blank">
+        <a class="boton-pdf" href="ruta/docs/Ruta POT_FCM.pdf" target="_blank">
           <button class="desc-pdf-fcm">Descargar ruta POT - FCM</button>
         </a>
       </div>
@@ -332,8 +336,8 @@
             </div>
           </div>
           <div id="logoutContainer" style="text-align: center;padding: 10px;">
-            <img id="userPhoto2" src="/images/icono_ingreso.png" style="width: 64px; height: 64px;border-radius: 50%;"
-              alt="Imagen Usuario" />
+            <img id="userPhoto2" src="ruta/images/icono_ingreso.png" style="width: 64px; height: 64px;border-radius: 50%;"
+              alt="Imagen Usuario" onerror="this.src='ruta/images/User.png';" />
             <h5><span id="userName2"></span></h5>
             <button id="logoutBtn" type="button" onclick="signOut();" class="btn btn-default btn-danger">
               Cerrar sesi&oacute;n
@@ -380,19 +384,19 @@
             <div class="redes-sociales">
               <p>
                 <a href="https://www.facebook.com/IgacColombia" tabindex="-1" target="_blank">
-                  <img alt="Visitar Facebook IGAC" class="icono-redes" src="/images/footer/facebook.svg">
+                  <img alt="Visitar Facebook IGAC" class="icono-redes" src="images/footer/facebook.svg">
                   Facebook IGAC
                 </a>
               </p>
               <p>
                 <a href="https://twitter.com/igacColombia" tabindex="-1" target="_blank">
-                  <img alt="Visitar Twitter IGAC" class="icono-redes" src="/images/footer/twitter.svg">
+                  <img alt="Visitar Twitter IGAC" class="icono-redes" src="images/footer/twitter.svg">
                   Twitter IGAC
                 </a>
               </p>
               <p>
                 <a href="https://www.instagram.com/igacColombia/" tabindex="-1" target="_blank">
-                  <img alt="Visitar Instagram IGAC" class="icono-redes" src="/images/footer/instagram.svg">
+                  <img alt="Visitar Instagram IGAC" class="icono-redes" src="images/footer/instagram.svg">
                   Instagram IGAC
                 </a>
               </p>
@@ -407,8 +411,8 @@
     </div>
     <div class="gov-co-footer-pie">
       <div class="gov-co-footer-auto containerf">
-        <img alt="Logo marca de Colombia" class="gov-co-logo-pie-blanco" src="/images/footer/marca_colombia.png">
-        <img alt="Logo de Gov Co" class="gov-co-logo-pie-mesa" src="/images/footer/header_govco.png">
+        <img alt="Logo marca de Colombia" class="gov-co-logo-pie-blanco" src="images/footer/marca_colombia.png">
+        <img alt="Logo de Gov Co" class="gov-co-logo-pie-mesa" src="images/footer/header_govco.png">
         <a class="text-white text-align-right" href="https://www.gov.co" target="_blank">
           Conoce GOV.CO aquí
         </a>
@@ -447,10 +451,10 @@
     });
   </script>
 
-  <script type="text/javascript" src="/js/navbar.js"></script>
-  <script type="text/javascript" src="/js/maestra.js"></script>
-  <script type="text/javascript" src="js/jquery.connections.js"></script>
-  <script type="text/javascript" src="js/index.js"></script>
+  <script type="text/javascript" src="js/navbar.js"></script>
+  <script type="text/javascript" src="js/maestra.js"></script>
+  <script type="text/javascript" src="ruta/js/jquery.connections.js"></script>
+  <script type="text/javascript" src="ruta/js/index.js"></script>
 
 </body>
 
