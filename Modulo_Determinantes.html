@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Análisis de Determinantes — Colombia OT 2.0</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<link rel="stylesheet" href="./maestra.css">
+<link rel="stylesheet" href="./navbar-footer.css">
+<link rel="stylesheet" href="./oot-complementario.css">
+<link rel="stylesheet" href="./oot-design-system.css">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet"/>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <link rel="stylesheet" href="./determinantes.css">
+</head>
+<body>
+
+<div id="oot-navbar-placeholder"></div>
+
+<div id="mob-backdrop" class="mob-backdrop" data-oot-click="_mobCerrar" style="display:none;"></div>
+
+<div id="module-wrap">
+<!-- LEFT PANEL -->
+<aside class="panel-left">
+  <div class="header-left">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;position:relative;z-index:1;">
+      <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <span class="material-symbols-outlined" style="font-size:20px;color:#fff">layers</span>
+      </div>
+      <div>
+        <a class="oot-backlink" href="./index.html" style="display:inline-flex;align-items:center;gap:4px;color:rgba(255,255,255,0.55);font-size:11px;text-decoration:none;margin-bottom:4px;transition:color 0.15s;"><span class="material-symbols-outlined" style="font-size:13px;">arrow_back</span>Menú principal</a>
+        <div style="font-weight:800;font-size:13.5px;color:#fff;line-height:1.2;">Análisis de Determinantes</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-top:2px;">Colombia OT 2.0 · IGAC 2026</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-scroll">
+    <!-- Selector de municipio ELIMINADO: era vestigial. La viabilidad detecta el
+         municipio real de la geometría de la zona (gestor._resolver_municipio) y la
+         consulta de área es dirigida por la zona. El dropdown no influía en el cálculo. -->
+
+    <!-- Área mínima -->
+    <div class="mb-4">
+      <label class="text-xs font-bold uppercase" style="color:var(--oot-tx3);display:block;margin-bottom:8px;">Área mínima (ha)</label>
+      <input type="number" id="area-minima" value="6" min="0.1" max="100" step="0.5" style="width:100px;">
+    </div>
+
+    <!-- NPN filter for consulta_predio -->
+    <div class="mb-4" id="params-npn" style="display:none;">
+      <label class="text-xs font-bold uppercase" style="color:var(--oot-tx3);display:block;margin-bottom:8px;">Filtrar por NPN (opcional)</label>
+      <input type="text" id="inp-npn" placeholder="47001..." style="width:100%;">
+      <div class="text-[10px]" style="color:var(--oot-tx3);margin-top:4px;">Prefijo del número predial</div>
+    </div>
+
+    <!-- Modo tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button id="tab-consulta" data-oot-click="cambiarFuncion" data-oot-arg="consulta_area" class="tab-btn active" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 12px;background:var(--oot-ochre);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">
+        <span class="material-symbols-outlined" style="font-size:16px;">layers</span>
+        Área
+      </button>
+      <button id="tab-viabilidad" data-oot-click="cambiarFuncion" data-oot-arg="viabilidad" class="tab-btn" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 12px;background:var(--oot-s2);color:var(--oot-tx2);border:1px solid var(--oot-b2);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">
+        <span class="material-symbols-outlined" style="font-size:16px;">pin_drop</span>
+        Viabilidad
+      </button>
+    </div>
+    <div id="upload-titulo" class="text-xs font-bold uppercase mb-3" style="color:var(--oot-tx3);">Zona de Consulta</div>
+
+    <!-- Zona de consulta -->
+    <div class="mb-4">
+      <label class="text-xs font-bold uppercase" style="color:var(--oot-tx3);display:block;margin-bottom:8px;">Zona de Consulta</label>
+      <div id="drop-zone" class="drop-zone" data-oot-click="_ootTriggerFile" data-oot-arg="file-input">
+        <span class="material-symbols-outlined" style="font-size:28px;color:var(--oot-ochre);opacity:0.6;margin-bottom:6px;display:block;">upload_file</span>
+        <div style="font-weight:700;font-size:12px;color:var(--oot-tx);">Arrastra tu archivo</div>
+        <div style="font-size:10px;color:var(--oot-tx3);text-align:center;max-width:200px;margin:0 auto;line-height:1.3;">.geojson, .kmz, .kml o Shapefile (.shp dentro de .zip)</div>
+      </div>
+      <input type="file" id="file-input" accept=".geojson,.json,.zip,.kmz,.kml" style="display:none;" data-oot-change="handleFileSelect">
+      
+      <button class="btn btn-secondary btn-block mt-2" data-oot-click="iniciarDibujo">
+        <span class="material-symbols-outlined" style="font-size:16px;">edit_location</span>
+        Dibujar zona en el mapa
+      </button>
+      
+      <div id="file-info" class="hidden p-3 rounded-lg mt-2" style="background:var(--oot-s2);font-size:11px;">
+        <span id="file-name" style="color:var(--oot-tx);"></span>
+        <button data-oot-click="limpiarArchivo" style="float:right;background:none;border:none;color:var(--oot-red);cursor:pointer;font-size:14px;">✕</button>
+        <!-- H-19: la vista previa en mapa solo está disponible para GeoJSON. Para KMZ/KML/SHP
+             el análisis SÍ funciona; se avisa que la zona se dibuja al ejecutar (no antes). -->
+        <div id="preview-aviso" style="display:none;clear:both;margin-top:8px;color:var(--oot-ochre);font-size:10.5px;line-height:1.45;"></div>
+      </div>
+    </div>
+
+    <!-- Reglas -->
+    <div class="mb-4" id="reglas-section">
+      <label class="text-xs font-bold uppercase" style="color:var(--oot-tx3);display:block;margin-bottom:10px;">Reglas a Evaluar</label>
+      <label class="rule-item">
+        <input type="checkbox" id="regla-aislamiento" checked>
+        <div>
+          <div class="rule-title">Aislamiento de Vías</div>
+          <div class="rule-desc">Fajas de exclusión (30/22.5/15m)</div>
+        </div>
+      </label>
+      <label class="rule-item" style="display:none;">
+        <input type="checkbox" id="regla-paramos">
+        <div>
+          <div class="rule-title">Páramos y Humedales</div>
+          <div class="rule-desc">Ecosistemas estratégicos</div>
+        </div>
+      </label>
+      <label class="rule-item" style="display:none;">
+        <input type="checkbox" id="regla-areas-vida">
+        <div>
+          <div class="rule-title">Áreas de Vida</div>
+          <div class="rule-desc">Zonas de reforestación</div>
+        </div>
+      </label>
+      <label class="rule-item" style="display:none;">
+        <input type="checkbox" id="regla-centros">
+        <div>
+          <div class="rule-title">Centros Poblados</div>
+          <div class="rule-desc">Densidad predial</div>
+        </div>
+      </label>
+    </div>
+
+    <!-- Uso pretendido (solo modo viabilidad) -->
+    <div class="mb-4" id="uso-pretendido-section" style="display:none;">
+      <label class="text-xs font-bold uppercase" style="color:var(--oot-tx3);display:block;margin-bottom:8px;">Uso Pretendido del Suelo</label>
+      <select id="uso-pretendido" style="width:100%;padding:8px;background:var(--oot-s2);color:var(--oot-tx);border:1px solid var(--oot-b2);border-radius:6px;font-size:12px;">
+        <option value="vivienda">Vivienda / Residencial</option>
+        <option value="comercio">Comercio / Servicios</option>
+        <option value="industria">Industria</option>
+        <option value="agropecuario">Agropecuario</option>
+        <option value="dotacional">Dotacional / Equipamiento</option>
+        <option value="recreacion">Recreación / Deporte</option>
+        <option value="mineria">Minería / Extracción</option>
+        <option value="conservacion">Conservación / Ambiental</option>
+      </select>
+      <div class="text-[10px]" style="color:var(--oot-tx3);margin-top:4px;">Uso que se pretende dar al suelo de la zona</div>
+    </div>
+
+    <!-- Leyenda -->
+    <div class="mb-4 p-3 rounded-xl" style="background:var(--oot-s2);">
+      <label class="text-xs font-bold uppercase" style="color:var(--oot-tx3);display:block;margin-bottom:8px;">Leyenda</label>
+      <div class="flex items-center gap-2 text-xs" style="color:var(--oot-tx2);margin-bottom:4px;"><span style="color:var(--oot-green);">●</span> Compatible</div>
+      <div class="flex items-center gap-2 text-xs" style="color:var(--oot-tx2);margin-bottom:4px;"><span style="color:var(--oot-ochre);">●</span> Condicionado</div>
+      <div class="flex items-center gap-2 text-xs" style="color:var(--oot-tx2);margin-bottom:4px;"><span style="color:var(--oot-red);">●</span> No viable</div>
+      <div class="flex items-center gap-2 text-xs" style="color:var(--oot-tx2);"><span style="color:#888888;">●</span> Sin información</div>
+    </div>
+
+    <!-- Ayuda -->
+    <div class="p-3 rounded-xl" style="background:var(--oot-s2);font-size:11px;color:var(--oot-tx2);">
+      <div class="font-bold mb-2" style="color:var(--oot-ochre);">¿Cómo funciona?</div>
+      <div>1. Seleccione municipio</div>
+      <div class="mt-1">2. Suba o dibuje la zona</div>
+      <div class="mt-1">3. Active las reglas</div>
+      <div class="mt-1">4. Ejecute el análisis</div>
+    </div>
+  </div>
+
+  <div style="padding:14px;background:rgba(255,255,255,0.02);border-top:0.5px solid rgba(74,144,217,0.08);">
+    <button id="btn-ejecutar" class="btn btn-primary w-full" data-oot-click="ejecutarAnalisis" disabled>
+      <span class="material-symbols-outlined">play_arrow</span>
+      <span id="btn-ejecutar-txt">Consultar Determinantes en Área</span>
+    </button>
+  </div>
+</aside>
+
+<!-- CENTER: MAP -->
+<div class="panel-center">
+  <div id="mapa-container" style="width:100%; height:100%;"></div>
+  <!-- Overlay de animación de carga SOBRE el mapa (agentes de IA procesando) -->
+  <div id="mapa-anim-overlay" style="position:absolute;inset:0;display:none;z-index:6;flex-direction:column;align-items:center;justify-content:center;background:rgba(6,16,28,0.78);backdrop-filter:blur(2px);">
+    <video id="proc-anim" loop muted playsinline preload="auto"
+           style="width:min(72%,580px);border-radius:14px;box-shadow:0 12px 44px rgba(0,0,0,.55);">
+      <source src="./images/Animacion_Determinantes.mp4" type="video/mp4">
+    </video>
+    <div style="margin-top:14px;color:var(--oot-tx);font-size:14px;font-weight:600;letter-spacing:.01em;">
+      Agentes de IA procesando el territorio…
+    </div>
+  </div>
+  <div id="map-hint" class="map-hint" style="align-items:center;gap:8px;padding:8px 12px;">
+    <span id="draw-vertex-badge" style="background:var(--oot-ochre);color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">0</span>
+    <span style="color:var(--oot-tx2);font-size:12px;">vértices</span>
+    <span style="color:var(--oot-tx3);">·</span>
+    <button id="btn-deshacer" data-oot-click="deshacerVertice" style="background:none;border:none;color:var(--oot-ochre);cursor:pointer;font-size:12px;font-weight:600;">Deshacer</button>
+    <span style="color:var(--oot-tx3);">·</span>
+    <button id="btn-finalizar-zona" data-oot-click="finalizarDibujo" disabled style="background:var(--oot-ochre);color:#fff;padding:4px 12px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;opacity:0.4;">Finalizar zona</button>
+    <span class="hint-desktop" style="color:var(--oot-ochre);font-size:11px;font-weight:600;margin-left:auto;">Doble clic para cerrar el polígono</span>
+    <span class="hint-desktop" style="color:var(--oot-tx3);">·</span>
+    <span class="hint-desktop" style="color:var(--oot-tx3);font-size:11px;">Esc para cancelar</span>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<aside class="panel-right">
+  <div class="header-right">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="width:32px;height:32px;border-radius:9px;background:rgba(200,87,62,0.15);border:1px solid rgba(200,87,62,0.25);display:flex;align-items:center;justify-content:center;">
+        <span class="material-symbols-outlined" style="font-size:17px;color:var(--oot-terra);">assessment</span>
+      </div>
+      <div>
+        <div style="font-weight:800;font-size:13px;color:#fff;line-height:1.2;">Resultados del Análisis</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.5);">IGAC · Colombia</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLACEHOLDER: cuando no hay análisis -->
+  <div id="placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 18px;text-align:center;min-height:300px;">
+    <div style="width:58px;height:58px;border-radius:17px;background:rgba(200,87,62,0.1);border:1px solid rgba(200,87,62,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">
+      <span class="material-symbols-outlined" style="font-size:27px;color:var(--oot-terra);opacity:0.6;">analytics</span>
+    </div>
+    <p style="font-size:13px;font-weight:700;color:var(--oot-tx);margin:0 0 8px;">Resultados del Análisis</p>
+    <p style="font-size:11.5px;color:var(--oot-tx3);line-height:1.6;margin:0 0 22px;">Ejecute un análisis para ver las determinantes aplicables.</p>
+    <div style="width:100%;display:flex;flex-direction:column;gap:5px;">
+      <p style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--oot-tx3);margin:0 0 5px;">Pasos</p>
+      <div style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03);color:var(--oot-tx2);font-size:11.5px;font-weight:600;">
+        <span class="material-symbols-outlined" style="font-size:16px;color:var(--oot-teal);flex-shrink:0;">check_circle</span>
+        Seleccione municipio y área mínima
+      </div>
+      <div style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03);color:var(--oot-tx2);font-size:11.5px;font-weight:600;">
+        <span class="material-symbols-outlined" style="font-size:16px;color:var(--oot-teal);flex-shrink:0;">check_circle</span>
+        Cargue o dibuje una zona de consulta
+      </div>
+      <div style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03);color:var(--oot-tx2);font-size:11.5px;font-weight:600;">
+        <span class="material-symbols-outlined" style="font-size:16px;color:var(--oot-teal);flex-shrink:0;">check_circle</span>
+        Active las reglas a evaluar
+      </div>
+      <div style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03);color:var(--oot-tx2);font-size:11.5px;font-weight:600;">
+        <span class="material-symbols-outlined" style="font-size:16px;color:var(--oot-teal);flex-shrink:0;">check_circle</span>
+        Presione "Consultar Determinantes"
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP: Processing -->
+  <div id="step-processing" class="step">
+    <div class="processing-box">
+      <div class="processing-icon"><span class="material-symbols-outlined spin">settings</span></div>
+      <div class="font-bold" style="font-size:15px;margin-bottom:4px;" id="proc-titulo">Procesando...</div>
+      <div class="text-xs" style="color:var(--oot-tx3);margin-bottom:20px;" id="proc-subtitulo">Analizando determinantes</div>
+      <div style="text-align:left;">
+        <div id="step1" class="flex items-center gap-2 text-sm" style="color:var(--oot-tx3);margin-bottom:8px;">
+          <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
+          <span>Intersectando zonas</span>
+        </div>
+        <div id="step2" class="flex items-center gap-2 text-sm" style="color:var(--oot-tx3);margin-bottom:8px;">
+          <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
+          <span>Aplicando reglas</span>
+        </div>
+        <div id="step3" class="flex items-center gap-2 text-sm" style="color:var(--oot-tx3);">
+          <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
+          <span>Evaluando normativa</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP: Results -->
+  <div id="step-results" class="step">
+    <div class="content-scroll">
+      <div class="tabs" style="margin-bottom:12px;">
+        <button class="tab active" id="tab-determinantes" data-oot-click="mostrarTab" data-oot-arg="determinantes">
+          <span class="tab-icon material-symbols-outlined">layers</span>
+          Determinantes
+        </button>
+        <button class="tab" id="tab-mapa" data-oot-click="mostrarTab" data-oot-arg="mapa">
+          <span class="tab-icon material-symbols-outlined">map</span>
+          Mapa
+        </button>
+      </div>
+      <div id="panel-determinantes">
+        <div style="padding:12px 0 4px;border-bottom:1px solid var(--oot-b2);margin-bottom:12px;">
+        <div style="font-size:10px;color:var(--oot-tx3);text-transform:uppercase;letter-spacing:0.06em;font-weight:700;">Municipio</div>
+        <div id="resultado-municipio" style="font-size:14px;font-weight:800;color:var(--oot-tx);margin-top:2px;">—</div>
+      </div>
+      <div class="results-cards">
+        <div class="result-card">
+          <div class="result-card-value" id="total-dets">0</div>
+          <div class="result-card-label">Determinantes</div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-value" id="total-predios">0</div>
+          <div class="result-card-label">Predios</div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-value" id="viables" style="color:var(--oot-green);">0</div>
+          <div class="result-card-label">Viables</div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-value" id="no-viables" style="color:var(--oot-red);">0</div>
+          <div class="result-card-label">No Viables</div>
+        </div>
+      </div>
+      <!-- Leyenda de tipos de determinante -->
+      <div style="margin-bottom:16px;padding:12px;background:var(--oot-s2);border-radius:10px;">
+        <div class="font-bold text-xs mb-3" style="color:var(--oot-tx3);text-transform:uppercase;letter-spacing:0.05em;">Categoría de Determinante</div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="width:14px;height:14px;border-radius:3px;background:#27ae60;"></span>
+            <span style="font-size:11px;color:var(--oot-tx2);">1 - Ambientales</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="width:14px;height:14px;border-radius:3px;background:#e67e22;"></span>
+            <span style="font-size:11px;color:var(--oot-tx2);">2 - Soberanía Alimentaria</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="width:14px;height:14px;border-radius:3px;background:#8e44ad;"></span>
+            <span style="font-size:11px;color:var(--oot-tx2);">3 - Patrimoniales</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="width:14px;height:14px;border-radius:3px;background:#2980b9;"></span>
+            <span style="font-size:11px;color:var(--oot-tx2);">4 - Infraestructura</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="width:14px;height:14px;border-radius:3px;background:#c0392b;"></span>
+            <span style="font-size:11px;color:var(--oot-tx2);">5 - Áreas Metropolitanas</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="width:14px;height:14px;border-radius:3px;background:#16a085;"></span>
+            <span style="font-size:11px;color:var(--oot-tx2);">6 - Proyectos Turísticos</span>
+          </div>
+        </div>
+      </div>
+      <div class="font-bold text-sm mb-3" style="color:var(--oot-tx);">Lista de Determinantes</div>
+      <div id="determinantes-list"></div>
+      <div id="reglas-list" style="margin-top:16px;"></div>
+      </div>
+      <div id="panel-mapa" style="display:none;">
+        <div class="font-bold text-sm mb-3" style="color:var(--oot-tx);">Controles del Mapa</div>
+        <div style="margin-bottom:16px;padding:12px;background:var(--oot-s2);border-radius:10px;">
+          <div style="font-size:11px;font-weight:600;color:var(--oot-tx3);margin-bottom:8px;">Opacidad de capas</div>
+          <input type="range" id="opacity-slider" min="0" max="100" value="50" style="width:100%;" data-oot-input="ajustarOpacidad">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--oot-tx3);margin-top:4px;">
+            <span>0%</span><span id="opacity-val">50%</span><span>100%</span>
+          </div>
+        </div>
+        <div style="margin-bottom:16px;padding:12px;background:var(--oot-s2);border-radius:10px;">
+          <div style="font-size:11px;font-weight:600;color:var(--oot-tx3);margin-bottom:8px;">Tipos de geometría</div>
+          <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px;color:var(--oot-tx2);cursor:pointer;">
+            <input type="checkbox" id="toggle-polygons" checked data-oot-change="toggleCapa" data-oot-arg="polygons"> Polígonos
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px;color:var(--oot-tx2);cursor:pointer;">
+            <input type="checkbox" id="toggle-lines" checked data-oot-change="toggleCapa" data-oot-arg="lines"> Líneas
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--oot-tx2);cursor:pointer;">
+            <input type="checkbox" id="toggle-points" checked data-oot-change="toggleCapa" data-oot-arg="points"> Puntos
+          </label>
+        </div>
+        <div style="padding:12px;background:var(--oot-s2);border-radius:10px;">
+          <div style="font-size:11px;font-weight:600;color:var(--oot-tx3);margin-bottom:8px;">Leyenda por categoría</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:3px;background:#27ae60;"></span><span style="font-size:11px;color:var(--oot-tx2);">Ambientales</span></div>
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:3px;background:#e67e22;"></span><span style="font-size:11px;color:var(--oot-tx2);">Soberanía Alimentaria</span></div>
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:3px;background:#8e44ad;"></span><span style="font-size:11px;color:var(--oot-tx2);">Patrimoniales</span></div>
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:3px;background:#2980b9;"></span><span style="font-size:11px;color:var(--oot-tx2);">Infraestructura</span></div>
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:3px;background:#c0392b;"></span><span style="font-size:11px;color:var(--oot-tx2);">Áreas Metropolitanas</span></div>
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:3px;background:#16a085;"></span><span style="font-size:11px;color:var(--oot-tx2);">Proyectos Turísticos</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Acciones: grid 2×2 para que quepan en el panel sin desbordarse -->
+    <div id="visor-btn-group" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px;border-top:1px solid var(--oot-bd);background:var(--oot-bg);">
+      <button data-oot-click="descargarReporte" class="visor-btn-primary" style="min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 8px;background:var(--oot-ochre);color:#fff;border:none;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;overflow:hidden;">
+        <span class="material-symbols-outlined" style="font-size:18px;flex-shrink:0;">download</span>
+        <span style="overflow:hidden;text-overflow:ellipsis;">Reporte</span>
+      </button>
+      <button data-oot-click="descargarDeterminantesGeoJSON" class="visor-btn-secondary" style="min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 8px;background:var(--oot-s2);color:var(--oot-tx);border:1px solid var(--oot-bd);border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;overflow:hidden;">
+        <span class="material-symbols-outlined" style="font-size:18px;flex-shrink:0;">data_object</span>
+        <span style="overflow:hidden;text-overflow:ellipsis;">GeoJSON</span>
+      </button>
+      <button data-oot-click="descargarDeterminantesSHP" class="visor-btn-secondary" style="min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 8px;background:var(--oot-s2);color:var(--oot-tx);border:1px solid var(--oot-bd);border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;overflow:hidden;">
+        <span class="material-symbols-outlined" style="font-size:18px;flex-shrink:0;">folder_zip</span>
+        <span style="overflow:hidden;text-overflow:ellipsis;">SHP</span>
+      </button>
+      <button data-oot-click="reiniciar" class="visor-btn-secondary" style="min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 8px;background:var(--oot-s2);color:var(--oot-tx);border:1px solid var(--oot-bd);border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;overflow:hidden;">
+        <span class="material-symbols-outlined" style="font-size:18px;flex-shrink:0;">refresh</span>
+        <span style="overflow:hidden;text-overflow:ellipsis;">Nuevo análisis</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP: Error -->
+  <div id="step-error" class="step">
+    <div class="error-box">
+      <span class="material-symbols-outlined">error</span>
+      <div class="error-title">Error en el análisis</div>
+      <div class="error-msg" id="error-msg"></div>
+      <button class="btn btn-primary mt-4" data-oot-click="reiniciar">Intentar de nuevo</button>
+    </div>
+  </div>
+</aside>
+</div>
+
+<script src="./config.js"></script>
+<script src="./oot.js"></script>
+<script src="./js/determinantes.js"></script>
+</body>
+</html>

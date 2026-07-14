@@ -1,0 +1,857 @@
+:root {
+
+    /* =========================
+       COLORES PRINCIPALES
+    ========================= */
+
+    --color-primary-dark: #5E3208;
+    --color-primary: #7A430C;
+    --color-primary-light: #A65A12;
+
+    --color-secondary-dark: #D89222;
+    --color-secondary: #FBB03B;
+    --color-secondary-light: #FFD27A;
+
+    /* =========================
+       TONOS COMPLEMENTARIOS
+    ========================= */
+
+    --color-accent-gold: #E7A52E;
+    --color-accent-soft: #F6E3BE;
+    --color-accent-cream: #FFF7E8;
+
+    /* =========================
+       FONDOS
+    ========================= */
+
+    --color-background: #FFF9F1;
+    --color-surface: #FFFFFF;
+    --color-surface-soft: #FDF4E6;
+
+    /* =========================
+       TEXTOS
+    ========================= */
+
+    --color-text-primary: #4B2A08;
+    --color-text-secondary: #7A5A2A;
+    --color-text-soft: #9A8667;
+
+    /* =========================
+       BORDES
+    ========================= */
+
+    --color-border: #E7C58B;
+    --color-border-soft: #F1DFC1;
+
+    /* =========================
+       ESTADOS
+    ========================= */
+
+    --color-hover: #FFC857;
+    --color-active: #C97B1D;
+    --color-disabled: #D8C6AE;
+
+    /* =========================
+       SOMBRAS
+    ========================= */
+
+    --shadow-soft: 0 4px 12px rgba(122, 67, 12, 0.12);
+    --shadow-medium: 0 6px 18px rgba(122, 67, 12, 0.18);
+
+    /* =========================
+       GRADIENTES
+    ========================= */
+
+    --gradient-primary: linear-gradient(
+        to right,
+        #7A430C,
+        #FBB03B
+    );
+
+    --gradient-soft: linear-gradient(
+        to right,
+        #A65A12,
+        #FFD27A
+    );
+
+}
+
+.chart-card {
+    overflow-x: visible;
+    overflow-y: visible;
+}
+
+.attr-category-chart-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.attr-category-chart-canvas-wrap {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.attr-category-chart-row.tourism-layout-active {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.attr-category-chart-row.tourism-layout-active .attr-category-chart-canvas-wrap {
+    order: 1;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    flex: 1 1 100%;
+    box-sizing: border-box;
+}
+
+.attr-category-chart-row.tourism-layout-active .tourism-req-panel {
+    order: 2;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    flex: 1 1 100%;
+    box-sizing: border-box;
+}
+
+.tourism-req-panel {
+    flex: 0 0 min(240px, 30%);
+    max-width: min(280px, 34%);
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid #d9d3c8;
+    background: #fffaf0;
+    box-shadow: var(--shadow-soft);
+    font-size: 0.88rem;
+    line-height: 1.45;
+    color: var(--color-text-primary);
+}
+
+.attr-category-chart-row.tourism-derived-open {
+    flex-wrap: wrap;
+}
+
+.attr-category-chart-row.tourism-derived-open .attr-category-chart-canvas-wrap {
+    flex: 1 1 100%;
+    order: 1;
+}
+
+.attr-category-chart-row.tourism-derived-open .tourism-req-panel:not([hidden]) {
+    flex: 1 1 100%;
+    order: 2;
+    max-width: 100%;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    margin-top: 10px;
+}
+
+.attr-category-chart-row.tourism-derived-open .tourism-req-panel--right:not([hidden]) {
+    order: 3;
+}
+
+.attr-category-chart-row.tourism-layout-active.tourism-derived-open .tourism-req-panel--right:not([hidden]) {
+    order: 2;
+}
+
+.attr-category-chart-row.eva-yield-layout {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.eva-layout-active .attr-category-chart-row.eva-yield-layout {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-border);
+}
+
+.attr-category-chart-row.eva-yield-layout .attr-category-chart-canvas-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.attr-category-chart-row.eva-yield-layout .tourism-req-panel {
+    display: none !important;
+}
+
+.tourism-req-panel--right {
+    border-color: #d9d3c8;
+    background: #fffaf0;
+    color: var(--color-text-primary);
+}
+
+.tourism-req-panel__req {
+    margin: 0 0 6px 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--color-primary);
+}
+
+.tourism-req-panel--right .tourism-req-panel__req {
+    color: var(--color-active);
+}
+
+.tourism-req-panel__cat {
+    margin: 0 0 10px 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: inherit;
+}
+
+.tourism-req-panel__count {
+    margin: 0 0 8px 0;
+    font-weight: 600;
+}
+
+.tourism-req-panel__place {
+    margin: 0;
+    font-size: 0.84rem;
+    opacity: 0.92;
+}
+
+.tourism-req-panel__chart-box {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 360px;
+    margin-top: 12px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.tourism-req-panel__chart-box canvas {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: 360px;
+    box-sizing: border-box;
+}
+
+.tourism-req-panel__status {
+    margin: 12px 0 0;
+    font-size: 0.84rem;
+    line-height: 1.4;
+    color: #475569;
+}
+
+#chart {
+    display: block;
+    width: 100%;
+}
+
+.chart-card.chart-ready {
+    min-height: 455px;
+    overflow-x: visible;
+    overflow-y: visible;
+}
+
+.chart-card.chart-ready #chart {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    max-width: none !important;
+    height: 345px !important;
+    min-height: 345px !important;
+    max-height: none !important;
+}
+
+.chart-card.chart-scrollable {
+    padding-bottom: 0;
+}
+
+.pib-chart-scroll {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 0 8px 0;
+    margin: 0 0 12px 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-secondary) var(--color-surface-soft);
+}
+
+.eva-layout-active .pib-chart-scroll {
+    max-width: 100%;
+    overflow-x: hidden !important;
+    padding-right: 0;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.eva-layout-active #chart {
+    min-width: 0 !important;
+    max-width: 100% !important;
+}
+
+.eva-layout-active.chart-card {
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.pib-chart-scroll::-webkit-scrollbar {
+    height: 9px;
+}
+
+.pib-chart-scroll::-webkit-scrollbar-track {
+    background: var(--color-surface-soft);
+    border-radius: 999px;
+}
+
+.pib-chart-scroll::-webkit-scrollbar-thumb {
+    background: var(--color-secondary);
+    border-radius: 999px;
+}
+
+.pib-chart-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--color-active);
+}
+
+.pib-chart-status {
+    padding: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-surface-soft);
+    color: var(--color-text-primary);
+    font-weight: 600;
+    text-align: center;
+    margin-top: 12px;
+}
+
+.chart-switch-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 14px 0;
+}
+
+#economicActivitiesSubitemTabs {
+    align-items: center;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 0;
+    margin-bottom: 10px;
+    padding: 4px 0 2px;
+}
+
+#connectivityChartTabs {
+    align-items: center;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 0;
+    margin-bottom: 10px;
+    padding: 4px 0 2px;
+}
+
+.economic-chart-subtitle {
+    margin: 2px 0 10px 0;
+    font-size: 0.94rem;
+    line-height: 1.2;
+}
+
+.chart-switch-tab {
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+#economicActivitiesSubitemTabs .chart-switch-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 28px;
+    padding: 5px 10px;
+    border-color: rgba(122, 67, 12, 0.24);
+    background: #fffaf0;
+    color: #7a430c;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.1;
+    box-shadow: 0 1px 3px rgba(74, 40, 6, 0.08);
+    text-align: center;
+    white-space: normal;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+#connectivityChartTabs .chart-switch-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 28px;
+    padding: 5px 10px;
+    border-color: rgba(122, 67, 12, 0.24);
+    background: #fffaf0;
+    color: #7a430c;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.1;
+    box-shadow: 0 1px 3px rgba(74, 40, 6, 0.08);
+    text-align: center;
+    white-space: normal;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+#economicActivitiesSubitemTabs .chart-switch-tab:nth-child(3):last-child,
+#economicActivitiesSubitemTabs .chart-switch-tab:nth-child(5):last-child,
+#connectivityChartTabs .chart-switch-tab:nth-child(3):last-child,
+#connectivityChartTabs .chart-switch-tab:nth-child(5):last-child {
+    grid-column: 1 / -1;
+}
+
+.chart-switch-tab:hover {
+    border-color: var(--color-active);
+    background: var(--color-surface-soft);
+}
+
+#economicActivitiesSubitemTabs .chart-switch-tab:hover {
+    border-color: #c97914;
+    background: #fff4dc;
+    color: var(--color-primary);
+    box-shadow: 0 3px 8px rgba(74, 40, 6, 0.12);
+    transform: translateY(-1px);
+}
+
+#connectivityChartTabs .chart-switch-tab:hover {
+    border-color: #c97914;
+    background: #fff4dc;
+    color: var(--color-primary);
+    box-shadow: 0 3px 8px rgba(74, 40, 6, 0.12);
+    transform: translateY(-1px);
+}
+
+.chart-switch-tab.active {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: #ffffff;
+}
+
+#economicActivitiesSubitemTabs .chart-switch-tab.active {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: #ffffff;
+    box-shadow: 0 4px 10px rgba(74, 40, 6, 0.18);
+}
+
+#connectivityChartTabs .chart-switch-tab.active {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: #ffffff;
+    box-shadow: 0 4px 10px rgba(74, 40, 6, 0.18);
+}
+
+.pib-sector-panel {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-border);
+}
+
+.chart-card.pib-value-added-flow .pib-sector-panel {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+}
+
+.chart-local-title,
+.pib-sector-title,
+#pibSectorPieTitle,
+#pibEmpresasTitle,
+#censoPecuarioTitle,
+#economicChartSubtitle,
+.support-parallel-chart-panel__title {
+    margin: 0 0 10px 0;
+    color: var(--color-primary);
+    font-size: 0.98rem;
+    font-weight: 700;
+    line-height: 1.25;
+    text-align: center;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+}
+
+.pib-sector-chart-box {
+    position: relative;
+    width: 100%;
+    height: 295px;
+    min-height: 295px;
+}
+
+#pibSectorPieChart {
+    display: block;
+    width: 100% !important;
+    height: 295px !important;
+    min-height: 295px !important;
+}
+
+.pib-empresas-panel {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-border);
+}
+
+.pib-empresas-chart-box {
+    position: relative;
+    width: 100%;
+    min-height: 360px;
+    overflow: hidden;
+    padding-bottom: 0;
+}
+
+#pibEmpresasChart {
+    display: block;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 340px;
+}
+
+.pib-empresas-text {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-surface-soft);
+    color: var(--color-text-primary);
+    font-size: 0.9rem;
+    line-height: 1.45;
+}
+
+.chart-card.pib-value-added-flow .pib-empresas-text,
+.chart-card.pib-value-added-flow #summaryDiv {
+    width: 100%;
+    min-height: 0;
+    max-height: none;
+    margin-top: 12px;
+    padding: 12px 14px;
+    border: 1px solid #d9d3c8;
+    border-radius: 6px;
+    background: #fffaf0;
+    color: var(--color-text-primary);
+    font-size: 0.9rem;
+    font-weight: 400;
+    line-height: 1.45;
+    text-align: left;
+    box-shadow: none;
+    box-sizing: border-box;
+    overflow-y: auto;
+    overflow-x: hidden;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+}
+
+.chart-card.pib-value-added-flow #summaryDiv p {
+    margin: 0 0 0.75em 0;
+}
+
+.chart-card.pib-value-added-flow #summaryDiv p:last-child {
+    margin-bottom: 0;
+}
+
+.chart-card.public-services-text-flow .pib-empresas-text,
+.chart-card.public-services-text-flow #summaryDiv {
+    width: 100%;
+    min-height: 0;
+    max-height: none;
+    margin-top: 12px;
+    padding: 12px 14px;
+    border: 1px solid #d9d3c8;
+    border-radius: 6px;
+    background: #fffaf0;
+    color: var(--color-text-primary);
+    font-size: 0.9rem;
+    font-weight: 400;
+    line-height: 1.45;
+    text-align: left;
+    box-shadow: none;
+    box-sizing: border-box;
+    overflow-y: auto;
+    overflow-x: hidden;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+}
+
+.eva-parallel-panel {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    clear: both;
+}
+
+/* grafico de censo pecuario */
+
+.censo-pecuario-panel {
+    margin-top: 18px;
+    padding-top: 0;
+}
+
+.censo-pecuario-chart-box {
+    position: relative;
+    width: 100%;
+    height: 330px;
+    min-height: 330px;
+}
+
+.livestock-derived-panel {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    margin-top: 16px;
+    padding: 12px 12px 14px;
+    border: 1px solid #d9d3c8;
+    border-radius: 8px;
+    background: #fffaf0;
+    box-shadow: var(--shadow-soft);
+    scroll-margin-top: 16px;
+    overflow: hidden;
+}
+
+.livestock-derived-panel[hidden] {
+    display: none !important;
+}
+
+.livestock-derived-panel__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.livestock-derived-panel__title {
+    margin: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    color: var(--color-primary);
+    font-size: 0.98rem;
+    font-weight: 700;
+    line-height: 1.25;
+    text-align: center;
+}
+
+.livestock-derived-panel__close {
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-surface-soft);
+    color: var(--color-text-primary);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.livestock-derived-panel__close:hover {
+    border-color: var(--color-active);
+    background: var(--color-accent-cream);
+}
+
+.livestock-derived-panel__scroll {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    border-radius: 6px;
+    background: #fffaf0;
+    padding-bottom: 6px;
+}
+
+.livestock-derived-panel__scroll canvas,
+#livestockDerivedChart {
+    display: block;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: 330px !important;
+    min-height: 330px;
+}
+
+.livestock-metric-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin: 8px 0 12px;
+}
+
+.livestock-metric-legend__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    border: 1px solid rgba(115, 65, 26, 0.22);
+    border-radius: 999px;
+    background: #fffaf2;
+    color: #5f3719;
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.livestock-metric-legend__item:hover {
+    background: #fff2dc;
+    border-color: rgba(115, 65, 26, 0.42);
+}
+
+.livestock-metric-legend__item.is-disabled {
+    opacity: 0.45;
+    background: #f4f4f4;
+    color: #777;
+    text-decoration: line-through;
+}
+
+.livestock-metric-legend__swatch {
+    width: 28px;
+    height: 9px;
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.chart-card.livestock-derived-open #summaryDiv {
+    min-height: 120px !important;
+    max-height: 180px !important;
+    overflow-y: auto !important;
+}
+
+.support-parallel-chart-panel {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-border);
+}
+
+.support-parallel-chart-panel[hidden] {
+    display: none !important;
+}
+
+
+
+
+
+.equipamientos-charts-panel {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    overflow-x: hidden;
+}
+
+.equipamientos-charts-panel[hidden] {
+    display: none !important;
+}
+
+.equipamientos-chart-box {
+    min-width: 0;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+}
+
+.equipamientos-chart-box + .equipamientos-chart-box {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-border);
+}
+
+.equipamientos-chart-title {
+    min-height: 38px;
+    margin: 0 0 8px 0;
+    color: var(--color-primary);
+    font-size: 0.98rem;
+    font-weight: 700;
+    line-height: 1.25;
+    text-align: center;
+}
+
+.equipamientos-chart-canvas {
+    position: relative;
+    width: 100%;
+    height: 330px;
+    min-height: 330px;
+    overflow: hidden;
+}
+
+#equipamientosPieChart,
+#equipamientosStackedChart {
+    display: block;
+    width: 100% !important;
+    height: 330px !important;
+    max-width: 100% !important;
+}
+
+#censoPecuarioChart {
+    display: block;
+    width: 100% !important;
+    height: 330px !important;
+    min-height: 330px !important;
+}
+
+@media (max-width: 900px) {
+    .chart-card {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    #chart {
+        min-width: 720px;
+    }
+
+    .livestock-derived-panel {
+        padding: 10px;
+    }
+}
+
+@media (max-width: 600px) {
+    #chart {
+        min-width: 760px;
+    }
+
+    .livestock-derived-panel__header {
+        flex-wrap: wrap;
+    }
+
+    .livestock-derived-panel__close {
+        margin-left: auto;
+    }
+
+    .livestock-derived-panel__scroll canvas,
+    #livestockDerivedChart {
+        min-width: 0 !important;
+    }
+}

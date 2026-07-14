@@ -1,0 +1,249 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cartillas, Guías y Manuales — Colombia OT 2.0</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="../maestra.css">
+  <link rel="stylesheet" href="../navbar-footer.css">
+  <link rel="stylesheet" href="../oot-complementario.css">
+</head>
+<body>
+  <div id="oot-navbar-placeholder"></div>
+
+  <div class="page-banner">
+    <div class="container">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="../index.html">Inicio</a></li>
+          <li class="breadcrumb-item active" id="bc-nombre"></li>
+        </ol>
+      </nav>
+      <h1 id="banner-titulo"></h1>
+      <p id="banner-desc"></p>
+    </div>
+  </div>
+
+  <main class="container mt-4 mb-5">
+    <!-- Filtros -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3 mb-2">
+            <label class="font-weight-bold small text-uppercase text-muted">Año</label>
+            <select id="filtro-annio" class="form-control form-control-sm">
+              <option value="">Todos los años</option>
+            </select>
+          </div>
+          <div class="col-md-3 mb-2">
+            <label class="font-weight-bold small text-uppercase text-muted">Dimensión</label>
+            <select id="filtro-dimension" class="form-control form-control-sm">
+              <option value="">Todas</option>
+            </select>
+          </div>
+          <div class="col-md-3 mb-2">
+            <label class="font-weight-bold small text-uppercase text-muted">Componente</label>
+            <select id="filtro-componente" class="form-control form-control-sm">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="col-md-3 mb-2">
+            <label class="font-weight-bold small text-uppercase text-muted">Buscar</label>
+            <div class="input-group input-group-sm">
+              <input type="text" id="input-busqueda" class="form-control" placeholder="Título, tema...">
+              <div class="input-group-append">
+                <button class="btn btn-primary" id="btn-buscar">
+                  <i class="fas fa-search"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estado carga -->
+    <div id="estado-carga" class="text-center py-5" style="display:none">
+      <div class="spinner-border text-primary"></div>
+      <p class="mt-2 text-muted">Consultando recursos...</p>
+    </div>
+
+    <!-- Resultados -->
+    <div id="contenedor-recursos"></div>
+
+    <!-- Paginación -->
+    <div id="paginacion" class="d-flex justify-content-between align-items-center mt-3" style="display:none">
+      <small class="text-muted" id="info-pagina"></small>
+      <div class="btn-group btn-group-sm">
+        <button class="btn btn-outline-secondary" id="btn-anterior">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="btn btn-outline-secondary" id="btn-siguiente">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <div id="oot-footer-placeholder"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="../config.js"></script>
+  <script src="../oot.js"></script>
+  <script>
+    'use strict';
+    const API = window.OOT_API_BASE || '';
+
+    const TIPO_RECURSO  = 'Cartillas, guias y manuales';
+    const PAGINA_TITULO = 'Cartillas, Guías y Manuales';
+    const PAGINA_DESC   = 'Material de divulgación y guías metodológicas para el OT.';
+    const PAGINA_ICONO  = 'fa-book';
+
+    let offset = 0;
+    const POR_PAGINA = 12;
+    let total = 0;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('bc-nombre').textContent    = PAGINA_TITULO;
+      document.getElementById('banner-titulo').innerHTML  = `<i class="fas ${PAGINA_ICONO} mr-2"></i>${PAGINA_TITULO}`;
+      document.getElementById('banner-desc').textContent  = PAGINA_DESC;
+      await cargarFiltros();
+      await buscar(0);
+    });
+
+    async function cargarFiltros() {
+      try {
+        const [config, filtros] = await Promise.all([
+          fetch(API + '/api/igac/config').then(r => r.json()),
+          fetch(API + '/api/igac/documentos/filtros').then(r => r.json())
+        ]);
+
+        const annios = filtros?.annio?.FECHA || [];
+        const selA = document.getElementById('filtro-annio');
+        annios.forEach(a => {
+          const o = document.createElement('option');
+          o.value = a.id || a; o.textContent = a.text || a;
+          selA.appendChild(o);
+        });
+
+        (config.DIMENSION || []).forEach(d => {
+          const o = document.createElement('option');
+          o.value = d.id; o.textContent = d.text;
+          document.getElementById('filtro-dimension').appendChild(o);
+        });
+
+        (config.COMPONENTE || []).forEach(c => {
+          const o = document.createElement('option');
+          o.value = c.id; o.textContent = c.text;
+          document.getElementById('filtro-componente').appendChild(o);
+        });
+      } catch(e) {
+        console.warn('No se pudieron cargar los filtros:', e);
+        if (window.OOT && OOT.notify) OOT.notify('No se pudieron cargar los filtros de búsqueda. Verifique su conexión.', 'warn');
+      }
+    }
+
+    async function buscar(off = 0) {
+      document.getElementById('estado-carga').style.display = 'block';
+      document.getElementById('contenedor-recursos').innerHTML = '';
+      document.getElementById('paginacion').style.display = 'none';
+
+      const params = new URLSearchParams({
+        start:  off,
+        length: POR_PAGINA,
+        search: document.getElementById('input-busqueda').value.trim(),
+        tipo:   TIPO_RECURSO,
+      });
+      const dim  = document.getElementById('filtro-dimension').value;
+      const comp = document.getElementById('filtro-componente').value;
+      const ann  = document.getElementById('filtro-annio').value;
+      if (dim)  params.append('dimension', dim);
+      if (comp) params.append('componente', comp);
+      if (ann)  params.append('annio', ann);
+
+      try {
+        const data = await fetch(`${API}/api/igac/recursos?${params}`).then(r => r.json());
+        total  = data.recordsFiltered || data.recordsTotal || 0;
+        offset = off;
+        renderItems(data.data || []);
+      } catch(e) {
+        document.getElementById('contenedor-recursos').innerHTML = `
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            No se pudo conectar con el servicio del IGAC.
+            <a href="https://www.colombiaot.gov.co" target="_blank" class="alert-link ml-2">
+              Consultar en Colombia OT <i class="fas fa-external-link-alt"></i>
+            </a>
+          </div>`;
+      } finally {
+        document.getElementById('estado-carga').style.display = 'none';
+      }
+    }
+
+    function renderItems(items) {
+      const cont = document.getElementById('contenedor-recursos');
+      if (!items.length) {
+        cont.innerHTML = '<p class="text-center text-muted py-4">No se encontraron resultados.</p>';
+        return;
+      }
+      const esc = s => window.OOT?.escapeHtml ? window.OOT.escapeHtml(s) : String(s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+
+      const grid = document.createElement('div');
+      grid.className = 'row';
+      items.forEach(item => {
+        const titulo = item.NOMBRE      || item.nombre      || 'Sin título';
+        const desc   = item.DESCRIPCION || item.descripcion || '';
+        const tipo   = item.TIPO_RECURSO|| item.tipo        || '';
+        const fecha  = (item.FECHA_PUBLICACION || '').toString().match(/\d{4}/)?.[0] || '';
+        const ent    = item.ENTIDAD     || '';
+        const url    = item.URL1        || item.URL_METADATO|| item.url || '';
+
+        const col = document.createElement('div');
+        col.className = 'col-md-6 col-lg-4 mb-4';
+        col.innerHTML = `
+          <div class="card h-100">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge badge-primary small">${esc(tipo)}</span>
+                <span class="text-muted small">${esc(fecha)}</span>
+              </div>
+              <h6 class="card-title">${esc(titulo)}</h6>
+              <p class="card-text small text-muted">${esc(desc.replace(/<[^>]*>/g,'').substring(0,120))}${desc.length>120?'…':''}</p>
+              ${ent ? `<p class="small text-muted mb-0"><i class="fas fa-building mr-1"></i>${esc(ent)}</p>` : ''}
+            </div>
+            ${url ? `<div class="card-footer bg-transparent border-top-0">
+              <a href="${esc(url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-external-link-alt mr-1"></i>Ver recurso
+              </a>
+            </div>` : ''}
+          </div>`;
+        grid.appendChild(col);
+      });
+      cont.appendChild(grid);
+
+      const totalPags = Math.ceil(total / POR_PAGINA);
+      const paginaNum = Math.floor(offset / POR_PAGINA);
+      document.getElementById('info-pagina').textContent =
+        `${offset + 1}–${Math.min(offset + POR_PAGINA, total)} de ${total}`;
+      document.getElementById('btn-anterior').disabled = paginaNum === 0;
+      document.getElementById('btn-siguiente').disabled = paginaNum >= totalPags - 1;
+      document.getElementById('paginacion').style.display = 'flex';
+    }
+
+    document.getElementById('btn-buscar').addEventListener('click', () => buscar(0));
+    document.getElementById('input-busqueda').addEventListener('keydown', e => { if(e.key==='Enter') buscar(0); });
+    document.getElementById('filtro-annio').addEventListener('change', () => buscar(0));
+    document.getElementById('filtro-dimension').addEventListener('change', () => buscar(0));
+    document.getElementById('filtro-componente').addEventListener('change', () => buscar(0));
+    document.getElementById('btn-anterior').addEventListener('click', () => buscar(offset - POR_PAGINA));
+    document.getElementById('btn-siguiente').addEventListener('click', () => buscar(offset + POR_PAGINA));
+
+    window.OOT.loadShell();
+  </script>
+</body>
+</html>

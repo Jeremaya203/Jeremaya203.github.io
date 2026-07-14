@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caracterizaciones Territoriales – IGAC</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════
+       NAVBAR — dos filas
+  ══════════════════════════════════════════════ -->
+  <header class="navbar" id="navbar">
+    <!-- Fila 1: GOV.CO -->
+    <div class="barra_gov">
+      <a class="logo-gov" href="https://www.gov.co/home/" target="_blank" rel="noopener">
+        <img id="logo-govco" src="" alt="Logo Gov.co" />
+      </a>
+    </div>
+    <!-- Fila 2: IGAC -->
+    <nav>
+      <div class="navbarigac">
+        <div class="logos">
+          <a href="https://www.igac.gov.co" class="navbar-brand-igac" target="_blank" rel="noopener">
+            <img id="logo-full" src="" alt="Logo IGAC" />
+          </a>
+          <img id="ct_logo" src="images/logo_ct.png" alt="Logo Caracterizaciones"/>
+          <span class="navbar__brand-text">CARACTERIZACIONES TERRITORIALES</span>
+        </div>
+        <ul id="link-list">
+          <li><a rel="noopener" href="../index.html">Inicio</a></li>
+          <li><a rel="noopener" href="#tematicas">Temáticas</a></li>
+          <li><a rel="noopener" href="#publico-objetivo">Público Objetivo</a></li>
+          <li><a rel="noopener" href="#estadisticas">Estadísticas</a></li> 
+        </ul>
+        <button class="nav-bar-toggle-igac" aria-label="Abrir menú" aria-expanded="false">
+          <div class="icon-bar"></div>
+          <div class="icon-bar"></div>
+          <div class="icon-bar"></div>
+        </button>
+      </div>
+      <div class="navbarnavigac"></div>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- ══════════════════════════════════════════════
+         HERO — mosaico de tiles
+    ══════════════════════════════════════════════ -->
+    <section class="hero" id="hero">
+      <img class="hero__banner" src="./Recursos_Base/Banner.gif" alt="" aria-hidden="true"/>
+      <div class="hero__content">
+        <div class="hero__text">
+          <h1 class="hero__title">CARACTERIZACIONES<br />TERRITORIALES</h1>
+          <a href="../index.html" class="btn btn--navy hero__cta">Visitar plataforma</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════
+         ¿QUÉ SON?
+    ══════════════════════════════════════════════ -->
+    <section class="que-son reveal" id="que-son">
+      <div class="que-son__grid">
+        <div class="que-son__text">
+          <h2 class="section-title">¿Qué son?</h2>
+          <p class="que-son__body">
+            La caracterización territorial es un análisis integral de los entes
+            territoriales en el cual se incluye información relacionada con: su
+            localización en el territorio nacional; estado de los límites
+            municipales y fronteras; ordenamiento territorial, para conocer el
+            estado de los POT; contexto legal relacionado con las determinantes
+            y condicionantes que definen el adecuado uso del suelo; también
+            analiza los procesos biofísicos teniendo en cuenta variables como
+            altitud, pendiente, relieve, clima, ecosistemas, cobertura vegetal,
+            amenazas naturales, entre otros.
+          </p>
+          <p class="que-son__body">
+            Además, se estudia el proceso relacionado con la población y su
+            territorio, la distribución, el crecimiento, áreas, tamaño de los
+            predios, condiciones de seguridad, así mismo las actividades
+            económicas, infraestructura y el acceso a servicios básicos como
+            educación y salud. Lo anterior brinda elementos clave para los
+            procesos catastrales y de planificación territorial.
+          </p>
+        </div>
+        <div class="que-son__image-wrap">
+          <img id="img-mapa" src="images/mapa_colombia.png" alt="Mapa de Colombia" class="que-son__image" />
+        </div>
+      </div>
+    </section>
+    <!-- ══════════════════════════════════════════════
+         TEMÁTICAS
+    ══════════════════════════════════════════════ -->
+    <section class="tematicas" id="tematicas">
+      <div class="section-inner">
+        <h2 class="section-title section-title--dark tematicas__heading">Temáticas</h2>
+        <div class="tematicas__bifocal">
+        <div class="tematicas__diagram" role="list">          
+          <!-- Center -->
+          <div class="tematicas__center" aria-hidden="true"></div>
+          
+          <button class="tematicas__bubble bubble--limites bubble--slot-0" data-topic="limites" role="listitem">
+            <span class="bubble__inner">
+              <img class="bubble__icon" src="./Recursos_Base/limites_municipales.png" alt="Límites Municipales"/>
+              <span class="bubble__label">Límites<br>Municipales</span>
+            </span>
+          </button>
+          <button class="tematicas__bubble bubble--socioeconomicos bubble--slot-1" data-topic="socioeconomicos" role="listitem">
+            <span class="bubble__inner">
+              <img class="bubble__icon" src="./Recursos_Base/pro_socieconomicos.png" alt="Socioeconómicos"/>
+              <span class="bubble__label"> Procesos<br>Socioeconómicos</span>
+            </span>
+          </button>
+          <button class="tematicas__bubble bubble--ordenamiento bubble--slot-2" data-topic="ordenamiento" role="listitem">
+            <span class="bubble__inner">
+              <img class="bubble__icon" src="./Recursos_Base/ordenamiento_territorial.png" alt="Ordenamiento Territorial"/>
+              <span class="bubble__label">Ordenamiento<br>Territorial</span>
+            </span>
+          </button>
+          <button class="tematicas__bubble bubble--ocupacion bubble--slot-3" data-topic="ocupacion" role="listitem">
+            <span class="bubble__inner">
+              <img class="bubble__icon" src="./Recursos_Base/pro_ocupacion.png" alt="Ocupación"/>
+              <span class="bubble__label">Procesos de<br>Ocupación</span>
+            </span>
+          </button>
+          <button class="tematicas__bubble bubble--contexto bubble--slot-4" data-topic="contexto" role="listitem">
+            <span class="bubble__inner">
+              <img class="bubble__icon" src="./Recursos_Base/contexto_legal.png" alt="Contexto Legal"/>
+              <span class="bubble__label">Contexto<br>Legal</span>
+            </span>
+          </button>
+          <button class="tematicas__bubble bubble--biofisicos bubble--slot-5" data-topic="biofisicos" role="listitem">
+            <span class="bubble__inner">
+              <img class="bubble__icon" src="./Recursos_Base/procesos_biofisicos.png" alt="Procesos Biofísicos"/>
+              <span class="bubble__label">Procesos<br>Biofísicos</span>
+            </span>
+          </button>
+        </div><!-- /.tematicas__diagram -->
+        <aside class="tematicas__panel" id="tematicas-panel">
+          <div class="tematicas__card">
+            <span class="tematicas__card-accent"></span>
+            <button class="tematicas__card-close" aria-label="Cerrar">✕</button>
+            <h3 class="tematicas__card-title"></h3>
+            <p class="tematicas__card-desc"></p>
+            <a class="tematicas__card-cta" href="#" target="_self">Visita el visor</a>
+          </div>
+        </aside>
+        </div><!-- /.tematicas__bifocal -->
+      </div>
+    </section>
+    <!-- ══════════════════════════════════════════════
+         PÚBLICO OBJETIVO
+    ══════════════════════════════════════════════ -->
+    <section class="publico-objetivo reveal" id="publico-objetivo">
+      <div class="publico-objetivo__overlay">
+        <div class="section-inner publico-objetivo__inner">
+          <h2 class="publico-objetivo__tit">Público Objetivo</h2>
+          <p class="publico-objetivo__sub" id="po-sub">Entes Territoriales Municipales</p>
+          <div class="publico-objetivo__dots" role="list" aria-label="Público objetivo">
+            <button class="dot dot--active" aria-label="Entes territoriales municipales"></button>
+            <button class="dot" aria-label="Secretarías y oficinas de planeación municipales"></button>
+            <button class="dot" aria-label="Gestores catastrales"></button>
+            <button class="dot" aria-label="Otras entidades de orden nacional y regional"></button>
+          </div>
+          <div class="publico-objetivo__stats" role="list">
+            <div class="po-stat" role="listitem"><span class="po-stat__num">+525</span><span class="po-stat__lbl">Municipios<br>Caracterizados</span></div>
+            <div class="po-stat" role="listitem"><span class="po-stat__num">+825</span><span class="po-stat__lbl">Mapas<br>Temáticos</span></div>
+            <div class="po-stat" role="listitem"><span class="po-stat__num">+965</span><span class="po-stat__lbl">Datos<br>Estadísticos</span></div>
+            <div class="po-stat" role="listitem"><span class="po-stat__num">257</span><span class="po-stat__lbl">Base de Datos<br>Descargable</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  
+     <!-- ══════════════════════════════════════════════
+         ESTADÍSTICAS
+    ══════════════════════════════════════════════ -->
+    <section class="estadisticas" id="estadisticas"></section>
+    
+
+  </main>
+
+  <!-- ══════════════════════════════════════════════
+       FOOTER
+  ══════════════════════════════════════════════ -->
+  <footer class="footer">
+    <div class="section-inner footer__grid">
+      <div class="footer__info">
+        <h3 class="footer__org">Instituto Geográfico Agustín Codazzi – IGAC</h3>
+        <div class="footer__section-label">Información sede principal</div>
+        <p><strong>Dirección:</strong><br />Bogotá D.C. – Carrera 30 # 48-51</p>
+        <p><strong>Horarios de atención al ciudadano:</strong><br />
+          Abierto al público de lunes a viernes de 9:00 a.m. a 4:00 p.m. jornada continua
+          Sede Central y territorial Cundinamarca (Horario de atención temporal acatando las medidas
+          y demás regulaciones de bioseguridad)
+        </p>
+        <p><strong>Teléfono Conmutador:</strong><br />
+          <a href="tel:+576016531888">+57 601 653 18 88</a></p>
+        <p><strong>Correo de contacto:</strong><br />
+          <a href="mailto:contactenos@igac.gov.co">contactenos@igac.gov.co</a></p>
+        <p><strong>Correo de notificaciones judiciales:</strong><br />
+          <a href="mailto:judiciales@igac.gov.co">judiciales@igac.gov.co</a></p>
+        <p class="footer__nit">NIT: 8999990049</p>
+        <p class="footer__copy">©Copyright 2026 – Todos los derechos reservados Gobierno de Colombia</p>
+      </div>
+
+      <div class="footer__social">
+        <div class="footer__section-label">Contáctenos en nuestras redes sociales</div>
+        <a href="#" class="footer__social-link footer__social-link--fb">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+          Facebook IGAC
+        </a>
+        <a href="#" class="footer__social-link footer__social-link--tw">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+          Twitter IGAC
+        </a>
+        <a href="#" class="footer__social-link footer__social-link--ig">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+          Instagram IGAC
+        </a>
+        <div class="footer__legal">
+          <a href="#">Políticas</a>
+          <span>·</span>
+          <a href="#">Mapa del sitio</a>
+          <span>·</span>
+          <a href="#">Términos y condiciones</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="images.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+# Cabeceras de seguridad (formato Netlify / Cloudflare Pages).
+# Para nginx / Apache / IIS u otros servidores, configurarlas a nivel de servidor:
+# ver docs/despliegue/README_DESPLIEGUE_FRONTEND.md (sección 4).
+#
+# CSP (H-04): orígenes FIJOS por directiva; se eliminó el comodín `https:` de
+# script-src / style-src / font-src / connect-src / frame-src (antes permitía cargar
+# scripts desde CUALQUIER host https → vector de XSS). Se conserva `'unsafe-inline'`
+# en script-src y style-src porque el frontend aún usa manejadores inline (onclick=)
+# y cientos de atributos style="…" (arquitectura actual). Endurecer a script-src sin
+# 'unsafe-inline' es un pase aparte (eliminar los ~60 handlers inline → addEventListener).
+# `https:` se mantiene SOLO en img-src: los basemaps ráster (OSM) provienen de varios
+# hosts y las imágenes no ejecutan código.
+#
+# Orígenes externos vigentes:
+#   scripts/estilos CDN → cdnjs, jsdelivr, unpkg, ajax.googleapis (jQuery), gstatic
+#   analítica GA4       → googletagmanager (script) + *.google-analytics (beacon)
+#   fuentes             → fonts.googleapis (css) + fonts.gstatic (woff) + pro.fontawesome
+#   backend/API + cargue→ 'self' y *.igac.gov.co (incl. serviciosgeovisor:8080)
+#   iframes Colombia OT → www.colombiaot.gov.co
+#   PMTiles/tiles       → 'self' (OOT_TILES_BASE por defecto = mismo origen)
+# Nota despliegue: si el backend/API o los tiles se sirven desde OTRO dominio (p. ej.
+# un túnel de desarrollo o un object storage), añadir ese origen a connect-src aquí.
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=(), usb=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://ajax.googleapis.com https://www.googletagmanager.com https://www.gstatic.com; style-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://fonts.googleapis.com https://pro.fontawesome.com https://www.gstatic.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://pro.fontawesome.com; connect-src 'self' https://*.igac.gov.co https://serviciosgeovisor.igac.gov.co:8080 https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self' https://www.colombiaot.gov.co; object-src 'none'; base-uri 'self'; frame-ancestors 'self'

@@ -1,0 +1,566 @@
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Colombia OT — Hoja maestra compartida
+   oot-base.css · Versión 1.0 · Abril 2026
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* ── 1. @font-face ────────────────────────────────────────────────────────── */
+/*
+  FUENTES: Las rutas son relativas a static/fonts/
+  Si la carpeta static/fonts/ está vacía, copiar desde Colombia OT:
+    - GillSansStd.woff2, GillSansStd.woff
+    - GillSansStd-Bold.woff2, GillSansStd-Bold.woff
+    - GillSansStd-Light.woff2, GillSansStd-Light.woff
+    - Geometria-Bold.ttf
+    - Tajawal-Regular.ttf, Tajawal-Bold.ttf
+  Origen: observatorioordenamientoterritorial.igac.gov.co/fonts/
+*/
+
+/* Gill Sans Std — fuente principal de contenido */
+@font-face {
+  font-family: 'Gill Sans Std';
+  src: url('./fonts/GillSansStd.woff2') format('woff2'),
+       url('./fonts/GillSansStd.woff') format('woff');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Gill Sans Std';
+  src: url('./fonts/GillSansStd-Bold.woff2') format('woff2'),
+       url('./fonts/GillSansStd-Bold.woff') format('woff');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Gill Sans Std';
+  src: url('./fonts/GillSansStd-Light.woff2') format('woff2'),
+       url('./fonts/GillSansStd-Light.woff') format('woff');
+  font-weight: 300;
+  font-display: swap;
+}
+/* Geometria Bold — solo para hero/display */
+@font-face {
+  font-family: 'Geometria';
+  src: url('./fonts/Geometria-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+/* Tajawal — solo para navbar y footer */
+@font-face {
+  font-family: 'Tajawal';
+  src: url('./fonts/Tajawal-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Tajawal';
+  src: url('./fonts/Tajawal-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+
+/* ── 2. Tokens CSS — :root ────────────────────────────────────────────────── */
+:root {
+  /* Paleta institucional IGAC — NO modificar estos valores */
+  --oot-azul:         #33669e;   /* Primario — títulos, activos, botones */
+  --oot-azul-dark:    #234570;   /* Hover, degradados, texto sobre fondo claro */
+  --oot-azul-custom:  #365068;   /* Alternativo para variantes */
+  --oot-azul-light:   #e8f0f8;   /* Fondos de iconos, chips, highlights */
+  --oot-ambar:        #F4A833;   /* Acento — números hero, borde activo navbar */
+  --oot-ambar-dark:   #c4841a;   /* Hover del ámbar */
+  --oot-ambar-light:  #fef3d8;   /* Fondo suave ámbar */
+  --oot-rojo:         #e10818;   /* Semántico — peligro, error */
+  --oot-gov-co:       #3366cc;   /* Barra Gov.co — NO usar para otra cosa */
+
+  /* Neutros */
+  --oot-gris-bg:      #eff0f1;   /* Fondo de secciones alternas y navbar */
+  --oot-gris-texto:   #58595b;   /* Color base de párrafos */
+  --oot-gris-claro:   #c1c1c1;   /* Bordes suaves, scrollbar */
+
+  /* Tipografía */
+  --oot-font-body:    'Gill Sans Std', 'Public Sans', sans-serif;
+  --oot-font-display: 'Geometria', 'Gill Sans Std', sans-serif;
+  --oot-font-nav:     'Tajawal', 'Public Sans', sans-serif;
+
+  /* Espaciado y forma */
+  --oot-radius:       8px;
+  --oot-radius-lg:    14px;
+  --oot-radius-pill:  999px;
+  --oot-nav-height:   60px;
+  --oot-gov-height:   24px;
+}
+
+/* ── 3. Reset y base global ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--oot-font-body);
+  color: var(--oot-gris-texto);
+  background: #ffffff;
+  scroll-behavior: smooth;
+}
+
+a { color: var(--oot-azul); text-decoration: none; }
+a:hover { color: var(--oot-azul-dark); }
+
+img { max-width: 100%; height: auto; }
+
+/* Scrollbar institucional */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--oot-gris-claro); border-radius: 3px; }
+
+/* ── 4. Componentes globales reutilizables ────────────────────────────────── */
+
+/* Badges de estado POT */
+.badge-estado {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--oot-radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.badge-vigente     { background: #dcfce7; color: #14532d; }
+.badge-vencido     { background: #fee2e2; color: #7f1d1d; }
+.badge-revision    { background: #fef9c3; color: #713f12; }
+.badge-proceso     { background: #dbeafe; color: #1e3a5f; }
+
+/* Tarjeta de módulo (grid de la landing) */
+.oot-mod-card {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 0.5px solid #d1d5db;
+  border-radius: var(--oot-radius-lg);
+  padding: 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+  text-decoration: none;
+  color: inherit;
+}
+.oot-mod-card:hover {
+  border-color: var(--oot-azul);
+  transform: translateY(-1px);
+}
+.oot-mod-card__icon {
+  width: 36px;
+  height: 36px;
+  background: var(--oot-azul-light);
+  border-radius: var(--oot-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+.oot-mod-card__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--oot-azul-dark);
+  margin-bottom: 4px;
+}
+.oot-mod-card__desc {
+  font-size: 11px;
+  color: var(--oot-gris-texto);
+  line-height: 1.5;
+  flex: 1;
+}
+.oot-mod-card__link {
+  font-size: 11px;
+  color: var(--oot-azul);
+  margin-top: 10px;
+}
+.oot-mod-card--pending {
+  opacity: 0.5;
+  border-style: dashed;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Page banner (cabecera de módulos internos) */
+.oot-page-banner {
+  background: var(--oot-azul-dark);
+  color: #ffffff;
+  padding: 32px 24px 24px;
+}
+.oot-page-banner__breadcrumb {
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+  margin-bottom: 8px;
+}
+.oot-page-banner__breadcrumb a {
+  color: rgba(255,255,255,0.65);
+}
+.oot-page-banner__breadcrumb a:hover {
+  color: #ffffff;
+}
+.oot-page-banner__title {
+  font-family: var(--oot-font-display);
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #ffffff;
+}
+.oot-page-banner__desc {
+  font-size: 14px;
+  color: rgba(255,255,255,0.8);
+  max-width: 600px;
+  line-height: 1.5;
+}
+
+/* Tooltips CSS (sin JS) */
+.tt {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.tt-ico {
+  cursor: help;
+  color: var(--oot-gris-claro);
+  font-size: 14px;
+  line-height: 1;
+}
+.tt-ico:hover { color: var(--oot-azul); }
+.tt-tip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--oot-azul-dark);
+  color: #ffffff;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 6px 10px;
+  border-radius: var(--oot-radius);
+  white-space: nowrap;
+  max-width: 240px;
+  white-space: normal;
+  z-index: 100;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.tt:hover .tt-tip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Stat card (números del hero y secciones de cifras) */
+.oot-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.oot-stat__val {
+  font-family: var(--oot-font-display);
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--oot-ambar);
+  line-height: 1;
+}
+.oot-stat__lbl {
+  font-size: 11px;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.3;
+}
+/* Variante sobre fondo blanco */
+.oot-stat--light .oot-stat__val { color: var(--oot-azul); }
+.oot-stat--light .oot-stat__lbl { color: var(--oot-gris-texto); }
+
+/* Botones */
+.oot-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: var(--oot-radius-pill);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  text-decoration: none;
+  border: none;
+}
+.oot-btn--solid {
+  background: var(--oot-azul);
+  color: #ffffff;
+}
+.oot-btn--solid:hover {
+  background: var(--oot-azul-dark);
+  color: #ffffff;
+}
+.oot-btn--outline {
+  background: transparent;
+  color: #ffffff;
+  border: 1.5px solid rgba(255,255,255,0.6);
+}
+.oot-btn--outline:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: #ffffff;
+}
+.oot-btn--ghost {
+  background: transparent;
+  color: var(--oot-azul);
+  border: 1px solid var(--oot-azul);
+}
+.oot-btn--ghost:hover {
+  background: var(--oot-azul-light);
+}
+
+/*
+  IMPORTANTE: En todos los módulos JS que rendericen datos dinámicos
+  usar siempre la función escapeHtml() antes de insertar en el DOM.
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  Esta función también está disponible como window.OOT.escapeHtml() desde config.js.
+*/
+
+/* ── NAVBAR ───────────────────────────────────────────────────────────────── */
+.oot-barra-gov {
+  background: var(--oot-gov-co);
+  height: var(--oot-gov-height);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 8px;
+}
+.oot-barra-gov span {
+  font-family: var(--oot-font-nav);
+  font-size: 11px;
+  color: rgba(255,255,255,0.85);
+}
+.oot-nav {
+  background: var(--oot-gris-bg);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid #d1d5db;
+}
+.oot-nav__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--oot-nav-height);
+  padding: 0 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.oot-nav__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.oot-nav__logo-placeholder {
+  width: 32px;
+  height: 32px;
+  background: var(--oot-azul);
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+  flex-shrink: 0;
+}
+/* Cuando llegue el logo: reemplazar .oot-nav__logo-placeholder por <img class="oot-nav__logo"> */
+.oot-nav__logo {
+  height: 32px;
+  width: auto;
+}
+.oot-nav__brand-name {
+  display: block;
+  font-family: var(--oot-font-nav);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--oot-azul-dark);
+  letter-spacing: -0.2px;
+  line-height: 1.2;
+}
+.oot-nav__brand-sub {
+  display: block;
+  font-family: var(--oot-font-nav);
+  font-size: 10px;
+  color: var(--oot-gris-texto);
+  letter-spacing: 0.02em;
+}
+.oot-nav__links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.oot-nav__link {
+  font-family: var(--oot-font-nav);
+  font-size: 13px;
+  color: var(--oot-gris-texto);
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: var(--oot-radius);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s;
+}
+.oot-nav__link:hover,
+.oot-nav__link.active {
+  color: var(--oot-azul);
+}
+.oot-nav__link.active {
+  border-bottom-color: var(--oot-ambar);
+}
+.oot-nav__arrow { font-size: 10px; }
+/* Dropdown */
+.oot-nav__dropdown-btn { display: flex; align-items: center; gap: 4px; }
+.oot-nav__dropdown {
+  display: none;
+  position: absolute;
+  background: #ffffff;
+  border: 0.5px solid #d1d5db;
+  border-radius: var(--oot-radius-lg);
+  padding: 6px;
+  min-width: 180px;
+  list-style: none;
+  margin: 0;
+  z-index: 200;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.oot-nav__dropdown.open { display: block; }
+li { position: relative; }
+.oot-nav__drop-item {
+  display: block;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--oot-gris-texto);
+  border-radius: var(--oot-radius);
+  text-decoration: none;
+}
+.oot-nav__drop-item:hover {
+  background: var(--oot-azul-light);
+  color: var(--oot-azul);
+}
+/* Hamburger */
+.oot-nav__hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+.oot-nav__hamburger span {
+  width: 22px;
+  height: 2px;
+  background: var(--oot-azul-dark);
+  border-radius: 2px;
+  display: block;
+  transition: transform 0.2s;
+}
+/* Menú móvil */
+.oot-nav__mobile {
+  display: none;
+  flex-direction: column;
+  background: var(--oot-gris-bg);
+  border-top: 0.5px solid #d1d5db;
+  padding: 8px 16px;
+}
+.oot-nav__mobile.open { display: flex; }
+.oot-nav__mob-link {
+  font-family: var(--oot-font-nav);
+  font-size: 14px;
+  color: var(--oot-gris-texto);
+  padding: 10px 8px;
+  border-bottom: 0.5px solid #e5e7eb;
+  text-decoration: none;
+}
+.oot-nav__mob-link:last-child { border-bottom: none; }
+.oot-nav__mob-link:hover { color: var(--oot-azul); }
+/* Responsive navbar */
+@media (max-width: 1024px) {
+  .oot-nav__links { display: none; }
+  .oot-nav__hamburger { display: flex; }
+}
+
+/* ── FOOTER ───────────────────────────────────────────────────────────────── */
+.oot-footer {
+  background: #e6effd;
+  border-top: 1px solid #d1d5db;
+  margin-top: auto;
+}
+.oot-footer__inner {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 32px;
+  padding: 40px 24px 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.oot-footer__name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--oot-azul-dark);
+  margin-bottom: 6px;
+}
+.oot-footer__desc {
+  font-size: 12px;
+  color: var(--oot-gris-texto);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.oot-footer__rrss {
+  display: flex;
+  gap: 10px;
+}
+.oot-footer__rrss a { opacity: 0.7; transition: opacity 0.15s; }
+.oot-footer__rrss a:hover { opacity: 1; }
+.oot-footer__col-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--oot-azul-dark);
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+.oot-footer__link {
+  display: block;
+  font-size: 12px;
+  color: var(--oot-gris-texto);
+  padding: 3px 0;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.oot-footer__link:hover { color: var(--oot-azul); }
+.oot-footer__pie {
+  background: var(--oot-gov-co);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 10px 24px;
+  flex-wrap: wrap;
+}
+.oot-footer__pie-text {
+  font-family: var(--oot-font-nav);
+  font-size: 11px;
+  color: rgba(255,255,255,0.85);
+}
+@media (max-width: 768px) {
+  .oot-footer__inner { grid-template-columns: 1fr; gap: 24px; }
+}

@@ -1,0 +1,180 @@
+/* ============================================================
+   OOT MAGDALENA — DESIGN SYSTEM v1.0
+   Instituto Geográfico Agustín Codazzi (IGAC)
+   Archivo maestro de tokens de diseño.
+   ============================================================ */
+
+/* ── FUENTES CORPORATIVAS IGAC ── */
+@font-face {
+  font-family: 'Gill Sans Std';
+  src: url('./fonts/GillSansStd.woff2') format('woff2'),
+       url('./fonts/GillSansStd.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Gill Sans Std';
+  src: url('./fonts/GillSansStd-Bold.woff2') format('woff2'),
+       url('./fonts/GillSansStd-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Gill Sans Std';
+  src: url('./fonts/GillSansStd-Light.woff2') format('woff2'),
+       url('./fonts/GillSansStd-Light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Gill Sans Std';
+  src: url('./fonts/GillSansStd-ExtraBold.woff2') format('woff2'),
+       url('./fonts/GillSansStd-ExtraBold.woff') format('woff');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Gill Sans Std';
+  src: url('./fonts/GillSansStd-Italic.woff2') format('woff2'),
+       url('./fonts/GillSansStd-Italic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Gill Sans Std';
+  src: url('./fonts/GillSans-SemiBold.woff2') format('woff2'),
+       url('./fonts/GillSans-SemiBold.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geometria';
+  src: url('./fonts/Geometria-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── TOKENS GLOBALES ── */
+:root {
+  /* --- Paleta IGAC institucional --- */
+  --oot-azul:         #33669e;
+  --oot-azul-dark:    #234570;
+  --oot-azul-light:   #e8f0f8;
+  --oot-navy:         #1A3A5C;
+  --oot-ambar:        #F4A833;
+  --oot-rojo:         #e10818;
+
+  /* --- Colores semánticos de módulos --- */
+  --oot-teal:         #0F6E56;
+  --oot-teal-light:   #E1F5EE;
+  --oot-terra:        #c8573e;
+  --oot-terra-light:  #FAECE7;
+  --oot-purple:       #534AB7;
+  --oot-purple-light: #EEEDFE;
+  --oot-verde:        #1a7a4c;
+  --oot-verde-light:  #EAF3DE;
+
+  /* --- Superficies y fondos --- */
+  --oot-bg:           #f8f9fa;
+  --oot-s1:           #ffffff;
+  --oot-s2:           #eff0f1;
+  --oot-s3:           #e5e7ea;
+
+  /* --- Texto --- */
+  --oot-tx:           #353535;
+  --oot-tx2:          #58595b;
+  --oot-tx3:          #888888;
+
+  /* --- Bordes --- */
+  --oot-border:       rgba(0, 0, 0, 0.10);
+  --oot-border-md:    rgba(0, 0, 0, 0.20);
+  --oot-border-azul:  rgba(51, 102, 158, 0.30);
+
+  /* --- Tipografía --- */
+  --fn-display: 'Gill Sans Std', 'Geometria', system-ui, sans-serif;
+  --fn-body:    'Gill Sans Std', system-ui, sans-serif;
+  --fn-mono:    'DM Mono', 'Courier New', monospace;
+
+  /* --- Espaciado --- */
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  20px;
+  --sp-6:  24px;
+  --sp-7:  28px;
+  --sp-8:  32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  /* --- Radios de borde --- */
+  --r-xs:  3px;
+  --r-sm:  5px;
+  --r-md:  8px;
+  --r-lg:  12px;
+  --r-xl:  16px;
+  --r-2xl: 24px;
+  --r-pill: 999px;
+
+  /* --- Sombras --- */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.10);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+
+  /* --- Transiciones --- */
+  --tx-fast:   0.12s ease;
+  --tx-normal: 0.20s ease;
+  --tx-slow:   0.35s ease;
+
+  /* --- Z-index --- */
+  --z-navbar:  100;
+  --z-modal:   200;
+  --z-tooltip: 300;
+}
+
+/* ── RESET MÍNIMO ── */
+*, *::before, *::after { box-sizing: border-box; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--fn-body);
+  font-weight: 400;
+  color: var(--oot-tx);
+  background: var(--oot-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+img, svg { max-width: 100%; height: auto; }
+a { color: var(--oot-azul); text-decoration: none; }
+a:hover { color: var(--oot-azul-dark); }
+button { cursor: pointer; font-family: var(--fn-body); }
+input, select, textarea { font-family: var(--fn-body); }
+
+/* ── UTILIDADES ── */
+.oot-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--sp-6);
+}
+.oot-container--wide {
+  max-width: 1440px;
+}
+.oot-visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0,0,0,0) !important;
+}
+/* Back-link "Menú principal" de módulos — hover migrado de onmouseover inline a CSS (H-04). */
+.oot-backlink:hover { color: rgba(255,255,255,0.9) !important; }

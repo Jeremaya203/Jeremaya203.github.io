@@ -1,0 +1,309 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Colombia OT 2.0 — IGAC, Colombia">
+  <title>Colombia OT 2.0 · IGAC</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+  <link rel="stylesheet" href="./maestra.css">
+  <link rel="stylesheet" href="./navbar-footer.css">
+  <link rel="stylesheet" href="./oot-complementario.css">
+</head>
+<body>
+  <div id="oot-navbar-placeholder"></div>
+
+  <main class="oot-home">
+    <!-- ── Hero ──────────────────────────────────────────────────── -->
+    <section>
+      <div class="herobanner">
+        <div class="container herocontent">
+          <div class="text-white hero-text">
+            <h1 class="title mb-0">Colombia OT 2.0</h1>
+            <p class="subtitle">Conoce, analiza y decide con datos reales</p>
+            <p>La plataforma oficial del IGAC para el seguimiento e inteligencia territorial de Colombia. Normativa, cartograf&iacute;a, indicadores y agentes IA integrados.</p>
+            <div class="hero-ctas">
+              <a href="./Modulo_Chat_normativo.html" class="btn-hero-outline">
+                <i class="fas fa-robot"></i> Consulta Normativa
+              </a>
+              <a href="./Modulo_Indicadores.html" class="btn-hero-outline">
+                <i class="fas fa-chart-bar"></i> Indicadores
+              </a>
+              <a href="./Modulo_Especificaciones.html" class="btn-hero-outline">
+                <i class="fas fa-layer-group"></i> Documentaci&oacute;n POT
+              </a>
+            </div>
+          </div>
+        </div>
+        <img class="shape" src="./images/home/shape.png" alt="">
+      </div>
+    </section>
+
+    <!-- ── Accede a nuestros módulos (3 cards glassmorphism) ─────── -->
+    <section class="oot-modulos-section">
+      <div class="container">
+        <h2 class="oot-sec-title">Accede a nuestros m&oacute;dulos</h2>
+        <p class="oot-sec-sub">Seleccione la herramienta que necesita para su an&aacute;lisis territorial.</p>
+        <div class="oot-modulos-destacados">
+
+          <a href="./Modulo_Chat_normativo.html" class="oot-modcard" style="background-image:url('./images/home/c_normativa.png')">
+            <div class="oot-modcard-overlay"></div>
+            <div class="oot-modcard-body">
+              <span class="oot-modcard-badge">Inteligencia Artificial</span>
+              <h3 class="oot-modcard-title">Consulta Normativa</h3>
+              <p class="oot-modcard-desc">Motor RAG sobre 56 normas territoriales. LLM + ChromaDB + b&uacute;squeda h&iacute;brida.</p>
+            </div>
+          </a>
+
+          <a href="./Modulo_Determinantes.html" class="oot-modcard" style="background-image:url('./images/home/determinantes.png')">
+            <div class="oot-modcard-overlay"></div>
+            <div class="oot-modcard-body">
+              <span class="oot-modcard-badge">An&aacute;lisis Espacial</span>
+              <h3 class="oot-modcard-title">Determinantes del OT</h3>
+              <p class="oot-modcard-desc">Carga una zona y eval&uacute;a la viabilidad predial con 4 agentes LangGraph.</p>
+            </div>
+          </a>
+
+          <a href="./Modulo_Indicadores.html" class="oot-modcard" style="background-image:url('./images/home/indicadores.png')">
+            <div class="oot-modcard-overlay"></div>
+            <div class="oot-modcard-body">
+              <span class="oot-modcard-badge">Geoestad&iacute;stica</span>
+              <h3 class="oot-modcard-title">Indicadores Territoriales</h3>
+              <p class="oot-modcard-desc">8 indicadores espaciales precalculados: cobertura vegetal, amenazas, brechas.</p>
+            </div>
+          </a>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Colombia OT en datos (4 stats) ───────────────────── -->
+    <section class="oot-stats-section">
+      <div class="container">
+        <h2 class="oot-sec-title">Colombia OT 2.0 en datos</h2>
+        <p class="oot-sec-sub">Cifras clave de Colombia OT 2.0.</p>
+        <div class="oot-stats-grid">
+          <div class="oot-statcard">
+            <div class="oot-statcard-num">1.103</div>
+            <div class="oot-statcard-lbl">Municipios de Colombia</div>
+          </div>
+          <div class="oot-statcard">
+            <div class="oot-statcard-num">56</div>
+            <div class="oot-statcard-lbl">Normas indexadas</div>
+          </div>
+          <div class="oot-statcard">
+            <div class="oot-statcard-num">8</div>
+            <div class="oot-statcard-lbl">Indicadores Territoriales</div>
+          </div>
+          <div class="oot-statcard">
+            <div class="oot-statcard-num">4+</div>
+            <div class="oot-statcard-lbl">M&oacute;dulos disponibles</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Herramientas para el Ordenamiento Nacional (carrusel) ── -->
+    <section class="oot-herramientas-section">
+      <div class="container">
+        <h2 class="oot-sec-title">Herramientas para el Ordenamiento Nacional</h2>
+        <p class="oot-sec-sub" style="text-wrap:balance">Accede a informaci&oacute;n territorial actualizada, mapas interactivos y an&aacute;lisis asistidos por inteligencia artificial para apoyar la gesti&oacute;n y planificaci&oacute;n territorial.</p>
+
+        <!-- ── Carrusel de módulos ─────────────────────────────────── -->
+        <div class="oot-carousel">
+        <div class="swiper oot-modulos-swiper">
+          <div class="swiper-wrapper">
+
+            <!-- 1. Consulta Normativa -->
+            <div class="swiper-slide">
+              <a href="./Modulo_Chat_normativo.html" class="oot-mod-card">
+                <div class="oot-mod-icon"><i class="fas fa-robot"></i></div>
+                <h5>Consulta Normativa</h5>
+                <p>Consulta las 56 normas territoriales mediante IA. RAG con LLM + ChromaDB.</p>
+                <div class="oot-mod-link">CONSULTAR &rarr;</div>
+              </a>
+            </div>
+
+            <!-- 2. Análisis Determinantes -->
+            <div class="swiper-slide">
+              <a href="./Modulo_Determinantes.html" class="oot-mod-card">
+                <div class="oot-mod-icon"><i class="fas fa-map-marked-alt"></i></div>
+                <h5>Análisis Determinantes</h5>
+                <p>Carga una zona geográfica y evalúa la viabilidad predial con 4 agentes LangGraph.</p>
+                <div class="oot-mod-link">ANALIZAR &rarr;</div>
+              </a>
+            </div>
+
+            <!-- 3. Indicadores Territoriales -->
+            <div class="swiper-slide">
+              <a href="./Modulo_Indicadores.html" class="oot-mod-card">
+                <div class="oot-mod-icon"><i class="fas fa-chart-bar"></i></div>
+                <h5>Indicadores Territoriales</h5>
+                <p>8 indicadores espaciales: cobertura vegetal, amenazas, deforestación, brecha catastral.</p>
+                <div class="oot-mod-link">EXPLORAR &rarr;</div>
+              </a>
+            </div>
+
+            <!-- 4. Los POT del país -->
+            <div class="swiper-slide">
+              <a href="./colombia-ot/pot.html" class="oot-mod-card">
+                <div class="oot-mod-icon"><i class="fas fa-search-location"></i></div>
+                <h5>Los POT del País</h5>
+                <p>Consulta los Planes de Ordenamiento Territorial de todos los municipios de Colombia.</p>
+                <div class="oot-mod-link">ABRIR BUSCADOR &rarr;</div>
+              </a>
+            </div>
+
+            <!-- 5. Cartillas, guías y manuales -->
+            <div class="swiper-slide">
+              <a href="./colombia-ot/cartillas.html" class="oot-mod-card">
+                <div class="oot-mod-icon"><i class="fas fa-book"></i></div>
+                <h5>Cartillas, Guías y Manuales</h5>
+                <p>Material de divulgación y guías metodológicas para el ordenamiento territorial.</p>
+                <div class="oot-mod-link">VER CARTILLAS &rarr;</div>
+              </a>
+            </div>
+
+            <!-- 6. La Ruta del POT -->
+            <div class="swiper-slide">
+              <a href="./colombia-ot/ruta.html" class="oot-mod-card">
+                <div class="oot-mod-icon"><i class="fas fa-route"></i></div>
+                <h5>La Ruta del POT</h5>
+                <p>Guía interactiva de los 9 pasos para formular, revisar y adoptar un POT.</p>
+                <div class="oot-mod-link">VER RUTA &rarr;</div>
+              </a>
+            </div>
+
+            <!-- 7. Especificaciones OT -->
+            <div class="swiper-slide">
+              <a href="./Modulo_Especificaciones.html" class="oot-mod-card">
+                <div class="oot-mod-icon"><i class="fas fa-layer-group"></i></div>
+                <h5>Especificaciones OT</h5>
+                <p>Modelos de dominio, guías técnicas y normatividad LADM-COL-POT.</p>
+                <div class="oot-mod-link">VER DOCUMENTOS &rarr;</div>
+              </a>
+            </div>
+
+            <!-- 8. Caracterizaciones Territoriales -->
+            <div class="swiper-slide">
+              <a href="./caracterizaciones/index.html" class="oot-mod-card">
+                <div class="oot-mod-icon"><i class="fas fa-globe-americas"></i></div>
+                <h5>Caracterizaciones Territoriales</h5>
+                <p>Caracterizaciones detalladas del territorio para la planificación del OT.</p>
+                <div class="oot-mod-link">EXPLORAR &rarr;</div>
+              </a>
+            </div>
+
+            <!-- 9. Estado de Planes OT -->
+            <div class="swiper-slide">
+              <a href="https://www.colombiaot.gov.co/pot/" target="_blank" class="oot-mod-card">
+                <div class="oot-mod-icon"><i class="fas fa-clipboard-check"></i></div>
+                <h5>Estado de Planes OT</h5>
+                <p>Consulta el estado de vigencia de los instrumentos de ordenamiento territorial.</p>
+                <div class="oot-mod-link">VER EN COLOMBIA OT &rarr;</div>
+              </a>
+            </div>
+
+          </div>
+          <div class="swiper-pagination"></div>
+        </div>
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-button-next"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Noticias OT ──────────────────────────────────────────── -->
+    <section class="oot-noticias-section">
+      <div class="container">
+        <div class="oot-news-badge">Noticias OT</div>
+          <div class="row">
+
+            <!-- Noticia 1 -->
+            <div class="col-lg-4 mb-4">
+              <div class="oot-noticia-card" style="background:rgba(15,35,64,0.6);border:1px solid rgba(74,144,217,0.15);border-radius:16px;overflow:hidden;height:100%;display:flex;flex-direction:column;transition:transform 0.2s,box-shadow 0.2s;">
+                <div style="height:160px;overflow:hidden;position:relative;">
+                  <img src="./images/noticias/noticia-decreto-0381-2026.png" alt="Decreto 0381 de 2026" style="width:100%;height:100%;object-fit:cover;object-position:top;transition:transform 0.4s;">
+                  <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(11,30,50,0.85) 100%);"></div>
+                </div>
+                <div style="padding:22px 24px 24px;display:flex;flex-direction:column;flex:1;">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                    <span style="background:rgba(74,144,217,0.12);color:#4a90d9;font-size:10.4px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:4px 10px;border-radius:20px;">Normativa</span>
+                    <span style="color:#7a9cc0;font-size:12px;">Abril 2026</span>
+                  </div>
+                  <h3 style="font-size:16.8px;font-weight:700;color:#e0e8f2;line-height:1.35;margin-bottom:10px;">Gobierno Nacional reglamenta nuevo procedimiento para el ordenamiento territorial centrado en las determinantes de ordenamiento</h3>
+                  <p style="font-size:13.6px;color:#7a9cc0;line-height:1.55;margin-bottom:16px;flex:1;">El Decreto 0381 del 07 de abril de 2026 reglamenta el procedimiento para la gesti&oacute;n de la informaci&oacute;n y establece par&aacute;metros estrictos de coordinaci&oacute;n interinstitucional para la expedicci&oacute;n de las determinantes de ordenamiento territorial.</p>
+                  <button data-oot-click="abrirModalNoticia" data-oot-arg="./images/noticias/noticia-decreto-0381-2026.png" style="font-size:12.8px;font-weight:600;color:#4a90d9;text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:none;border:none;padding:0;cursor:pointer;">Ver m&aacute;s <i class="fas fa-arrow-right" style="font-size:10.4px;"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Noticia 2 -->
+            <div class="col-lg-4 mb-4">
+              <div class="oot-noticia-card" style="background:rgba(15,35,64,0.6);border:1px solid rgba(74,144,217,0.15);border-radius:16px;overflow:hidden;height:100%;display:flex;flex-direction:column;transition:transform 0.2s,box-shadow 0.2s;">
+                <div style="height:160px;overflow:hidden;position:relative;">
+                  <img src="./images/noticias/noticia-decreto-64-2026.png" alt="Decreto 64 de 2026" style="width:100%;height:100%;object-fit:cover;object-position:top;transition:transform 0.4s;">
+                  <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(11,30,50,0.85) 100%);"></div>
+                </div>
+                <div style="padding:22px 24px 24px;display:flex;flex-direction:column;flex:1;">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                    <span style="background:rgba(39,168,128,0.12);color:#27a880;font-size:10.4px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:4px 10px;border-radius:20px;">Institucional</span>
+                    <span style="color:#7a9cc0;font-size:12px;">Enero 2026</span>
+                  </div>
+                  <h3 style="font-size:16.8px;font-weight:700;color:#e0e8f2;line-height:1.35;margin-bottom:10px;">Gobierno Nacional reglamenta la creaci&oacute;n de Colombia OT con el Decreto 64 de 2026</h3>
+                  <p style="font-size:13.6px;color:#7a9cc0;line-height:1.55;margin-bottom:16px;flex:1;">El Decreto 64 de 2026 reglamenta la conformaci&oacute;n y funcionamiento de Colombia OT (OOT), cuyo objetivo es recopilar, analizar y disponer de informaci&oacute;n t&eacute;cnica y cient&iacute;fica para el soporte de pol&iacute;ticas p&uacute;blicas de OT.</p>
+                  <button data-oot-click="abrirModalNoticia" data-oot-arg="./images/noticias/noticia-decreto-64-2026.png" style="font-size:12.8px;font-weight:600;color:#4a90d9;text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:none;border:none;padding:0;cursor:pointer;">Ver m&aacute;s <i class="fas fa-arrow-right" style="font-size:10.4px;"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Noticia 3 -->
+            <div class="col-lg-4 mb-4">
+              <div class="oot-noticia-card" style="background:rgba(15,35,64,0.6);border:1px solid rgba(74,144,217,0.15);border-radius:16px;overflow:hidden;height:100%;display:flex;flex-direction:column;transition:transform 0.2s,box-shadow 0.2s;">
+                <div style="height:160px;overflow:hidden;position:relative;">
+                  <img src="./images/noticias/noticia-appa-197000-ha.png" alt="APPA 197.000 hectáreas" style="width:100%;height:100%;object-fit:cover;object-position:top;transition:transform 0.4s;">
+                  <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(11,30,50,0.85) 100%);"></div>
+                </div>
+                <div style="padding:22px 24px 24px;display:flex;flex-direction:column;flex:1;">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                    <span style="background:rgba(244,168,51,0.12);color:#f4a833;font-size:10.4px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:4px 10px;border-radius:20px;">Agropecuario</span>
+                    <span style="color:#7a9cc0;font-size:12px;">Marzo 2026</span>
+                  </div>
+                  <h3 style="font-size:16.8px;font-weight:700;color:#e0e8f2;line-height:1.35;margin-bottom:10px;">Colombia supera las 197.000 hect&aacute;reas declaradas como &Aacute;reas de Protecci&oacute;n para la Producci&oacute;n de Alimentos (APPA)</h3>
+                  <p style="font-size:13.6px;color:#7a9cc0;line-height:1.55;margin-bottom:16px;flex:1;">Un hito hist&oacute;rico para la seguridad alimentaria del pa&iacute;s. Las APPA representan el compromiso del Estado con los campesinos y las comunidades rurales, garantizando que las tierras dedicadas a la producci&oacute;n de alimentos permanezcan en el tiempo.</p>
+                  <button data-oot-click="abrirModalNoticia" data-oot-arg="./images/noticias/noticia-appa-197000-ha.png" style="font-size:12.8px;font-weight:600;color:#4a90d9;text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:none;border:none;padding:0;cursor:pointer;">Ver m&aacute;s <i class="fas fa-arrow-right" style="font-size:10.4px;"></i></button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    <!-- Modal Noticias -->
+    <div id="modal-noticia" data-oot-click="cerrarModalNoticia" style="display:none;position:fixed;inset:0;z-index:20000;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:24px;opacity:0;transition:opacity 0.3s;">
+      <div data-oot-click="_ootNoop" style="position:relative;max-width:900px;width:100%;max-height:90vh;background:#0b1929;border:1px solid rgba(74,144,217,0.25);border-radius:16px;overflow:hidden;transform:scale(0.92);transition:transform 0.3s;box-shadow:0 24px 80px rgba(0,0,0,0.6);">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid rgba(74,144,217,0.15);">
+          <span style="font-size:13.6px;font-weight:600;color:#e0e8f2;">Documento de referencia</span>
+          <button data-oot-click="cerrarModalNoticia" class="oot-modal-close" style="background:none;border:none;color:#7a9cc0;font-size:19.2px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:color 0.15s;">&times;</button>
+        </div>
+        <div style="padding:20px;overflow-y:auto;max-height:calc(90vh - 60px);text-align:center;">
+          <img id="modal-noticia-img" src="" alt="Documento" style="max-width:100%;height:auto;border-radius:8px;border:1px solid rgba(74,144,217,0.15);">
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <div id="oot-footer-placeholder"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <script src="./config.js"></script>
+  <script src="./oot.js"></script>
+  <script src="./js/pagina-principal.js"></script>
+</body>
+</html>

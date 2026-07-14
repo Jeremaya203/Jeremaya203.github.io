@@ -1,0 +1,189 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Consulta Normativa — Colombia OT 2.0</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="./maestra.css">
+  <link rel="stylesheet" href="./navbar-footer.css">
+  <link rel="stylesheet" href="./oot-complementario.css">
+  <link rel="stylesheet" href="./oot-design-system.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <link rel="stylesheet" href="./chat-normativo.css">
+</head>
+<body>
+
+<div id="oot-navbar-placeholder"></div>
+
+<div id="mob-chat-backdrop" class="mob-chat-backdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:140;cursor:pointer;" data-oot-click="_mobChatSidebar" data-oot-arg="false"></div>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="chat-sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <span class="material-symbols-outlined" style="color:#fff;font-size:20px">gavel</span>
+        </div>
+        <div>
+          <div class="sidebar-logo-text">Consulta Normativa</div>
+          <div class="sidebar-logo-sub">Colombia OT 2.0 &middot; IGAC 2026</div>
+        </div>
+      </div>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <button data-oot-click="nuevaConsulta" class="sidebar-link" style="width:100%;border:0.5px solid var(--oot-b2);background:var(--oot-s2);text-align:left;cursor:pointer;">
+        <span class="material-symbols-outlined" style="color:var(--oot-terra)">add</span>
+        Nueva Consulta
+      </button>
+      <div class="sidebar-nav-title" style="margin-top:16px">Historial</div>
+      <div id="historial-list"></div>
+    </nav>
+
+    <div class="sidebar-faq">
+      <div class="sidebar-faq-title">Consultas frecuentes</div>
+      <button data-oot-click="usarSugerencia" data-oot-arg="¿Qué es una determinante ambiental de primer orden en ordenamiento territorial?" class="faq-btn">
+        Determinantes de primer orden
+      </button>
+      <button data-oot-click="usarSugerencia" data-oot-arg="¿Cuáles son las determinantes ambientales según la Ley 99 de 1993?" class="faq-btn">
+        Determinantes Ley 99/1993
+      </button>
+      <button data-oot-click="usarSugerencia" data-oot-arg="¿Qué normativa regula los retiros y rondas hídricas en Colombia?" class="faq-btn">
+        Retiros a cuerpos de agua
+      </button>
+      <button data-oot-click="usarSugerencia" data-oot-arg="¿Cuáles son las categorías de protección del suelo rural en Colombia?" class="faq-btn">
+        Categorías suelo rural
+      </button>
+      <button data-oot-click="usarSugerencia" data-oot-arg="¿Qué dice el Decreto 1077 de 2015 sobre suelo suburbano?" class="faq-btn">
+        Decreto 1077 suelo suburbano
+      </button>
+      <button data-oot-click="usarSugerencia" data-oot-arg="¿Cuáles son las condiciones para declarar suelo de expansión urbana?" class="faq-btn">
+        Suelo de expansión urbana
+      </button>
+      <button data-oot-click="usarSugerencia" data-oot-arg="¿Cómo se clasifica el suelo según la Ley 388 de 1997?" class="faq-btn">
+        Ley 388 clasificación suelo
+      </button>
+      <button data-oot-click="usarSugerencia" data-oot-arg="¿Qué normas regulan las áreas de reserva forestal en Colombia?" class="faq-btn">
+        Reservas forestales
+      </button>
+      <button data-oot-click="usarSugerencia" data-oot-arg="¿Cuándo es obligatorio actualizar un Plan de Ordenamiento Territorial?" class="faq-btn">
+        Cuándo actualizar un POT
+      </button>
+      <button data-oot-click="usarSugerencia" data-oot-arg="¿Qué es la estructura ecológica principal y qué normas la regulan?" class="faq-btn">
+        Estructura ecológica principal
+      </button>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">IG</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name">IGAC 2026</div>
+        <div class="sidebar-status" id="sidebar-status">Conectado</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <header class="chat-header">
+      <div>
+        <h1 class="chat-header-title">Pregúntele a la Norma</h1>
+        <div class="chat-header-status">
+          <span class="dot" id="status-dot"></span>
+          <span id="status-text">Conectando...</span>
+        </div>
+      </div>
+      <div class="chat-header-actions">
+        <button data-oot-click="exportarChat" class="icon-btn" title="Exportar chat">
+          <span class="material-symbols-outlined">download</span>
+        </button>
+        <button data-oot-click="nuevaConsulta" class="icon-btn" title="Nueva consulta">
+          <span class="material-symbols-outlined">add</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="messages" id="messages">
+      <!-- FAQ inicial -->
+      <div id="faq-container">
+        <div class="faq-hero">
+          <div class="faq-hero-bg"></div>
+          <div class="faq-hero-head">
+            <div class="faq-hero-icon">
+              <span class="material-symbols-outlined">menu_book</span>
+            </div>
+            <div>
+              <div class="faq-hero-title">Consulta Normativa OT</div>
+            </div>
+          </div>
+          <p class="faq-hero-desc">Motor RAG sobre <strong style="color:rgba(255,255,255,0.85)">56 normas</strong> colombianas &mdash; b&uacute;squeda h&iacute;brida BM25 + vectores + Groq LLM</p>
+          <div class="faq-stat-row">
+            <div class="faq-stat"><div class="faq-stat-num">15</div><div class="faq-stat-label">Leyes</div></div>
+            <div class="faq-stat"><div class="faq-stat-num">24</div><div class="faq-stat-label">Decretos</div></div>
+            <div class="faq-stat"><div class="faq-stat-num">11</div><div class="faq-stat-label">Resoluciones</div></div>
+            <div class="faq-stat"><div class="faq-stat-num">6</div><div class="faq-stat-label">Docs</div></div>
+            <div class="faq-stat"><div class="faq-stat-num">4 955</div><div class="faq-stat-label">Fragmentos IA</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensaje de bienvenida -->
+      <div class="message bot">
+        <div class="message-avatar">
+          <span class="material-symbols-outlined" style="color:#fff;font-size:18px">menu_book</span>
+        </div>
+        <div class="message-content">
+          <div class="message-label">IA OOT Assistant</div>
+          <div class="message-bubble">
+            Bienvenido al asistente normativo de Colombia OT 2.0. Puedo responder preguntas sobre normativa colombiana de ordenamiento territorial con base en 56 normas indexadas. ¿En qué le puedo ayudar?
+          </div>
+          <div class="message-time">Sistema listo</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Typing indicator -->
+    <div class="typing" id="typing" style="display:none;">
+      <div class="typing-avatar">
+        <span class="material-symbols-outlined" style="color:#fff;font-size:18px">menu_book</span>
+      </div>
+      <div class="typing-content">
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+        <span class="typing-text">Consultando la norma...</span>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-area">
+      <div class="input-container">
+        <div class="input-wrapper">
+          <textarea id="input-pregunta" class="input-textarea" placeholder="Escriba su consulta jurídica o técnica aquí..." data-oot-keydown="manejarTecla"></textarea>
+          <div class="input-footer">
+            <span class="input-hint">Enter para enviar · Shift+Enter para nueva línea</span>
+            <button id="btn-enviar" data-oot-click="enviarPregunta" class="send-btn">
+              Enviar
+              <span class="material-symbols-outlined" style="font-size:16px">send</span>
+            </button>
+          </div>
+        </div>
+        <p class="disclaimer">La IA puede cometer errores. Verifique siempre la normativa en el Diario Oficial o gacetas municipales.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="./config.js"></script>
+<script src="./oot.js"></script>
+<!-- DOMPurify (vendido local, no CDN → compatible con CSP 'self' y despliegue offline).
+     Sanea la salida del RAG/LLM antes de inyectarla en el DOM (defensa en profundidad). -->
+<script src="./js/lib/purify.min.js"></script>
+<script src="./js/chat-normativo.js"></script>
+
+</body>
+</html>

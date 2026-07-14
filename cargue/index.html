@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="es-ES">
+
+<head>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description"
+        content="Ordenamiento territorial de Colombia | Colombia OT 2.0: Una plataforma del IGAC para la construcción colectiva de país." />
+    <meta name="title" property="og:title" content="Colombia OT 2.0 — Cargue de Documentos">
+    <meta property="og:type" content="website">
+    <meta name="image" property="og:image" content="https://www.colombiaot.gov.co/images/Preview.png">
+    <meta name="keywords"
+        content="Ordenamiento territorial, Plan de ordenamiento territorial, Pot colombia, Pot, Componente rural, Componente urbano, Dimensiones del diagnóstico, Igac, Observatorio de ordenamiento territorial, Datos del pot, Planificación territorial, Federación colombiana de municipios, La ruta del pot, Colombia OT" />
+    <meta name="author" content="Instituto Geográfico Agustín Codazzi - IGAC" />
+    <meta http-equiv="content-language" content="es" />
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"
+        integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
+
+    <link rel="canonical" href="https://www.colombiaot.gov.co/docuvisor" />
+    <link rel="shortcut icon" href="images/favicon.ico" />
+    <title>Cargue de Documentos — Colombia OT 2.0</title>
+
+    <link type="text/css" async rel="stylesheet"
+        href="https://www.gstatic.com/firebasejs/ui/4.5.0/firebase-ui-auth.css" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.4/jquery-confirm.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.12/css/select2.min.css" />
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.20/css/dataTables.bootstrap.min.css" />
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker3.min.css" />
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-colorpicker/2.5.3/css/bootstrap-colorpicker.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote.min.css" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.css" />
+    <link rel="stylesheet" href="js/lib/dist/css/calcite-maps-bootstrap.min-v0.10.css">
+    <link rel="stylesheet" href="js/lib/dist/css/calcite-maps-arcgis-3.x.min-v0.10.css">
+
+    <link rel="stylesheet" href="css/maestra.css">
+    <link rel="stylesheet" href="css/navbar-footer.css">
+    <link rel="stylesheet" href="css/cargue.css">
+    <!-- Re-branding del navbar/footer a la identidad del Observatorio (OOT) -->
+    <link rel="stylesheet" href="css/oot-branding.css">
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-78PPLF47WW"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+        gtag('js', new Date());
+
+        gtag('config', 'G-78PPLF47WW');
+    </script>
+</head>
+
+<body class="calcite calcite-nav-top">
+    <div id="oot-navbar-placeholder"></div>
+
+    <div class="calcite-map docuvisor-content">
+        <div id="mainDiv" class="main-small">
+            <!-- Search Panel -->
+            <div id="panelSearch" class="panel collapse">
+                <div id="collapseSearch" class="panel-collapse">
+                    <div class="panel-body" style="padding: 0px;">
+                        <div id="containerFiltros">
+                            <div id="panelSearchFiltros" class="panel panel-default" data-toggle="popover">
+                                <div id="listOpciones">
+                                    <div id="searchHeader" class="panel-heading">
+                                        <h3 class="panel-title" style="display: inline-block;">Selecciona una
+                                            opci&oacute;n</h3>
+                                    </div>
+                                    <ul class="nav nav-sidebar"
+                                        style="border: 1px solid gray; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px;">
+                                        <li>
+                                            <a class="dropdownToggleTwo">Los POT del país</a>
+                                            <ul class="dropDownTwo">
+                                                <li id="menuDocumentos" style="display: none;">
+                                                    <a href="#" onclick="gotoDocumentos();">Documentos</a>
+                                                </li>
+                                                <li id="menuPot" style="display: none;">
+                                                    <a href="#" onclick="gotoPot();">Cartografía (XTF / GDB)</a>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li id="menuRecursos" style="display: none;">
+                                            <a href="#" onclick="gotoRecursos();">Otros recursos</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div id="listDocumentosPasos" style="display: none;">
+                                    <ul class="nav nav-sidebar">
+                                        <li>
+                                            <a href="#" onclick="gotoDocumentosPaso(1);">Nombre y descripción</a>
+                                        </li>
+                                        <li>
+                                            <a href="#" onclick="gotoDocumentosPaso(2);">Detalle</a>
+                                        </li>
+                                        <li>
+                                            <a href="#" onclick="gotoDocumentosPaso(3);">Recurso</a>
+                                        </li>
+                                        <li>
+                                            <a href="#" onclick="gotoDocumentosPaso(4);">Resumen</a>
+                                        </li>
+
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="mapViewDiv" class="calcite-map-absolute main-small-map" style="background: white;">
+            <div id="alertList" style="display: none;">
+                <div>
+                    <div id="alertHeader" class="alert-header" style="background-color:white;"></div>
+                    <div style="background: white;" class="alert-media">
+                        <div id="alertContentLeft" class="media-left">
+                            <img alt="imagen" class="media-object" style="width: 20px; height: 20px;" src="" />
+                        </div>
+                        <div id="alertContent" class="media-body alert-media-body" style="width: 250px;">
+                        </div>
+                        <div class="media-right" style="color: gray;" onclick="$('#alertList').hide();">
+                            <span class="esri-icon esri-icon-close" aria-hidden="true"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div id="documentosDiv" class="col-md-8 contenedor-interno" style="display: none;">
+                    <div id="documentosList">
+                        <ul class="nav nav-pills">
+                            <li class="active"><a data-toggle="pill" href="#documentosMisRegistros">Mis registros</a></li>
+                            <li><a data-toggle="pill" href="#documentosRegistrosIGAC">Registros IGAC</a></li>
+                        </ul>
+                        <div class="tab-content">
+                            <div id="documentosMisRegistros" class="tab-pane fade in active">
+                                <div class="headerResult">
+                                    <div id="docViewCount">
+                                    </div>
+                                    <div id="docViewPage">&nbsp; | &nbsp; Ver:
+                                        <a href="#" onclick="changeLenDocs(25);">&nbsp;25&nbsp;</a>
+                                        <a href="#" onclick="changeLenDocs(50);">&nbsp;50&nbsp;</a>
+                                        <a href="#" onclick="changeLenDocs(100);">&nbsp;100&nbsp;</a>
+                                    </div>
+                                </div>
+                                <div class="pull-right" style="margin-bottom: 20px;">
+                                    <button type="button" onclick="newDocumentos();" class="btn btn-default btn-primary">
+                                        Cargar nuevo documento
+                                    </button>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        <div class="table-responsive">
+                                            <table id="tableDocumentos" class="table" style="width:100%">
+                                                <thead>
+                                                    <tr>
+                                                        <th>#</th>
+                                                        <th>Nombre</th>
+                                                        <th>Unidad</th>
+                                                        <th>Etapa</th>
+                                                        <th>Estado</th>
+                                                        <th>Fecha</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="documentosTable"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="documentosRegistrosIGAC" class="tab-pane fade">
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        <div class="headerResultIGAC">
+                                            <div class="wrapFilters">
+                                                <div class="col-md-3Just">
+                                                    <p class="unidad-container" style="width: 100%;">
+                                                        <label style="font-size: 14px;"><strong>Unidad</strong></label>
+                                                        <select class="form-control" id="filterUnidadIGAC" style="width: 100%;font-size: 14px;">
+                                                        </select>
+                                                    </p>
+                                                </div>
+                                                <div class="col-md-3Just">
+                                                    <p class="unidad-container" style="width: 100%;">
+                                                        <label style="font-size: 14px;"><strong>Etapa</strong></label>
+                                                        <select class="form-control" id="filterEtapaIGAC" style="width: 100%;font-size: 14px;">
+                                                            <option value="Todas">Todas las etapas</option>
+                                                            <option value="Diagnóstico">Diagnóstico</option>
+                                                            <option value="Formulación">Formulación</option>
+                                                            <option value="Implementación">Implementación</option>
+                                                            <option value="Evaluación y Seguimiento">Evaluación y Seguimiento</option>
+                                                        </select>
+                                                    </p>
+                                                </div>
+                                                <div class="col-md-3Just">
+                                                    <p class="unidad-container" style="width: 100%;">
+                                                        <label style="font-size: 14px;"><strong>Fecha</strong></label>
+                                                        <select class="form-control" id="filterYearIGAC" style="width: 100%;font-size: 14px;">
+                                                        </select>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div class="wrapResults">
+                                                <div id="docViewCountIGAC">
+                                                </div>
+                                                <div id="docViewPageIGAC">&nbsp; | &nbsp; Ver:
+                                                    <a href="#" onclick="changeLenDocsIGAC(25);">&nbsp;25&nbsp;</a>
+                                                    <a href="#" onclick="changeLenDocsIGAC(50);">&nbsp;50&nbsp;</a>
+                                                    <a href="#" onclick="changeLenDocsIGAC(100);">&nbsp;100&nbsp;</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table id="tableDocumentosIGAC" class="table" style="width:100%">
+                                                <thead>
+                                                    <tr>
+                                                        <th>#</th>
+                                                        <th>Nombre</th>
+                                                        <th>Unidad</th>
+                                                        <th>Etapa</th>
+                                                        <th>Fecha</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="documentosTableIGAC"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="documentosDetail" style="display: none;">
+                        <div class="pull-left" style="margin-bottom: 20px;">
+                            <a href="#" onclick="gotoDocumentos();">
+                                <span class='glyphicon glyphicon-menu-left' aria-hidden='true'></span>
+                                &nbsp;Volver
+                            </a>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <div id="documentosPaso1">
+                                    <div class="form-group" id="documentosIdFieldDiv" style="display: none;" >
+                                        <label for="documentosIdField">ID</label>
+                                        <input type="text" class="form-control" id="documentosIdField" readonly>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="form-group col-sm-6">
+                                            <label for="documentosETField">Entidad territorial</label><label style="color: red;">&nbsp;*</label>
+                                            <select id="documentosETField" data-width="100%"></select>
+                                            <div class="pull-right" id="documentosET_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                        </div>
+                                        <div class="form-group col-sm-6">
+                                            <label for="documentosCodigoField">C&oacute;digo DANE</label>
+                                            <br />
+                                            <input type="text" class="form-control" id="documentosCodigoField" data-width="100%" readonly>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="documentosFormaField">1. Forma de representaci&oacute;n</label><label style="color: red;">&nbsp;*</label>
+                                        <br />
+                                        <select id="documentosFormaField" data-width="100%">
+                                            <option>Documento</option>
+                                            <option>Cartograf&iacute;a</option>
+                                        </select>
+                                        <div class="pull-right" id="documentosForma_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="documentosEtapaField">2. Etapa</label><label style="color: red;">&nbsp;*</label>
+                                        <select id="documentosEtapaField" data-width="100%">
+                                            <option>Diagnóstico</option>
+                                            <option>Evaluación y Seguimiento</option>
+                                            <option>Formulación</option>
+                                            <option>Implementación</option>
+                                        </select>
+                                        <div class="pull-right" id="documentosEtapa_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                    </div>
+                                    <div class="form-group" id="documentosComponenteDiv" style="display: none;">
+                                        <label for="documentosComponenteField">Componente</label>
+                                        <select id="documentosComponenteField" data-width="100%">
+                                            <option>General</option>
+                                            <option>Rural</option>
+                                            <option>Urbano</option>
+                                        </select>
+                                        <div class="pull-right" id="documentosComponente_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                    </div>
+                                    <div class="form-group" id="documentosDimensionDiv" style="display: none;">
+                                        <label for="documentosDimensionField">Dimensión</label>
+                                        <select id="documentosDimensionField" data-width="100%">
+                                            <option>Ambiental</option>
+                                            <option>Económica</option>
+                                            <option>Funcional</option>
+                                            <option>Institucional</option>
+                                            <option>Socio-Cultural</option>
+                                            <option>Síntesis</option>
+                                        </select>
+                                        <div class="pull-right" id="documentosDimension_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                    </div>
+
+                                   <div class="form-group" id="documentosNombreDiv">
+                                        <label for="documentosNombreField">3. Nombre del documento</label><label style="color: red;">&nbsp;*</label>
+                                        <br />
+                                        <select id="documentosNombreField" data-width="100%">
+                                        </select>
+                                        <div class="pull-right" id="documentosDimension_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                    </div>
+
+                                    <!-- <div class="form-group">
+                                        <label for="documentosVersionField">3. Versi&oacute;n</label>
+                                        <input type="text" class="form-control" id="documentosVersionField"
+                                            placeholder="Ej. 2.0; V2; Versión 2">
+                                    </div> -->
+
+                                    <div class="form-group" id="documentosDescripcionDiv" style="display: none;">
+                                        <label for="documentosDescripcionField">Descripci&oacute;n</label>
+                                        <textarea class="form-control" id="documentosDescripcionField"></textarea>
+                                    </div>
+
+
+                                </div>
+                                <div id="documentosPaso2" style="display: none;">
+
+<!-- 
+                                    <div class="form-group">
+                                        <label for="documentosTipoField">6. Tipo de documento</label>
+                                        <br />
+                                        <select id="documentosTipoField" data-width="100%">
+                                            <option>Dato</option>
+                                            <option>Normativo</option>
+                                            <option>Técnico</option>
+                                            <option>Administrativo</option>
+                                        </select>
+                                    </div> -->
+
+                                    <div class="form-group">
+                                        <label for="documentosFormatoField">4. Formato</label><label style="color: red;">&nbsp;*</label>
+                                        <br />
+                                        <select id="documentosFormatoField" data-width="100%">
+                                            <option></option>
+                                            <option>PDF</option>
+                                            <option>ZIP</option>
+                                        </select>
+                                        <div class="pull-right" id="documentosFormato_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                    </div>
+
+                                    <!-- <div class="form-group">
+                                        <label for="documentosFormatoField">4. Formato</label><label style="color: red;">&nbsp;*</label>
+                                        <input type="text" class="form-control" id="documentosFormatoField"
+                                            placeholder="Ingrese el formato del archivo">
+                                        <div class="pull-right" id="documentosFormato_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                    </div> -->
+
+
+
+                                    <div class="form-group">
+                                        <label for="documentosDateField">5. Fecha</label><label style="color: red;">&nbsp;*</label>
+                                        <input type="text" class="form-control" id="documentosDateField"
+                                            placeholder="Indique la fecha de creación del documento">
+                                        <div class="pull-right" id="documentosDate_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                    </div>
+                  <!--                   <div class="form-group">
+                                        <label for="documentosCategoriaField">6. Categor&iacute;a Tem&aacute;tica</label><label style="color: red;">&nbsp;*</label>
+                                        <br />
+                                        <select id="documentosCategoriaField" data-width="100%">
+                                            <option>Agricultura</option>
+                                            <option>Ambiente</option>
+                                            <option>Biota</option>
+                                            <option>Economía</option>
+                                            <option>Elevacion</option>
+                                            <option>Estructura</option>
+                                            <option>Información geocientífica</option>
+                                            <option>Infraestructura y servicios públicos</option>
+                                            <option>Límites</option>
+                                            <option>Mapas e imágenes</option>
+                                            <option>Planeación y Catastro</option>
+                                            <option>Riesgos y desastres</option>
+                                            <option>Sociedad</option>
+                                            <option>Transporte</option>
+                                            <option>Ubicación</option>
+                                        </select>
+                                        <div class="pull-right" id="documentosCategoria_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                    </div> -->
+
+                                    <div class="form-group">
+                                        <label for="documentosKeywordsField">6. Palabras Clave</label><label style="color: red;">&nbsp;*</label>
+                                        <select id="documentosKeywordsField" data-width="100%"></select>
+                                        <div class="pull-right" id="documentosKeywords_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                    </div>
+
+                                </div>
+                                <div id="documentosPaso3" style="display: none;">
+
+                                    <div class="form-group">
+                                        <label for="documentosResponsableField">7. Responsable</label><label style="color: red;">&nbsp;*</label>
+                                        <input type="text" class="form-control" id="documentosResponsableField"
+                                            placeholder="Escriba el nombre de la entidad responsable Ej. Secretaría de Planeación Municipal de Palmira.">
+                                        <div class="pull-right" id="documentosResponsable_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="documentosURLResponsableField">8. URL Responsable</label><label style="color: red;">&nbsp;*</label>
+                                        <input type="text" class="form-control" id="documentosURLResponsableField"
+                                            placeholder="Indroduzca la URL de la entidad responsable del registro Ej. https://www.cali.gov.co">
+                                        <div class="pull-right" id="documentosURLResponsable_Error" style="color: red; display: none;">La URL ingresada no es válida</div>
+                                    </div>
+<!-- 
+                                    <div class="form-group">
+                                        <label for="documentosLicenciaField">13. Licencia</label>
+                                        <select id="documentosLicenciaField" data-width="100%">
+                                            <option>CC BY 4.0</option>
+                                            <option>CC BY-SA 4.0</option>
+                                            <option>CC BY-ND 4.0</option>
+                                            <option>CC BY-NC 4.0</option>
+                                            <option>CC BY-NC-SA 4.0</option>
+                                            <option>CC BY-NC-ND 4.0</option>
+                                        </select>
+                                    </div> -->
+
+                         <!--            <div class="form-group">
+                                        <label for="documentosIdiomaField">14. Idioma</label>
+                                        <br />
+                                        <select id="documentosIdiomaField" data-width="100%">
+                                            <option>Español</option>
+                                            <option>Inglés</option>
+                                        </select>
+                                    </div> -->
+
+                                    <div class="form-group">
+                                        <label for="documentosFileField">9.Cargue del documento</label><label style="color: red;">&nbsp;*</label>
+                                        <form id="documentosFileFieldData" method="post" enctype="multipart/form-data">
+                                            <input type="file" class="form-control" id="documentosFileField">
+                                        </form>
+                                        <div class="pull-right" id="documentosFile_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                        <div class="pull-right" id="documentosFileResult">
+                                        </div>
+                                    </div>
+
+                                    <!-- <div class="form-group" style="display: none;" id="documentosURLFieldDiv">
+                                        <label for="documentosURLField">URL</label>
+                                        <input type="text" class="form-control" id="documentosURLField" placeholder="">
+                                    </div> -->
+
+                                </div>
+                                <div id="documentosPaso4" style="display: none;">
+
+                                    <div id="documentosResumen">
+                                        <div id="documentosResumenPaso1">
+                                            <h4>Nombre y descripción</h4>
+                                            <hr>
+                                            <div>
+                                                <div class="col-sm-6">
+                                                    <label for="">Entidad Territorial</label><br>
+                                                    <p id="documentosETLabel"></p>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label for="">Código DANE</label><br>
+                                                    <p id="documentosCodigoLabel"></p>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="col-sm-6">
+                                                    <label for="">1. Forma de representación</label><br>
+                                                    <p id="documentosFormaLabel"></p>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label for="">2. Etapa</label><br>
+                                                    <p id="documentosEtapaLabel">Diagnóstico</p>
+                                                </div>
+                                                <div class="col-sm-6" id="documentosDCLabel">
+                                                    <label for="" id="documentosDC1Label">Dimensión</label><br>
+                                                    <p id="documentosDC2Label"></p>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="col-sm-6">
+                                                    <label for="">3. Nombre del documento</label><br>
+                                                    <p id="documentosNombreLabel"></p>
+                                                </div>
+                                            </div>
+                                            <div>
+<!--                                                 <div class="col-sm-12">
+                                                    <label for="">4. Descripción</label><br>
+                                                    <p id="documentosDescripcionLabel"></p>
+                                                </div> SOLO MOSTRAR SI SE LLENO-->
+                                            </div>
+                                            <br>
+                                        </div>
+                                        <br>
+                                        <div id="documentosResumenPaso2">
+                                            <h4>Detalle</h4>
+                                            <hr>
+                                            <div>
+                                              <!--   <div class="col-sm-6">
+                                                    <label for="">6. Tipo de documento</label><br>
+                                                    <p id="documentosTipoLabel"></p>
+                                                </div> -->
+                                            </div>
+                                            <div>
+                                                <div class="col-sm-6">
+                                                    <label for="">4. Formato</label><br>
+                                                    <p id="documentosFormatoLabel"></p>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label for="">5. Fecha</label><br>
+                                                    <p id="documentosDateLabel"></p>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <!-- <div class="col-sm-6">
+                                                    <label for="">9. Categoría temática</label><br>
+                                                    <p id="documentosCategoriaLabel"></p>
+                                                </div> -->
+                                                <div class="col-sm-6">
+                                                    <label for="">6. Palabras clave</label><br>
+                                                    <p id="documentosKeywordsLabel"></p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div id="documentosResumenPaso3">
+                                            <h4>Recurso</h4>
+                                            <hr>
+                                            <div>
+                                                <div class="col-sm-6">
+                                                    <label for="">7. Responsable</label><br>
+                                                    <p id="documentosResponsableLabel"></p>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label for="">8. URL Responsable</label><br>
+                                                    <p id="documentosUrlResponsableLabel"></p>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <!-- <div class="col-sm-6">
+                                                    <label for="">13. Licencia</label><br>
+                                                    <p id="documentosLicenciaLabel"></p>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label for="">14. Idioma</label><br>
+                                                    <p id="documentosIdiomaLabel"></p>
+                                                </div> -->
+                                            </div>
+                                            <div>
+                                                <div class="col-sm-12">
+                                                    <label for="">9. Documento cargado</label><br>
+                                                    <div id="documentosDocCargadoLabel">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div id="documentosObservaciones">
+                                                <div class="col-sm-12">
+                                                    <label for="">Observaciones</label><br>
+                                                    <p id="documentosObservacionesLabel"></p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                    <div class="pull-right" style="margin-top: 45px;">
+                                        <button id="btnDocumentosGuardar" onclick="salvarDocumentos();"
+                                            class="btn btn-default btn-primary">
+                                            Confirmar y enviar
+                                        </button>
+                                        &nbsp;
+
+                                        <button id="btnDocumentosBorrar" onclick="borrarDocumentos();"
+                                            class="btn btn-default btn-danger">
+                                            Eliminar documento
+                                        </button>
+
+                                        <button id="btnDocumentosCrear" onclick="crearDocumentos();"
+                                            class="btn btn-default btn-primary">
+                                            Crear nuevo documento
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="pull-left" style="margin-top: 45px;">
+                                    <button id="btnDocumentosPasoPrev" onclick="DocumentosPasoPrev();"
+                                        class="btn btn-default btn-primary" style="display: none; margin-right: 10px;">
+                                        Anterior
+                                    </button>
+                                    <button id="btnDocumentosPasoNext" onclick="DocumentosPasoNext();"
+                                        class="btn btn-default btn-primary">
+                                        Siguiente
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="recursosDiv" class="col-md-8 contenedor-interno" style="display: none;">
+                    <div id="recursosList" style="margin-right: 20px;">
+                        <div class="pull-right" style="margin-bottom: 20px;">
+                            <button type="button" onclick="newRecursos();" class="btn btn-default btn-primary"
+                                style="font-size: small;">
+                                Cargar nuevo recurso
+                            </button>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <div class="table-responsive">
+                                    <table id="tableRecursos" class="table" style="width:100%">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Nombre</th>
+                                                <th>Tipo</th>
+                                                <th>Nivel</th>
+                                                <th>Fecha</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="recursosTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="recursosDetail" style="display: none;">
+                        <div class="pull-left" style="margin-bottom: 20px;">
+                            <a href="#" onclick="gotoRecursos();">
+                                <span class='glyphicon glyphicon-menu-left' aria-hidden='true'></span>
+                                &nbsp;Volver
+                            </a>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <div class="form-group">
+                                    <label for="recursosIdField">ID</label>
+                                    <input type="text" class="form-control" id="recursosIdField" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label for="recursosNombreField">Nombre del recurso</label>
+                                    <input type="text" class="form-control" id="recursosNombreField"
+                                        placeholder="Nombre">
+                                </div>
+                                <div class="form-group">
+                                    <label for="recursosDescripcionField">Descripci&oacute;n</label>
+                                    <textarea class="form-control" id="recursosDescripcionField"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="recursosTipoField">Tipo de recurso</label>
+                                    <br />
+                                    <select id="recursosTipoField" data-width="100%">
+                                        <option>Cartillas, guias y manuales</option>
+                                        <option>Normatividad</option>
+                                        <option>Datos para el OT</option>
+                                        <option>Aplicaciones y herramientas</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="recursosDateField">Fecha</label>
+                                    <input type="text" class="form-control" id="recursosDateField" placeholder="Fecha">
+                                </div>
+                                <div class="form-group">
+                                    <label for="recursosTematicaField">Tematica</label>
+                                    <br />
+                                    <select id="recursosTematicaField" data-width="100%"></select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="recursosTematica2Field">Tematica Secundaria</label>
+                                    <br />
+                                    <select id="recursosTematica2Field" data-width="100%"></select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="recursosEntidadField">Entidad</label>
+                                    <br />
+                                    <select id="recursosEntidadField" data-width="100%"></select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="recursosLicenciaField">Licencia</label>
+                                    <input type="text" class="form-control" id="recursosLicenciaField"
+                                        placeholder="CC BY 4.0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="recursosKeywordsField">Palabras Clave</label>
+                                    <input type="text" class="form-control" id="recursosKeywordsField"
+                                        placeholder="Palabras claves">
+                                </div>
+                                <div class="form-group">
+                                    <label for="recursosURLField">URL Principal</label>
+                                    <input type="text" class="form-control" id="recursosURLField" placeholder="http://">
+                                </div>
+                                <div class="form-group">
+                                    <label for="recursosURL2Field">URL Secundaria</label>
+                                    <input type="text" class="form-control" id="recursosURL2Field"
+                                        placeholder="http://">
+                                </div>
+                                <div class="form-group">
+                                    <label for="recursosMetadataURLField">URL Metadato</label>
+                                    <input type="text" class="form-control" id="recursosMetadataURLField"
+                                        placeholder="http://">
+                                </div>
+                                <div class="form-group">
+                                    <label for="recursosNivelField">Nivel</label>
+                                    <br />
+                                    <select id="recursosNivelField" data-width="100%">
+                                        <option>Nacional</option>
+                                        <option>Departamental</option>
+                                        <option>Municipal</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="recursosCodigoField">C&oacute;digo DANE</label>
+                                    <br />
+                                    <select id="recursosCodigoField" data-width="100%"></select>
+                                </div>
+
+                                <div class="pull-right">
+                                    <button id="btnRecursosGuardar" onclick="salvarRecursos();"
+                                        class="btn btn-default btn-primary">
+                                        Guardar
+                                    </button>
+                                    &nbsp;
+
+                                    <button id="btnRecursosBorrar" onclick="borrarRecursos();"
+                                        class="btn btn-default btn-danger">
+                                        Eliminar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="potDiv" class="col-md-8 contenedor-interno" style="display: none;">
+                    <div id="potList" style="margin-right: 20px;">
+                        <div class="pull-left" style="margin-bottom: 20px;">
+                            <button type="button" onclick="newPot();" class="btn btn-default btn-primary"
+                                style="font-size: small;">
+                                Cargar nuevo POT (XTF)
+                            </button>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <div class="table-responsive">
+                                    <table id="tablePot" class="table" style="width:100%">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Nombre</th>
+                                                <th>Unidad</th>
+                                                <th>Fecha</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="potTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="potDetail" style="display: none;">
+                        <div class="pull-left">
+                            <a href="#" onclick="gotoPot();">
+                                <span class='glyphicon glyphicon-menu-left' aria-hidden='true'></span>
+                                &nbsp;Volver
+                            </a>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <div class="form-group">
+                                    <label for="potIdField">ID</label>
+                                    <input type="text" class="form-control" id="potIdField" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label for="potNombreField">Nombre del documento</label>
+                                    <input type="text" class="form-control" id="potNombreField" placeholder="Nombre">
+                                </div>
+                                <div class="form-group">
+                                    <label for="potFileField">Archivo</label>
+                                    <div class="input-group">
+                                        <form id="potFileFieldData" method="post" enctype="multipart/form-data">
+                                            <input type="file" class="form-control" id="potFileField">
+                                        </form>
+                                        <span class="input-group-btn">
+                                            <button type="button" class="btn btn-default btn-primary"
+                                                onclick="validarPot();">Validar</button>
+                                        </span>
+                                    </div>
+                                    <div id="potFileValidateResult" style="padding: 10px;">
+                                    </div>
+                                </div>
+
+                                <div class="pull-right">
+                                    <button id="btnPotGuardar" onclick="salvarPot();"
+                                        class="btn btn-default btn-primary">
+                                        Guardar
+                                    </button>
+                                    &nbsp;
+
+                                    <button id="btnPotBorrar" onclick="borrarPot();" class="btn btn-default btn-danger">
+                                        Eliminar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="instruccionesDiv" class="col-md-4 contenedor-interno" style="display: none;">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="mobile-image" id="mobile-image">
+        <div class="wraper">
+            <div class="we-sorry">
+                <h2>Lo sentimos</h2>
+                <p>Esta página no es apta para dispositivos móviles</p>
+            </div>
+            <img src="images/dispositivo.svg" alt="Imagen movil">
+        </div>
+    </div>
+    <div id="modalLogin" class="modal fade" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="border: none; padding-bottom: 0px;">
+                    <a href="#" class="close" onclick="closeLogin(); return false;" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </a>
+                    <h4 class="modal-title">Iniciar sesi&oacute;n</h4>
+                </div>
+                <div class="modal-body" style="padding-top: 0px;">
+                    <div id="loginContainer">
+                        <div id="authContainer"></div>
+                    </div>
+                    <div id="logoutContainer" style="text-align: center;padding: 10px;">
+                        <img id="userPhoto2" src="images/icono_ingreso.png"
+                            style="width: 64px; height: 64px;border-radius: 50%;" alt="Imagen Usuario" />
+                        <h5>
+                            <span id="userName2"></span>
+                        </h5>
+                        <button id="logoutBtn" type="button" onclick="signOut();" class="btn btn-default btn-danger">
+                            Cerrar sesi&oacute;n
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<!-- ALERT BIENVENIDA -->
+    <div id="modalBienvenida" class="modal fade" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="border: none; padding-bottom: 0px;">
+                    <a href="#" class="close" onclick="$('#modalBienvenida').modal('hide'); return false;" aria-label="Cerrar"><span aria-hidden="true">&times;</span></a>
+                </div>
+                <div id="modalTutorialDiv" class="modal-body" style="text-align: center;padding-top: 0px;">
+                    <span style='color: #6445E1;font-size: 22px;'>BIENVENIDO AL APLICATIVO DE CARGUE DE LOS POT DEL PAÍS</span><br /><br />
+                    <p>
+                        Se ha dispuesto este aplicativo para el cargue de la documentación, normativa, técnica y cartográfica de los planes de ordenamiento territorial, aprobados por los municipios según lo establecido en la Ley 2079 del 2021 en el Articulo 37. La información dispuesta de los POTS y su correspondiente actualización es responsabilidad de los municipios.                    </p>
+                </div>
+                <div class="modal-footer" style="text-align: center;padding-top: 10px;line-height: 2.5em;">
+                    <a href="#" class="btn btn-primary" onclick="$('#modalBienvenida').modal('hide'); return false;" style="background-color: #6445E1;float: right;">Aceptar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="oot-footer-placeholder"></div>
+
+    <script type="text/javascript" src="https://www.gstatic.com/firebasejs/7.4.0/firebase-app.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/firebasejs/7.4.0/firebase-auth.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/firebasejs/ui/4.5.0/firebase-ui-auth__es.js"></script>
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.4/jquery-confirm.min.js"></script>
+    <script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.12/js/select2.full.min.js">
+    </script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.12/js/i18n/es.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.12/js/i18n/es.js"></script>
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+
+    <script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-colorpicker/2.5.3/js/bootstrap-colorpicker.min.js">
+    </script>
+    <script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.20/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.20/js/dataTables.bootstrap.min.js"></script>
+    <script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+    <script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.es.min.js">
+    </script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote.min.js">
+    </script>
+
+    <script type="text/javascript" src="../config.js"></script>
+    <script type="text/javascript" src="../oot.js"></script>
+    <script type="text/javascript" src="js/index.js"></script>
+    <script type="text/javascript" src="js/documentosNombreOptions.js"></script>
+    <script>
+        if (window.OOT && window.OOT.loadShell) {
+            window.OOT.loadShell();
+        }
+    </script>
+
+    <script>
+        $(document).ready(function () {
+            setTimeout(function () {
+                $('.calltocontext').hide()
+            }, 10000);
+
+            $('#headingSearch').on('click', function (e) {
+                $('#mainDiv').toggleClass("collapsed pressed");
+            });
+        });
+    </script>
+
+</body>
+
+</html>

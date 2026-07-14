@@ -1,0 +1,2889 @@
+:root {
+    --color-primary-dark: #5E381D;
+    --color-primary: #9a5a23;
+    --color-primary-light: #D67036;
+    --color-secondary-dark: #7a4826;
+    --color-secondary: #c9874e;
+    --color-secondary-light: #f1d4bc;
+    --color-accent-gold: #D67036;
+    --color-accent-soft: #f7e5d6;
+    --color-accent-cream: #fffaf0;
+    --color-background: #fffaf0;
+    --color-surface: #ffffff;
+    --color-surface-soft: #fff4e8;
+    --color-text-primary: #3b2416;
+    --color-text-secondary: #6f4c33;
+    --color-text-soft: #9c745a;
+    --color-border: #d8b99d;
+    --color-border-soft: #ead7c6;
+    --color-hover: #f1d4bc;
+    --color-active: #D67036;
+    --color-disabled: #dfc9b7;
+    --shadow-soft: 0 4px 12px rgba(94, 56, 29, 0.12);
+    --shadow-medium: 0 6px 18px rgba(94, 56, 29, 0.18);
+    --gradient-primary: linear-gradient(to right, #5E381D, #D67036);
+    --gradient-soft: linear-gradient(to right, #9a5a23, #f1d4bc);
+}
+
+html,
+body {
+    margin: 0;
+    /* padding: 0; */
+    height: 100%;
+    background: #FFFAF0;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+}
+
+#navbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background-color: rgba(255, 255, 255, 0.95);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    z-index: 9999;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
+}
+
+#navbar button {
+    padding: 10px 25px;
+    border: none;
+    border-radius: 5px;
+    background-color: var(--color-primary-dark);
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0.7;
+}
+
+#navbar button:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+#navbar button.active {
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(0, 121, 193, 0.8);
+    border: 2px solid white;
+}
+
+.carousel-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.carousel-btn {
+    background-color: #ddd;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.carousel-btn:hover {
+    background-color: #ccc;
+}
+
+#layerTitle {
+    font-weight: bold;
+    text-align: center;
+    flex-grow: 1;
+}
+
+/* Ajustamos el contenedor principal para que no quede debajo del navbar si se desea, 
+           pero como pidieron "encima de todo" lo dejamos overlay o podemos añadir padding-top.
+           Para asegurar que el mapa se vea bien, podemos restar la altura del navbar al container 
+           o dejarlo overlay. Dejémoslo con un padding-top para que no tape nada.
+        */
+#container {
+    display: flex;
+    min-height: 0;
+    height: calc(100vh - 140px);
+    margin-top: 29px;
+    background: var(--color-accent-soft);
+}
+
+
+#mapDiv {
+    width: 70%;
+    position: relative;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+/* Estilos para la leyenda del mapa */
+.map-legend {
+    position: absolute;
+    bottom: 40px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    min-width: 200px;
+    max-width: 300px;
+    max-height: 400px;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.legend-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background-color: #004A69;
+    color: white;
+    border-radius: 8px 8px 0 0;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.legend-toggle {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    line-height: 20px;
+    text-align: center;
+    border-radius: 3px;
+    transition: background-color 0.2s;
+}
+
+.legend-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.legend-content {
+    padding: 10px;
+    max-height: 350px;
+    overflow-y: auto;
+    font-size: 12px;
+    background: #FFFAF0;
+}
+
+.legend-content.collapsed {
+    display: none;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
+    gap: 8px;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+}
+
+.legend-label {
+    flex: 1;
+    line-height: 1.3;
+}
+
+#chartDiv {
+    width: 30%;
+    min-width: 0;
+    padding: 12px 14px 18px;
+    background: #FFFAF0;
+    border-left: 1px solid #d6d0c7;
+    box-sizing: border-box;
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-top: 0;
+}
+
+.chart-card {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    background: #fffaf0;
+    border: 1px solid #d9d3c8;
+    border-radius: 14px;
+    padding: 16px 14px 18px;
+}
+
+#chart {
+    width: 100% !important;
+    height: auto;
+    min-height: 100px;
+    max-height: none;
+    display: block;
+}
+
+#summaryDiv {
+    margin-top: 14px;
+
+    flex: 1;
+    min-height: 260px;
+
+    max-height: none;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    padding: 10px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+
+    box-sizing: border-box;
+}
+
+.btn-ver-todo {
+    margin-bottom: 10px;
+    width: 100%;
+    height: 42px;
+    border: 1px solid #8a8a8a;
+    background: #f5f5f5;
+    color: #222;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.chart-card-wrap {
+    position: relative;
+    margin-top: 0;
+    padding-top: 46px;
+    min-width: 0;
+}
+
+/* cuando sea bubble, le damos más alto */
+.chart-card.chart-bubble #chart {
+    height: 340px !important;
+    max-height: 340px;
+}
+
+/* contenedores de geoformas */
+#geoformasCharts canvas {
+    width: 100% !important;
+    display: block;
+}
+
+#geoPieChart {
+    height: 260px !important;
+    max-height: 260px;
+}
+
+#geoDonutChart {
+    height: 260px !important;
+    max-height: 260px;
+}
+
+.subtabs-shell {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.subtabs-shell::-webkit-scrollbar {
+    height: 8px;
+}
+
+.subtabs-shell::-webkit-scrollbar-track {
+    background: #d8d8d8;
+    border-radius: 10px;
+}
+
+.subtabs-shell::-webkit-scrollbar-thumb {
+    background: var(--color-primary);
+    border-radius: 10px;
+}
+
+.subtabs-shell::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary-dark);
+}
+
+.subtabs-controls {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    margin: 0;
+    flex-wrap: nowrap;
+    min-width: max-content;
+    padding-bottom: 0;
+    border-bottom: 1px solid #d9d3c8;
+}
+
+/* .chart-card {
+    background: #FFFAF0;
+    border: 1px solid #d6d0c7;
+    padding: 18px 16px 22px 16px;
+    box-sizing: border-box;
+    min-height: 460px;
+    width: 100%;
+    min-width: 0;
+} */
+.subtab-btn {
+    flex: 0 0 auto;
+    min-width: 128px;
+    height: 30px;
+    padding: 0 10px;
+
+    border: none;
+    background: var(--color-secondary);
+    color: #fff;
+
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1;
+    font-family: 'Outfit', sans-serif;
+
+    border-radius: 0;
+    cursor: pointer;
+    box-sizing: border-box;
+    white-space: nowrap;
+    box-shadow: none;
+}
+
+.subtab-btn:hover {
+    filter: brightness(0.98);
+}
+
+.subtab-btn.active {
+    background: var(--color-primary);
+    color: #fff;
+}
+
+canvas {
+    width: 100% !important;
+}
+
+.select-municipio {
+    display: flex;
+    gap: 5px;
+}
+
+/* Minimap limpio */
+.overview-map {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 180px;
+    height: 110px;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    overflow: hidden;
+    z-index: 50;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+#overviewMap {
+    width: 100%;
+    height: 100%;
+}
+
+/* Ocultar UI interna */
+#overviewDiv .esri-ui {
+    display: none !important;
+}
+
+/* .map-tools{
+  position:absolute;
+  left: 12px;
+  top: 120px;
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+  z-index: 60;.tool-btn{
+} */
+.map-tools {
+    position: absolute;
+    bottom: 90px;
+    /* distancia desde abajo */
+    left: 14px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    z-index: 40;
+}
+
+/* .tool-btn{
+  width:48px;
+  height:48px;
+  border-radius:14px;
+  border:none;
+  cursor:pointer;
+  background:var(--color-primary-dark);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  box-shadow:0 2px 8px rgba(0,0,0,0.25);
+  overflow:hidden;
+}
+
+.tool-btn img{
+  width:26px;
+  height:26px;
+  object-fit:contain;
+  display:block;
+  pointer-events:none;
+} */
+.tool-btn {
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background-color: #004A69;
+    border: none;
+    border-radius: 6px;
+
+    box-shadow: 0 2px 5px rgba(0, 0, 0, .25);
+    cursor: pointer;
+    padding: 0;
+    overflow: hidden;
+
+    color: #fff;
+    font-size: 22px;
+    line-height: 1;
+}
+
+.tool-btn img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    display: block;
+    pointer-events: none;
+}
+
+#btnZoomIn,
+#btnZoomOut {
+    width: 34px;
+    height: 34px;
+    font-size: 24px;
+}
+
+/* separación entre herramientas y zoom */
+#btnResetZoom {
+    margin-bottom: 10px;
+}
+
+#btnResetZoom img {
+    width: 22px;
+    height: 22px;
+}
+
+/* hover suave */
+.tool-btn:hover {
+    filter: brightness(1.05);
+}
+
+.tool-btn:active {
+    transform: translateY(1px);
+}
+
+/* Panel basemaps */
+.basemap-panel {
+    position: absolute;
+    left: 68px;
+    top: 120px;
+    width: 260px;
+    max-height: 340px;
+    overflow: auto;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    z-index: 60;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+    padding: 8px;
+}
+
+#tituloTerritorial {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #333;
+}
+
+/* slider bar de zoom */
+.esri-scale-bar {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 6px 10px;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* #zoomSliderContainer{
+    position:absolute;
+    bottom:80px;
+    left:15px;
+    z-index:50;
+    background:white;
+    padding:8px 10px;
+    border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.3);
+} */
+
+/* #zoomSlider{
+    width:100px;
+} */
+
+#summaryDiv {
+    min-height: 320px;
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 8px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+}
+
+/* Scrollbar resumen */
+#summaryDiv::-webkit-scrollbar {
+    width: 8px;
+}
+
+#summaryDiv::-webkit-scrollbar-track {
+    background: #e5e5e5;
+    border-radius: 10px;
+}
+
+#summaryDiv::-webkit-scrollbar-thumb {
+    background: var(--color-primary-dark);
+    /* color del scroll */
+    border-radius: 10px;
+}
+
+#summaryDiv::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary-dark);
+}
+
+.panel-topbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.btn-pdf {
+    background: #007ac2;
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .25);
+}
+
+.btn-pdf:hover {
+    filter: brightness(1.08);
+}
+
+.legend-item {
+    cursor: pointer;
+    user-select: none;
+}
+
+.legend-item.off {
+    opacity: .35;
+}
+
+.legend-item.off .legend-label {
+    text-decoration: line-through;
+}
+
+/* boton minimizar map peq */
+.overview-map {
+    position: absolute;
+}
+
+.overview-mini-toggle {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    z-index: 20;
+
+    width: 15px;
+    height: 15px;
+
+    border: none;
+    border-radius: 3px;
+
+    background: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+
+    font-size: 12px;
+    line-height: 15px;
+    padding: 0;
+
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.overview-map.minimized {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
+    overflow: visible !important;
+
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+.overview-map.minimized #overviewMap {
+    display: none !important;
+}
+
+.overview-map.minimized .overview-mini-toggle {
+    top: 0 !important;
+    right: 0 !important;
+}
+
+/* Dise;o pagina */
+
+/* =========================
+   HEADER GOV
+========================= */
+.barra_gov {
+    width: 100%;
+    background: #3366cc;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    height: 48px;
+    box-sizing: border-box;
+}
+
+.logo-gov {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.logo-gov img {
+    max-height: 28px;
+    width: auto;
+    display: block;
+}
+
+/* =========================
+   HEADER IGAC
+========================= */
+.main-header-nav {
+    width: 100%;
+    position: relative;
+}
+
+.navbarigac {
+    width: 100%;
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0;
+    /* quitar padding izquierdo */
+    box-sizing: border-box;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.logos {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    /* elimina separación */
+    margin-left: 0;
+    padding-left: 0;
+}
+
+.navbar-brand-igac {
+    background: white;
+    padding: 10.5px 10px;
+    display: flex;
+    align-items: center;
+    margin-left: 0;
+}
+
+.navbar-brand-igac img {
+    height: 42px;
+    width: auto;
+    display: block;
+}
+
+.titulo-app {
+    order: 2;
+    padding-left: 6px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    white-space: nowrap;
+}
+
+/* ICONO NUEVO */
+.icono-territorial {
+    height: 42px;
+    margin-left: 8px;
+    /* separa del logo */
+    margin-right: 5px;
+    /* separa del texto */
+}
+
+#link-list {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+#link-list li {
+    display: flex;
+    align-items: center;
+}
+
+#link-list a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#userPhoto {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: white;
+    padding: 2px;
+}
+
+/* Botón hamburguesa */
+.nav-bar-toggle-igac {
+    display: none;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+}
+
+.nav-bar-toggle-igac .icon-bar {
+    width: 24px;
+    height: 3px;
+    background: white;
+    margin: 4px 0;
+    border-radius: 2px;
+}
+
+/* Barra vacía adicional si la usas */
+.navbarnavigac {
+    width: 100%;
+    min-height: 0;
+}
+
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 768px) {
+    .navbarigac {
+        height: 55px;
+        min-height: 55px;
+        max-height: 55px;
+        flex-direction: row;
+        align-items: center;
+        padding: 0;
+    }
+
+    .logos {
+        width: auto;
+        min-width: 0;
+        flex-wrap: nowrap;
+    }
+
+    .titulo-app {
+        padding-left: 4px;
+        white-space: nowrap;
+        font-size: 0.86rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #link-list {
+        width: auto;
+        justify-content: flex-start;
+        flex-wrap: nowrap;
+        gap: 8px;
+    }
+
+    .nav-bar-toggle-igac {
+        display: none;
+    }
+}
+
+/* =========================
+   AJUSTE DE NAVBAR INTERNO
+   (se mantiene oculto para reutilizar la lógica JS)
+========================= */
+#navbar {
+    display: none !important;
+    position: relative;
+    z-index: 100;
+}
+
+/* =========================
+   HEADER / LINKS
+========================= */
+#link-list {
+    display: flex;
+    align-items: center;
+}
+
+
+
+/* =========================
+   CONTENEDOR DE MODULOS
+========================= */
+.modulos-scroll {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: #FFFAF0;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+
+    /* más espacio para dropdowns largos */
+    padding-bottom: 340px;
+    margin-bottom: -340px;
+}
+
+.modulos-container {
+    width: max-content;
+    min-width: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0 9px 12px 9px;
+    box-sizing: border-box;
+    position: relative;
+    background: #FFFAF0;
+    flex-wrap: nowrap;
+}
+
+/* =========================
+   TARJETAS GENERALES
+========================= */
+.modulo-card,
+.modulo-card-trigger {
+    width: 125px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: 0 0 18px 18px;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1.05;
+    cursor: pointer;
+    box-sizing: border-box;
+    flex: 0 0 120px;
+    text-decoration: none;
+    border: none;
+    overflow: hidden;
+}
+
+.modulo-card img,
+.modulo-card-trigger img {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+
+
+/* =========================
+   DROPDOWN BIOFISICO
+========================= */
+.modulo-dropdown {
+    position: relative;
+    width: 118px;
+    flex: 0 0 118px;
+    z-index: 2000;
+}
+
+.modulo-card span,
+.modulo-card a,
+.modulo-card-trigger span,
+.modulo-card-trigger a {
+    color: white;
+    text-decoration: none;
+    display: block;
+    text-transform: uppercase;
+    word-break: break-word;
+}
+
+.modulo-card-trigger span {
+    flex: 1;
+}
+
+.modulo-card-trigger span {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 7.4px;
+    letter-spacing: 0.5px;
+}
+
+/* =========================
+   PANEL DESPLEGABLE
+========================= */
+.dropdown-menu-custom {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    width: 220px;
+    background: #FFFAF0;
+    border-radius: 0 0 18px 18px;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
+    padding: 14px 0 10px 0;
+    box-sizing: border-box;
+    z-index: 12000;
+    display: none;
+    overflow: hidden;
+}
+
+.modulo-dropdown.open>.dropdown-menu-custom {
+    display: block !important;
+}
+
+/* =========================
+   ITEMS DROPDOWN
+========================= */
+.dropdown-item {
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 12px 20px;
+    font-size: 15px;
+    line-height: 1.2;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    font-weight: 500;
+    font-family: "Outfit", sans-serif;
+    box-sizing: border-box;
+}
+
+.dropdown-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.dropdown-item.active {
+    font-weight: 700;
+}
+
+/* =========================
+   DEGRADADOS MODULOS
+========================= */
+
+
+.limites .modulo-card-trigger {
+    background: linear-gradient(to right, #5E381D, #D67036);
+}
+
+.ordenamiento .modulo-card-trigger {
+    background: linear-gradient(to right, #3D2779, #7A4897);
+}
+
+.legal .modulo-card-trigger {
+    background: linear-gradient(to right, #782800, #D1322A);
+}
+
+.biofisico .modulo-card-trigger {
+    background: linear-gradient(to right, #005439, #74AAAA);
+}
+
+.ocupacion .modulo-card-trigger {
+    background: linear-gradient(to right, #1C2766, #0992E6);
+}
+
+.socioeconomico .modulo-card-trigger {
+    background: linear-gradient(to right, #7A430C, #FBB03B);
+}
+
+.limites .dropdown-item {
+    color: #9a5a23;
+}
+
+.limites .dropdown-item.active {
+    text-decoration: underline;
+    text-decoration-color: #9a5a23;
+    text-underline-offset: 10px;
+    text-decoration-thickness: 2px;
+}
+
+.ordenamiento .dropdown-item {
+    color: #6b4693;
+}
+
+.ordenamiento .dropdown-item.active {
+    text-decoration: underline;
+    text-decoration-color: #6b4693;
+    text-underline-offset: 10px;
+    text-decoration-thickness: 2px;
+}
+
+.legal .dropdown-item {
+    color: #b13a2f;
+}
+
+.legal .dropdown-item.active {
+    text-decoration: underline;
+    text-decoration-color: #b13a2f;
+    text-underline-offset: 10px;
+    text-decoration-thickness: 2px;
+}
+
+.biofisico .dropdown-item {
+    color: var(--color-primary);
+}
+
+.biofisico .dropdown-item.active {
+    /* text-decoration: underline; */
+    text-decoration-color: var(--color-primary);
+    text-underline-offset: 10px;
+    text-decoration-thickness: 2px;
+}
+
+.ocupacion .dropdown-item {
+    color: #1e78c8;
+}
+
+.ocupacion .dropdown-item.active {
+    text-decoration: underline;
+    text-decoration-color: #1e78c8;
+    text-underline-offset: 10px;
+    text-decoration-thickness: 2px;
+}
+
+.socioeconomico .dropdown-item {
+    color: #a66a11;
+}
+
+.socioeconomico .dropdown-item.active {
+    text-decoration: underline;
+    text-decoration-color: #a66a11;
+    text-underline-offset: 10px;
+    text-decoration-thickness: 2px;
+}
+
+.modulo-card-trigger {
+    position: relative;
+    z-index: 2;
+}
+
+.modulo-dropdown.open .modulo-card-trigger {
+    border-radius: 0 0 18px 18px;
+}
+
+.modulo-dropdown.open .dropdown-menu-custom {
+    display: block;
+}
+
+/* =========================
+   EFECTO HOVER TARJETAS
+========================= */
+.modulo-card:hover,
+.modulo-card-trigger:hover {
+    filter: brightness(1.03);
+}
+
+/* =========================
+   RESPONSIVE GENERAL HEADER
+========================= */
+@media (max-width: 768px) {
+
+    .modulos-container {
+        gap: 10px;
+        padding: 8px 10px;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+    }
+
+    .modulo-card,
+    .modulo-dropdown,
+    .modulo-card-trigger {
+        width: 140px;
+        flex: 0 0 140px;
+        height: 56px;
+        font-size: 9px;
+    }
+
+    /* .modulo-card img,
+    .modulo-card-trigger img {
+        width: 26px;
+        height: 26px;
+    } */
+
+    .dropdown-menu-custom {
+        width: 200px;
+        top: calc(100% - 4px);
+    }
+
+}
+
+/* =========================
+   RESPONSIVE MODULOS
+========================= */
+@media (max-width: 768px) {
+    .modulos-container {
+        gap: 8px;
+        padding: 6px 10px 8px 10px;
+    }
+
+    .modulo-card,
+    .modulo-dropdown,
+    .modulo-card-trigger {
+        width: 200px;
+        flex: 0 0 200px;
+    }
+
+    .dropdown-menu-custom {
+        width: 200px;
+    }
+
+    .modulo-card,
+    .modulo-card-trigger {
+        height: 54px;
+        padding: 8px 10px;
+        font-size: 10px;
+    }
+
+    /* .modulo-card img,
+    .modulo-card-trigger img {
+        width: 28px;
+        height: 28px;
+    } */
+
+    .dropdown-menu-custom {
+        top: calc(100% - 2px);
+    }
+
+    .dropdown-item {
+        font-size: 14px;
+        padding: 10px 14px;
+    }
+}
+
+@media (max-width: 768px) {
+
+    .territorial-toolbar {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 10px;
+        justify-content: flex-start;
+    }
+
+    .territorial-toolbar-right {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .toolbar-select {
+        width: 170px;
+        min-width: 170px;
+    }
+
+    #departamentos.toolbar-select {
+        width: 184px;
+        min-width: 184px;
+    }
+
+    #municipios.toolbar-select {
+        width: 158px;
+        min-width: 158px;
+    }
+
+}
+
+@media (max-width: 768px) {
+
+    .dropdown-menu-custom {
+        left: 0;
+        min-width: 200px;
+        max-width: 220px;
+    }
+
+}
+
+/* Dropdowns de departamentos y municipios */
+/* =========================
+   TOOLBAR ENTIDAD TERRITORIAL
+========================= */
+.territorial-toolbar {
+    margin-left: auto;
+    margin-right: 40px;
+    margin-top: 4px;
+    /* mueve hacia abajo */
+}
+
+.territorial-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    flex-wrap: wrap;
+}
+
+.toolbar-label {
+    font-family: "Outfit", sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: #004A69;
+    white-space: nowrap;
+}
+
+.toolbar-select {
+    width: 178px;
+    min-width: 178px;
+    height: 30px;
+    border: 2px solid #004A69;
+    border-radius: 4px;
+    background: #fffaf0;
+    color: #004A69;
+    font-family: "Outfit", sans-serif;
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 1.2;
+    padding: 0 8px 0 8px;
+    box-sizing: border-box;
+}
+
+#departamentos.toolbar-select {
+    width: 184px;
+    min-width: 184px;
+}
+
+#municipios.toolbar-select {
+    width: 158px;
+    min-width: 158px;
+}
+
+.toolbar-select:focus {
+    outline: none;
+}
+
+.toolbar-refresh {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.toolbar-refresh::after,
+.btn-reiniciar-consulta::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 8px);
+    z-index: 1200;
+    min-width: max-content;
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: #fffaf0;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.24);
+    font-family: "Outfit", sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-3px);
+    transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s ease;
+    pointer-events: none;
+}
+
+.toolbar-refresh::after {
+    right: 0;
+    background: #004A69;
+}
+
+.btn-reiniciar-consulta::after {
+    left: 50%;
+    background: var(--color-primary-dark);
+    transform: translateX(-50%) translateY(-3px);
+}
+
+.toolbar-refresh::before,
+.btn-reiniciar-consulta::before {
+    content: "";
+    position: absolute;
+    top: calc(100% + 3px);
+    z-index: 1201;
+    border-right: 5px solid transparent;
+    border-left: 5px solid transparent;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-3px);
+    transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s ease;
+    pointer-events: none;
+}
+
+.toolbar-refresh::before {
+    right: 9px;
+    border-bottom: 5px solid #004A69;
+}
+
+.btn-reiniciar-consulta::before {
+    left: 50%;
+    border-bottom: 5px solid var(--color-primary-dark);
+    transform: translateX(-50%) translateY(-3px);
+}
+
+.toolbar-refresh:hover::after,
+.toolbar-refresh:hover::before,
+.toolbar-refresh:focus-visible::after,
+.toolbar-refresh:focus-visible::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.btn-reiniciar-consulta:hover::after,
+.btn-reiniciar-consulta:focus-visible::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.btn-reiniciar-consulta:hover::before,
+.btn-reiniciar-consulta:focus-visible::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.toolbar-refresh:hover,
+.toolbar-refresh:focus-visible {
+    outline: none;
+    filter: brightness(0.94);
+}
+
+.toolbar-refresh img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    display: block;
+}
+
+/* =========================
+   DESCARGABLES
+========================= */
+.descargables-dropdown {
+    position: relative;
+    margin-left: 6px;
+    flex: 0 0 auto;
+}
+
+.ordenamiento-side-actions .descargables-dropdown {
+    margin-left: 0;
+}
+
+.btn-descargables {
+    width: 165px;
+    min-width: 165px;
+    height: 36px;
+    border: none;
+    border-radius: 0 0 12px 12px;
+    background: var(--color-primary-dark);
+    color: #ffffff;
+    font-family: "Outfit", sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 12px;
+    cursor: pointer;
+    box-shadow: none;
+    box-sizing: border-box;
+}
+
+.btn-descargables-texto {
+    color: #ffffff;
+    font-family: "Outfit", sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.btn-descargables-icon {
+    width: 25px;
+    height: 25px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.descargables-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 165px;
+    background: var(--color-surface);
+    border-radius: 0 0 12px 12px;
+    box-shadow: var(--shadow-medium);
+    padding: 8px 0;
+    display: none;
+    z-index: 9999;
+}
+
+.descargables-dropdown.open .descargables-menu {
+    display: block;
+}
+
+.descargables-item {
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 9px 12px;
+    cursor: pointer;
+    color: #333333;
+    font-family: "Outfit", sans-serif;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 1.2;
+    box-sizing: border-box;
+}
+
+.descargables-item+.descargables-item {
+    border-top: 1px solid rgba(94, 56, 29, 0.22);
+}
+
+.ordenamiento-side-actions {
+    position: relative;
+    margin-left: 6px;
+    flex: 0 0 auto;
+    width: 165px;
+    height: 36px;
+    align-self: flex-start;
+}
+
+.btn-reiniciar-consulta {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-primary);
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    z-index: 2001;
+    box-sizing: border-box;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.18);
+    transform: translateX(-50%);
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-reiniciar-consulta img {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    display: block;
+    mix-blend-mode: screen;
+}
+
+.btn-reiniciar-consulta:hover {
+    background: var(--color-primary-dark);
+    transform: translateX(-50%) scale(1.04);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22);
+}
+
+.btn-reiniciar-consulta:focus-visible {
+    outline: 2px solid var(--color-primary-light);
+    outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+
+    .btn-descargables {
+        width: 140px;
+        min-width: 140px;
+        height: 44px;
+        font-size: 13px;
+    }
+
+    .descargables-menu {
+        width: 140px;
+    }
+
+}
+
+/* =========================
+   FOOTER IGAC
+========================= */
+
+.footer {
+    width: 100%;
+    background: #f4f4f4;
+    padding: 40px 0 0 0;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 0 20px;
+}
+
+.footer-container {
+    width: 100%;
+}
+
+.rowf {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+}
+
+.col-md-6f {
+    flex: 1;
+    min-width: 320px;
+}
+
+.footer-titulo {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.sub-titulo-sede-gov-co {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.footer h3 {
+    font-size: 14px;
+    margin-top: 16px;
+    margin-bottom: 4px;
+}
+
+.footer p {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.footer a {
+    color: #1a5fb4;
+    text-decoration: none;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+
+/* Redes sociales */
+
+.redes-sociales p {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.icono-redes {
+    width: 24px;
+}
+
+/* Links inferiores */
+
+.footer-enlaces {
+    margin-top: 20px;
+}
+
+.btn-low {
+    margin-right: 10px;
+    font-size: 13px;
+    color: #1a5fb4;
+    cursor: pointer;
+}
+
+/* =========================
+   FRANJA AZUL GOV.CO
+========================= */
+
+.gov-co-footer-pie {
+    width: 100%;
+    background: #3366cc;
+    margin-top: 40px;
+}
+
+.gov-co-footer-auto {
+    max-width: 1200px;
+    margin: auto;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.gov-co-logo-pie-blanco {
+    height: 36px;
+}
+
+.gov-co-logo-pie-mesa {
+    height: 36px;
+}
+
+.text-white {
+    color: white;
+}
+
+.text-align-right {
+    margin-left: auto;
+}
+
+.footer {
+    width: 100%;
+    background: #c7d0db;
+    padding: 60px 0 0 0;
+    box-sizing: border-box;
+}
+
+.footer-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: 0 20px;
+    /* margen lateral solo para la card */
+}
+
+.footer-card {
+    width: 1200px;
+    max-width: 95%;
+    background: #f3f3f3;
+    border-radius: 8px;
+    padding: 40px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+/* BARRA AZUL */
+.gov-co-footer-pie {
+    width: 100%;
+    background: #3366cc;
+    margin-top: 48px;
+}
+
+.gov-co-footer-auto {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 30px;
+    box-sizing: border-box;
+}
+
+/* importante: que containerf no dañe el ancho */
+.containerf {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+.gov-co-logo-pie-blanco,
+.gov-co-logo-pie-mesa {
+    height: 42px;
+    width: auto;
+}
+
+.text-white.text-align-right {
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 16px;
+    white-space: nowrap;
+}
+
+#mapDiv {
+    position: relative;
+}
+
+.map-view-badge {
+    position: absolute;
+    top: -30.5px;
+    /* pegado al borde superior del mapa */
+    right: -2px;
+    /* ajústalo según dónde lo quieras respecto al overview */
+    z-index: 40;
+    pointer-events: none;
+    padding: 1px 2px;
+    /* antes seguro estaba más grande */
+    height: auto;
+    /* evita alturas fijas */
+    display: flex;
+    align-items: center;
+}
+
+.map-view-badge span {
+    display: inline-block;
+    min-width: 110px;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    background: var(--color-primary);
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 0 16px;
+    border-radius: 10px 10px 0 0;
+    /* redondeado arriba, recto abajo */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+
+
+
+#chartTitle {
+    text-align: center;
+    margin: 0 auto 14px auto;
+    padding: 1px 5px;
+    /* background: var(--color-primary); */
+    color: var(--color-primary);
+    border-radius: 18px;
+    font-size: 0.98rem;
+    font-weight: 600;
+    width: max-content;
+    max-width: 100%;
+    line-height: 1.2;
+    /* box-sizing: border-box;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, .15); */
+}
+
+/* estilos zoom arcgis */
+/* Contenedor del zoom */
+.esri-zoom {
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+/* Botones + y - */
+.esri-zoom .esri-widget--button {
+    background: var(--color-primary-dark);
+    /* color */
+    color: var(--color-primary-dark);
+    border-radius: 10px;
+}
+
+/* hover */
+.esri-zoom .esri-widget--button:hover {
+    background: var(--color-primary-dark);
+}
+
+/* CONTENEDOR FLOTANTE */
+#zoomSliderContainer {
+    position: absolute;
+    display: none;
+    top: 20px;
+    left: 30px;
+    z-index: 40;
+
+    background: transparent;
+    /* quitamos el fondo */
+    box-shadow: none;
+    /* quitamos sombra */
+    padding: 0;
+    /* quitamos padding */
+    border-radius: 0;
+
+    width: 250px;
+}
+
+/* cuando esté en modo tiempo */
+#zoomSliderContainer.time-mode {
+    display: block;
+}
+
+/* label tipo pastilla */
+.map-slider-label {
+    display: inline-block;
+    margin: 0 0 12px 0;
+    padding: 10px 22px;
+    background: var(--color-primary);
+    color: #fff;
+    font-weight: 600;
+    font-size: 10px;
+    line-height: 1;
+    border-radius: 999px;
+}
+
+
+/* slider base */
+#zoomSlider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 12px;
+    background: transparent;
+}
+
+/* pista */
+#zoomSlider::-webkit-slider-runnable-track {
+    height: 12px;
+    background: #e6e2d9;
+    border-radius: 999px;
+    border: 2px solid #c8c1b5;
+}
+
+/* thumb */
+#zoomSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: var(--color-primary-dark);
+    border: none;
+    margin-top: -5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .2);
+}
+
+/* pista firefox */
+#zoomSlider::-moz-range-track {
+    height: 12px;
+    background: #f0eee8;
+    border: 2px solid #cfc8bb;
+    border-radius: 999px;
+}
+
+/* thumb firefox */
+#zoomSlider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: var(--color-primary);
+    border: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .18);
+}
+
+/* ocultarlo cuando no aplique */
+#zoomSliderContainer.hidden {
+    display: none !important;
+}
+
+.map-source {
+    position: relative;
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 4px 12px;
+    box-sizing: border-box;
+
+    background: #efefef;
+    border-top: 1px solid #ddd;
+
+    font-size: 12px;
+    line-height: 1.2;
+    color: #666;
+    z-index: 5;
+}
+
+/* =========================
+   RESPONSIVE MAPA + CARD GRAFICAS
+   sin afectar dropdowns
+========================= */
+
+@media (max-width: 1100px) {
+    #container {
+        flex-direction: column;
+        min-height: auto;
+        height: auto;
+    }
+
+    #mapDiv,
+    #chartDiv {
+        width: 100%;
+    }
+
+    #mapDiv {
+        min-height: 420px;
+    }
+
+    #chartDiv {
+        min-width: 0;
+        border-left: none;
+        border-top: 1px solid #ccc;
+        padding: 12px;
+        overflow: visible;
+    }
+
+    .chart-card-wrap {
+        margin-top: 0;
+        padding-top: 52px;
+    }
+
+    .chart-card {
+        min-height: unset;
+    }
+
+    #summaryDiv {
+        max-height: 260px;
+    }
+}
+
+@media (max-width: 768px) {
+    #container {
+        flex-direction: column;
+        height: auto;
+        margin-top: 20px;
+    }
+
+    #mapDiv,
+    #chartDiv {
+        width: 100%;
+    }
+
+    #mapDiv {
+        min-height: 360px;
+    }
+
+    #chartDiv {
+        min-width: 0;
+        padding: 10px;
+        border-left: none;
+        border-top: 1px solid #d6d0c7;
+        overflow: visible;
+    }
+
+    .chart-card-wrap {
+        margin-top: 0;
+        padding-top: 58px;
+    }
+
+    .subtabs-shell {
+        left: 0;
+        right: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 2px;
+    }
+
+    .subtabs-controls {
+        display: flex;
+        flex-wrap: nowrap;
+        min-width: max-content;
+        gap: 6px;
+        padding-bottom: 6px;
+    }
+
+    .subtab-btn {
+        min-width: 80px;
+        height: 30px;
+        padding: 0 14px;
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+    }
+
+    .chart-card {
+        min-height: unset;
+        padding: 16px 12px;
+    }
+
+    #chartTitle {
+        font-size: 13px;
+        padding: 6px 12px;
+        margin-bottom: 14px;
+    }
+
+    /* #chart {
+        max-height: 260px;
+        margin-bottom: 14px;
+    } */
+
+    #summaryDiv {
+        margin-top: 12px;
+        font-size: 13px !important;
+        max-height: 220px;
+    }
+}
+
+@media (max-width: 768px) {
+    #mapDiv {
+        min-height: 320px;
+    }
+
+    #chartDiv {
+        padding: 8px;
+    }
+
+    .chart-card-wrap {
+        padding-top: 62px;
+    }
+
+    .subtab-btn {
+        min-width: 108px;
+        height: 28px;
+        font-size: 9px;
+        padding: 0 8px;
+    }
+
+    .chart-card {
+        padding: 14px 10px;
+        border-radius: 8px;
+    }
+
+    #chartTitle {
+        font-size: 12px;
+        padding: 5px 10px;
+    }
+
+
+    #summaryDiv {
+        font-size: 12px !important;
+        padding: 8px !important;
+        max-height: 180px;
+    }
+
+    #chart {
+        min-height: 0;
+        max-height: none;
+    }
+}
+
+@media (max-width: 768px) {
+    #chartTitle {
+        font-size: 12px;
+        line-height: 1.2;
+        padding: 8px 12px;
+        margin-bottom: 10px;
+        max-width: 100%;
+        text-align: center;
+    }
+}
+
+/* =========================================
+   RESPONSIVE PROFESIONAL PANEL GRÁFICAS
+========================================= */
+
+#chart,
+#geoPieChart,
+#geoDonutChart,
+#geoformasCharts canvas,
+canvas {
+    max-width: 100% !important;
+    display: block;
+}
+
+#summaryDiv {
+    box-sizing: border-box;
+    max-height: 220px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 8px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+}
+
+@media (max-width:1100px) {
+    #container {
+        flex-direction: column;
+        min-height: auto;
+        height: auto;
+    }
+
+    #mapDiv,
+    #chartDiv {
+        width: 100%;
+    }
+
+    #mapDiv {
+        min-height: 420px;
+    }
+
+    #chartDiv {
+        min-width: 0;
+        border-left: none;
+        border-top: 1px solid #d6d0c7;
+        padding: 12px;
+    }
+
+    .chart-card-wrap {
+        padding-top: 44px;
+    }
+
+    .chart-card {
+        min-height: auto;
+        padding: 16px 12px 18px 12px;
+    }
+
+    .subtabs-controls {
+        gap: 8px;
+    }
+
+    .subtab-btn {
+        min-width: 112px;
+        height: 36px;
+        font-size: 12px;
+        padding: 0 10px;
+    }
+
+    #chart {
+        min-height: 0;
+        max-height: none;
+    }
+
+    .chart-card.chart-bubble #chart {
+        height: 300px !important;
+        max-height: 300px !important;
+    }
+
+    #geoPieChart,
+    #geoDonutChart {
+        height: 200px !important;
+        max-height: 200px !important;
+    }
+
+    #summaryDiv {
+        margin-top: 12px;
+        max-height: 180px;
+        font-size: 13px !important;
+        line-height: 1.35 !important;
+    }
+}
+
+@media (max-width:768px) {
+    #container {
+        margin-top: 20px;
+    }
+
+    #mapDiv {
+        min-height: 340px;
+    }
+
+    #chartDiv {
+        padding: 10px;
+    }
+
+    .chart-card-wrap {
+        padding-top: 40px;
+    }
+
+    .chart-card {
+        padding: 14px 10px 16px 10px;
+    }
+
+    .subtabs-shell {
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    .subtabs-controls {
+        gap: 6px;
+        min-width: max-content;
+    }
+
+    .subtab-btn {
+        min-width: 100px;
+        height: 34px;
+        font-size: 11px;
+        padding: 0 8px;
+    }
+
+    #chartTitle {
+        font-size: 13px;
+        padding: 8px 12px;
+        margin-bottom: 12px;
+    }
+
+    #chart {
+        min-height: 0;
+        max-height: none;
+    }
+
+    .chart-card.chart-bubble #chart {
+        height: 270px !important;
+        max-height: 270px !important;
+    }
+
+    #geoPieChart,
+    #geoDonutChart {
+        height: 180px !important;
+        max-height: 180px !important;
+    }
+
+    #summaryDiv {
+        max-height: 160px;
+        font-size: 12px !important;
+        padding: 8px !important;
+    }
+}
+
+@media (max-width:480px) {
+    #mapDiv {
+        min-height: 300px;
+    }
+
+    #chartDiv {
+        padding: 8px;
+    }
+
+    .chart-card-wrap {
+        padding-top: 36px;
+    }
+
+    .chart-card {
+        padding: 12px 8px 14px 8px;
+    }
+
+    .subtab-btn {
+        min-width: 92px;
+        height: 32px;
+        font-size: 10px;
+        padding: 0 6px;
+    }
+
+    #chartTitle {
+        font-size: 12px;
+        padding: 7px 10px;
+        margin-bottom: 10px;
+    }
+
+    #chart {
+        min-height: 0;
+        max-height: none;
+    }
+
+    .chart-card.chart-bubble #chart {
+        height: 240px !important;
+        max-height: 240px !important;
+    }
+
+    #geoPieChart,
+    #geoDonutChart {
+        height: 165px !important;
+        max-height: 165px !important;
+    }
+
+    #summaryDiv {
+        max-height: 145px;
+        font-size: 11px !important;
+        line-height: 1.3 !important;
+    }
+}
+
+/* =========================
+   GRÁFICAS DE BARRAS RESPONSIVE
+========================= */
+
+@media (max-width: 1100px) {
+    #chartDiv {
+        width: 100%;
+        min-width: 0;
+        border-left: none;
+        border-top: 1px solid #d6d0c7;
+        padding: 12px;
+    }
+
+    .chart-card-wrap {
+        padding-top: 44px;
+    }
+
+    .chart-card {
+        padding: 14px 12px 16px;
+        border-radius: 12px;
+    }
+
+    #chart {
+        min-height: 0;
+        max-height: none;
+    }
+}
+
+@media (max-width: 768px) {
+    #chartDiv {
+        padding: 10px;
+    }
+
+    .chart-card-wrap {
+        padding-top: 52px;
+    }
+
+    .chart-card {
+        padding: 12px 10px 14px;
+        border-radius: 10px;
+    }
+
+    #chartTitle {
+        width: 100%;
+        max-width: 100%;
+        font-size: 12px;
+        padding: 8px 10px;
+        border-radius: 12px;
+        line-height: 1.25;
+    }
+
+    #chart {
+        min-height: 0;
+        max-height: none;
+    }
+
+    #summaryDiv {
+        font-size: 12px !important;
+        max-height: 180px;
+    }
+}
+
+@media (max-width: 480px) {
+    #chartDiv {
+        padding: 8px;
+    }
+
+    .chart-card {
+        padding: 10px 8px 12px;
+    }
+
+    #chartTitle {
+        font-size: 11px;
+        padding: 7px 8px;
+    }
+
+    #chart {
+        min-height: 0;
+        max-height: none;
+    }
+}
+
+#loginBtn {
+    margin-right: 20px;
+}
+
+.tool-dropdown-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.basemap-panel {
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1000;
+
+    max-height: 40vh;
+    /* evita que salga del mapa */
+    width: 340px;
+    /* tamaño adecuado */
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    border-radius: 14px;
+}
+
+.chart-card {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+#chart {
+    display: block;
+    width: 100%;
+}
+
+/* Alineacion lateral: panel lateral al mismo nivel visual que el mapa.
+   El boton de rangos queda oculto y los subtabs inician al nivel del mapa. */
+#chartDiv {
+    position: relative;
+    padding-top: 0;
+}
+
+#chartDiv .subtabs-shell {
+    left: 0;
+    right: 0;
+    top: 0;
+    transform: none;
+}
+
+#chartDiv .btn-ver-todo {
+    display: none;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+#chartDiv .chart-card-wrap {
+    position: relative;
+    padding-top: 0;
+}
+
+@media (max-width: 1100px) {
+    #chartDiv {
+        padding-top: 0;
+    }
+
+    #chartDiv .subtabs-shell {
+        left: 0;
+        right: 0;
+    }
+
+    #chartDiv .btn-ver-todo {
+        margin-top: 0;
+    }
+
+    #chartDiv .chart-card-wrap {
+        position: relative;
+        padding-top: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    #chartDiv {
+        padding-top: 0;
+    }
+
+    #chartDiv .subtabs-shell {
+        left: 0;
+        right: 0;
+    }
+
+    #chartDiv .btn-ver-todo {
+        margin-top: 0;
+    }
+
+    #chartDiv .chart-card-wrap {
+        position: relative;
+        padding-top: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    #chartDiv .chart-card-wrap {
+        padding-top: 0;
+    }
+}
+
+@media (max-width: 900px) {
+    .chart-card {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    #chart {
+        min-width: 720px;
+    }
+}
+
+@media (max-width: 600px) {
+    #chart {
+        min-width: 760px;
+    }
+}
+
+.subtabs-shell {
+    transform: translateY(-20px);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin-bottom: 6px;
+    transition: all 0.2s ease;
+}
+
+.legend-item:hover {
+    transform: translateX(3px);
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    border-radius: 3px;
+}
+
+.legend-item.active {
+    opacity: 1;
+}
+
+.legend-item:not(.active) {
+    opacity: 0.4;
+}
+
+.zr-subtabs {
+    display: flex;
+    gap: 0;
+    margin: 0 0 16px 0;
+    width: 100%;
+}
+
+.zr-subtab-btn {
+    flex: 1;
+    border: none;
+    background: var(--color-secondary);
+    color: #ffffff;
+    font-family: 'Outfit', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    padding: 14px 18px;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+    border-radius: 0;
+}
+
+.zr-subtab-btn + .zr-subtab-btn {
+    margin-left: 10px;
+}
+
+.zr-subtab-btn.active {
+    background: var(--color-primary);
+    color: #ffffff;
+}
+
+.zr-subtab-btn:hover {
+    transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+    .zr-subtabs {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .zr-subtab-btn + .zr-subtab-btn {
+        margin-left: 0;
+    }
+
+    .zr-subtab-btn {
+        font-size: 14px;
+        padding: 12px 14px;
+    }
+}
+
+/* Equivalencia visual con Socioeconomico: apertura por hover/focus y activo de Limites. */
+.modulo-dropdown:hover > .dropdown-menu-custom,
+.modulo-dropdown:focus-within > .dropdown-menu-custom {
+    display: block !important;
+}
+
+#dropdownLimites .dropdown-item.active {
+    position: relative;
+    text-decoration: none !important;
+}
+
+#dropdownLimites .dropdown-item.active::after {
+    content: "";
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 0;
+    height: 2px;
+    background: currentColor;
+    pointer-events: none;
+}
+
+/* =========================
+   LÍNEA DE TIEMPO - LÍMITES MUNICIPALES
+========================= */
+.timeline-container {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.timeline-header {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.timeline-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin: 0 0 4px 0;
+}
+
+.timeline-subtitle {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0;
+}
+
+.timeline-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 20px 10px 10px 10px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.timeline-track {
+    position: relative;
+    min-width: max-content;
+    padding: 0 20px;
+}
+
+.timeline-line {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    height: 3px;
+    background: var(--color-primary-light);
+    border-radius: 2px;
+}
+
+.timeline-nodes {
+    display: flex;
+    justify-content: space-between;
+    gap: 0;
+    position: relative;
+    z-index: 1;
+    padding-top: 12px;
+}
+
+.timeline-node-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    min-width: 60px;
+}
+
+.timeline-node {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.timeline-node:hover {
+    background: var(--color-accent-soft);
+    transform: scale(1.1);
+}
+
+.timeline-node.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary-dark);
+}
+
+.timeline-node.active .timeline-node-label {
+    color: #fff;
+}
+
+.timeline-node-label {
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-primary-dark);
+    pointer-events: none;
+}
+
+.timeline-eventos-container {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+    padding: 4px;
+    background: #fff;
+    border: 1px solid var(--color-border-soft);
+    border-radius: 8px;
+    min-width: 160px;
+    max-width: 200px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.timeline-evento {
+    position: relative;
+    padding: 6px 8px;
+    background: var(--color-accent-soft);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    font-size: 11px;
+    font-family: 'Outfit', sans-serif;
+    color: var(--color-text-primary);
+}
+
+.timeline-evento:hover {
+    background: var(--color-hover);
+}
+
+.timeline-evento-label {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.timeline-popup {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    min-width: 200px;
+    max-width: 280px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    z-index: 100;
+    pointer-events: none;
+}
+
+.timeline-popup p {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--color-text-primary);
+}
+
+.timeline-popup-scroll p {
+    max-height: 90px;
+    overflow-y: auto;
+}
+
+.timeline-footer {
+    margin-top: 20px;
+    padding: 10px 14px;
+    background: #f9f5f0;
+    border-radius: 8px;
+    border: 1px solid var(--color-border-soft);
+}
+
+.timeline-fuente-label {
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin: 0 0 4px 0;
+}
+
+.timeline-fuentes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.timeline-fuente-tag {
+    display: inline-block;
+    background: var(--color-primary-light);
+    color: #fff;
+    font-size: 10px;
+    font-family: 'Outfit', sans-serif;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+/* Panel de Oficio en #summaryDiv */
+.oficio-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-primary-dark);
+    margin: 0 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border-soft);
+}
+
+.oficio-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.oficio-card {
+    background: #fff;
+    border: 1px solid var(--color-border-soft);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+}
+
+.oficio-row {
+    margin-bottom: 4px;
+    line-height: 1.4;
+    color: var(--color-text-primary);
+}
+
+.oficio-row:last-child {
+    margin-bottom: 0;
+}
+
+.oficio-row strong {
+    color: var(--color-text-secondary);
+    margin-right: 4px;
+}
+
+.oficio-desc {
+    color: var(--color-text-primary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}

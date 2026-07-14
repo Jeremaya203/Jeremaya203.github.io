@@ -1,0 +1,202 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Indicadores Territoriales — Colombia OT 2.0</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="./maestra.css">
+  <link rel="stylesheet" href="./navbar-footer.css">
+  <link rel="stylesheet" href="./oot-complementario.css">
+  <link rel="stylesheet" href="./oot-design-system.css">
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet"/>
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@3.2.0/dist/pmtiles.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <link rel="stylesheet" href="./indicadores.css">
+</head>
+<body>
+
+<div id="oot-navbar-placeholder"></div>
+
+<div id="mob-backdrop-ind" class="mob-backdrop-ind" style="display:none;" data-oot-click="_mobIndCerrar"></div>
+
+<div id="ind-module-wrap">
+<aside id="ind-aside" style="width:260px; flex-shrink:0; display:flex; flex-direction:column; overflow:hidden;">
+  <div style="padding:18px 16px 16px;background:linear-gradient(135deg,#0b2e4a 0%,#234570 55%,#0F6E56 100%);border-bottom:1px solid rgba(255,255,255,0.1);flex-shrink:0;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:-40%;right:-10%;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,0.04);pointer-events:none;"></div>
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;position:relative;z-index:1;">
+       <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+         <span class="material-symbols-outlined" style="font-size:20px;color:#fff">bar_chart</span>
+       </div>
+       <div>
+         <a class="oot-backlink" href="./index.html" style="display:inline-flex;align-items:center;gap:4px;color:rgba(255,255,255,0.55);font-size:11px;text-decoration:none;margin-bottom:4px;transition:color 0.15s;"><span class="material-symbols-outlined" style="font-size:13px;">arrow_back</span>Menú principal</a>
+         <div style="font-weight:800;font-size:13.5px;color:#fff;line-height:1.2;">Indicadores Territoriales</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-top:2px;">Colombia OT 2.0 &middot; IGAC 2026</div>
+      </div>
+    </div>
+    <div class="relative" style="position:relative;z-index:1;">
+      <span class="material-symbols-outlined" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.5);font-size:16px;">search</span>
+      <input id="buscador" type="text" placeholder="Buscar indicador..." style="width:100%;padding:8px 12px 8px 34px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:#fff;font-size:13px;" data-oot-input="filtrarIndicadores"/>
+    </div>
+  </div>
+
+  <!-- Selector de escala -->
+  <div style="padding:8px 12px;border-bottom:0.5px solid rgba(255,255,255,0.08);flex-shrink:0;">
+    <div style="display:flex;gap:3px;background:rgba(0,0,0,0.25);border-radius:8px;padding:3px;">
+      <button class="scale-btn active" data-scale="nacional" data-oot-click="cambiarEscala" data-oot-arg="nacional"
+        style="flex:1;padding:5px 4px;border:none;border-radius:6px;font-size:10.5px;font-weight:700;cursor:pointer;background:var(--oot-azul);color:#fff;transition:all 0.15s;">
+        Nacional
+      </button>
+      <button class="scale-btn" data-scale="departamental" data-oot-click="cambiarEscala" data-oot-arg="departamental"
+        style="flex:1;padding:5px 4px;border:none;border-radius:6px;font-size:10.5px;font-weight:700;cursor:pointer;background:transparent;color:var(--oot-tx2);transition:all 0.15s;">
+        Departamento
+      </button>
+      <button class="scale-btn" data-scale="municipal" data-oot-click="cambiarEscala" data-oot-arg="municipal"
+        style="flex:1;padding:5px 4px;border:none;border-radius:6px;font-size:10.5px;font-weight:700;cursor:pointer;background:transparent;color:var(--oot-tx2);transition:all 0.15s;">
+        Municipio
+      </button>
+    </div>
+  </div>
+
+  <div id="dept-filter-section" style="padding:9px 14px 10px;border-bottom:0.5px solid rgba(255,255,255,0.08);flex-shrink:0;background:rgba(255,255,255,0.02);">
+    <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--oot-tx3);margin:0 0 6px;">Departamento</p>
+    <select id="dept-select" data-oot-change="cambiarDepartamento" style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#fff;font-size:12.5px;cursor:pointer;">
+      <option value="47">Cargando...</option>
+    </select>
+  </div>
+
+  <div id="municipio-filter-section" style="padding:9px 14px 10px;border-bottom:0.5px solid rgba(255,255,255,0.08);flex-shrink:0;background:rgba(255,255,255,0.02);display:none;">
+    <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--oot-tx3);margin:0 0 6px;">Municipio</p>
+    <select id="municipio-select" data-oot-change="filtrarPorMunicipio" style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#fff;font-size:12.5px;cursor:pointer;">
+      <option value="">Todos los municipios</option>
+    </select>
+  </div>
+
+  <!-- Scope label -->
+  <div id="scope-label" style="padding:5px 14px 6px;font-size:10.5px;font-weight:600;color:var(--oot-teal);border-bottom:0.5px solid rgba(255,255,255,0.08);flex-shrink:0;display:flex;align-items:center;gap:5px;">
+    <span class="material-symbols-outlined" style="font-size:13px;">location_on</span>
+    <span id="scope-label-text">Colombia</span>
+  </div>
+
+  <div id="lista-indicadores" style="flex:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:5px;">
+    <p class="text-xs text-center py-8" style="color:var(--oot-tx3)">Cargando indicadores...</p>
+  </div>
+
+  <div style="padding:12px 14px;background:rgba(255,255,255,0.02);border-top:0.5px solid rgba(74,144,217,0.08);flex-shrink:0;">
+    <p style="font-size:10.5px;font-weight:700;color:var(--oot-teal);margin:0 0 3px;">¿Cómo funciona?</p>
+    <p style="font-size:10.5px;color:var(--oot-tx2);line-height:1.5;margin:0;">Seleccione un indicador para visualizarlo en el mapa.</p>
+  </div>
+</aside>
+
+<!-- ── MAPA: siempre visible ──────────────────────────────────── -->
+<div style="flex:1; position:relative; min-width:0; min-height:0; overflow:hidden;">
+  <div id="mapa-container" style="width:100%; height:100%;"></div>
+  <div id="mapa-controles" style="position:absolute;bottom:12px;left:12px;display:flex;flex-wrap:wrap;gap:6px;z-index:10;"></div>
+
+  <div id="map-loading" style="display:none;position:absolute;inset:0;background:rgba(7,14,25,0.75);backdrop-filter:blur(4px);z-index:20;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+    <div style="width:56px;height:56px;border-radius:16px;background:var(--oot-teal);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(39,168,128,0.4);">
+      <span class="material-symbols-outlined spin" style="font-size:28px;color:#fff;">settings</span>
+    </div>
+    <div style="text-align:center;">
+      <p id="map-loading-titulo" style="font-size:14px;font-weight:800;color:#fff;margin:0 0 4px;">Calculando...</p>
+      <p style="font-size:11px;color:rgba(255,255,255,0.5);margin:0;">Leyendo GeoPackage y calculando estadísticas espaciales</p>
+    </div>
+  </div>
+
+  <div id="map-error" style="display:none;position:absolute;inset:0;background:rgba(7,14,25,0.75);backdrop-filter:blur(4px);z-index:20;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
+    <span class="material-symbols-outlined" style="font-size:52px;color:var(--oot-red);">error_outline</span>
+    <p style="font-size:14px;font-weight:700;color:var(--oot-red-l);margin:0;">Error al calcular</p>
+    <p id="map-error-msg" style="font-size:12px;color:var(--oot-tx2);margin:0;text-align:center;max-width:280px;line-height:1.5;"></p>
+    <button data-oot-click="mostrarInicial" style="margin-top:8px;padding:8px 20px;border-radius:8px;background:var(--oot-teal);color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;">Volver</button>
+  </div>
+
+  <div id="map-hint" style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:5;pointer-events:none;">
+    <div style="background:rgba(11,25,41,0.88);backdrop-filter:blur(10px);border:0.5px solid rgba(74,144,217,0.2);border-radius:10px;padding:8px 16px;white-space:nowrap;">
+      <p style="font-size:12px;color:var(--oot-tx2);margin:0;"><span style="color:var(--oot-azul);font-weight:700;">←</span> Seleccione un indicador para cargar las capas</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── PANEL DERECHO: detalle del indicador ───────────────────── -->
+<div id="ind-stats" style="width:320px;flex-shrink:0;overflow-y:auto;background:linear-gradient(180deg,#06101c 0%,#091728 100%);border-left:0.5px solid rgba(255,255,255,0.05);">
+
+  <div id="panel-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 18px;text-align:center;min-height:200px;">
+    <div style="width:58px;height:58px;border-radius:17px;background:rgba(74,144,217,0.08);border:1px solid rgba(74,144,217,0.14);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">
+      <span class="material-symbols-outlined" style="font-size:27px;color:var(--oot-azul);opacity:0.55;">bar_chart</span>
+    </div>
+    <p style="font-size:13px;font-weight:700;color:var(--oot-tx);margin:0 0 8px;">Seleccione un indicador</p>
+    <p style="font-size:11.5px;color:var(--oot-tx3);line-height:1.6;margin:0 0 22px;">Escoja uno de los indicadores del panel izquierdo para visualizar el mapa, leyenda y estadísticas.</p>
+    <div style="width:100%;display:flex;flex-direction:column;gap:5px;">
+      <p style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--oot-tx3);margin:0 0 5px;">Acceso rápido</p>
+      <button data-oot-click="seleccionarIndicador" data-oot-arg="cobveg" style="display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03);color:var(--oot-tx2);font-size:11.5px;font-weight:600;cursor:pointer;width:100%;text-align:left;"><span class="material-symbols-outlined" style="font-size:16px;color:var(--oot-teal);flex-shrink:0;">park</span>Cobertura Vegetal Natural</button>
+      <button data-oot-click="seleccionarIndicador" data-oot-arg="amenaza_masa" style="display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03);color:var(--oot-tx2);font-size:11.5px;font-weight:600;cursor:pointer;width:100%;text-align:left;"><span class="material-symbols-outlined" style="font-size:16px;color:var(--oot-ochre);flex-shrink:0;">landslide</span>Amenaza Movimientos en Masa</button>
+      <button data-oot-click="seleccionarIndicador" data-oot-arg="amenaza_inundacion" style="display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03);color:var(--oot-tx2);font-size:11.5px;font-weight:600;cursor:pointer;width:100%;text-align:left;"><span class="material-symbols-outlined" style="font-size:16px;color:#3b82f6;flex-shrink:0;">water</span>Amenaza por Inundación</button>
+      <button data-oot-click="seleccionarIndicador" data-oot-arg="deforestacion_pnn" style="display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03);color:var(--oot-tx2);font-size:11.5px;font-weight:600;cursor:pointer;width:100%;text-align:left;"><span class="material-symbols-outlined" style="font-size:16px;color:var(--oot-red);flex-shrink:0;">forest</span>Deforestación en PNN</button>
+    </div>
+  </div>
+
+  <div id="panel-contenido" style="display:none;">
+    <div style="padding:13px 17px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(74,144,217,0.12);position:sticky;top:0;z-index:5;backdrop-filter:blur(8px);">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+        <div style="min-width:0;">
+          <p id="vp-asunto" style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--oot-tx3);margin:0 0 3px;"></p>
+          <h2 id="vp-nombre" style="font-size:13px;font-weight:900;color:var(--oot-tx);margin:0;line-height:1.3;"></h2>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <span id="vp-badge" class="px-2 py-0.5 rounded-full text-xs font-bold shrink-0"></span>
+          <button data-oot-click="mostrarInicial" title="Cerrar" style="width:26px;height:26px;border-radius:7px;border:0.5px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:var(--oot-tx3);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+            <span class="material-symbols-outlined" style="font-size:14px;">close</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:13px 17px;border-bottom:0.5px solid rgba(255,255,255,0.06);">
+      <div id="stats-cards" class="grid grid-cols-2 gap-3"></div>
+    </div>
+
+    <div style="padding:11px 17px;border-bottom:0.5px solid rgba(255,255,255,0.06);">
+      <p class="text-xs font-bold uppercase tracking-wider mb-3" style="color:var(--oot-tx3)">Leyenda</p>
+      <div id="leyenda-container" class="space-y-2"></div>
+    </div>
+
+    <div style="padding:11px 17px;border-bottom:0.5px solid rgba(255,255,255,0.06);">
+      <p class="text-xs font-bold uppercase tracking-wider mb-2" style="color:var(--oot-tx3)">¿Qué mide?</p>
+      <p id="vp-descripcion" class="text-sm leading-relaxed" style="color:var(--oot-tx2)"></p>
+      <div id="vp-paraque-wrap" style="display:none;margin-top:11px;">
+        <p class="text-xs font-bold uppercase tracking-wider mb-2" style="color:var(--oot-tx3)">¿Para qué sirve?</p>
+        <p id="vp-paraque" class="text-sm leading-relaxed" style="color:var(--oot-tx2)"></p>
+      </div>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <span class="text-xs" style="color:var(--oot-tx3)"><strong>Fuente:</strong> <span id="vp-fuente"></span></span>
+        <span class="text-xs" style="color:var(--oot-tx3)">|</span>
+        <span class="text-xs" style="color:var(--oot-tx3)"><strong>Unidad de análisis:</strong> <span id="vp-nivel"></span></span>
+      </div>
+    </div>
+
+    <div style="padding:11px 17px;border-bottom:0.5px solid rgba(255,255,255,0.06);">
+      <p class="text-xs font-bold uppercase tracking-wider mb-3" style="color:var(--oot-tx3)">Estadísticas</p>
+      <div id="stats-detalle" class="space-y-2 text-sm" style="color:var(--oot-tx2)"></div>
+    </div>
+
+    <div id="torta-section" class="p-4 border-t border-ot-b1" style="display:none">
+      <p class="text-xs font-bold uppercase tracking-wider mb-3" style="color:var(--oot-tx3)">Distribución <span class="font-normal normal-case" style="color:var(--oot-tx3)">(clic → resaltar en mapa)</span></p>
+      <div style="max-width:180px; margin:0 auto;">
+        <canvas id="grafico-torta"></canvas>
+      </div>
+    </div>
+
+  </div>
+  </div>
+</div>
+
+<script src="./config.js"></script>
+<script src="./oot.js"></script>
+<script src="./js/indicadores.js"></script>
+
+</body>
+</html>

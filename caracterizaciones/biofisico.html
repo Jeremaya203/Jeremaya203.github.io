@@ -1,0 +1,473 @@
+﻿<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Caracterizaciones</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
+    <link rel="stylesheet" href="css/stylesBiofisico.css?v=reiniciar-consulta-20260622" />
+
+    <script src="https://js.arcgis.com/4.29/"></script>
+
+    <script>
+        const __define = window.define;
+        const __require = window.require;
+        window.define = undefined;
+        window.require = undefined;
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+
+    <script>
+        window.define = __define;
+        window.require = __require;
+    </script>
+
+    <script src="js/biofisico2/coloresBiofisico.js?v=hipsometria-rangos-20260617"></script>
+    <script src="js/moduleNavigation.js?v=component-nav-20260622"></script>
+    <script type="module" src="./js/biofisico2/biofisico.controller.js?v=component-nav-biofisico-20260623"></script>
+</head>
+
+<body>
+    <!-- HEADER GOV -->
+    <div class="barra_gov">
+        <a class="logo-gov" href="https://www.gov.co/home/" target="_blank">
+            <img alt="Logo Gov.co" src="./img/nav/header_govco.png" />
+        </a>
+    </div>
+
+    <!-- HEADER IGAC -->
+    <nav class="main-header-nav" style="z-index: 101">
+        <div class="navbarigac" style="background: #004a69; color: white">
+            <div class="logos">
+                <a href="https://www.igac.gov.co" class="navbar-brand-igac" target="_blank">
+                    <img alt="Logo IGAC" src="./img/nav/logo.png" />
+                </a>
+                <img src="./img/logo_ct.png" class="icono-territorial" alt="Icono" />
+                <div class="titulo-app">CARACTERIZACIONES TERRITORIALES</div>
+            </div>
+
+            <ul class="pl-1" id="link-list">
+                <li><a href="index.html" style="color: white !important">&#8592; Caracterizaciones</a></li>
+                <li>
+                    <a id="inicio" href="../index.html" style="color: white !important">Inicio</a>
+                </li>
+                <li>
+                    <a id="loginBtn" href="#" role="button" aria-label="Iniciar sesión">
+                        <span id="userName" style="color: white !important">Iniciar sesión</span>
+                    </a>
+                </li>
+            </ul>
+
+            <button class="nav-bar-toggle-igac" type="button" aria-label="Abrir menú de navegación"
+                aria-expanded="false" aria-controls="link-list">
+                <div class="icon-bar"></div>
+                <div class="icon-bar"></div>
+                <div class="icon-bar"></div>
+            </button>
+        </div>
+        <div class="navbarnavigac"></div>
+    </nav>
+    <div class="modulos-scroll">
+        <div class="modulos-container">
+            <!-- LÍMITES MUNICIPALES -->
+            <div class="modulo-dropdown limites" id="limitesDropdown">
+                <div class="modulo-card-trigger" id="limitesTrigger">
+                    <img src="img/limites_municipales.png" alt="Límites Municipales" />
+                    <span>LÍMITES MUNICIPALES</span>
+                </div>
+
+                <div class="dropdown-menu-custom" id="dropdownLimites">
+                    <button class="dropdown-item" data-target="Departamentos">
+                        Departamentos
+                    </button>
+                    <button class="dropdown-item" data-target="Municipios">
+                        Municipios
+                    </button>
+                </div>
+            </div>
+
+            <!-- ORDENAMIENTO TERRITORIAL -->
+            <div class="modulo-dropdown ordenamiento" id="ordenamientoDropdown">
+                <div class="modulo-card-trigger" id="ordenamientoTrigger">
+                    <img src="img/ordenamiento_territorial.png" alt="Ordenamiento Territorial" />
+                    <span>ORDENAMIENTO TERRITORIAL</span>
+                </div>
+
+                <div class="dropdown-menu-custom" id="dropdownOrdenamiento">
+                    <button class="dropdown-item" data-target="Clasificación del suelo">
+                        Clasificación del suelo
+                    </button>
+                    <button class="dropdown-item" data-target="Áreas de actividad">
+                        Áreas de actividad
+                    </button>
+                    <button class="dropdown-item" data-target="Zonificación de uso del suelo rural">
+                        Zonificación de uso del suelo rural
+                    </button>
+                </div>
+            </div>
+
+            <!-- CONTEXTO LEGAL -->
+            <div class="modulo-dropdown legal" id="legalDropdown">
+                <div class="modulo-card-trigger" id="legalTrigger">
+                    <img src="img/contexto_legal.png" alt="Contexto Legal" />
+                    <span>CONTEXTO LEGAL</span>
+                </div>
+
+                <div class="dropdown-menu-custom" id="dropdownLegal">
+                    <button class="dropdown-item" data-target="Determinantes">
+                        Determinantes
+                    </button>
+                    <button class="dropdown-item" data-target="Condicionantes">
+                        Condicionantes
+                    </button>
+                </div>
+            </div>
+
+            <!-- PROCESOS BIOFÍSICOS -->
+            <div class="modulo-dropdown biofisico" id="biofisicoDropdown">
+                <div class="modulo-card-trigger" id="biofisicoTrigger">
+                    <img src="img/procesos_biofisicos.png" alt="Procesos Biofísicos" />
+                    <span>PROCESOS BIOFÍSICOS</span>
+                </div>
+
+                <div class="dropdown-menu-custom" id="dropdownBiofisico">
+                    <button class="dropdown-item active" data-target="Relieve" id="itemRelieve">
+                        Relieve
+                    </button>
+                    <button class="dropdown-item" data-target="Clima" id="itemClima">
+                        Clima
+                    </button>
+                    <button class="dropdown-item" data-target="Hidrografía" id="itemHidrografia">
+                        Hidrografía
+                    </button>
+                    <button class="dropdown-item" data-target="Ecosistemas" id="itemEcosistemas">
+                        Ecosistemas
+                    </button>
+                    <button class="dropdown-item" data-target="Suelos" id="itemSuelos">
+                        Suelos
+                    </button>
+                    <button class="dropdown-item" data-target="Fenómenos Amenazantes" id="itemFenomenos">
+                        Fenómenos Amenazantes
+                    </button>
+                    <!-- <button class="dropdown-item" data-target="Relaciones Ambientales" id="itemRelaciones">
+                        Relaciones Ambientales
+                    </button> -->
+                </div>
+            </div>
+
+            <!-- PROCESOS DE OCUPACIÓN -->
+            <div class="modulo-dropdown ocupacion" id="ocupacionDropdown">
+                <div class="modulo-card-trigger" id="ocupacionTrigger">
+                    <img src="img/pro_ocupacion.png" alt="Procesos de Ocupación" />
+                    <span>PROCESOS DE OCUPACIÓN</span>
+                </div>
+
+                <div class="dropdown-menu-custom" id="dropdownOcupacion">
+                    <button class="dropdown-item" data-target="Contexto histórico">
+                        Contexto histórico
+                    </button>
+                    <button class="dropdown-item" data-target="Distribución de la población">
+                        Distribución de la población
+                    </button>
+                    <button class="dropdown-item" data-target="Composición de la población">
+                        Composición de la población
+                    </button>
+                    <button class="dropdown-item" data-target="Tamaño y distribución de la propiedad rural">
+                        Tamaño y distribución de la propiedad rural
+                    </button>
+                </div>
+            </div>
+
+            <!-- PROCESOS SOCIOECONÓMICOS -->
+            <div class="modulo-dropdown socioeconomico" id="socioeconomicoDropdown">
+                <div class="modulo-card-trigger" id="socioeconomicoTrigger">
+                    <img src="img/pro_socieconomicos.png" alt="Procesos Socioeconómicos" />
+                    <span>PROCESOS SOCIOECONÓMICOS</span>
+                </div>
+
+                <div class="dropdown-menu-custom" id="dropdownSocioeconomico">
+                    <button class="dropdown-item" data-target="Dinámicas Socioeconómicas">
+                        Dinámicas Socioeconómicas
+                    </button>
+                    <button class="dropdown-item" data-target="Infraestructura">
+                        Infraestructura
+                    </button>
+                    <button class="dropdown-item" data-target="Condiciones Socioeconómicas">
+                        Condiciones Socioeconómicas
+                    </button>
+                </div>
+            </div>
+
+            <div class="territorial-toolbar">
+                <div class="territorial-toolbar-right">
+                    <label class="toolbar-label">Entidad Territorial:</label>
+                    <select id="departamentos" class="toolbar-select">
+                        <option value="">Cargando...</option>
+                    </select>
+                    <select id="municipios" class="toolbar-select">
+                        <option value="">municipio</option>
+                    </select>
+                    <button id="btnRefreshBusqueda" class="toolbar-refresh" type="button"
+                        aria-label="Reiniciar búsqueda" title="Reiniciar búsqueda" data-tooltip="Reiniciar búsqueda">
+                        <img src="img/refrescar.png" alt="" />
+                    </button>
+                </div>
+            </div>
+            <div class="ordenamiento-side-actions">
+                <div class="descargables-dropdown" id="descargablesDropdown">
+                    <button id="btnDescargables" class="btn-descargables" type="button">
+                        <span class="btn-descargables-texto">Descargables</span>
+                        <img src="img/descargables.png" alt="Descargables" class="btn-descargables-icon" />
+                    </button>
+
+                    <div class="descargables-menu" id="descargablesMenu">
+                        <button class="descargables-item" id="btnMemoriaTecnica" type="button">
+                            Memoria técnica
+                        </button>
+                        <button class="descargables-item" id="btnBaseDatosEspacial" type="button">
+                            Base de datos espacial
+                        </button>
+                    </div>
+                </div>
+
+                <button
+                    id="btnReiniciarConsulta"
+                    class="btn-reiniciar-consulta"
+                    type="button"
+                    aria-label="Reiniciar consulta"
+                    title="Reiniciar consulta"
+                    data-tooltip="Reiniciar consulta">
+                    <img src="img/Reinicia.png" alt="" />
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TU NAVBAR DEL VISOR -->
+    <div id="navbar" style="display: none">
+        <button id="btnRelieve" class="active">Relieve</button>
+        <button id="btnClima">Clima</button>
+        <button id="btnHidrografia">Hidrografía</button>
+        <button id="btnEcosistemas">Ecosistemas</button>
+        <button id="btnSuelos">Suelos</button>
+        <button id="btnFenomenos">Fenómenos Amenazantes</button>
+    </div>
+
+    <div id="container">
+        <div id="mapDiv">
+            <div id="mapViewBadge" class="map-view-badge">
+                <span id="mapViewBadgeText">Relieve</span>
+            </div>
+            <!-- Leyenda del mapa -->
+            <div id="mapLegend" class="map-legend">
+                <div class="legend-header">
+                    <span id="legendTitle">Leyenda</span>
+                    <button id="legendToggle" class="legend-toggle">−</button>
+                </div>
+                <div id="legendContent" class="legend-content">
+                    <!-- Contenido dinámico de la leyenda -->
+                </div>
+            </div>
+            <!-- Minimap (overview) -->
+            <div id="overviewDiv" class="overview-map">
+                <button id="overviewMiniToggle" class="overview-mini-toggle" title="Minimizar mapa">
+                    −
+                </button>
+                <div id="overviewMap"></div>
+            </div>
+            <div id="zoomSliderContainer">
+                <div id="mapSliderLabel" class="map-slider-label">Periodo: Todos</div>
+                <input id="zoomSlider" type="range" min="2" max="12" step="0.1" />
+            </div>
+            <div id="mapTools" class="map-tools">
+                <button id="btnHome" class="tool-btn" title="Inicio" aria-label="Inicio">
+                    <img src="img/HomeExtent_1.png" alt="" />
+                </button>
+                <div class="tool-dropdown-wrap">
+                    <button id="btnBasemaps" class="tool-btn" title="Mapas base" aria-label="Mapas base">
+                        <img src="img/List_Gray_1.png" alt="" />
+                    </button>
+
+                    <div id="basemapPanel" class="basemap-panel" style="display: none">
+                        <div id="basemapGalleryDiv"></div>
+                    </div>
+                </div>
+
+                <button id="btnLocate" class="tool-btn" title="Ubicación actual" aria-label="Ubicación actual">
+                    <img src="img/Center_1.png" alt="" />
+                </button>
+
+                <!-- <button id="btnOverviewToggle" class="tool-btn" title="Vista general" aria-label="Vista general">
+                    <img src="img/ordenamiento_territorial.png" alt="">
+                </button> -->
+
+                <button id="btnResetZoom" class="tool-btn" title="Vista Previa" aria-label="Vista Previa">
+                    <img src="img/vista_previa_1.png" alt="" />
+                </button>
+
+                <button id="btnZoomIn" class="tool-btn" title="Acercar">
+                    <img src="img/zoomin.png" alt="" />
+                </button>
+
+                <button id="btnZoomOut" class="tool-btn" title="Alejar">
+                    <img src="img/zoomout_1.png" alt="" />
+                </button>
+            </div>
+
+            <!-- Panel basemaps (se abre/cierra) -->
+            <!-- <div id="basemapPanel" class="basemap-panel" style="display:none;">
+                <div id="basemapGalleryDiv"></div>
+            </div> -->
+            <div id="mapSource" class="map-source"></div>
+        </div>
+
+        <div id="chartDiv">
+            <button id="btnVerTodo" class="btn-ver-todo">
+                Ver todos los rangos
+            </button>
+
+            <!-- <hr> -->
+
+            <div class="chart-card-wrap">
+                <div class="subtabs-shell">
+                    <div class="subtabs-controls" id="subtabsControls" style="display: none"></div>
+                </div>
+
+                <div class="chart-card">
+                    <div id="timeSliderWrap" style="display: none; margin: 10px 0 14px 0">
+                        <div id="timeSliderLabel" style="text-align: center; font-weight: 600; margin-bottom: 6px">
+                            Periodo
+                        </div>
+                        <input id="timeSlider" type="range" min="0" max="0" step="1" value="0" style="width: 100%" />
+                    </div>
+
+                    <h3 id="chartTitle"></h3>
+
+                    <div id="geoformasCharts" style="display: none; margin-top: 10px">
+                        <div style="margin-bottom: 22px">
+                            <h4 id="geoPieTitle" style="margin: 0 0 10px 0"></h4>
+                            <canvas id="geoPieChart"></canvas>
+                        </div>
+
+                        <div>
+                            <!-- <h4 id="geoDonutTitle" style="margin:0 0 10px 0;">Paisaje montañoso</h4> -->
+                            <div id="geoDonutSubtitle" style="margin: 0 0 10px 0"></div>
+                            <canvas id="geoDonutChart"></canvas>
+                        </div>
+                    </div>
+
+                    <canvas id="chart"></canvas>
+
+                    <div id="summaryDiv">
+                        Seleccione un municipio para ver el resumen.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-wrapper">
+            <div class="footer-card">
+                <div class="container">
+                    <div class="footer-container">
+                        <div class="rowf">
+                            <div class="col-md-6f">
+                                <h2 class="footer-titulo">
+                                    Instituto Geográfico Agustín Codazzi - IGAC
+                                </h2>
+                            </div>
+                            <div class="logos-footer col-md-6f">&nbsp;</div>
+                        </div>
+
+                        <div class="rowf">
+                            <div class="col-md-6f">
+                                <h2 class="sub-titulo-sede-gov-co">
+                                    Información sede principal
+                                </h2>
+
+                                <h3>Dirección:</h3>
+                                <p>Bogotá D.C. - Carrera 30 # 48-51</p>
+
+                                <h3>Horarios de atención al ciudadano:</h3>
+                                <p>
+                                    Abierto al público de lunes a viernes de 9:00 a.m. a 4:00
+                                    p.m. jornada continua Sede Central y territorial
+                                    Cundinamarca
+                                </p>
+
+                                <h3>Teléfono Conmutador:</h3>
+                                <p><a href="tel:6016531888">+57 601 653 18 88</a></p>
+
+                                <h3>Correo de contacto:</h3>
+                                <p>
+                                    <a href="mailto:contactenos@igac.gov.co">contactenos@igac.gov.co</a>
+                                </p>
+
+                                <h3>Correo de notificaciones judiciales:</h3>
+                                <p>
+                                    <a href="mailto:judiciales@igac.gov.co">judiciales@igac.gov.co</a>
+                                </p>
+
+                                <p>NIT: 8999990049</p>
+                                <p>
+                                    ©Copyright 2021 - Todos los derechos reservados Gobierno de
+                                    Colombia
+                                </p>
+                            </div>
+
+                            <div class="col-md-6f">
+                                <h3>Contáctenos en nuestras redes sociales</h3>
+
+                                <div class="redes-sociales">
+                                    <p>
+                                        <a href="https://www.facebook.com/IgacColombia" target="_blank">
+                                            <img class="icono-redes" src="./img/footer/facebook.svg" />
+                                            Facebook IGAC
+                                        </a>
+                                    </p>
+
+                                    <p>
+                                        <a href="https://twitter.com/igacColombia" target="_blank">
+                                            <img class="icono-redes" src="./img/footer/twitter.svg" />
+                                            Twitter IGAC
+                                        </a>
+                                    </p>
+
+                                    <p>
+                                        <a href="https://www.instagram.com/igacColombia/" target="_blank">
+                                            <img class="icono-redes" src="./img/footer/instagram.svg" />
+                                            Instagram IGAC
+                                        </a>
+                                    </p>
+                                </div>
+
+                                <div class="footer-enlaces">
+                                    <a class="btn-low">Políticas</a>
+                                    <a class="btn-low">Mapa del sitio</a>
+                                    <a class="btn-low">Términos y condiciones</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="gov-co-footer-pie">
+            <div class="gov-co-footer-auto containerf">
+                <img class="gov-co-logo-pie-blanco" src="./img/footer/marca_colombia.png" />
+                <img class="gov-co-logo-pie-mesa" src="./img/footer/header_govco.png" />
+                <a class="text-white text-align-right" href="https://www.gov.co" target="_blank">
+                    Conoce GOV.CO aquí
+                </a>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>
