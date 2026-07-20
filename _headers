@@ -2,12 +2,16 @@
 # Para nginx / Apache / IIS u otros servidores, configurarlas a nivel de servidor:
 # ver docs/despliegue/README_DESPLIEGUE_FRONTEND.md (sección 4).
 #
-# CSP (H-04): orígenes FIJOS por directiva; se eliminó el comodín `https:` de
+# CSP (H-04 / H-17): orígenes FIJOS por directiva; se eliminó el comodín `https:` de
 # script-src / style-src / font-src / connect-src / frame-src (antes permitía cargar
-# scripts desde CUALQUIER host https → vector de XSS). Se conserva `'unsafe-inline'`
-# en script-src y style-src porque el frontend aún usa manejadores inline (onclick=)
-# y cientos de atributos style="…" (arquitectura actual). Endurecer a script-src sin
-# 'unsafe-inline' es un pase aparte (eliminar los ~60 handlers inline → addEventListener).
+# scripts desde CUALQUIER host https → vector de XSS).
+# Se removió `'unsafe-inline'` de script-src y style-src. Verificado 2026-07-19 mediante
+# grep exhaustivo de todo el repo (no solo módulos principales): 0 <script> embebidos,
+# 0 atributos style="", 0 eval()/new Function() en *.html y *.js. Antes de esa fecha este
+# comentario afirmaba lo mismo sin que fuera cierto (39 scripts + 593 estilos inline
+# seguían en el código) — si se reintroduce código inline en el futuro, esta CSP lo
+# bloqueará en el navegador real aunque el sitio "funcione" en local sin comprobar la
+# cabecera.
 # `https:` se mantiene SOLO en img-src: los basemaps ráster (OSM) provienen de varios
 # hosts y las imágenes no ejecutan código.
 #
@@ -15,8 +19,36 @@
 #   scripts/estilos CDN → cdnjs, jsdelivr, unpkg, ajax.googleapis (jQuery), gstatic
 #   analítica GA4       → googletagmanager (script) + *.google-analytics (beacon)
 #   fuentes             → fonts.googleapis (css) + fonts.gstatic (woff) + pro.fontawesome
+#   mapas ArcGIS        → js.arcgis.com (librería + CSS) y, para las peticiones fetch/XHR
+#                          reales de tiles/datos (WebGL, no <img>, por eso van en connect-src
+#                          y no en img-src pese a que img-src ya permite https: en general):
+#                          services.arcgisonline.com (World_Imagery), tiles.arcgis.com y
+#                          services2.arcgis.com (capas propias de IGAC). Solo usado en
+#                          caracterizaciones/, cargue/, colombia-ot/pot/ y colombia-ot/ruta/.
+#   mapas MapLibre       → Modulo_Determinantes.html / Modulo_Indicadores.html usan
+#   (Determinantes/      → MapLibre GL JS (unpkg.com, ya cubierto) con basemap real de
+#    Indicadores)          OpenStreetMap: tile.openstreetmap.org/{z}/{x}/{y}.png — también
+#                          via fetch (WebGL), va en connect-src. Ninguno de los dos sistemas
+#                          de mapas del sitio (ArcGIS en Caracterizaciones, OSM/MapLibre en
+#                          Determinantes/Indicadores) tenía su dominio de tiles en la CSP —
+#                          el basemap cargaba en blanco en ambos. Encontrado probando en vivo
+#                          2026-07-19, nunca se había probado con la CSP realmente aplicada.
 #   backend/API + cargue→ 'self' y *.igac.gov.co (incl. serviciosgeovisor:8080)
+#   auth (Firebase SDK) → identitytoolkit.googleapis.com + securetoken.googleapis.com
+#                          (el SDK los llama por XHR para el intercambio de tokens;
+#                          sin esto signInWithPopup falla tras elegir la cuenta de Google)
+#   source maps (.map)  → los mismos hosts de script-src/style-src (cdnjs, jsdelivr, unpkg,
+#                          gstatic) deben repetirse en connect-src: con DevTools abierto el
+#                          navegador pide el .map de cada script/css para depurar, y esa
+#                          petición se evalúa contra connect-src, no contra script-src/style-src.
+#                          Descubierto probando el login real 2026-07-19 (ruido en consola que
+#                          tapaba los errores reales).
 #   iframes Colombia OT → www.colombiaot.gov.co
+#   auth (Firebase)     → geovisor-igac.firebaseapp.com (iframe oculto que usa
+#                          signInWithPopup para el handshake; sin esto el login falla
+#                          en silencio — el popup de Google abre pero nunca confirma sesión)
+#                          + apis.google.com (gapi, helper interno del SDK de Firebase Auth
+#                          para el mismo flujo — algunas versiones del SDK lo cargan también)
 #   PMTiles/tiles       → 'self' (OOT_TILES_BASE por defecto = mismo origen)
 # Nota despliegue: si el backend/API o los tiles se sirven desde OTRO dominio (p. ej.
 # un túnel de desarrollo o un object storage), añadir ese origen a connect-src aquí.
@@ -26,4 +58,5 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=(), usb=()
   Strict-Transport-Security: max-age=31536000; includeSubDomains
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://ajax.googleapis.com https://www.googletagmanager.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://fonts.googleapis.com https://pro.fontawesome.com https://www.gstatic.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://pro.fontawesome.com; connect-src 'self' https://*.igac.gov.co https://serviciosgeovisor.igac.gov.co:8080 https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self' https://www.colombiaot.gov.co; object-src 'none'; base-uri 'self'; frame-ancestors 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://ajax.googleapis.com https://www.googletagmanager.com https://www.gstatic.com https://apis.google.com https://js.arcgis.com; style-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://fonts.googleapis.com https://pro.fontawesome.com https://www.gstatic.com https://js.arcgis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://pro.fontawesome.com https://js.arcgis.com; connect-src 'self' https://*.igac.gov.co https://serviciosgeovisor.igac.gov.co:8080 https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://www.gstatic.com https://js.arcgis.com https://services.arcgisonline.com https://tiles.arcgis.com https://services2.arcgis.com https://tile.openstreetmap.org; worker-src 'self' blob: https://js.arcgis.com; child-src 'self' blob:; frame-src 'self' https://www.colombiaot.gov.co https://geovisor-igac.firebaseapp.com https://apis.google.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'
+

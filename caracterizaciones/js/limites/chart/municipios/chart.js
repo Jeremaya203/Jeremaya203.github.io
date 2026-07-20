@@ -6,6 +6,70 @@ import { getColorCSS } from "../../colors.js";
 var _allChartFeatures = [];
 var _currentFilteredFeatures = [];
 
+var alignMunicipalBarBasePlugin = {
+    id: "alignMunicipalBarBase",
+    beforeDatasetsDraw: function(chart) {
+        var zeroPixel = chart.scales?.x?.getPixelForValue?.(0);
+        if (!Number.isFinite(zeroPixel)) return;
+
+        chart.data.datasets.forEach(function(_dataset, datasetIndex) {
+            var meta = chart.getDatasetMeta(datasetIndex);
+            (meta?.data || []).forEach(function(bar) {
+                bar.base = zeroPixel;
+            });
+        });
+    }
+};
+
+function fitMunicipalYAxis(axis) {
+    var chart = axis.chart;
+    var labels = chart?.data?.labels || [];
+    var tickFont = axis.options?.ticks?.font || {};
+    var fontSize = Number(tickFont.size) || 10;
+    var fontWeight = tickFont.weight || "500";
+    var fontFamily = tickFont.family || "Outfit, sans-serif";
+    var context = chart?.ctx;
+    if (!context) return;
+
+    context.save();
+    context.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+    var widestLine = labels.reduce(function(currentMax, label) {
+        var lines = Array.isArray(label) ? label : [label];
+        return lines.reduce(function(lineMax, line) {
+            return Math.max(lineMax, context.measureText(String(line || "")).width);
+        }, currentMax);
+    }, 0);
+    context.restore();
+
+    var tickPadding = Number(axis.options?.ticks?.padding) || 0;
+    axis.width = Math.ceil(Math.min(178, Math.max(72, widestLine + tickPadding + 12)));
+}
+
+function wrapBoundaryLabel(value) {
+    var text = String(value || "Sin nombre").replace(/\s+/g, " ").trim();
+    var maxLineLength = 29;
+    if (text.length <= maxLineLength) return text;
+
+    var words = text.split(" ");
+    var bestLines = [text];
+    var bestScore = Infinity;
+
+    for (var index = 1; index < words.length; index += 1) {
+        var firstLine = words.slice(0, index).join(" ");
+        var secondLine = words.slice(index).join(" ");
+        var longestLine = Math.max(firstLine.length, secondLine.length);
+        var balance = Math.abs(firstLine.length - secondLine.length);
+        var score = (longestLine * 10) + balance;
+
+        if (score < bestScore) {
+            bestScore = score;
+            bestLines = [firstLine, secondLine];
+        }
+    }
+
+    return bestLines;
+}
+
 function groupFeaturesByLineId(features) {
     var grouped = new Map();
 
@@ -78,7 +142,7 @@ export async function renderChart(layer, config, whereClause, options) {
         features.forEach(function(f) {
             var att = f.attributes;
             labels.push(String(att["LLNombre"] || "Sin nombre"));
-            values.push(Number(att["SHAPE_Length"] || 0));
+            values.push((Number(att["SHAPE_Length"] || 0)) / 1000);
             colors.push(getColorCSS(att["LLIdentif"]));
             ids.push(String(att["LLIdentif"] || ""));
         });
@@ -116,8 +180,9 @@ export async function renderChart(layer, config, whereClause, options) {
             ? { top: 20, bottom: 14, left: 10, right: 18 }
             : { top: 10, bottom: 10, left: 0, right: 12 };
 
-        createChart(canvas, {
+        var chart = createChart(canvas, {
             type: "bar",
+            plugins: [alignMunicipalBarBasePlugin],
             data: {
                 labels: labels,
                 datasets: [buildDataset(values, colors)]
@@ -131,7 +196,7 @@ export async function renderChart(layer, config, whereClause, options) {
                 onClick: function(event, elements) {
                     if (!elements || !elements.length) return;
                     var index = elements[0].index;
-                    var llid = ids[index];
+                    var llid = this.$limitesMunicipales?.currentIds?.[index] || ids[index];
                     if (!llid) return;
                     // Disparar evento para que main.js sincronice mapa y leyenda
                     document.dispatchEvent(new CustomEvent("limites:chart-select", {
@@ -173,6 +238,31 @@ export async function renderChart(layer, config, whereClause, options) {
                 }
             }
         });
+        var displayLabels = labels.map(wrapBoundaryLabel);
+        chart.data.labels = displayLabels;
+        chart.options.scales.x.min = 0;
+        chart.options.scales.x.offset = false;
+        chart.options.scales.x.grace = 0;
+        chart.options.scales.y.afterFit = fitMunicipalYAxis;
+        chart.data.datasets.forEach(function(dataset) {
+            dataset.base = 0;
+            dataset.borderSkipped = "start";
+            dataset.borderRadius = {
+                topLeft: 0,
+                bottomLeft: 0,
+                topRight: 2,
+                bottomRight: 2
+            };
+        });
+        chart.update("none");
+        chart.$limitesMunicipales = {
+            ids: ids,
+            currentIds: ids.slice(),
+            labels: displayLabels,
+            values: values,
+            colors: colors,
+            originalLabels: labels.slice()
+        };
 
         // Doble clic en el canvas restaura el grafico completo
         canvas.onclick = null;

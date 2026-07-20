@@ -208,7 +208,10 @@ export function createLayerController({ state, deps }) {
     }
 
     function useDepartmentMapContextForMunicipality(config) {
-        return (isPovertyConfig(config) || isSupportInfrastructureConfig(config) || isTourismConfig(config))
+        return (isPovertyConfig(config)
+            || isSupportInfrastructureConfig(config)
+            || isTourismConfig(config)
+            || config?.keepDepartmentMapOnMunicipality === true)
             && state.filtroNivel === "MUNI";
     }
 
@@ -503,7 +506,7 @@ export function createLayerController({ state, deps }) {
             state.map.reorder?.(povertyMunicipalityHighlightLayer, state.map.layers.length - 1);
         } catch (error) {
             if (!isExpectedLayerError(error)) {
-                console.warn("No se pudo resaltar el municipio seleccionado en nivel de pobreza:", error);
+                console.warn("No se pudo resaltar el municipio seleccionado:", error);
             }
         }
     }
@@ -1480,7 +1483,7 @@ export function createLayerController({ state, deps }) {
             canvas.insertAdjacentElement("afterend", status);
         }
 
-        status.textContent = `${message} Verifica la raiz configurada en __SOCIOECONOMICO_SERVICE_ROOT__.`;
+        status.textContent = `${message} Intenta nuevamente en unos minutos.`;
     }
 
     async function queryFeatureCountSafe(layer, where) {
@@ -1639,7 +1642,9 @@ export function createLayerController({ state, deps }) {
                     showDepartmentMapOnlyState(config, count);
                 } else {
                     try {
-                        await renderChart(tableLayer, config);
+                        await renderChart(tableLayer, config, {
+                            skipSyncMap: useDepartmentMapContextForMunicipality(config)
+                        });
                     } catch (e) {
                         if (!isExpectedLayerError(e)) console.error("table-layer renderChart error:", e);
                     }
@@ -1893,7 +1898,7 @@ export function createLayerController({ state, deps }) {
                     ];
                 });
 
-                console.info("connectivity:variant-layers-created", {
+                if (window.__SOCIOECONOMICO_DEBUG__ === true) console.info("connectivity:variant-layers-created", {
                     mode: state.currentMode,
                     title: config.title,
                     whereBase: state.whereBase || "1=1",
@@ -1907,7 +1912,7 @@ export function createLayerController({ state, deps }) {
                 });
 
                 state.layersGlobal = variantEntries.map(entry => entry.layer);
-                window.__debugLayers = state.layersGlobal;
+                if (window.__SOCIOECONOMICO_DEBUG__ === true) window.__debugLayers = state.layersGlobal;
                 const initialActiveVariantKey = config.key === "PIB_DEPARTMENT"
                     ? (window.__pibMapVariantKey || config.chartVariantKey || variantEntries[0]?.key)
                     : null;
@@ -1953,7 +1958,7 @@ export function createLayerController({ state, deps }) {
                 );
                 if (loadedEntries.length) {
                     state.layersGlobal = loadedEntries.map(entry => entry.layer);
-                    window.__debugLayers = state.layersGlobal;
+                    if (window.__SOCIOECONOMICO_DEBUG__ === true) window.__debugLayers = state.layersGlobal;
                     const loadedActiveVariantKey = config.key === "PIB_DEPARTMENT"
                         ? (window.__pibMapVariantKey || config.chartVariantKey || loadedEntries[0]?.key)
                         : null;
@@ -1983,7 +1988,7 @@ export function createLayerController({ state, deps }) {
                 try {
                     const navigationTarget = await queryConnectivityNavigationExtent(config, state.layerGlobal);
                     const extent = navigationTarget?.extent;
-                    console.info("connectivity:query-extent", {
+                    if (window.__SOCIOECONOMICO_DEBUG__ === true) console.info("connectivity:query-extent", {
                         title: config.title,
                         layerUrl: navigationTarget?.layerUrl || state.layerGlobal?.__sourceUrl || state.layerGlobal?.url || "",
                         where: navigationTarget?.where || "",
@@ -2083,13 +2088,13 @@ export function createLayerController({ state, deps }) {
             actualizarFuente(newLayer);
             newLayer.__mapPriorityReady = !mapPriority;
             if (mapPriority) {
-                window.__mapPerformanceMetrics = {
+                if (window.__SOCIOECONOMICO_DEBUG__ === true) window.__mapPerformanceMetrics = {
                     key: config.key,
                     where: newLayer.definitionExpression || "1=1",
                     layerAddedMs: Math.round(performance.now() - mapLoadStartedAt),
                     firstRenderMs: null
                 };
-                console.info("map-performance:layer-added", window.__mapPerformanceMetrics);
+                if (window.__SOCIOECONOMICO_DEBUG__ === true) console.info("map-performance:layer-added", window.__mapPerformanceMetrics);
             }
 
             // estaciones SOLO en temp/precip
@@ -2123,7 +2128,9 @@ export function createLayerController({ state, deps }) {
 
                 if (isDepartmentPopupOnlyConfig(config)) {
                     try {
-                        await renderChart(newLayer, config);
+                        await renderChart(newLayer, config, {
+                            skipSyncMap: useDepartmentMapContextForMunicipality(config)
+                        });
                     } catch (e) {
                         if (!isExpectedLayerError(e)) console.error("popup-only department chart setup error:", e);
                     }
@@ -2176,7 +2183,7 @@ export function createLayerController({ state, deps }) {
                     if (window.__mapPerformanceMetrics?.key === config.key) {
                         window.__mapPerformanceMetrics.firstRenderMs = firstRenderMs;
                     }
-                    console.info("map-performance:first-render", {
+                    if (window.__SOCIOECONOMICO_DEBUG__ === true) console.info("map-performance:first-render", {
                         key: config.key,
                         elapsedMs: firstRenderMs,
                         where: newLayer.definitionExpression || "1=1"
@@ -2210,7 +2217,9 @@ export function createLayerController({ state, deps }) {
                     window.renderActiveEconomicSubitem?.(0);
                 } else {
                     try {
-                        await renderChart(newLayer, config);
+                        await renderChart(newLayer, config, {
+                            skipSyncMap: useDepartmentMapContextForMunicipality(config)
+                        });
                     } catch (e) {
                         if (isExpectedLayerError(e)) return;
                         console.error("renderChart error:", e);

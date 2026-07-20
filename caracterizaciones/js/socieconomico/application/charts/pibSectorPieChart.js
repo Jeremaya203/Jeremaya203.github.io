@@ -1,5 +1,5 @@
 import { PIB_VALUE_ADDED_PIE_CHART_CONFIG } from "./configs/dynamicsChartsConfig.js?v=global-municipality-required-state-20260604";
-import { renderPieChart } from "./renderers/pieChartRenderer.js?v=pib-sector-instant-hover-20260604";
+import { renderPieChart } from "./renderers/pieChartRenderer.js?v=shared-pie-labels-20260701";
 import { colorToCss } from "./core/chartSymbolUtils.js?v=travel-time-pie-20260511";
 import { toNum } from "../utils/shared.js?v=pib-number-parser-20260506";
 import { ECONOMIC_SECTOR_COLOR_PALETTE } from "./configs/economicSectorColors.js?v=economic-sector-shared-colors-20260603";
@@ -177,97 +177,6 @@ export function createPibSectorPieChartController({
         return `${Number.isFinite(n) ? n.toFixed(1) : "0.0"}%`;
     }
 
-    function formatSlicePercent(value) {
-        const n = Number(value);
-        return `${Number.isFinite(n) ? n.toLocaleString("es-CO", {
-            minimumFractionDigits: 1,
-            maximumFractionDigits: 1
-        }) : "0,0"}%`;
-    }
-
-    function boxesOverlap(a, b, padding = 2) {
-        return !(
-            a.right + padding < b.left ||
-            a.left - padding > b.right ||
-            a.bottom + padding < b.top ||
-            a.top - padding > b.bottom
-        );
-    }
-
-    function createSectorPercentLabelsPlugin() {
-        return {
-            id: "pib-sector-percent-labels",
-            afterDatasetsDraw(chart) {
-                const dataset = chart.data?.datasets?.[0];
-                const meta = chart.getDatasetMeta(0);
-                const values = (dataset?.data || []).map(value => Number(value) || 0);
-                const total = values.reduce((sum, value) => sum + Math.max(0, value), 0);
-                if (!total || !meta?.data?.length) return;
-
-                const { ctx, chartArea } = chart;
-                const placed = [];
-                const slices = meta.data
-                    .map((arc, index) => ({ arc, index, value: values[index] || 0 }))
-                    .filter(item => item.value > 0)
-                    .sort((a, b) => b.value - a.value);
-
-                ctx.save();
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillStyle = "#ffffff";
-                ctx.strokeStyle = "rgba(15, 23, 42, 0.45)";
-                ctx.lineWidth = 3;
-
-                slices.forEach(({ arc, value }) => {
-                    const percent = (value / total) * 100;
-                    const props = arc.getProps([
-                        "x",
-                        "y",
-                        "startAngle",
-                        "endAngle",
-                        "circumference",
-                        "outerRadius",
-                        "innerRadius"
-                    ], true);
-                    const circumference = Math.abs(Number(props.circumference) || 0);
-                    if (percent < 3 || circumference < 0.24) return;
-
-                    const radius = (Number(props.innerRadius) + Number(props.outerRadius)) / 2 || Number(props.outerRadius) * 0.58;
-                    const angle = (Number(props.startAngle) + Number(props.endAngle)) / 2;
-                    const x = Number(props.x) + Math.cos(angle) * radius;
-                    const y = Number(props.y) + Math.sin(angle) * radius;
-                    if (
-                        x < chartArea.left ||
-                        x > chartArea.right ||
-                        y < chartArea.top ||
-                        y > chartArea.bottom
-                    ) return;
-
-                    const label = formatSlicePercent(percent);
-                    const fontSize = Math.max(9, Math.min(12, Math.round(Number(props.outerRadius) * 0.09)));
-                    ctx.font = `700 ${fontSize}px Outfit, sans-serif`;
-                    const textWidth = ctx.measureText(label).width;
-                    const availableArc = Math.max(0, radius * circumference * 0.72);
-                    if (textWidth > availableArc) return;
-
-                    const box = {
-                        left: x - textWidth / 2,
-                        right: x + textWidth / 2,
-                        top: y - fontSize / 2,
-                        bottom: y + fontSize / 2
-                    };
-                    if (placed.some(existing => boxesOverlap(box, existing, 4))) return;
-
-                    ctx.strokeText(label, x, y);
-                    ctx.fillText(label, x, y);
-                    placed.push(box);
-                });
-
-                ctx.restore();
-            }
-        };
-    }
-
     function normalizeSectorLabel(label) {
         const text = String(label ?? "").toLowerCase();
         if (text.includes("primaria")) return "primarias";
@@ -433,8 +342,7 @@ export function createPibSectorPieChartController({
                 type: "pie",
                 colors: await getRendererPalette(),
                 formatValue: formatPercent,
-                hoverOffset: 0,
-                plugins: [createSectorPercentLabelsPlugin()]
+                hoverOffset: 0
             });
             bindPreciseSectorPointer(canvas);
             await syncRendererLegend();

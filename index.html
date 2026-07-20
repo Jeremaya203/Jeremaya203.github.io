@@ -11,6 +11,12 @@
   <link rel="stylesheet" href="./maestra.css">
   <link rel="stylesheet" href="./navbar-footer.css">
   <link rel="stylesheet" href="./oot-complementario.css">
+  <link rel="stylesheet" href="./inline-extracted.css">
+    <link rel="stylesheet" href="mobile-warning.css">
+  <script defer src="mobile-warning.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/12.16.0/firebase-auth-compat.js"></script>
+  <script defer src="js/shared-auth.js"></script>
 </head>
 <body>
   <div id="oot-navbar-placeholder"></div>
@@ -48,7 +54,7 @@
         <p class="oot-sec-sub">Seleccione la herramienta que necesita para su an&aacute;lisis territorial.</p>
         <div class="oot-modulos-destacados">
 
-          <a href="./Modulo_Chat_normativo.html" class="oot-modcard" style="background-image:url('./images/home/c_normativa.png')">
+          <a id="ie-index-1" href="./Modulo_Chat_normativo.html" class="oot-modcard">
             <div class="oot-modcard-overlay"></div>
             <div class="oot-modcard-body">
               <span class="oot-modcard-badge">Inteligencia Artificial</span>
@@ -57,7 +63,7 @@
             </div>
           </a>
 
-          <a href="./Modulo_Determinantes.html" class="oot-modcard" style="background-image:url('./images/home/determinantes.png')">
+          <a id="ie-index-2" href="./Modulo_Determinantes.html" class="oot-modcard">
             <div class="oot-modcard-overlay"></div>
             <div class="oot-modcard-body">
               <span class="oot-modcard-badge">An&aacute;lisis Espacial</span>
@@ -66,7 +72,7 @@
             </div>
           </a>
 
-          <a href="./Modulo_Indicadores.html" class="oot-modcard" style="background-image:url('./images/home/indicadores.png')">
+          <a id="ie-index-3" href="./Modulo_Indicadores.html" class="oot-modcard">
             <div class="oot-modcard-overlay"></div>
             <div class="oot-modcard-body">
               <span class="oot-modcard-badge">Geoestad&iacute;stica</span>
@@ -109,7 +115,7 @@
     <section class="oot-herramientas-section">
       <div class="container">
         <h2 class="oot-sec-title">Herramientas para el Ordenamiento Nacional</h2>
-        <p class="oot-sec-sub" style="text-wrap:balance">Accede a informaci&oacute;n territorial actualizada, mapas interactivos y an&aacute;lisis asistidos por inteligencia artificial para apoyar la gesti&oacute;n y planificaci&oacute;n territorial.</p>
+        <p id="ie-index-4" class="oot-sec-sub">Accede a informaci&oacute;n territorial actualizada, mapas interactivos y an&aacute;lisis asistidos por inteligencia artificial para apoyar la gesti&oacute;n y planificaci&oacute;n territorial.</p>
 
         <!-- ── Carrusel de módulos ─────────────────────────────────── -->
         <div class="oot-carousel">
@@ -223,57 +229,57 @@
 
             <!-- Noticia 1 -->
             <div class="col-lg-4 mb-4">
-              <div class="oot-noticia-card" style="background:rgba(15,35,64,0.6);border:1px solid rgba(74,144,217,0.15);border-radius:16px;overflow:hidden;height:100%;display:flex;flex-direction:column;transition:transform 0.2s,box-shadow 0.2s;">
-                <div style="height:160px;overflow:hidden;position:relative;">
-                  <img src="./images/noticias/noticia-decreto-0381-2026.png" alt="Decreto 0381 de 2026" style="width:100%;height:100%;object-fit:cover;object-position:top;transition:transform 0.4s;">
-                  <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(11,30,50,0.85) 100%);"></div>
+              <div id="ie-index-5" class="oot-noticia-card">
+                <div id="ie-index-6">
+                  <img id="ie-index-7" src="./images/noticias/noticia-decreto-0381-2026.png" alt="Decreto 0381 de 2026">
+                  <div id="ie-index-8"></div>
                 </div>
-                <div style="padding:22px 24px 24px;display:flex;flex-direction:column;flex:1;">
-                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-                    <span style="background:rgba(74,144,217,0.12);color:#4a90d9;font-size:10.4px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:4px 10px;border-radius:20px;">Normativa</span>
-                    <span style="color:#7a9cc0;font-size:12px;">Abril 2026</span>
+                <div id="ie-index-9">
+                  <div id="ie-index-10">
+                    <span id="ie-index-11">Normativa</span>
+                    <span id="ie-index-12">Abril 2026</span>
                   </div>
-                  <h3 style="font-size:16.8px;font-weight:700;color:#e0e8f2;line-height:1.35;margin-bottom:10px;">Gobierno Nacional reglamenta nuevo procedimiento para el ordenamiento territorial centrado en las determinantes de ordenamiento</h3>
-                  <p style="font-size:13.6px;color:#7a9cc0;line-height:1.55;margin-bottom:16px;flex:1;">El Decreto 0381 del 07 de abril de 2026 reglamenta el procedimiento para la gesti&oacute;n de la informaci&oacute;n y establece par&aacute;metros estrictos de coordinaci&oacute;n interinstitucional para la expedicci&oacute;n de las determinantes de ordenamiento territorial.</p>
-                  <button data-oot-click="abrirModalNoticia" data-oot-arg="./images/noticias/noticia-decreto-0381-2026.png" style="font-size:12.8px;font-weight:600;color:#4a90d9;text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:none;border:none;padding:0;cursor:pointer;">Ver m&aacute;s <i class="fas fa-arrow-right" style="font-size:10.4px;"></i></button>
+                  <h3 id="ie-index-13">Gobierno Nacional reglamenta nuevo procedimiento para el ordenamiento territorial centrado en las determinantes de ordenamiento</h3>
+                  <p id="ie-index-14">El Decreto 0381 del 07 de abril de 2026 reglamenta el procedimiento para la gesti&oacute;n de la informaci&oacute;n y establece par&aacute;metros estrictos de coordinaci&oacute;n interinstitucional para la expedicci&oacute;n de las determinantes de ordenamiento territorial.</p>
+                  <button id="ie-index-15" data-oot-click="abrirModalNoticia" data-oot-arg="./images/noticias/noticia-decreto-0381-2026.png">Ver m&aacute;s <i id="ie-index-16" class="fas fa-arrow-right"></i></button>
                 </div>
               </div>
             </div>
 
             <!-- Noticia 2 -->
             <div class="col-lg-4 mb-4">
-              <div class="oot-noticia-card" style="background:rgba(15,35,64,0.6);border:1px solid rgba(74,144,217,0.15);border-radius:16px;overflow:hidden;height:100%;display:flex;flex-direction:column;transition:transform 0.2s,box-shadow 0.2s;">
-                <div style="height:160px;overflow:hidden;position:relative;">
-                  <img src="./images/noticias/noticia-decreto-64-2026.png" alt="Decreto 64 de 2026" style="width:100%;height:100%;object-fit:cover;object-position:top;transition:transform 0.4s;">
-                  <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(11,30,50,0.85) 100%);"></div>
+              <div id="ie-index-17" class="oot-noticia-card">
+                <div id="ie-index-18">
+                  <img id="ie-index-19" src="./images/noticias/noticia-decreto-64-2026.png" alt="Decreto 64 de 2026">
+                  <div id="ie-index-20"></div>
                 </div>
-                <div style="padding:22px 24px 24px;display:flex;flex-direction:column;flex:1;">
-                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-                    <span style="background:rgba(39,168,128,0.12);color:#27a880;font-size:10.4px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:4px 10px;border-radius:20px;">Institucional</span>
-                    <span style="color:#7a9cc0;font-size:12px;">Enero 2026</span>
+                <div id="ie-index-21">
+                  <div id="ie-index-22">
+                    <span id="ie-index-23">Institucional</span>
+                    <span id="ie-index-24">Enero 2026</span>
                   </div>
-                  <h3 style="font-size:16.8px;font-weight:700;color:#e0e8f2;line-height:1.35;margin-bottom:10px;">Gobierno Nacional reglamenta la creaci&oacute;n de Colombia OT con el Decreto 64 de 2026</h3>
-                  <p style="font-size:13.6px;color:#7a9cc0;line-height:1.55;margin-bottom:16px;flex:1;">El Decreto 64 de 2026 reglamenta la conformaci&oacute;n y funcionamiento de Colombia OT (OOT), cuyo objetivo es recopilar, analizar y disponer de informaci&oacute;n t&eacute;cnica y cient&iacute;fica para el soporte de pol&iacute;ticas p&uacute;blicas de OT.</p>
-                  <button data-oot-click="abrirModalNoticia" data-oot-arg="./images/noticias/noticia-decreto-64-2026.png" style="font-size:12.8px;font-weight:600;color:#4a90d9;text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:none;border:none;padding:0;cursor:pointer;">Ver m&aacute;s <i class="fas fa-arrow-right" style="font-size:10.4px;"></i></button>
+                  <h3 id="ie-index-25">Gobierno Nacional reglamenta la creaci&oacute;n de Colombia OT con el Decreto 64 de 2026</h3>
+                  <p id="ie-index-26">El Decreto 64 de 2026 reglamenta la conformaci&oacute;n y funcionamiento de Colombia OT (OOT), cuyo objetivo es recopilar, analizar y disponer de informaci&oacute;n t&eacute;cnica y cient&iacute;fica para el soporte de pol&iacute;ticas p&uacute;blicas de OT.</p>
+                  <button id="ie-index-27" data-oot-click="abrirModalNoticia" data-oot-arg="./images/noticias/noticia-decreto-64-2026.png">Ver m&aacute;s <i id="ie-index-28" class="fas fa-arrow-right"></i></button>
                 </div>
               </div>
             </div>
 
             <!-- Noticia 3 -->
             <div class="col-lg-4 mb-4">
-              <div class="oot-noticia-card" style="background:rgba(15,35,64,0.6);border:1px solid rgba(74,144,217,0.15);border-radius:16px;overflow:hidden;height:100%;display:flex;flex-direction:column;transition:transform 0.2s,box-shadow 0.2s;">
-                <div style="height:160px;overflow:hidden;position:relative;">
-                  <img src="./images/noticias/noticia-appa-197000-ha.png" alt="APPA 197.000 hectáreas" style="width:100%;height:100%;object-fit:cover;object-position:top;transition:transform 0.4s;">
-                  <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(11,30,50,0.85) 100%);"></div>
+              <div id="ie-index-29" class="oot-noticia-card">
+                <div id="ie-index-30">
+                  <img id="ie-index-31" src="./images/noticias/noticia-appa-197000-ha.png" alt="APPA 197.000 hectáreas">
+                  <div id="ie-index-32"></div>
                 </div>
-                <div style="padding:22px 24px 24px;display:flex;flex-direction:column;flex:1;">
-                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-                    <span style="background:rgba(244,168,51,0.12);color:#f4a833;font-size:10.4px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:4px 10px;border-radius:20px;">Agropecuario</span>
-                    <span style="color:#7a9cc0;font-size:12px;">Marzo 2026</span>
+                <div id="ie-index-33">
+                  <div id="ie-index-34">
+                    <span id="ie-index-35">Agropecuario</span>
+                    <span id="ie-index-36">Marzo 2026</span>
                   </div>
-                  <h3 style="font-size:16.8px;font-weight:700;color:#e0e8f2;line-height:1.35;margin-bottom:10px;">Colombia supera las 197.000 hect&aacute;reas declaradas como &Aacute;reas de Protecci&oacute;n para la Producci&oacute;n de Alimentos (APPA)</h3>
-                  <p style="font-size:13.6px;color:#7a9cc0;line-height:1.55;margin-bottom:16px;flex:1;">Un hito hist&oacute;rico para la seguridad alimentaria del pa&iacute;s. Las APPA representan el compromiso del Estado con los campesinos y las comunidades rurales, garantizando que las tierras dedicadas a la producci&oacute;n de alimentos permanezcan en el tiempo.</p>
-                  <button data-oot-click="abrirModalNoticia" data-oot-arg="./images/noticias/noticia-appa-197000-ha.png" style="font-size:12.8px;font-weight:600;color:#4a90d9;text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:none;border:none;padding:0;cursor:pointer;">Ver m&aacute;s <i class="fas fa-arrow-right" style="font-size:10.4px;"></i></button>
+                  <h3 id="ie-index-37">Colombia supera las 197.000 hect&aacute;reas declaradas como &Aacute;reas de Protecci&oacute;n para la Producci&oacute;n de Alimentos (APPA)</h3>
+                  <p id="ie-index-38">Un hito hist&oacute;rico para la seguridad alimentaria del pa&iacute;s. Las APPA representan el compromiso del Estado con los campesinos y las comunidades rurales, garantizando que las tierras dedicadas a la producci&oacute;n de alimentos permanezcan en el tiempo.</p>
+                  <button id="ie-index-39" data-oot-click="abrirModalNoticia" data-oot-arg="./images/noticias/noticia-appa-197000-ha.png">Ver m&aacute;s <i id="ie-index-40" class="fas fa-arrow-right"></i></button>
                 </div>
               </div>
             </div>
@@ -283,14 +289,14 @@
       </section>
 
     <!-- Modal Noticias -->
-    <div id="modal-noticia" data-oot-click="cerrarModalNoticia" style="display:none;position:fixed;inset:0;z-index:20000;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:24px;opacity:0;transition:opacity 0.3s;">
-      <div data-oot-click="_ootNoop" style="position:relative;max-width:900px;width:100%;max-height:90vh;background:#0b1929;border:1px solid rgba(74,144,217,0.25);border-radius:16px;overflow:hidden;transform:scale(0.92);transition:transform 0.3s;box-shadow:0 24px 80px rgba(0,0,0,0.6);">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid rgba(74,144,217,0.15);">
-          <span style="font-size:13.6px;font-weight:600;color:#e0e8f2;">Documento de referencia</span>
-          <button data-oot-click="cerrarModalNoticia" class="oot-modal-close" style="background:none;border:none;color:#7a9cc0;font-size:19.2px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:color 0.15s;">&times;</button>
+    <div id="modal-noticia" data-oot-click="cerrarModalNoticia">
+      <div id="ie-index-41" data-oot-click="_ootNoop">
+        <div id="ie-index-42">
+          <span id="ie-index-43">Documento de referencia</span>
+          <button id="ie-index-44" data-oot-click="cerrarModalNoticia" class="oot-modal-close">&times;</button>
         </div>
-        <div style="padding:20px;overflow-y:auto;max-height:calc(90vh - 60px);text-align:center;">
-          <img id="modal-noticia-img" src="" alt="Documento" style="max-width:100%;height:auto;border-radius:8px;border:1px solid rgba(74,144,217,0.15);">
+        <div id="ie-index-45">
+          <img id="modal-noticia-img" src="" alt="Documento">
         </div>
       </div>
     </div>

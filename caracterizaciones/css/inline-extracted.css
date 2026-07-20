@@ -1,0 +1,104 @@
+/* Extraido de style="" attrs inline — CSP compliance (sin !important:
+   selector por id, para no romper toggles JS via element.style.x) */
+
+/* -- ocupacion.html -- */
+#ie-ocupacion-1 { z-index: 101; }
+#ie-ocupacion-2 { background: #004A69; color: white; }
+#inicio { color: white !important; }
+#userName { color: white !important; }
+#navbar { display:none; }
+#periodoSliderContainer { display:none; }
+#basemapPanel { display:none; }
+#basemapPanel { display:none; }
+#subtabsControls { display:none; }
+#timeSliderWrap { display:none; margin:10px 0 14px 0; }
+#timeSliderLabel { text-align:center; font-weight:600; margin-bottom:6px; }
+#timeSlider { width:100%; }
+#geoformasCharts { display:none; margin-top:10px; }
+#ie-ocupacion-3 { margin-bottom:22px; }
+#geoPieTitle { margin:0 0 10px 0; }
+#geoDonutTitle { margin:0 0 10px 0; }
+#geoDonutSubtitle { margin:0 0 10px 0; }
+#indicesCharts { display:none; margin-top:6px; }
+#ie-ocupacion-4 { margin-bottom:20px; }
+#ie-ocupacion-5 { margin:0 0 6px 0; font-size:0.9em; text-align:center; color:#555; }
+#ie-ocupacion-6 { margin-bottom:20px; }
+#ie-ocupacion-7 { margin:0 0 6px 0; font-size:0.9em; text-align:center; color:#555; }
+#ie-ocupacion-8 { margin:0 0 6px 0; font-size:0.9em; text-align:center; color:#555; }
+#piramidesCharts { display:none; margin-top:6px; }
+#transicionCharts { display:none; margin-top:6px; }
+#tasaCrecimientoCharts { display:none; margin-top:6px; }
+#migracionExternaCharts { display:none; margin-top:6px; }
+#migracionInternaCharts { display:none; margin-top:6px; }
+#autoreconocimientoCharts { display:none; margin-top:6px; }
+#condicionesSeguridadCharts { display:none; margin-top:6px; }
+#contextoHistoricoTimeline { display:none; margin-top:20px; }
+#summaryDiv { margin-top: 15px; padding: 10px; background-color: #FFFAF0; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; line-height: 1.4; }
+
+/* -- socioeconomico.html -- */
+#ie-socioeconomico-1 { z-index: 101; }
+#ie-socioeconomico-2 { background: #004A69; color: white; }
+#inicio { color: white !important; }
+#userName { color: white !important; }
+#navbar { display:none; }
+#basemapPanel { display:none; }
+#basemapPanel { display:none; }
+#subtabsControls { display:none; }
+#timeSliderWrap { display:none; margin:10px 0 14px 0; }
+#timeSliderLabel { text-align:center; font-weight:600; margin-bottom:6px; }
+#timeSlider { width:100%; }
+#geoformasCharts { display:none; margin-top:10px; }
+#ie-socioeconomico-3 { margin-bottom:22px; }
+#geoPieTitle { margin:0 0 10px 0; }
+#geoDonutTitle { margin:0 0 10px 0; }
+#geoDonutSubtitle { margin:0 0 10px 0; }
+#summaryDiv { margin-top: 15px; padding: 10px; background-color: #FFFAF0; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; line-height: 1.4; }
+
+/* -- biofisico.html -- */
+#ie-biofisico-1 { z-index: 101 }
+#ie-biofisico-2 { background: #004a69; color: white }
+#inicio { color: white !important }
+#userName { color: white !important }
+#navbar { display: none }
+#basemapPanel { display: none }
+#basemapPanel { display:none; }
+#subtabsControls { display: none }
+#timeSliderWrap { display: none; margin: 10px 0 14px 0 }
+#timeSliderLabel { text-align: center; font-weight: 600; margin-bottom: 6px }
+#timeSlider { width: 100% }
+#geoformasCharts { display: none; margin-top: 10px }
+#ie-biofisico-3 { margin-bottom: 22px }
+#geoPieTitle { margin: 0 0 10px 0 }
+#geoDonutTitle { margin:0 0 10px 0; }
+#geoDonutSubtitle { margin: 0 0 10px 0 }
+
+/* -- contexto.html -- */
+#ie-contexto-1 { z-index: 101; }
+#ie-contexto-2 { background: #004A69; color: white; }
+#inicio { color: white !important; }
+#userName { color: white !important; }
+#navbar { display:none; }
+#basemapPanel { display:none; }
+#basemapPanel { display:none; }
+#subtabsControls { display:none; }
+#chart { width: 100%; display: none; margin-bottom: 15px; }
+#summaryDiv-contexto { margin-top:10px; padding:10px; background-color:#FFFAF0; border:1px solid #ddd; border-radius:4px; font-size:0.9em; line-height:1.4; max-height:calc(100vh - 220px); overflow-y:auto; }
+
+/* -- limites.html -- */
+#ie-limites-1 { z-index: 101; }
+#ie-limites-2 { background: #004A69; color: white; }
+#inicio { color: white !important; }
+#userName { color: white !important; }
+#basemapPanel { display:none; }
+#subtabsControls { display:none; }
+#municipalStatusChartSection { display:none; }
+#timelineDiv { display:none; }
+#lineDescriptionsDiv { display:none; }
+
+/* -- ordenamiento.html -- */
+#ie-ordenamiento-1 { z-index: 101; }
+#ie-ordenamiento-2 { background: #004A69; color: white; }
+#inicio { color: white !important; }
+#userName { color: white !important; }
+#basemapPanel { display: none }
+#subtabsControls { display:none; }

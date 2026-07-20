@@ -1,0 +1,55 @@
+/* custom.css - Estilos del módulo Cargue extraídos para cumplimiento de CSP */
+
+nav.oot-dark-nav {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 140px !important;
+    min-height: 140px !important;
+    background: #0f2340 !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    z-index: 10100 !important;
+}
+nav.oot-dark-links {
+    display: flex !important;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    height: auto !important;
+    background: transparent !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    min-height: 0 !important;
+}
+body.calcite {
+    padding-top: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+}
+.calcite-map {
+    top: 0 !important;
+    height: 100vh !important;
+}
+.calcite-map .calcite-map-absolute {
+    top: 140px !important;
+    height: calc(100vh - 140px) !important;
+}
+#mainDiv {
+    position: absolute !important;
+    top: 140px !important;
+    height: calc(100vh - 140px) !important;
+    margin-top: 0 !important;
+}
+.calltocontext {
+    top: 187px !important;
+}
+#oot-footer-placeholder {
+    display: none !important;
+}

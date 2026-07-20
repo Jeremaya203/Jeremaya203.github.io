@@ -68,6 +68,12 @@ export function getAxisTitles(layerConfig, chartType, isVertical, datasets) {
         return { xTitle, yTitle };
     }
 
+    if (layerConfig?.isEcosistema
+        && layerConfig?.ecosistemaType === "deforestacion"
+        && chartType === "line") {
+        return { xTitle: "Periodo", yTitle: valueTitle };
+    }
+
     if (layerConfig?.isFenomenos) {
         if (layerConfig.fenomenosType === "inundaciones") {
             xTitle = "Susceptibilidad por inundación";

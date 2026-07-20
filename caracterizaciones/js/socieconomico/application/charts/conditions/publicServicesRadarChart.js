@@ -2,8 +2,7 @@ import { getChartBaseWhere } from "../core/chartUtils.js?v=travel-time-pie-20260
 import { getChartSymbolLookups, getRendererVisualForValue } from "../core/chartSymbolUtils.js?v=travel-time-pie-20260511";
 import { prepareVisibleChartCanvas, setChartTitle } from "../ui/chartPanel.js?v=local-chart-title-20260529";
 import { setChartStatus } from "../ui/chartStatus.js";
-import { destroyCanvasChart, createBoundedCache } from "../core/chartLifecycle.js";
-import FeatureLayer from "https://js.arcgis.com/4.29/@arcgis/core/layers/FeatureLayer.js";
+import { destroyCanvasChart } from "../core/chartLifecycle.js";
 
 const DEFAULT_SETTLEMENT_LABELS = {
     "14091": "Rural",
@@ -193,6 +192,9 @@ function buildTelecomNarrative(place, municipalityValues) {
     return `En cuanto al acceso a telecomunicaciones ${place.mpnombre} registra ${formatInteger(municipalityValues.total_internet_fijo)} suscripciones a internet fijo y ${formatInteger(municipalityValues.total_emisoras)} emisoras de radio, que en conjunto se aproximan al conocimiento de las condiciones de calidad de vida de la poblacion y cuyas limitantes de acceso afectan el desarrollo humano sostenible, por consiguiente, el fortalecimiento de la capacidad institucional de los territorios debera garantizar el acceso equitativo de la poblacion a servicios basicos.`;
 }
 
+const TELECOM_QUERY_TIMEOUT_MS = 90000;
+const TELECOM_UNAVAILABLE_MESSAGE = "La información de telecomunicaciones no se encuentra disponible en el servicio.";
+
 function withTimeout(promise, ms, message) {
     let timeoutId = null;
     const timeout = new Promise((_, reject) => {
@@ -276,37 +278,69 @@ export function createPublicServicesRadarChartController({
     let selectedSettlementCode = null;
     let telecomDoughnutChart = null;
     let telecomRadioChart = null;
-    const telecomTableCache = createBoundedCache(20);
 
-    async function getTelecomTable(serviceUrl) {
-        if (!serviceUrl) throw new Error("Servicio de telecomunicaciones no configurado.");
-        if (!telecomTableCache.has(serviceUrl)) {
-            telecomTableCache.set(serviceUrl, new FeatureLayer({
-                url: serviceUrl,
-                outFields: ["*"]
-            }));
+    function buildTelecomWhereVariants(fieldName, code) {
+        const field = String(fieldName || "").trim();
+        const value = String(code ?? "").trim();
+        if (!field || !value) return [];
+        const escaped = value.replace(/'/g, "''");
+        const variants = [`${field} = '${escaped}'`];
+        if (/^\d+$/.test(value)) {
+            variants.push(`${field} = ${Number(value)}`);
         }
-        const layer = telecomTableCache.get(serviceUrl);
-        await layer.load();
-        return layer;
+        return [...new Set(variants)];
+    }
+
+    function hasUsableTelecomAttributes(attrs) {
+        return Boolean(attrs && typeof attrs === "object" && Object.keys(attrs).length);
     }
 
     async function queryTelecomRow(serviceUrl, fieldName, code, requiredFields = []) {
         const outFields = [...new Set(requiredFields)].filter(Boolean);
-        const escapedCode = String(code ?? "").replace(/'/g, "''");
-        const isDivipola = String(fieldName || "").toLowerCase() === "divipola";
-        const isMunicipalityCode = /^\d{5}$/.test(escapedCode);
-        const where = isDivipola && isMunicipalityCode
-            ? `UPPER(${fieldName}) = '${escapedCode.toUpperCase()}'`
-            : `${fieldName} = '${escapedCode}'`;
-        const payload = await queryServiceJson(serviceUrl, {
-            where,
-            outFields: outFields.length ? outFields : ["*"],
-            returnGeometry: false,
-            resultRecordCount: 1,
-            timeoutMs: 45000
-        }, `La consulta de telecomunicaciones no respondio a tiempo (${fieldName}=${code}).`);
-        return payload?.features?.[0]?.attributes || null;
+        const whereAttempts = buildTelecomWhereVariants(fieldName, code);
+        let lastError = null;
+
+        for (const where of whereAttempts) {
+            try {
+                const payload = await queryServiceJson(serviceUrl, {
+                    where,
+                    outFields: outFields.length ? outFields : ["*"],
+                    returnGeometry: false,
+                    resultRecordCount: 1,
+                    timeoutMs: TELECOM_QUERY_TIMEOUT_MS
+                }, `La consulta de telecomunicaciones no respondio a tiempo (${fieldName}=${code}).`);
+                const attrs = payload?.features?.[0]?.attributes || null;
+                if (hasUsableTelecomAttributes(attrs)) return attrs;
+                continue;
+            } catch (error) {
+                lastError = error;
+                console.warn(`Consulta de telecomunicaciones fallida (${where}) en ${serviceUrl}:`, error);
+                if (/no respondio a tiempo/i.test(String(error?.message || "")) || !outFields.length) {
+                    throw error;
+                }
+            }
+
+            try {
+                const payload = await queryServiceJson(serviceUrl, {
+                    where,
+                    outFields: ["*"],
+                    returnGeometry: false,
+                    resultRecordCount: 1,
+                    timeoutMs: TELECOM_QUERY_TIMEOUT_MS
+                }, `La consulta de telecomunicaciones no respondio a tiempo (${fieldName}=${code}).`);
+                const attrs = payload?.features?.[0]?.attributes || null;
+                if (hasUsableTelecomAttributes(attrs)) return attrs;
+            } catch (error) {
+                lastError = error;
+                console.warn(`Consulta alternativa de telecomunicaciones fallida (${where}) en ${serviceUrl}:`, error);
+                if (/no respondio a tiempo/i.test(String(error?.message || ""))) {
+                    throw error;
+                }
+            }
+        }
+
+        if (lastError) throw lastError;
+        return null;
     }
 
     async function queryTelecomRowWithFallback(serviceUrls = [], fieldName, code, requiredFields = []) {
@@ -314,10 +348,7 @@ export function createPublicServicesRadarChartController({
         let lastError = null;
         for (const serviceUrl of urls) {
             try {
-                const table = await getTelecomTable(serviceUrl);
-                const availableFields = new Set((table?.fields || []).map(field => String(field?.name || "").toLowerCase()));
-                const outFields = requiredFields.filter(field => availableFields.has(String(field).toLowerCase()));
-                const row = await queryTelecomRow(serviceUrl, fieldName, code, outFields);
+                const row = await queryTelecomRow(serviceUrl, fieldName, code, requiredFields);
                 if (row) return row;
             } catch (error) {
                 lastError = error;
@@ -513,6 +544,105 @@ export function createPublicServicesRadarChartController({
             });
     }
 
+    function resolveRadarValueLabelPosition({
+        point,
+        centerX,
+        centerY,
+        rawValue,
+        datasetIndex,
+        datasetCount,
+        radialScale
+    }) {
+        const dx = point.x - centerX;
+        const dy = point.y - centerY;
+        const distance = Math.hypot(dx, dy) || 1;
+        const unitX = dx / distance;
+        const unitY = dy / distance;
+        const tangentX = -unitY;
+        const tangentY = unitX;
+        const min = Number(radialScale?.min) || 1;
+        const max = Number(radialScale?.max) || 7;
+        const valueRatio = (rawValue - min) / Math.max(max - min, 1);
+
+        const radialOffset = valueRatio >= 0.85
+            ? -30
+            : valueRatio >= 0.65
+                ? -20
+                : valueRatio >= 0.35
+                    ? -6
+                    : 14;
+        const tangentOffset = datasetCount > 1
+            ? (datasetIndex - (datasetCount - 1) / 2) * 12
+            : 0;
+
+        return {
+            x: point.x + unitX * radialOffset + tangentX * tangentOffset,
+            y: point.y + unitY * radialOffset + tangentY * tangentOffset
+        };
+    }
+
+    function createPublicServicesRadarValueLabelsPlugin(chartConfig) {
+        return {
+            id: "public-services-radar-value-labels",
+            afterDraw(chart) {
+                const { ctx, chartArea } = chart;
+                const radialScale = chart.scales?.r;
+                const centerX = radialScale?.xCenter;
+                const centerY = radialScale?.yCenter;
+                if (!Number.isFinite(centerX) || !Number.isFinite(centerY) || !chartArea) return;
+
+                const visibleDatasetIndexes = (chart.data?.datasets || [])
+                    .map((_, index) => index)
+                    .filter(index => chart.isDatasetVisible(index));
+                const datasetCount = visibleDatasetIndexes.length;
+
+                visibleDatasetIndexes.forEach(datasetIndex => {
+                    const dataset = chart.data.datasets[datasetIndex];
+                    const meta = chart.getDatasetMeta(datasetIndex);
+                    (meta?.data || []).forEach((point, index) => {
+                        const rawValue = Number(dataset?.data?.[index]);
+                        if (!Number.isFinite(rawValue) || rawValue <= 0) return;
+                        if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return;
+
+                        const label = rangeLabel(rawValue, chartConfig);
+                        if (!label) return;
+
+                        const visibleIndex = visibleDatasetIndexes.indexOf(datasetIndex);
+                        const { x: labelX, y: labelY } = resolveRadarValueLabelPosition({
+                            point,
+                            centerX,
+                            centerY,
+                            rawValue,
+                            datasetIndex: visibleIndex,
+                            datasetCount,
+                            radialScale
+                        });
+
+                        if (
+                            labelX < chartArea.left + 4 ||
+                            labelX > chartArea.right - 4 ||
+                            labelY < chartArea.top + 4 ||
+                            labelY > chartArea.bottom - 4
+                        ) {
+                            return;
+                        }
+
+                        ctx.save();
+                        ctx.font = "600 10px Outfit, sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        ctx.lineWidth = 3;
+                        ctx.strokeStyle = "rgba(255, 255, 250, 0.92)";
+                        ctx.fillStyle = String(dataset?.borderColor || "#334155");
+                        ctx.strokeText(label, labelX, labelY);
+                        ctx.fillText(label, labelX, labelY);
+                        ctx.restore();
+                    });
+                });
+            }
+        };
+    }
+
     function createTelecomCenterLabelPlugin(getPercentText) {
         return {
             id: "telecom-center-label",
@@ -670,30 +800,38 @@ export function createPublicServicesRadarChartController({
 
         let municipalityAttrs = null;
         let departmentAttrs = null;
-        let telecomDataWarning = "";
-        try {
-            municipalityAttrs = await queryTelecomRowWithFallback(
+        const telecomDataWarning = TELECOM_UNAVAILABLE_MESSAGE;
+        const [municipalityResult, departmentResult] = await Promise.allSettled([
+            queryTelecomRowWithFallback(
                 [telecomConfig.municipalityServiceUrl, ...(telecomConfig.municipalityFallbackServiceUrls || [])],
                 telecomConfig.municipalityField,
                 municipalityCode,
                 telecomConfig.requiredFields
-            );
-            departmentAttrs = await queryTelecomRowWithFallback(
+            ),
+            queryTelecomRowWithFallback(
                 [telecomConfig.departmentServiceUrl, ...(telecomConfig.departmentFallbackServiceUrls || [])],
                 telecomConfig.departmentField,
                 departmentCode,
                 telecomConfig.requiredFields
-            );
-        } catch (error) {
-            telecomDataWarning = "La información de telecomunicaciones no se encuentra disponible en el servicio.";
-            console.warn("Telecomunicaciones sin datos consultables:", error);
+            )
+        ]);
+
+        if (municipalityResult.status === "fulfilled") {
+            municipalityAttrs = municipalityResult.value;
+        } else {
+            console.warn("Telecomunicaciones municipales sin datos consultables:", municipalityResult.reason);
         }
 
-        const hasTelecomData = Boolean(municipalityAttrs && departmentAttrs);
-        if (!hasTelecomData) {
-            municipalityAttrs = {};
-            departmentAttrs = {};
+        if (departmentResult.status === "fulfilled") {
+            departmentAttrs = departmentResult.value;
+        } else {
+            console.warn("Telecomunicaciones departamentales sin datos consultables:", departmentResult.reason);
         }
+
+        const hasMunicipalityData = hasUsableTelecomAttributes(municipalityAttrs);
+        const hasDepartmentData = hasUsableTelecomAttributes(departmentAttrs);
+        if (!hasMunicipalityData) municipalityAttrs = {};
+        if (!hasDepartmentData) departmentAttrs = {};
 
         const municipalityValues = {
             total_internet_fijo: toInteger(municipalityAttrs.total_internet_fijo),
@@ -712,7 +850,7 @@ export function createPublicServicesRadarChartController({
             municipalityValues.total_internet_fijo,
             departmentInternet
         ];
-        const hasInternetValues = hasTelecomData && doughnutData.some(value => Number(value) > 0);
+        const hasInternetValues = hasMunicipalityData && hasDepartmentData && doughnutData.some(value => Number(value) > 0);
 
         const palette = resolveTelecomPalette(rendererLookups, 4);
         const internetPalette = hasInternetValues
@@ -829,13 +967,14 @@ export function createPublicServicesRadarChartController({
             comunitarias: [municipalityValues.total_comunitarias_fm, 0],
             interesPublico: [municipalityValues.total_publico_fm, municipalityValues.total_publico_am]
         };
+        const hasRadioData = hasMunicipalityData;
 
         destroyCanvasChart(radioCanvas);
         resetTelecomRadioCanvas(radioCanvas);
         telecomRadioChart = new Chart(radioCanvas.getContext("2d"), {
             type: "bar",
             data: {
-                labels: ["Comunitarias", "Comercial", "Interes Publico"],
+                labels: ["Comunitarias", "Comercial", "Interés Publico"],
                 datasets: [{
                     label: "FM",
                     data: [
@@ -913,11 +1052,11 @@ export function createPublicServicesRadarChartController({
             },
             plugins: [createTelecomRadioTotalsPlugin()]
         });
-        showTelecomStatus(radioStatus, hasTelecomData ? "" : telecomDataWarning);
+        showTelecomStatus(radioStatus, hasRadioData ? "" : telecomDataWarning);
 
         if (radioText) {
             radioText.hidden = false;
-            radioText.textContent = hasTelecomData
+            radioText.textContent = hasRadioData
                 ? buildTelecomNarrative(place, municipalityValues)
                 : "La información de telecomunicaciones para este municipio se encuentra en proceso de actualización en el servicio fuente.";
         }
@@ -1078,7 +1217,7 @@ export function createPublicServicesRadarChartController({
         };
     }
 
-    async function actualizarGrafica(layer, config) {
+    async function actualizarGrafica(layer, config, options = {}) {
         const chartConfig = config?.chartConfig;
         if (!chartConfig || chartConfig.type !== "radar" || chartConfig.library !== "chart.js") return false;
 
@@ -1106,7 +1245,7 @@ export function createPublicServicesRadarChartController({
         validateRequiredFields(layer, chartConfig);
 
         const where = buildWhere(chartConfig);
-        if (chartConfig?.filter?.scope !== "allDepartments") {
+        if (!options.skipSyncMap && chartConfig?.filter?.scope !== "allDepartments") {
             applyWhereToActiveLayers?.(where);
         }
 
@@ -1267,7 +1406,8 @@ export function createPublicServicesRadarChartController({
                     if (!settlementCode) return;
                     await toggleSelectionFromChart(layer, chartConfig, settlementCode, config);
                 }
-            }
+            },
+            plugins: [createPublicServicesRadarValueLabelsPlugin(chartConfig)]
         });
 
         radarChart.options.plugins.tooltip.callbacks.label = buildTooltipLabel(chartConfig, radarChart);

@@ -1,1017 +1,88 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Caracterizaciones - Límites Municipales</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
-    <link rel="stylesheet" href="css/stylesLimites.css?v=reiniciar-consulta-20260622">
+    <link rel="stylesheet" href="css/global.css?v=responsive-20260712" />
+    <link rel="stylesheet" href="css/temas/limites.css?v=responsive-20260712" />
+    <link rel="stylesheet" href="css/stylesLimites.css?v=municipal-service-message-20260716">
 
     <script src="https://js.arcgis.com/4.29/"></script>
 
-    <script>
-        const __define = window.define;
-        const __require = window.require;
-        window.define = undefined;
-        window.require = undefined;
-    </script>
+    <script src="js/shared/arcgis-noconflict-start.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
-    <script>
-        (function ajustarGraficoLimitesDepartamentales() {
-            let ChartOriginal = window.Chart;
-
-            const fuenteGraficoLimites = {
-                family: "Outfit, sans-serif",
-                weight: "500"
-            };
-            const tamanoFuenteEjeYDepartamental = 8;
-            const tamanoFuenteEjeXDepartamental = 10;
-
-            function corregirTexto(texto) {
-                if (typeof texto !== "string" || !/[ÃÂâ]/.test(texto)) return texto;
-                try {
-                    const bytes = Uint8Array.from(Array.from(texto), caracter => caracter.charCodeAt(0) & 255);
-                    const corregido = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
-                    return corregido.includes("�") ? texto : corregido;
-                } catch (error) {
-                    return texto;
-                }
-            }
-
-            function corregirTextos(valor) {
-                if (typeof valor === "string") return corregirTexto(valor);
-                if (Array.isArray(valor)) return valor.map(corregirTextos);
-                if (!valor || typeof valor !== "object") return valor;
-
-                Object.keys(valor).forEach(clave => {
-                    valor[clave] = corregirTextos(valor[clave]);
-                });
-                return valor;
-            }
-
-            function formatearNumeroLimites(valor) {
-                const numero = Number(valor);
-                if (!Number.isFinite(numero)) return valor;
-
-                return new Intl.NumberFormat("es-CO", {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 2
-                }).format(numero);
-            }
-
-            function obtenerUnidadTooltip(texto) {
-                const unidad = corregirTexto(String(texto || ""))
-                    .replace(/km\s*(?:Â²|�|2)/gi, "km²")
-                    .match(/\s(km²|km)(?:\b|$)/i);
-
-                return unidad ? ` ${unidad[1]}` : "";
-            }
-
-            function aplicarFormatoTooltip(config) {
-                if (!config) return;
-                const opciones = config.options || (config.options = {});
-                const plugins = opciones.plugins || (opciones.plugins = {});
-                const tooltip = plugins.tooltip || (plugins.tooltip = {});
-                const callbacks = tooltip.callbacks || (tooltip.callbacks = {});
-                if (callbacks.__limitesFormatoNumerico) return;
-                const callbackOriginal = callbacks.label;
-
-                callbacks.label = function etiquetaTooltipFormateada(context) {
-                    const etiquetaOriginal = typeof callbackOriginal === "function"
-                        ? callbackOriginal(context)
-                        : context.raw;
-                    const unidad = obtenerUnidadTooltip(etiquetaOriginal);
-
-                    return `${formatearNumeroLimites(context.raw)}${unidad}`;
-                };
-                Object.defineProperty(callbacks, "__limitesFormatoNumerico", {
-                    value: true,
-                    enumerable: false
-                });
-            }
-
-            function esGraficoDepartamental() {
-                const titulo = document.getElementById("chartTitle")?.textContent || "";
-                return /departamental|departamentos/i.test(corregirTexto(titulo));
-            }
-
-            function asegurarFuente(ticks, size) {
-                if (!ticks) return;
-                ticks.font = {
-                    ...fuenteGraficoLimites,
-                    ...(ticks.font || {}),
-                    family: fuenteGraficoLimites.family,
-                    size
-                };
-            }
-
-            function limpiarCanvasDepartamental(canvas) {
-                canvas.removeAttribute("height");
-                canvas.removeAttribute("width");
-                canvas.style.width = "100%";
-                canvas.style.display = "block";
-            }
-
-            function esGraficoMunicipal() {
-                const titulo = document.getElementById("chartTitle")?.textContent || "";
-                return /l[ií]neas\s+lim[ií]trofes|l[ií]mites\s+municipales/i.test(corregirTexto(titulo));
-            }
-
-            function cortarTexto(texto, maximo) {
-                const limpio = corregirTexto(String(texto || "")).trim();
-                if (limpio.length <= maximo) return limpio;
-                return limpio.slice(0, Math.max(0, maximo - 1)).trimEnd() + "…";
-            }
-
-            function dividirEtiquetaLinea(nombre) {
-                const texto = corregirTexto(String(nombre || "Sin nombre")).replace(/\s+/g, " ").trim();
-                const maximoLinea = 28;
-                const maximoTotal = 56;
-
-                if (texto.length <= maximoLinea) return texto;
-
-                const palabras = cortarTexto(texto, maximoTotal).split(" ");
-                const lineas = [""];
-
-                palabras.forEach(palabra => {
-                    const indice = lineas.length - 1;
-                    const propuesta = lineas[indice] ? `${lineas[indice]} ${palabra}` : palabra;
-                    if (propuesta.length > maximoLinea && lineas.length < 2) {
-                        lineas.push(palabra);
-                    } else {
-                        lineas[indice] = propuesta;
-                    }
-                });
-
-                if (lineas.length > 2) lineas.length = 2;
-                if ((lineas[1] || "").length > maximoLinea) lineas[1] = cortarTexto(lineas[1], maximoLinea);
-
-                return lineas.filter(Boolean);
-            }
-
-            function prepararGraficoMunicipal(canvas, config) {
-                if (!canvas || !config || !esGraficoMunicipal()) return;
-
-                const labels = config.data?.labels || [];
-                const total = labels.length;
-                if (!total) return;
-
-                const opciones = config.options || (config.options = {});
-                const escalas = opciones.scales || (opciones.scales = {});
-                const escalaY = escalas.y || (escalas.y = {});
-                const escalaX = escalas.x || (escalas.x = {});
-                const muchasLineas = total > 12;
-                const pocasLineas = total <= 5;
-                const visiblesIniciales = muchasLineas ? 12 : total;
-                const altoCanvas = total === 1
-                    ? 250
-                    : muchasLineas
-                        ? 520
-                        : Math.max(260, Math.min(560, 150 + total * (pocasLineas ? 46 : 34)));
-                const fontSizeY = muchasLineas ? 9 : 10;
-                const fontSizeX = muchasLineas ? 10 : 11;
-
-                config.data.labels = labels.map(dividirEtiquetaLinea);
-
-                canvas.removeAttribute("height");
-                canvas.removeAttribute("width");
-                canvas.style.width = "100%";
-                canvas.style.display = "block";
-                canvas.style.height = `${altoCanvas}px`;
-                canvas.style.minHeight = `${altoCanvas}px`;
-                canvas.style.maxHeight = `${altoCanvas}px`;
-
-                opciones.responsive = false;
-                opciones.maintainAspectRatio = false;
-                opciones.indexAxis = "y";
-                opciones.layout = opciones.layout || {};
-                opciones.layout.padding = muchasLineas
-                    ? { top: 12, right: 18, bottom: 14, left: 6 }
-                    : { top: 14, right: 18, bottom: 14, left: 8 };
-
-                asegurarFuente(escalaY.ticks || (escalaY.ticks = {}), fontSizeY);
-                asegurarFuente(escalaX.ticks || (escalaX.ticks = {}), fontSizeX);
-                escalaY.ticks.autoSkip = false;
-                escalaY.ticks.maxRotation = 0;
-                escalaY.ticks.padding = muchasLineas ? 4 : 7;
-                escalaY.afterFit = function ajustarAnchoEjeLineas(axis) {
-                    axis.width = Math.max(axis.width, muchasLineas ? 118 : 132);
-                };
-
-                if (muchasLineas) {
-                    escalaY.min = 0;
-                    escalaY.max = visiblesIniciales - 1;
-                } else {
-                    delete escalaY.min;
-                    delete escalaY.max;
-                }
-
-                if (escalaX.title) {
-                    escalaX.title.text = corregirTexto(escalaX.title.text || "Longitud (km)");
-                    escalaX.title.font = {
-                        ...fuenteGraficoLimites,
-                        ...(escalaX.title.font || {}),
-                        family: fuenteGraficoLimites.family,
-                        size: fontSizeX
-                    };
-                }
-
-                opciones.datasets = opciones.datasets || {};
-                opciones.datasets.bar = {
-                    ...(opciones.datasets.bar || {}),
-                    categoryPercentage: muchasLineas ? 0.74 : 0.68,
-                    barPercentage: muchasLineas ? 0.78 : 0.7,
-                    borderWidth: 0.3
-                };
-
-                if (total === 1) opciones.barThickness = 24;
-                else if (pocasLineas) opciones.barThickness = 20;
-                else delete opciones.barThickness;
-
-                opciones.plugins = opciones.plugins || {};
-                opciones.plugins.zoom = {
-                    pan: { enabled: muchasLineas, mode: "y", threshold: 5 },
-                    zoom: {
-                        wheel: { enabled: muchasLineas, speed: 0.06, modifierKey: null },
-                        pinch: { enabled: muchasLineas },
-                        drag: { enabled: false },
-                        mode: "y"
-                    },
-                    limits: {
-                        y: { min: 0, max: Math.max(0, total - 1), minRange: Math.min(visiblesIniciales, total) }
-                    }
-                };
-            }
-
-            function prepararGraficoDepartamental(canvas, config) {
-                if (!canvas || !config || !esGraficoDepartamental()) return;
-
-                corregirTextos(config.data);
-                corregirTextos(config.options);
-                aplicarFormatoTooltip(config);
-
-                const labels = config.data?.labels || [];
-                const cantidadBarras = labels.length;
-                const esUnaBarra = cantidadBarras === 1;
-                const opciones = config.options || (config.options = {});
-                const escalas = opciones.scales || (opciones.scales = {});
-                const escalaY = escalas.y || (escalas.y = {});
-                const escalaX = escalas.x || (escalas.x = {});
-
-                limpiarCanvasDepartamental(canvas);
-                asegurarFuente(escalaY.ticks || (escalaY.ticks = {}), tamanoFuenteEjeYDepartamental);
-                asegurarFuente(escalaX.ticks || (escalaX.ticks = {}), tamanoFuenteEjeXDepartamental);
-
-                if (escalaX.title?.text) escalaX.title.text = corregirTexto(escalaX.title.text);
-                if (escalaX.title) {
-                    escalaX.title.font = {
-                        ...fuenteGraficoLimites,
-                        ...(escalaX.title.font || {}),
-                        family: fuenteGraficoLimites.family,
-                        size: tamanoFuenteEjeXDepartamental
-                    };
-                }
-
-                if (esUnaBarra) {
-                    canvas.style.height = "240px";
-                    canvas.style.minHeight = "240px";
-                    canvas.style.maxHeight = "240px";
-
-                    opciones.layout = opciones.layout || {};
-                    opciones.layout.padding = { top: 18, right: 20, bottom: 18, left: 8 };
-
-                    escalaY.ticks.padding = 8;
-                    escalaY.ticks.autoSkip = false;
-                    escalaY.afterFit = function despuesDeAjustarEjeY(axis) {
-                        axis.width = Math.max(axis.width, 82);
-                    };
-
-                    escalaX.ticks.padding = 6;
-                    opciones.datasets = opciones.datasets || {};
-                    opciones.datasets.bar = {
-                        ...(opciones.datasets.bar || {}),
-                        categoryPercentage: 0.52,
-                        barPercentage: 0.58,
-                        borderWidth: 0.3
-                    };
-                    opciones.barThickness = 24;
-                } else if (cantidadBarras > 1) {
-                    const pocosDeptos = cantidadBarras <= 5;
-                    const alturaPorBarra = pocosDeptos ? 28 : 18;
-                    const canvasHeight = Math.min(520, 100 + cantidadBarras * alturaPorBarra);
-
-                    canvas.style.height = `${canvasHeight}px`;
-                    canvas.style.minHeight = `${canvasHeight}px`;
-                    canvas.style.maxHeight = `${canvasHeight}px`;
-                }
-            }
-
-            function ChartAjustado(item, config) {
-                const canvas = item?.canvas || item;
-                aplicarFormatoTooltip(config);
-                prepararGraficoMunicipal(canvas, config);
-                prepararGraficoDepartamental(canvas, config);
-                return new ChartOriginal(item, config);
-            }
-
-            function instalarAjuste(ChartDisponible) {
-                if (!ChartDisponible || ChartDisponible.__limitesDepartamentalesAjustado) return;
-
-                ChartOriginal = ChartDisponible;
-                Object.setPrototypeOf(ChartAjustado, ChartOriginal);
-                ChartAjustado.prototype = ChartOriginal.prototype;
-                Object.getOwnPropertyNames(ChartOriginal).forEach(propiedad => {
-                    if (!(propiedad in ChartAjustado)) {
-                        Object.defineProperty(
-                            ChartAjustado,
-                            propiedad,
-                            Object.getOwnPropertyDescriptor(ChartOriginal, propiedad)
-                        );
-                    }
-                });
-
-                ChartAjustado.__limitesDepartamentalesAjustado = true;
-                window.Chart = ChartAjustado;
-            }
-
-            if (ChartOriginal) {
-                instalarAjuste(ChartOriginal);
-            } else {
-                Object.defineProperty(window, "Chart", {
-                    configurable: true,
-                    get() {
-                        return undefined;
-                    },
-                    set(valor) {
-                        delete window.Chart;
-                        instalarAjuste(valor);
-                    }
-                });
-            }
-        })();
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js" integrity="sha384-Cs3dgUx6+jDxxuqHvVH8Onpyj2LF1gKZurLDlhqzuJmUqVYMJ0THTWpxK5Z086Zm" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js" integrity="sha384-zPzbVRXfR492Sd5D+HydTYCxxgHAfgVO8KERbLlpeH5unsmbAEXrscGUUqLZG9BM" crossorigin="anonymous"></script>
+    <script src="js/limites/ajustar-grafico-limites-departamentales.js"></script>
    
-    <script>
-        window.define = __define;
-        window.require = __require;
-    </script>
-
-    <script>
-        (function controlarFiltroMunicipalPorNivelLimites() {
-            const TEXTO_MUNICIPIO_BLOQUEADO = "Municipio no disponible";
-            let aplicandoBloqueo = false;
-            let opcionBogotaDepartamento = null;
-
-            function obtenerNivelLimitesActivo() {
-                const activo = document.querySelector("#dropdownLimites .dropdown-item.active");
-                return (activo?.dataset?.target || "Departamentos").toUpperCase();
-            }
-
-            function estaActivoLimitesDepartamentales() {
-                return obtenerNivelLimitesActivo() === "DEPARTAMENTOS";
-            }
-
-            function limpiarSelectorMunicipal(select) {
-                if (!select) return;
-                if (
-                    select.options.length === 1 &&
-                    select.value === "" &&
-                    select.options[0]?.textContent === TEXTO_MUNICIPIO_BLOQUEADO
-                ) return;
-
-                aplicandoBloqueo = true;
-                select.innerHTML = "";
-                const opcion = document.createElement("option");
-                opcion.value = "";
-                opcion.textContent = TEXTO_MUNICIPIO_BLOQUEADO;
-                select.appendChild(opcion);
-                select.value = "";
-                aplicandoBloqueo = false;
-            }
-
-            function esOpcionBogotaDepartamento(opcion) {
-                if (!opcion) return false;
-                return opcion.value === "11" || /^bogot[aá]/i.test(opcion.textContent || "");
-            }
-
-            function quitarBogotaEnNivelDepartamental(select) {
-                if (!select) return;
-                const opcionBogota = Array.from(select.options).find(esOpcionBogotaDepartamento);
-                if (!opcionBogota) return;
-
-                if (select.value === opcionBogota.value) {
-                    select.value = "0";
-                }
-
-                opcionBogotaDepartamento = opcionBogota.cloneNode(true);
-                opcionBogota.remove();
-            }
-
-            function restaurarBogotaEnNivelMunicipal(select) {
-                if (!select || Array.from(select.options).some(esOpcionBogotaDepartamento)) return;
-                if (!opcionBogotaDepartamento) return;
-
-                const opciones = Array.from(select.options);
-                const opcionReferencia = opciones.find(opcion => {
-                    if (opcion.value === "0" || opcion.value === "COL") return false;
-                    return (opcion.textContent || "").localeCompare(opcionBogotaDepartamento.textContent || "", "es") > 0;
-                });
-
-                select.insertBefore(opcionBogotaDepartamento.cloneNode(true), opcionReferencia || null);
-            }
-
-            function actualizarEstadoFiltroDepartamental() {
-                const select = document.getElementById("departamentos");
-                if (!select) return;
-
-                if (estaActivoLimitesDepartamentales()) {
-                    quitarBogotaEnNivelDepartamental(select);
-                    return;
-                }
-
-                restaurarBogotaEnNivelMunicipal(select);
-            }
-
-            function actualizarEstadoFiltroMunicipal() {
-                const select = document.getElementById("municipios");
-                if (!select) return;
-
-                if (estaActivoLimitesDepartamentales()) {
-                    limpiarSelectorMunicipal(select);
-                    select.disabled = true;
-                    select.setAttribute("aria-disabled", "true");
-                    select.setAttribute("title", "Disponible solo en Límites Municipales");
-                    return;
-                }
-
-                select.disabled = false;
-                select.removeAttribute("aria-disabled");
-                select.removeAttribute("title");
-            }
-
-            function bloquearEventoMunicipalSiAplica(evento) {
-                if (!estaActivoLimitesDepartamentales()) return;
-
-                const selectMunicipios = document.getElementById("municipios");
-                if (!selectMunicipios || evento.target !== selectMunicipios) return;
-
-                limpiarSelectorMunicipal(selectMunicipios);
-                evento.preventDefault();
-                evento.stopImmediatePropagation();
-            }
-
-            document.addEventListener("DOMContentLoaded", function () {
-                const selectMunicipios = document.getElementById("municipios");
-                if (selectMunicipios) {
-                    const observador = new MutationObserver(function () {
-                        if (aplicandoBloqueo || !estaActivoLimitesDepartamentales()) return;
-                        limpiarSelectorMunicipal(selectMunicipios);
-                    });
-                    observador.observe(selectMunicipios, { childList: true });
-                }
-
-                const selectDepartamentos = document.getElementById("departamentos");
-                if (selectDepartamentos) {
-                    const observadorDepartamentos = new MutationObserver(function () {
-                        actualizarEstadoFiltroDepartamental();
-                    });
-                    observadorDepartamentos.observe(selectDepartamentos, { childList: true });
-                }
-
-                document.addEventListener("change", bloquearEventoMunicipalSiAplica, true);
-
-                document.addEventListener("change", function (evento) {
-                    if (evento.target?.id !== "departamentos") return;
-                    actualizarEstadoFiltroDepartamental();
-                    setTimeout(actualizarEstadoFiltroMunicipal, 0);
-                });
-
-                document.addEventListener("click", function (evento) {
-                    if (!evento.target?.closest("#dropdownLimites .dropdown-item")) return;
-                    setTimeout(actualizarEstadoFiltroDepartamental, 0);
-                    setTimeout(actualizarEstadoFiltroMunicipal, 0);
-                }, true);
-
-                actualizarEstadoFiltroDepartamental();
-                actualizarEstadoFiltroMunicipal();
-                setTimeout(actualizarEstadoFiltroDepartamental, 0);
-                setTimeout(actualizarEstadoFiltroMunicipal, 0);
-            });
-        })();
-    </script>
-
-    <script>
-        (function formatearValoresVisiblesLimites() {
-            function corregirTexto(texto) {
-                if (typeof texto !== "string" || !/[ÃÂâ]/.test(texto)) return texto;
-                try {
-                    const bytes = Uint8Array.from(Array.from(texto), caracter => caracter.charCodeAt(0) & 255);
-                    const corregido = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
-                    return corregido.includes("�") ? texto : corregido;
-                } catch (error) {
-                    return texto;
-                }
-            }
-
-            function normalizarNumero(texto) {
-                const tienePunto = texto.includes(".");
-                const tieneComa = texto.includes(",");
-
-                if (tienePunto && tieneComa) {
-                    const ultimoPunto = texto.lastIndexOf(".");
-                    const ultimaComa = texto.lastIndexOf(",");
-                    if (ultimaComa > ultimoPunto) {
-                        return texto.replace(/\./g, "").replace(",", ".");
-                    }
-                    return texto.replace(/,/g, "");
-                }
-
-                return texto.replace(",", ".");
-            }
-
-            function formatearNumero(texto) {
-                const numero = Number(normalizarNumero(texto));
-                if (!Number.isFinite(numero)) return texto;
-
-                return new Intl.NumberFormat("es-CO", {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 2
-                }).format(numero);
-            }
-
-            function limpiarTextoVisible(texto) {
-                return corregirTexto(texto)
-                    .replace(/km\s*(?:Â²|�|2)/gi, "km²")
-                    .replace(/-?\d+(?:[.,]\d{3})+[.,]\d{3,}|-?\d+[.,]\d{4,}/g, formatearNumero);
-            }
-
-            function formatearPopupArcgis(popup) {
-                const walker = document.createTreeWalker(popup, NodeFilter.SHOW_TEXT);
-                const nodos = [];
-                let nodo = walker.nextNode();
-
-                while (nodo) {
-                    nodos.push(nodo);
-                    nodo = walker.nextNode();
-                }
-
-                nodos.forEach(textNode => {
-                    const limpio = limpiarTextoVisible(textNode.nodeValue || "");
-                    if (limpio !== textNode.nodeValue) textNode.nodeValue = limpio;
-                });
-            }
-
-            document.addEventListener("DOMContentLoaded", function () {
-                const observadorPopup = new MutationObserver(function (mutaciones) {
-                    mutaciones.forEach(mutacion => {
-                        if (mutacion.type === "characterData") {
-                            const popup = mutacion.target?.parentElement?.closest?.(".esri-popup, .esri-popup__main-container, .esri-popup__content");
-                            if (popup) formatearPopupArcgis(popup);
-                            return;
-                        }
-
-                        mutacion.addedNodes.forEach(nodo => {
-                            if (!(nodo instanceof HTMLElement)) return;
-
-                            if (nodo.matches(".esri-popup, .esri-popup__main-container, .esri-popup__content")) {
-                                formatearPopupArcgis(nodo);
-                                return;
-                            }
-
-                            nodo.querySelectorAll?.(".esri-popup, .esri-popup__main-container, .esri-popup__content")
-                                .forEach(formatearPopupArcgis);
-                        });
-                    });
-                });
-
-                observadorPopup.observe(document.body, { childList: true, characterData: true, subtree: true });
-            });
-        })();
-    </script>
-
-    <script>
-        (function mejorarLineaTiempoMunicipalLimites() {
-            return;
-            const TIMELINE_QUERY_RE = /componentelineaslimitrofes\/FeatureServer\/3\/query/i;
-            const LINEAS_QUERY_URL = "https://mapas2.igac.gov.co/server/rest/services/limites/limites/MapServer/0/query";
-            const fetchOriginal = window.fetch?.bind(window);
-
-            if (!fetchOriginal) return;
-
-            window.__limitesTimelineAgrupado = {};
-
-            function esc(texto) {
-                const div = document.createElement("div");
-                div.textContent = texto == null ? "" : String(texto);
-                return div.innerHTML;
-            }
-
-            function textoEvento(valor, fallback = "—") {
-                const limpio = String(valor || "").trim();
-                return limpio || fallback;
-            }
-
-            function agruparEventos(features) {
-                const agrupado = {};
-
-                (features || []).forEach(feature => {
-                    const att = feature.attributes || {};
-                    const year = att.lloficioanno ? String(att.lloficioanno) : "Sin año";
-                    if (!agrupado[year]) agrupado[year] = [];
-                    agrupado[year].push({
-                        llid: att.llid,
-                        linea: att.LLNombre || att.lldesclim || att.llid || "—",
-                        lloficio: att.lloficio || "",
-                        lldescoficio: att.lldescoficio || "",
-                        llfuente: att.llfuente || "",
-                        year
-                    });
-                });
-
-                return agrupado;
-            }
-
-            async function consultarNombresLineas(llids) {
-                const ids = Array.from(new Set((llids || []).filter(Boolean).map(String)));
-                if (!ids.length) return {};
-
-                const where = "LLIdentif IN (" + ids.map(id => "'" + id.replace(/'/g, "''") + "'").join(",") + ")";
-                const url = LINEAS_QUERY_URL +
-                    "?where=" + encodeURIComponent(where) +
-                    "&outFields=LLIdentif,LLNombre&returnGeometry=false&f=json";
-
-                try {
-                    const resp = await fetchOriginal(url);
-                    const data = await resp.json();
-                    const mapa = {};
-                    (data.features || []).forEach(feature => {
-                        const att = feature.attributes || {};
-                        if (att.LLIdentif) mapa[String(att.LLIdentif)] = att.LLNombre || att.LLIdentif;
-                    });
-                    return mapa;
-                } catch (error) {
-                    return {};
-                }
-            }
-
-            window.fetch = async function fetchLimitesMejorado(input, init) {
-                const response = await fetchOriginal(input, init);
-                const url = typeof input === "string" ? input : input?.url || "";
-
-                if (!TIMELINE_QUERY_RE.test(url)) return response;
-
-                try {
-                    const data = await response.clone().json();
-                    const llids = (data.features || []).map(feature => feature.attributes?.llid).filter(Boolean);
-                    const nombres = await consultarNombresLineas(llids);
-
-                    (data.features || []).forEach(feature => {
-                        const att = feature.attributes || {};
-                        const nombreLinea = nombres[String(att.llid)] || att.lldesclim || att.llid || "";
-                        att.LLNombre = nombreLinea;
-                        att.lldesclim = nombreLinea;
-                        feature.attributes = att;
-                    });
-
-                    window.__limitesTimelineAgrupado = agruparEventos(data.features || []);
-
-                    return new Response(JSON.stringify(data), {
-                        status: response.status,
-                        statusText: response.statusText,
-                        headers: { "Content-Type": "application/json; charset=utf-8" }
-                    });
-                } catch (error) {
-                    return response;
-                }
-            };
-
-            function eventoPorNodo(nodo) {
-                const year = nodo?.dataset?.year;
-                const llid = nodo?.dataset?.llid;
-                const oficio = nodo?.dataset?.oficio || "";
-                const eventos = window.__limitesTimelineAgrupado?.[year] || [];
-
-                return eventos.find(evento =>
-                    String(evento.llid || "") === String(llid || "") &&
-                    (!oficio || String(evento.lloficio || "") === String(oficio))
-                ) || eventos.find(evento => String(evento.llid || "") === String(llid || ""));
-            }
-
-            function renderizarResumenOficio(eventos, year) {
-                const summaryDiv = document.getElementById("summaryDiv");
-                if (!summaryDiv) return;
-
-                const lista = Array.isArray(eventos) ? eventos.filter(Boolean) : [];
-                if (!lista.length) {
-                    summaryDiv.innerHTML = "<p style='color:#888;'>Seleccione un año en la línea del tiempo para ver los detalles.</p>";
-                    return;
-                }
-
-                const tarjetas = lista.map(evento => {
-                    const descripcion = textoEvento(evento.lldescoficio, "Sin descripción");
-                    return `
-                        <div class="oficio-card">
-                            <div class="oficio-row"><strong>Nombre de la línea limítrofe:</strong> ${esc(textoEvento(evento.linea))}</div>
-                            <div class="oficio-row"><strong>Oficio:</strong> ${esc(textoEvento(evento.lloficio))}</div>
-                            <div class="oficio-row"><strong>Descripción:</strong> <span class="oficio-desc">${esc(descripcion)}</span></div>
-                            <div class="oficio-row"><strong>Fuente:</strong> ${esc(textoEvento(evento.llfuente))}</div>
-                        </div>
-                    `;
-                }).join("");
-
-                summaryDiv.innerHTML = `
-                    <h4 class="oficio-title">Oficio</h4>
-                    ${year ? `<div class="oficio-year">Año ${esc(year)}</div>` : ""}
-                    <div class="oficio-list">${tarjetas}</div>
-                `;
-            }
-
-            function actualizarPopupEvento(nodo) {
-                const evento = eventoPorNodo(nodo);
-                if (!evento) return;
-
-                const descripcion = textoEvento(evento.lldescoficio, "Sin descripción");
-                const fuente = textoEvento(evento.llfuente);
-                const popup = nodo.querySelector(".timeline-popup");
-                if (!popup) return;
-
-                popup.classList.toggle("timeline-popup-scroll", descripcion.length > 70);
-                popup.innerHTML = `
-                    <p>${esc(descripcion)}</p>
-                    <small>Fuente: ${esc(fuente)}</small>
-                `;
-
-                if (!nodo.querySelector(".timeline-evento-fuente")) {
-                    const fuenteEl = document.createElement("span");
-                    fuenteEl.className = "timeline-evento-fuente";
-                    fuenteEl.textContent = fuente;
-                    nodo.appendChild(fuenteEl);
-                }
-            }
-
-            function mejorarTimeline() {
-                const timelineDiv = document.getElementById("timelineDiv");
-                if (!timelineDiv || timelineDiv.style.display === "none") return;
-
-                const titulo = timelineDiv.querySelector(".timeline-title");
-                if (titulo) titulo.textContent = "Línea del tiempo";
-
-                timelineDiv.querySelectorAll(".timeline-evento").forEach(actualizarPopupEvento);
-
-                timelineDiv.querySelectorAll(".timeline-node").forEach(nodo => {
-                    if (nodo.dataset.limitesMejorado) return;
-                    nodo.dataset.limitesMejorado = "true";
-                    nodo.addEventListener("click", function () {
-                        const year = this.dataset.year;
-                        setTimeout(() => {
-                            if (!this.classList.contains("active")) return;
-                            renderizarResumenOficio(window.__limitesTimelineAgrupado?.[year] || [], year);
-                        }, 0);
-                    });
-                });
-
-                timelineDiv.querySelectorAll(".timeline-evento").forEach(nodo => {
-                    if (nodo.dataset.limitesResumenMejorado) return;
-                    nodo.dataset.limitesResumenMejorado = "true";
-                    nodo.addEventListener("click", function () {
-                        const evento = eventoPorNodo(this);
-                        setTimeout(() => renderizarResumenOficio(evento ? [evento] : [], this.dataset.year), 0);
-                    });
-                });
-            }
-
-            function instalarEstilosTimeline() {
-                if (document.getElementById("limitesTimelineMunicipalStyles")) return;
-                const style = document.createElement("style");
-                style.id = "limitesTimelineMunicipalStyles";
-                style.textContent = `
-                    #timelineDiv { margin-top: 14px; }
-                    #timelineDiv .timeline-container {
-                        background: #fffaf0;
-                        border: 1px solid #d9d3c8;
-                        border-radius: 12px;
-                        padding: 14px 12px 16px;
-                    }
-                    #timelineDiv .timeline-header { text-align: center; margin-bottom: 10px; }
-                    #timelineDiv .timeline-title {
-                        margin: 0;
-                        color: #9a5a23;
-                        font-family: "Outfit", sans-serif;
-                        font-size: 16px;
-                        font-weight: 600;
-                    }
-                    #timelineDiv .timeline-subtitle {
-                        margin: 4px 0 0;
-                        color: #6f4c33;
-                        font-size: 12px;
-                        line-height: 1.25;
-                    }
-                    #timelineDiv .timeline-scroll { overflow-x: auto; padding: 8px 4px 18px; }
-                    #timelineDiv .timeline-track { position: relative; min-width: max-content; padding: 18px 6px 0; }
-                    #timelineDiv .timeline-line {
-                        position: absolute;
-                        left: 12px;
-                        right: 12px;
-                        top: 34px;
-                        height: 2px;
-                        background: #c9874e;
-                    }
-                    #timelineDiv .timeline-nodes {
-                        display: flex;
-                        align-items: flex-start;
-                        gap: 18px;
-                        position: relative;
-                    }
-                    #timelineDiv .timeline-node-group {
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        min-width: 78px;
-                    }
-                    #timelineDiv .timeline-node {
-                        min-width: 54px;
-                        height: 30px;
-                        padding: 0 10px;
-                        border-radius: 16px;
-                        border: 1px solid #c9874e;
-                        background: #fff4e8;
-                        color: #5e381d;
-                        display: inline-flex;
-                        align-items: center;
-                        justify-content: center;
-                        cursor: pointer;
-                        font-weight: 600;
-                        font-size: 12px;
-                        position: relative;
-                        z-index: 1;
-                    }
-                    #timelineDiv .timeline-node.active,
-                    #timelineDiv .timeline-node:hover {
-                        background: #d67036;
-                        color: #fff;
-                    }
-                    #timelineDiv .timeline-eventos-container {
-                        margin-top: 10px;
-                        flex-direction: column;
-                        gap: 6px;
-                        align-items: stretch;
-                        min-width: 118px;
-                    }
-                    #timelineDiv .timeline-evento {
-                        position: relative;
-                        border: 1px solid #ead7c6;
-                        background: #fff;
-                        border-radius: 8px;
-                        padding: 6px 8px;
-                        cursor: pointer;
-                        box-shadow: 0 2px 6px rgba(94, 56, 29, 0.08);
-                    }
-                    #timelineDiv .timeline-evento-label {
-                        display: block;
-                        color: #3b2416;
-                        font-size: 11px;
-                        font-weight: 600;
-                        line-height: 1.2;
-                    }
-                    #timelineDiv .timeline-evento-fuente {
-                        display: block;
-                        margin-top: 2px;
-                        color: #9c745a;
-                        font-size: 10px;
-                        line-height: 1.15;
-                    }
-                    #timelineDiv .timeline-popup {
-                        display: none;
-                        position: absolute;
-                        left: 50%;
-                        bottom: calc(100% + 8px);
-                        transform: translateX(-50%);
-                        min-width: 190px;
-                        max-width: 260px;
-                        background: #fff;
-                        border: 1px solid #d8b99d;
-                        border-radius: 8px;
-                        padding: 8px 10px;
-                        box-shadow: 0 8px 18px rgba(94, 56, 29, 0.18);
-                        z-index: 20;
-                        color: #3b2416;
-                        font-size: 11px;
-                        line-height: 1.3;
-                    }
-                    #timelineDiv .timeline-popup p { margin: 0; }
-                    #timelineDiv .timeline-popup small {
-                        display: block;
-                        margin-top: 6px;
-                        color: #6f4c33;
-                    }
-                    #timelineDiv .timeline-popup-scroll {
-                        max-height: 92px;
-                        overflow-y: auto;
-                    }
-                    #timelineDiv .timeline-footer {
-                        margin-top: 8px;
-                        border-top: 1px solid #ead7c6;
-                        padding-top: 8px;
-                    }
-                    #timelineDiv .timeline-fuente-label {
-                        margin: 0 0 4px;
-                        font-size: 11px;
-                        font-weight: 600;
-                        color: #6f4c33;
-                    }
-                    #timelineDiv .timeline-fuentes {
-                        display: flex;
-                        flex-wrap: wrap;
-                        gap: 4px;
-                    }
-                    #timelineDiv .timeline-fuente-tag {
-                        border-radius: 999px;
-                        background: #fff4e8;
-                        border: 1px solid #ead7c6;
-                        padding: 3px 7px;
-                        color: #5e381d;
-                        font-size: 10px;
-                    }
-                    #summaryDiv .oficio-title {
-                        margin: 0 0 6px;
-                        color: #9a5a23;
-                        font-size: 14px;
-                        font-weight: 600;
-                    }
-                    #summaryDiv .oficio-year {
-                        color: #6f4c33;
-                        font-size: 12px;
-                        margin-bottom: 8px;
-                    }
-                    #summaryDiv .oficio-list { display: grid; gap: 8px; }
-                    #summaryDiv .oficio-card {
-                        border: 1px solid #ead7c6;
-                        border-radius: 8px;
-                        background: #fff;
-                        padding: 8px;
-                    }
-                    #summaryDiv .oficio-row {
-                        color: #3b2416;
-                        font-size: 12px;
-                        line-height: 1.35;
-                        margin-bottom: 4px;
-                    }
-                    #summaryDiv .oficio-row:last-child { margin-bottom: 0; }
-                `;
-                document.head.appendChild(style);
-            }
-
-            document.addEventListener("DOMContentLoaded", function () {
-                instalarEstilosTimeline();
-                const timelineDiv = document.getElementById("timelineDiv");
-                if (!timelineDiv) return;
-
-                const observer = new MutationObserver(function () {
-                    setTimeout(mejorarTimeline, 0);
-                });
-                observer.observe(timelineDiv, { childList: true, subtree: true });
-                mejorarTimeline();
-            });
-        })();
-    </script>
-
-    <script src="js/moduleNavigation.js?v=component-nav-20260623"></script>
-    <script type="module" src="./js/limites/main.js?v=component-nav-limites-20260624"></script>
+    <script src="js/shared/arcgis-noconflict-end.js"></script>
+
+    <script src="js/limites/controlar-filtro-municipal-por-nivel.js"></script>
+
+    <script src="js/limites/formatear-valores-visibles.js"></script>
+
+    <script src="js/limites/mejorar-linea-tiempo-municipal.js"></script>
+
+    <script src="js/comunicacionEntreComponentes.js?v=component-nav-security-20260716"></script>
+    <script type="module" src="./js/limites/main.js?v=security-hardening-20260716"></script>
+    <link rel="stylesheet" href="css/responsive.css?v=legend-density-bottom-20260716" />
+    <script defer src="js/responsive-nav.js?v=responsive-20260713e"></script>
+    <link rel="stylesheet" href="css/shared/descargables-modal.css?v=cubara-download-20260717" />
+    <script defer src="js/shared/analytics.js?v=20260717b"></script>
+    <script defer src="js/shared/modal/descargables-modal.js?v=cubara-download-20260717"></script>
+    <link rel="stylesheet" href="css/shared/auth-navbar.css?v=auth-session-20260716" />
+    <script src="js/shared/auth/firebase-noconflict-start.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-auth-compat.js"></script>
+    <script src="js/shared/auth/firebase-noconflict-end.js"></script>
+    <script src="js/shared/auth/firebaseConfig.js?v=auth-session-20260717"></script>
+    <script src="js/shared/auth/authSession.js?v=auth-session-20260717"></script>
+    <script src="js/shared/auth/authNavbar.js?v=auth-session-20260717"></script>
+  <link rel="stylesheet" href="css/inline-extracted.css">
+  <link rel="stylesheet" href="css-js-limites-legend.css">
+  <link rel="stylesheet" href="css-js-limites-timeline2.css">
+  <link rel="stylesheet" href="css-js-limites-legendui.css">
+  <link rel="stylesheet" href="css-js-limites-main.css">
+  <link rel="stylesheet" href="css-js-limites-layerloader.css">
+  <link rel="stylesheet" href="css-js-limites-timeline.css">
+    <link rel="stylesheet" href="../mobile-warning.css">
+  <script defer src="../mobile-warning.js"></script>
 </head>
 
 <body>
 
     <!-- HEADER GOV -->
     <div class="barra_gov">
-        <a class="logo-gov" href="https://www.gov.co/home/" target="_blank">
-            <img alt="Logo Gov.co" src="./img/nav/header_govco.png">
+        <a class="logo-gov" href="https://www.gov.co/home/" target="_blank" rel="noopener noreferrer">
+            <img alt="Logo Gov.co" src="img/nav/header_govco.png">
         </a>
     </div>
 
     <!-- HEADER IGAC -->
-    <nav class="main-header-nav" style="z-index: 101;">
-        <div class="navbarigac" style="background: #004A69; color: white;">
+    <nav id="ie-limites-1" class="main-header-nav">
+        <div id="ie-limites-2" class="navbarigac">
             <div class="logos">
-                <a href="https://www.igac.gov.co" class="navbar-brand-igac" target="_blank">
-                    <img alt="Logo IGAC" src="./img/nav/logo.png">
+                <a href="https://www.igac.gov.co" class="navbar-brand-igac" target="_blank" rel="noopener noreferrer">
+                    <img alt="Logo IGAC" src="img/nav/logo.png">
                 </a>
-                <img src="./img/logo_ct.png" class="icono-territorial" alt="Icono">
+                <img src="img/logo_ct.png" class="icono-territorial" alt="Icono">
                 <div class="titulo-app">CARACTERIZACIONES TERRITORIALES</div>
             </div>
 
             <ul class="pl-1" id="link-list">
-                <li><a href="index.html" style="color: white !important">&#8592; Caracterizaciones</a></li>
                 <li>
-                    <a id="inicio" href="../index.html" style="color: white !important;">Inicio</a>
+                    <a id="inicio" href="/#">Inicio</a>
                 </li>
-                <li>
-                    <a id="loginBtn" href="#" role="button" aria-label="Iniciar sesión">
-                        <span id="userName" style="color: white !important;">Iniciar sesión</span>
+                <li class="auth-nav-item">
+                    <a id="loginBtn" href="#" role="button" aria-label="Validando sesión">
+                        <span id="userName">Validando sesión...</span>
                     </a>
+                    <button type="button" id="logoutBtn" class="auth-logout-btn" hidden aria-label="Cerrar sesión">Cerrar sesión</button>
                 </li>
             </ul>
 
@@ -1047,6 +118,7 @@
                 </div>
 
                 <div class="dropdown-menu-custom" id="dropdownOrdenamiento">
+                    <button class="dropdown-item" data-target="Vigencia">Vigencia</button>
                     <button class="dropdown-item" data-target="Clasificación del suelo">Clasificación del suelo</button>
                     <button class="dropdown-item" data-target="Áreas de actividad">Áreas de actividad</button>
                     <button class="dropdown-item" data-target="Zonificación de uso del suelo rural">Zonificación de uso
@@ -1062,8 +134,27 @@
                 </div>
 
                 <div class="dropdown-menu-custom" id="dropdownLegal">
-                    <button class="dropdown-item" data-target="Determinantes">Determinantes</button>
-                    <button class="dropdown-item" data-target="Condicionantes">Condicionantes</button>
+                    <div class="dropdown-item-with-sub">
+                        <button class="dropdown-item" data-target="Determinantes">Determinantes</button>
+                        <div class="dropdown-submenu">
+                            <button class="dropdown-subitem" data-target="Ambientales">Ambientales</button>
+                            <button class="dropdown-subitem" data-target="Soberanía Alimentaria">Soberanía Alimentaria</button>
+                            <button class="dropdown-subitem" data-target="patrimoniales">Patrimoniales</button>
+                            <button class="dropdown-subitem" data-target="infraestructura">Infraestructura</button>
+                            <button class="dropdown-subitem" data-target="areas_metropolitanas_suburbanizacion">Áreas Metropolitanas Suburbanización</button>
+                            <button class="dropdown-subitem" data-target="proyectos_turisticos_especiales_e_infraestructura_asociada">Proyectos Turísticos Especiales e infraestructura asociada</button>
+                        </div>
+                    </div>
+                    <div class="dropdown-item-with-sub">
+                        <button class="dropdown-item" data-target="Condicionantes">Condicionantes</button>
+                        <div class="dropdown-submenu">
+                            <button class="dropdown-subitem" data-target="territorios_colectivos">Territorios Colectivos</button>
+                            <button class="dropdown-subitem" data-target="exploracion_explotacion_recursos_no_renovables">Exploración y Explotación de Recursos No Renovables</button>
+                            <button class="dropdown-subitem" data-target="acuerdo_final_paz">Acuerdo Final de Paz</button>
+                            <button class="dropdown-subitem" data-target="planes_ordenamiento_social_propiedad_rural">Planes de Ordenamiento Social de la Propiedad Rural</button>
+                            <button class="dropdown-subitem" data-target="zonas_afectadas_conflicto_armado">Zonas más Afectadas por el Conflicto Armado</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1126,7 +217,7 @@
                     <select id="municipios" class="toolbar-select">
                         <option value="">municipio</option>
                     </select>
-                    <button id="btnRefreshBusqueda" class="toolbar-refresh" type="button" aria-label="Reiniciar búsqueda" title="Reiniciar búsqueda" data-tooltip="Reiniciar búsqueda">
+                    <button id="btnRefreshBusqueda" class="toolbar-refresh" type="button" aria-label="Reiniciar búsqueda" data-tooltip="Reiniciar búsqueda">
                         <img src="img/refrescar.png" alt="">
                     </button>
                 </div>
@@ -1142,9 +233,11 @@
                         <button class="descargables-item" id="btnMemoriaTecnica" type="button">
                             Memoria técnica
                         </button>
+                        <!--
                         <button class="descargables-item" id="btnBaseDatosEspacial" type="button">
                             Base de datos espacial
                         </button>
+                        -->
                     </div>
                 </div>
 
@@ -1153,7 +246,6 @@
                     class="btn-reiniciar-consulta"
                     type="button"
                     aria-label="Reiniciar consulta"
-                    title="Reiniciar consulta"
                     data-tooltip="Reiniciar consulta">
                     <img src="img/Reinicia.png" alt="">
                 </button>
@@ -1195,7 +287,7 @@
                         <img src="img/List_Gray_1.png" alt="">
                     </button>
 
-                    <div id="basemapPanel" class="basemap-panel" style="display:none;">
+                    <div id="basemapPanel" class="basemap-panel">
                         <div id="basemapGalleryDiv"></div>
                     </div>
                 </div>
@@ -1213,7 +305,7 @@
                 </button>
 
                 <button id="btnZoomIn" class="tool-btn" title="Acercar">
-                    <img src="img/zoomin.png" alt="">
+                    <img src="img/ZoomIn.png" alt="">
                 </button>
 
                 <button id="btnZoomOut" class="tool-btn" title="Alejar">
@@ -1233,21 +325,35 @@
 
             <div class="chart-card-wrap">
                 <div class="subtabs-shell">
-                    <div class="subtabs-controls" id="subtabsControls" style="display:none;"></div>
+                    <div class="subtabs-controls" id="subtabsControls"></div>
                 </div>
 
                 <div class="chart-card">
                     <h3 id="chartTitle">Límites Municipales</h3>
 
+                    <div id="municipalServiceMessage" class="municipal-service-message" role="status" aria-live="polite" hidden>
+                        <strong>Servicio temporalmente inestable</strong>
+                        <span>No fue posible cargar las l&iacute;neas lim&iacute;trofes en este momento. Espera un instante e intenta nuevamente.</span>
+                    </div>
+
                     <canvas id="chart"></canvas>
 
-                    <div id="timelineDiv" style="display:none;"></div>
+                    <section id="municipalStatusChartSection" class="municipal-status-chart">
+                        <h3>Estado de las líneas limítrofes</h3>
+                        <p id="municipalStatusChartSubtitle" class="municipal-status-chart__subtitle"></p>
+                        <div class="municipal-status-chart__canvas">
+                            <canvas id="municipalStatusChart"></canvas>
+                        </div>
+                        <div id="municipalStatusChartLegend" class="municipal-status-chart__legend"></div>
+                    </section>
+
+                    <div id="timelineDiv"></div>
 
                     <div id="summaryDiv">
                         Seleccione un municipio para ver el resumen.
                     </div>
 
-                    <div id="lineDescriptionsDiv" style="display:none;"></div>
+                    <div id="lineDescriptionsDiv"></div>
                 </div>
             </div>
 
@@ -1300,22 +406,22 @@
 
                                 <div class="redes-sociales">
                                     <p>
-                                        <a href="https://www.facebook.com/IgacColombia" target="_blank">
-                                            <img class="icono-redes" src="./img/footer/facebook.svg">
+                <a href="https://www.facebook.com/IgacColombia" target="_blank" rel="noopener noreferrer">
+                                            <img class="icono-redes" src="img/footer/facebook.svg">
                                             Facebook IGAC
                                         </a>
                                     </p>
 
                                     <p>
-                                        <a href="https://twitter.com/igacColombia" target="_blank">
-                                            <img class="icono-redes" src="./img/footer/twitter.svg">
+                <a href="https://twitter.com/igacColombia" target="_blank" rel="noopener noreferrer">
+                                            <img class="icono-redes" src="img/footer/twitter.svg">
                                             Twitter IGAC
                                         </a>
                                     </p>
 
                                     <p>
-                                        <a href="https://www.instagram.com/igacColombia/" target="_blank">
-                                            <img class="icono-redes" src="./img/footer/instagram.svg">
+                <a href="https://www.instagram.com/accounts/login/?next=/igacColombia/" target="_blank" rel="noopener noreferrer">
+                                            <img class="icono-redes" src="img/footer/instagram.svg">
                                             Instagram IGAC
                                         </a>
                                     </p>
@@ -1338,9 +444,9 @@
 
         <div class="gov-co-footer-pie">
             <div class="gov-co-footer-auto containerf">
-                <img class="gov-co-logo-pie-blanco" src="./img/footer/marca_colombia.png">
-                <img class="gov-co-logo-pie-mesa" src="./img/footer/header_govco.png">
-                <a class="text-white text-align-right" href="https://www.gov.co" target="_blank">
+                <img class="gov-co-logo-pie-blanco" src="img/footer/marca_colombia.png">
+                <img class="gov-co-logo-pie-mesa" src="img/footer/header_govco.png">
+                <a class="text-white text-align-right" href="https://www.gov.co" target="_blank" rel="noopener noreferrer">
                     Conoce GOV.CO aquí
                 </a>
             </div>

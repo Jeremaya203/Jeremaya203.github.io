@@ -1,7 +1,7 @@
 /**
- * chartController.js - Router de grÃ¡ficos y orquestador.
+ * chartController.js - Router de gráficos y orquestador.
  * 
- * Contiene TODO lo que estaba en main.js sobre grÃ¡ficos:
+ * Contiene TODO lo que estaba en main.js sobre gráficos:
  * - buildCtx: construye el contexto para handlers
  * - syncMapLayer: sincroniza capa del mapa con whereBase
  * - defaultQueryAndRenderHandler: handler catch-all
@@ -13,13 +13,13 @@
  */
 
 import { renderGenericChartFromFeatures } from "./chartRenderer.js?v=hipsometria-muni-height-20260619";
-import { createBiofisicoChartHandlers } from "./chartRegistry.js?v=hipsometria-muni-height-20260619";
+import { createBiofisicoChartHandlers } from "./chartRegistry.js?v=pendientes-imageserver-20260716";
 import { getAxisTitles } from "./chartOptions.js";
 import { buildChartTitleWithTerritory } from "../ui/ui.helpers.js?v=titulos-departamentales-20260617";
 
 export function createChartController(mainDeps) {
     // mainDeps contiene referencias a funciones/estado que viven en el scope de main.js
-    // ctx contendrÃ¡ getters/setters a AppState
+   
     const {
         ctx,
         arcRestQuery,
@@ -290,7 +290,7 @@ export function createChartController(mainDeps) {
                 if (!thisLayer || thisLayer.destroyed) return;
                 if (thisLayer !== ctx.layerGlobal && !ctx.layersGlobal.includes(thisLayer)) return;
 
-                // Fallback depto dpcodigo numÃ©rico
+                // Fallback depto dpcodigo numerico
                 if (chartCtx.filtroNivel === "DEPTO" && chartCtx.deptoActual && res.features?.length === 0) {
                     const n = Number(chartCtx.deptoActual);
                     if (Number.isFinite(n)) {

@@ -1,4 +1,4 @@
-import { createMunicipiosLayer, createDepartamentosLayer, hideAllLimitesLayers } from "./map/layer-loader.js?v=municipal-performance-20260618";
+import { createMunicipiosLayer, createDepartamentosLayer, hideAllLimitesLayers } from "./map/layer-loader.js?v=depto-area-km2-20260716";
 import { initOverview } from "./map/overview.js";
 import { initScaleBar } from "./map/scale.js";
 import { initMapControls } from "./map/map.controls.js";
@@ -7,17 +7,19 @@ import { updateMapViewBadge, setLegendLayerTitle } from "./ui/ui.helpers.js";
 import { AppState } from "./app/state.js";
 import { clearLayers as clearMapLayers } from "./map/layers.js";
 import { createMainMap } from "./map/map.core.js";
-import { LIMITES_CONFIG } from "./config.js";
-import { sqlEquals, sqlStartsWith, sqlContains, normalizeCode, getMunicipioDisplayName, getDepartamentoDisplayName } from "./utils.js";
+import { LIMITES_CONFIG } from "./config.js?v=depto-area-km2-20260716";
+import { sqlEquals, sqlStartsWith, sqlContains, normalizeCode, getMunicipioDisplayName, getDepartamentoDisplayName } from "./utils.js?v=depto-area-km2-20260716";
 import { actualizarLeyendaLimitesMunicipales } from "./legend.js?v=municipal-coastal-group-20260618";
 import { actualizarLeyendaDepartamentosLimites, toggleLegend } from "./ui/legend.ui.js";
 import { actualizarResumen } from "./ui/summary.js";
 import { cargarDiccionarioDesdeApi } from "./data/territorial.js";
-import { renderChart as renderChartMunicipios } from "./chart/municipios/chart.js?v=municipal-performance-20260618";
-import { renderChart as renderChartDepartamentos, highlightDeptoChartBar, clearDeptoChartHighlight } from "./chart/departamentales/chart.js?v=depto-select-restore-colombia-20260618";
+import { renderChart as renderChartMunicipios } from "./chart/municipios/chart.js?v=municipal-axis-labels-20260716d";
+import { renderStatusDoughnut, destroyStatusDoughnut, resolveStatusLabel, resolveStatusCode, getLlidsForStatusLabel, getLlidsForStatusCode, getStatusCodeForLabel, filterFeaturesByStatusLabel, filterFeaturesByStatusCode } from "./chart/municipios/status-doughnut.js?v=municipal-status-chart-scale-300-20260706";
+import { renderChart as renderChartDepartamentos, highlightDeptoChartBar, highlightDeptoChartByCode, clearDeptoChartHighlight } from "./chart/departamentales/chart.js?v=depto-area-km2-20260716";
 import { destroyChart, resetChartLayout } from "./chart/chart.core.js";
 import { getColorForLinea } from "./colors.js";
 import { fetchTimelineData, renderTimeline } from "./data/timeline.js?v=municipal-performance-20260618";
+import { setupMunicipalSync, clearMunicipalSync } from "./interactions/municipal-sync.js";
 
 // ── Estado de tab ──
 var currentLimitesTab = "DEPARTAMENTOS";
@@ -483,7 +485,9 @@ function limpiarVistaLimites(options) {
     if (layerGlobal) layerGlobal.visible = false;
 
     destroyChart();
+    destroyStatusDoughnut();
     resetChartLayout();
+    clearMunicipalSync();
 
     var chartTitle = document.getElementById("chartTitle");
     if (chartTitle && options.chartTitle) chartTitle.textContent = options.chartTitle;
@@ -504,6 +508,7 @@ function limpiarVistaLimites(options) {
     savedChartConfig = null;
     savedChartWhere = null;
     savedChartFeatures = [];
+    selectedStatusLabel = "";
 
     var td = document.getElementById("timelineDiv");
     if (td) { td.style.display = "none"; td.innerHTML = ""; }
@@ -550,6 +555,45 @@ function buildLimitesChartTitle(baseTitle) {
     return cleanBase + " en " + getLimitesTerritoryContext();
 }
 
+function buildStatusChartTitle() {
+    var baseTitle = "Estado de las líneas limítrofes";
+    if (municipioActual) {
+        return baseTitle + " en " + getLimitesTerritoryContext();
+    }
+    if (deptoActual && deptoActual !== "0" && deptoActual !== "COL") {
+        return baseTitle + " en " + (diccionarioDepartamentos[deptoActual] || deptoActual);
+    }
+    return baseTitle;
+}
+
+function setMunicipalServiceMessage(visible, error) {
+    var message = document.getElementById("municipalServiceMessage");
+    var canvas = document.getElementById("chart");
+    var statusSection = document.getElementById("municipalStatusChartSection");
+
+    if (message) message.hidden = !visible;
+    if (canvas) canvas.style.display = visible ? "none" : "block";
+
+    if (visible) {
+        destroyChart();
+        destroyStatusDoughnut();
+        if (statusSection) statusSection.style.display = "none";
+
+        var chartTitle = document.getElementById("chartTitle");
+        if (chartTitle) {
+            chartTitle.textContent = buildLimitesChartTitle("L\u00edneas lim\u00edtrofes");
+        }
+
+        var timeline = document.getElementById("timelineDiv");
+        if (timeline) {
+            timeline.style.display = "none";
+            timeline.innerHTML = "";
+        }
+
+        console.warn("Servicio municipal de lineas limitrofes no disponible:", error);
+    }
+}
+
 function buildLineNameLookup(features) {
     var names = {};
     (features || []).forEach(function(feature) {
@@ -585,12 +629,153 @@ var savedChartLayer = null;
 var savedChartConfig = null;
 var savedChartWhere = null;
 var savedChartFeatures = [];
+var selectedStatusLabel = "";
+var selectedStatusCode = "";
+
+function getBaseMunicipalWhere() {
+    var baseWhere = whereBase || String(layerGlobal?.definitionExpression || "1=1");
+    baseWhere = baseWhere.replace(/\s*AND\s+LLIdentif\s+IN\s*\([^)]*\)/gi, "");
+    baseWhere = baseWhere.replace(/\s*AND\s+LLIdentif\s*=\s*'[^']*'/gi, "");
+    baseWhere = baseWhere.replace(/\s*AND\s+LLEstado\s*=\s*'[^']*'/gi, "");
+    baseWhere = baseWhere.replace(/\s*AND\s+LLEstado\s*=\s*\d+/gi, "");
+    return baseWhere || "1=1";
+}
+
+function setLegendActiveCodes(codes) {
+    var activeSet = {};
+    (codes || []).forEach(function(code) { activeSet[String(code)] = true; });
+    var items = document.querySelectorAll("#legendContent .limites-legend-item");
+    items.forEach(function(item) {
+        var code = item.getAttribute("data-llid");
+        var active = !!activeSet[String(code || "")];
+        item.classList.toggle("inactive", !active);
+        item.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+}
+
+function restoreMunicipalStatusFilter() {
+    selectedStatusLabel = "";
+    selectedStatusCode = "";
+    if (!layerGlobal || !savedChartLayer || !savedChartConfig || !savedChartWhere) return;
+
+    var baseWhere = getBaseMunicipalWhere();
+    layerGlobal.definitionExpression = baseWhere;
+
+    municipalActiveCodes = [];
+    var seen = {};
+    (savedChartFeatures || []).forEach(function(f) {
+        var code = String(f.attributes["LLIdentif"] || "");
+        if (code && !seen[code]) { seen[code] = true; municipalActiveCodes.push(code); }
+    });
+    setLegendActiveCodes(municipalActiveCodes);
+
+    renderChartMunicipios(savedChartLayer, savedChartConfig, savedChartWhere, {
+        title: buildLimitesChartTitle(savedChartConfig.title || "L\u00edmites municipales"),
+        prefilteredFeatures: savedChartFeatures
+    });
+    renderStatusDoughnut(savedChartFeatures, { title: buildStatusChartTitle() });
+
+    layerGlobal.queryExtent({ where: baseWhere }).then(function(res) {
+        if (res && res.extent && view) view.goTo(res.extent.expand(1.2), { duration: 400, easing: "ease-in-out" });
+    }).catch(function() {});
+}
+
+function buildMunicipalStatusWhere(baseWhere, statusCode, llids) {
+    var ids = Array.from(new Set((llids || []).map(function(id) { return String(id || ""); }).filter(Boolean)));
+    if (ids.length) {
+        var codesStr = ids.map(function(c) { return "'" + String(c).replace(/'/g, "''") + "'"; }).join(",");
+        return {
+            where: baseWhere + " AND LLIdentif IN (" + codesStr + ")",
+            ids: ids
+        };
+    }
+
+    var numericCode = parseInt(String(statusCode || ""), 10);
+    if (!isNaN(numericCode)) {
+        return {
+            where: baseWhere + " AND LLEstado = " + numericCode,
+            ids: []
+        };
+    }
+
+    var safeLabel = String(resolveStatusLabel(statusCode) || statusCode || "").replace(/'/g, "''");
+    return {
+        where: baseWhere + " AND LLEstado = '" + safeLabel + "'",
+        ids: []
+    };
+}
+
+function applyMunicipalStatusFilter(statusLabel, llids, statusCode) {
+    if (!layerGlobal || !savedChartLayer || !savedChartConfig || !savedChartWhere) return;
+
+    var resolvedCode = String(statusCode || resolveStatusCode(statusLabel) || getStatusCodeForLabel(statusLabel) || "").trim();
+    var resolvedLabel = resolvedCode ? resolveStatusLabel(resolvedCode) : resolveStatusLabel(statusLabel);
+    var ids = Array.from(new Set((llids || []).map(function(id) { return String(id || ""); }).filter(Boolean)));
+    if (!ids.length && resolvedCode) ids = getLlidsForStatusCode(resolvedCode);
+    if (!ids.length) ids = getLlidsForStatusLabel(resolvedLabel);
+
+    var filteredFeatures = resolvedCode
+        ? filterFeaturesByStatusCode(savedChartFeatures, resolvedCode)
+        : filterFeaturesByStatusLabel(savedChartFeatures, resolvedLabel);
+    if (!ids.length) {
+        ids = Array.from(new Set(filteredFeatures.map(function(f) {
+            return String(f.attributes?.LLIdentif || "").trim();
+        }).filter(Boolean)));
+    }
+
+    if ((!resolvedCode && !resolvedLabel) || (!ids.length && !filteredFeatures.length)) {
+        restoreMunicipalStatusFilter();
+        return;
+    }
+
+    selectedStatusCode = resolvedCode;
+    selectedStatusLabel = resolvedLabel;
+    var baseWhere = getBaseMunicipalWhere();
+    var statusFilter = buildMunicipalStatusWhere(baseWhere, resolvedCode, ids);
+    layerGlobal.definitionExpression = statusFilter.where;
+
+    if (statusFilter.ids.length) {
+        municipalActiveCodes = statusFilter.ids;
+    } else {
+        municipalActiveCodes = ids.slice();
+    }
+    if (!municipalActiveCodes.length && filteredFeatures.length) {
+        municipalActiveCodes = Array.from(new Set(filteredFeatures.map(function(f) {
+            return String(f.attributes?.LLIdentif || "").trim();
+        }).filter(Boolean)));
+    }
+    setLegendActiveCodes(municipalActiveCodes);
+
+    if (!filteredFeatures.length && ids.length) {
+        var activeSet = {};
+        ids.forEach(function(id) { activeSet[id] = true; });
+        filteredFeatures = (savedChartFeatures || []).filter(function(f) {
+            return activeSet[String(f.attributes["LLIdentif"] || "")];
+        });
+    }
+
+    renderChartMunicipios(savedChartLayer, savedChartConfig, savedChartWhere, {
+        title: buildLimitesChartTitle(savedChartConfig.title || "L\u00edmites municipales"),
+        prefilteredFeatures: filteredFeatures
+    });
+    renderStatusDoughnut(savedChartFeatures, {
+        title: buildStatusChartTitle(),
+        selectedStatusCode: selectedStatusCode,
+        selectedStatusLabel: selectedStatusLabel
+    });
+
+    layerGlobal.queryExtent({ where: statusFilter.where }).then(function(res) {
+        if (res && res.extent && view) view.goTo(res.extent.expand(1.35), { duration: 400, easing: "ease-in-out" });
+    }).catch(function() {});
+}
 
 function handleLegendClick(e) {
     var btn = e.target.closest(".limites-legend-item");
     if (!btn) return;
     var layer = layerGlobal;
     if (!layer) return;
+    selectedStatusLabel = "";
+    selectedStatusCode = "";
     var code = btn.getAttribute("data-llid");
     if (!code) return;
 
@@ -626,6 +811,7 @@ function handleLegendClick(e) {
         });
         if (filteredFeatures.length === 0) {
             destroyChart();
+            destroyStatusDoughnut();
             var cv = document.getElementById("chart");
             if (cv) { cv.style.height = "60px"; cv.style.maxHeight = "60px"; cv.style.minHeight = "60px"; }
         } else {
@@ -633,6 +819,7 @@ function handleLegendClick(e) {
                 title: buildLimitesChartTitle(savedChartConfig.title || "L\u00edmites municipales"),
                 prefilteredFeatures: filteredFeatures
             });
+            renderStatusDoughnut(filteredFeatures, { title: buildStatusChartTitle() });
         }
     }
 }
@@ -659,68 +846,103 @@ function setupChartSync() {
     if (chartSyncAttached) return;
     chartSyncAttached = true;
 
-    document.addEventListener("limites:chart-select", function(e) {
-        var llid = e.detail && e.detail.llid;
-        if (!llid || !layerGlobal) return;
-        var baseWhere = whereBase || String(layerGlobal.definitionExpression || "1=1");
-        baseWhere = baseWhere.replace(/\s*AND\s+LLIdentif\s+IN\s*\([^)]*\)/gi, "");
-        layerGlobal.definitionExpression = baseWhere + " AND LLIdentif = '" + String(llid).replace(/'/g, "''") + "'";
-
-        layerGlobal.queryExtent({ where: layerGlobal.definitionExpression }).then(function(res) {
-            if (res && res.extent && view) view.goTo(res.extent.expand(3), { duration: 400, easing: "ease-in-out" });
-        }).catch(function() {});
-
-        municipalActiveCodes = [llid];
-        var items = document.querySelectorAll("#legendContent .limites-legend-item");
-        items.forEach(function(item) {
-            var code = item.getAttribute("data-llid");
-            if (code === llid) { item.classList.remove("inactive"); item.setAttribute("aria-pressed", "true"); }
-            else { item.classList.add("inactive"); item.setAttribute("aria-pressed", "false"); }
-        });
-
-        if (savedChartLayer && savedChartConfig && savedChartWhere && savedChartFeatures.length > 0) {
-            var singleFeature = savedChartFeatures.filter(function(f) {
-                return String(f.attributes["LLIdentif"] || "") === llid;
-            });
-            if (singleFeature.length > 0) {
-                renderChartMunicipios(savedChartLayer, savedChartConfig, savedChartWhere, {
-                    title: buildLimitesChartTitle(savedChartConfig.title || "L\u00edmites municipales"),
-                    prefilteredFeatures: singleFeature
-                });
-            }
-        }
+    document.addEventListener("limites:status-select", function(e) {
+        if (currentLimitesTab !== "MUNICIPIOS") return;
+        var detail = e.detail || {};
+        var statusCode = detail.selectedStatusCode || detail.statusCode || "";
+        var statusLabel = detail.selectedStatusLabel || detail.statusLabel || "";
+        applyMunicipalStatusFilter(
+            statusLabel,
+            detail.llids || getLlidsForStatusCode(statusCode) || getLlidsForStatusLabel(statusLabel),
+            statusCode
+        );
     });
 
-    document.addEventListener("limites:chart-restore", function(e) {
-        if (!layerGlobal) return;
-        var baseWhere = whereBase || String(layerGlobal.definitionExpression || "1=1");
-        baseWhere = baseWhere.replace(/\s*AND\s+LLIdentif\s+IN\s*\([^)]*\)/gi, "");
-        baseWhere = baseWhere.replace(/\s*AND\s+LLIdentif\s*=\s*'[^']*'/gi, "");
-        layerGlobal.definitionExpression = baseWhere;
-
-        municipalActiveCodes = [];
-        var seen2 = {};
-        (savedChartFeatures || []).forEach(function(f) {
-            var code = String(f.attributes["LLIdentif"] || "");
-            if (code && !seen2[code]) { seen2[code] = true; municipalActiveCodes.push(code); }
-        });
-
-        var items = document.querySelectorAll("#legendContent .limites-legend-item");
-        items.forEach(function(item) { item.classList.remove("inactive"); item.setAttribute("aria-pressed", "true"); });
-
-        if (savedChartLayer && savedChartConfig && savedChartWhere) {
-            renderChartMunicipios(savedChartLayer, savedChartConfig, savedChartWhere, {
-                title: buildLimitesChartTitle(savedChartConfig.title || "L\u00edmites municipales")
-            });
-        }
-        layerGlobal.queryExtent({ where: baseWhere }).then(function(res) {
-            if (res && res.extent && view) view.goTo(res.extent.expand(1.2), { duration: 400, easing: "ease-in-out" });
-        }).catch(function() {});
+    document.addEventListener("limites:status-restore", function() {
+        if (currentLimitesTab !== "MUNICIPIOS") return;
+        restoreMunicipalStatusFilter();
     });
 }
 
 // ── Sincronizacion grafico departamental → mapa (solo mapa, grafico nacional intacto) ──
 var deptoChartSyncAttached = false;
+function buildDeptoSelectionWhere(deCodigo) {
+    var config = LIMITES_CONFIG.DEPARTAMENTOS;
+    var filterField = config.filterField || "dpcodigo";
+    var codeWhere = filterField + " = '" + String(deCodigo).replace(/'/g, "''") + "'";
+    var fixedWhere = config.fixedWhere || "1=1";
+    return fixedWhere && fixedWhere !== "1=1"
+        ? "(" + fixedWhere + ") AND (" + codeWhere + ")"
+        : codeWhere;
+}
+
+function refreshMunicipioSelectForDepto(deCodigo) {
+    var municipioSelect = document.getElementById("municipios");
+    if (!municipioSelect) return;
+
+    municipioSelect.innerHTML = '<option value="">Seleccione un municipio</option>';
+    var filtrados = todosMunicipios || [];
+    if (deCodigo && deCodigo !== "0" && deCodigo !== "COL") {
+        filtrados = filtrados.filter(function(municipio) {
+            return String(municipio && municipio.depto) === String(deCodigo);
+        });
+    }
+
+    filtrados.forEach(function(municipio) {
+        var option = document.createElement("option");
+        option.value = municipio.codigo;
+        option.textContent = getMunicipioDisplayName(municipio, diccionarioMunicipios);
+        municipioSelect.appendChild(option);
+    });
+    municipioSelect.value = "";
+}
+
+function applyDeptoSelection(deCodigo, options) {
+    options = options || {};
+    var layer = deptoLayerRef || layerGlobal || window._departamentosLayerGlobal;
+    if (!layer || !deCodigo) return;
+
+    var mapFilter = buildDeptoSelectionWhere(deCodigo);
+    layer.visible = true;
+    layer.definitionExpression = mapFilter;
+    setWhereBase(mapFilter);
+
+    deptoActual = String(deCodigo);
+    filtroNivel = "DEPTO";
+    municipioActual = "";
+
+    if (options.updateSelect !== false) {
+        var deptoSelect = document.getElementById("departamentos");
+        if (deptoSelect && deptoSelect.value !== String(deCodigo)) {
+            deptoSelect.value = String(deCodigo);
+        }
+        refreshMunicipioSelectForDepto(String(deCodigo));
+        actualizarResumen({
+            municipioActual: municipioActual,
+            deptoActual: deptoActual,
+            filtroNivel: filtroNivel,
+            diccionarioMunicipios: diccionarioMunicipios,
+            diccionarioDepartamentos: diccionarioDepartamentos
+        });
+    }
+
+    if (view && view.popup) view.popup.close();
+
+    if (typeof options.index === "number") {
+        highlightDeptoChartBar(options.index);
+    } else {
+        highlightDeptoChartByCode(deCodigo);
+    }
+
+    if (options.zoom !== false) {
+        layer.queryExtent({ where: mapFilter }).then(function(res) {
+            if (res && res.extent && view) {
+                view.goTo(res.extent.expand(1.2), { duration: 400, easing: "ease-in-out" });
+            }
+        }).catch(function() {});
+    }
+}
+
 function setupDeptoChartSync() {
     if (deptoChartSyncAttached) return;
     deptoChartSyncAttached = true;
@@ -735,22 +957,7 @@ function setupDeptoChartSync() {
         var index = e.detail && e.detail.index;
         if (!deCodigo) return;
 
-        var config = LIMITES_CONFIG.DEPARTAMENTOS;
-        var filterField = config.filterField || "DeCodigo";
-        var mapFilter = filterField + " = '" + String(deCodigo).replace(/'/g, "''") + "'";
-
-        layer.visible = true;
-        layer.definitionExpression = mapFilter;
-
-        if (view && view.popup) view.popup.close();
-
-        layer.queryExtent({ where: mapFilter }).then(function(res) {
-            if (res && res.extent && view) {
-                view.goTo(res.extent.expand(1.2), { duration: 400, easing: "ease-in-out" });
-            }
-        }).catch(function() {});
-
-        if (typeof index === "number") highlightDeptoChartBar(index);
+        applyDeptoSelection(deCodigo, { index: index, updateSelect: true, zoom: true });
     });
 
     document.addEventListener("limites:depto-chart-restore", function() {
@@ -759,7 +966,7 @@ function setupDeptoChartSync() {
         var layer = deptoLayerRef || layerGlobal || window._departamentosLayerGlobal;
         if (!layer) return;
 
-        var restoreWhere = "1=1";
+        var restoreWhere = LIMITES_CONFIG.DEPARTAMENTOS.fixedWhere || "1=1";
         deptoActual = "";
         filtroNivel = "";
         whereBase = restoreWhere;
@@ -856,8 +1063,8 @@ window.require([
             limpiarVistaLimites({
                 chartTitle: "L\u00edmites Municipales",
                 legendMessage: deptoActual
-                    ? '<p style="margin:0;color:#666;">Cargando l\u00edmites municipales\u2026</p>'
-                    : '<p style="margin:0;color:#666;">Seleccione un departamento o municipio para visualizar los l\u00edmites municipales</p>'
+                    ? '<p class="oot-js-limites-main-1">Cargando l\u00edmites municipales\u2026</p>'
+                    : '<p class="oot-js-limites-main-1">Seleccione un departamento o municipio para visualizar los l\u00edmites municipales</p>'
             });
 
             actualizarResumen({
@@ -879,7 +1086,7 @@ window.require([
 
             limpiarVistaLimites({
                 chartTitle: "L\u00edmites Departamentales",
-                legendMessage: '<p style="margin:0;color:#666;">Cargando l\u00edmites departamentales\u2026</p>'
+                legendMessage: '<p class="oot-js-limites-main-1">Cargando l\u00edmites departamentales\u2026</p>'
             });
 
             var sdDepto = document.getElementById("summaryDiv");
@@ -924,7 +1131,7 @@ window.require([
         if (currentLimitesTab === "DEPARTAMENTOS") {
             limpiarVistaLimites({
                 chartTitle: "L\u00edmites Departamentales",
-                legendMessage: '<p style="margin:0;color:#666;">Cargando l\u00edmites departamentales\u2026</p>'
+                legendMessage: '<p class="oot-js-limites-main-1">Cargando l\u00edmites departamentales\u2026</p>'
             });
 
             var sdDepto = document.getElementById("summaryDiv");
@@ -941,8 +1148,8 @@ window.require([
         limpiarVistaLimites({
             chartTitle: "L\u00edmites Municipales",
             legendMessage: deptoActual
-                ? '<p style="margin:0;color:#666;">Cargando l\u00edmites municipales\u2026</p>'
-                : '<p style="margin:0;color:#666;">Seleccione un departamento o municipio para visualizar los l\u00edmites municipales</p>'
+                ? '<p class="oot-js-limites-main-1">Cargando l\u00edmites municipales\u2026</p>'
+                : '<p class="oot-js-limites-main-1">Seleccione un departamento o municipio para visualizar los l\u00edmites municipales</p>'
         });
 
         actualizarResumen({
@@ -982,8 +1189,10 @@ window.require([
         if (sd) sd.value = "0";
         if (sm) { sm.innerHTML = '<option value="">Seleccione un municipio</option>'; renderizarMunicipios(); sm.value = ""; }
         municipioActual = ""; deptoActual = ""; filtroNivel = ""; whereBase = "";
+        selectedStatusLabel = "";
         if (highlightHandle) { try { highlightHandle.remove(); } catch(e) {} highlightHandle = null; }
         destroyChart();
+        destroyStatusDoughnut();
         resetChartLayout();
         clearAuxiliaryTerritoryLayer();
         var td = document.getElementById("timelineDiv");
@@ -991,7 +1200,7 @@ window.require([
         var lt = document.getElementById("legendTitle");
         var lc = document.getElementById("legendContent");
         if (lt) lt.textContent = "Leyenda";
-        if (lc) { lc.innerHTML = '<p style="margin:0;color:#666;">Seleccione un departamento o municipio</p>'; lc.classList.remove("collapsed"); }
+        if (lc) { lc.innerHTML = '<p class="oot-js-limites-main-1">Seleccione un departamento o municipio</p>'; lc.classList.remove("collapsed"); }
         window.__legendState = { allCodes: [], activeCodes: new Set(), field: null, layer: null };
         actualizarResumen({ municipioActual: "", deptoActual: "", filtroNivel: "", diccionarioMunicipios: diccionarioMunicipios, diccionarioDepartamentos: diccionarioDepartamentos });
         if (view && view.popup) view.popup.close();
@@ -1006,14 +1215,18 @@ window.require([
         if (!ds) return;
         ds.innerHTML = '<option value="">Cargando...</option>';
         cargarDiccionarioDesdeApi().then(function(data) {
-            if (!data) { ds.innerHTML = '<option value="">Error al cargar</option>'; return; }
+            if (!data || !Array.isArray(data.todosMunicipios) || data.todosMunicipios.length === 0) {
+                ds.innerHTML = '<option value="">Error al cargar</option>';
+                var selectMuniError = document.getElementById("municipios");
+                if (selectMuniError) {
+                    selectMuniError.innerHTML = '<option value="">Error al cargar</option>';
+                }
+                return;
+            }
             diccionarioMunicipios = data.diccionarioMunicipios;
             diccionarioDepartamentos = data.diccionarioDepartamentos;
             todosMunicipios = data.todosMunicipios;
-            var deptosOrdenados = Object.keys(diccionarioDepartamentos).sort();
-            ds.innerHTML = '<option value="0">Seleccione un departamento</option>';
-            var oc = document.createElement("option"); oc.value = "COL"; oc.textContent = "Colombia"; ds.appendChild(oc);
-            deptosOrdenados.forEach(function(cod) { var o = document.createElement("option"); o.value = cod; o.textContent = diccionarioDepartamentos[cod] || cod; ds.appendChild(o); });
+            poblarSelectDepartamentos(ds);
             renderizarMunicipios();
         }).catch(function() { ds.innerHTML = '<option value="">Error al cargar</option>'; });
 
@@ -1022,14 +1235,16 @@ window.require([
             if (cod === "0") return;
             if (cod === "COL") {
                 deptoActual = ""; filtroNivel = ""; municipioActual = ""; whereBase = "";
+                selectedStatusLabel = "";
                 destroyChart();
+                destroyStatusDoughnut();
                 resetChartLayout();
                 clearAuxiliaryTerritoryLayer();
                 var td2 = document.getElementById("timelineDiv"); if (td2) { td2.style.display = "none"; td2.innerHTML = ""; }
                 var ld2 = document.getElementById("lineDescriptionsDiv"); if (ld2) { ld2.style.display = "none"; ld2.innerHTML = ""; }
                 var ms2 = document.getElementById("municipios"); if (ms2) { ms2.innerHTML = '<option value="">Seleccione un municipio</option>'; renderizarMunicipios(); ms2.value = ""; }
                 var lt2 = document.getElementById("legendTitle"); var lc2 = document.getElementById("legendContent");
-                if (lt2) lt2.textContent = "Leyenda"; if (lc2) { lc2.innerHTML = '<p style="margin:0;color:#666;">Seleccione un departamento o municipio</p>'; lc2.classList.remove("collapsed"); }
+                if (lt2) lt2.textContent = "Leyenda"; if (lc2) { lc2.innerHTML = '<p class="oot-js-limites-main-1">Seleccione un departamento o municipio</p>'; lc2.classList.remove("collapsed"); }
                 window.__legendState = { allCodes: [], activeCodes: new Set(), field: null, layer: null };
                 actualizarResumen({ municipioActual: "", deptoActual: "", filtroNivel: "", diccionarioMunicipios: diccionarioMunicipios, diccionarioDepartamentos: diccionarioDepartamentos });
                 if (view && view.popup) view.popup.close();
@@ -1059,11 +1274,43 @@ window.require([
         }
     }
 
+    function obtenerCodigosDepartamentoDisponibles() {
+        var codigos = Array.from(new Set(
+            (todosMunicipios || [])
+                .map(function(municipio) { return String(municipio && municipio.depto || "").trim(); })
+                .filter(function(codigo) { return /^\d{2}$/.test(codigo); })
+        ));
+
+        return codigos.sort(function(a, b) {
+            var nombreA = getDepartamentoDisplayName(a, diccionarioDepartamentos);
+            var nombreB = getDepartamentoDisplayName(b, diccionarioDepartamentos);
+            return String(nombreA).localeCompare(String(nombreB), "es", { sensitivity: "base" })
+                || String(a).localeCompare(String(b), "es", { sensitivity: "base" });
+        });
+    }
+
+    function poblarSelectDepartamentos(select) {
+        if (!select) return;
+
+        select.innerHTML = '<option value="0">Seleccione un departamento</option>';
+        var optionColombia = document.createElement("option");
+        optionColombia.value = "COL";
+        optionColombia.textContent = "Colombia";
+        select.appendChild(optionColombia);
+
+        obtenerCodigosDepartamentoDisponibles().forEach(function(cod) {
+            var option = document.createElement("option");
+            option.value = cod;
+            option.textContent = getDepartamentoDisplayName(cod, diccionarioDepartamentos);
+            select.appendChild(option);
+        });
+    }
+
     function renderizarMunicipios(deptoFiltro) {
         var select = document.getElementById("municipios"); if (!select) return;
         select.innerHTML = '<option value="">Seleccione un municipio</option>';
         var filtrados = todosMunicipios;
-        if (deptoFiltro && deptoFiltro !== "0") filtrados = todosMunicipios.filter(function(m) { return m.depto === deptoFiltro; });
+        if (deptoFiltro && deptoFiltro !== "0" && deptoFiltro !== "COL") filtrados = todosMunicipios.filter(function(m) { return m.depto === deptoFiltro; });
         filtrados.forEach(function(m) { var o = document.createElement("option"); o.value = m.codigo; o.textContent = getMunicipioDisplayName(m, diccionarioMunicipios); select.appendChild(o); });
     }
 
@@ -1079,10 +1326,13 @@ window.require([
         clearAuxiliaryTerritoryLayer();
         if (window._departamentosLayerGlobal) window._departamentosLayerGlobal.visible = false;
         if (layerGlobal) layerGlobal.visible = false;
+        setMunicipalServiceMessage(false);
 
         if (!deptoActual && !municipioActual) {
             if (!isRenderCycleCurrent(cycleId)) return;
+            selectedStatusLabel = "";
             destroyChart();
+            destroyStatusDoughnut();
             resetChartLayout();
             clearAuxiliaryTerritoryLayer();
             var chartTitleEmpty = document.getElementById("chartTitle");
@@ -1091,7 +1341,7 @@ window.require([
             var lc0 = document.getElementById("legendContent");
             if (lt0) lt0.textContent = "Leyenda";
             if (lc0) {
-                lc0.innerHTML = '<p style="margin:0;color:#666;">Seleccione un departamento o municipio para visualizar los l\u00edmites municipales</p>';
+                lc0.innerHTML = '<p class="oot-js-limites-main-1">Seleccione un departamento o municipio para visualizar los l\u00edmites municipales</p>';
                 lc0.classList.remove("collapsed");
             }
             var sd0 = document.getElementById("summaryDiv");
@@ -1126,12 +1376,22 @@ window.require([
 
                 var results = await Promise.all([
                     layer.queryExtent({ where: enhancedWhereClause }).catch(function() { return null; }),
-                    layer.queryFeatures({ where: enhancedWhereClause, outFields: ["OBJECTID","LLIdentif","LLNombre","LLJerarqui","LLNorma","Fecha","LLEscala","LLEstado","SHAPE_Length"], returnGeometry: false, orderByFields: ["LLNombre"] }).catch(function() { return { features: [] }; })
+                    layer.queryFeatures({ where: enhancedWhereClause, outFields: ["OBJECTID","LLIdentif","LLNombre","LLJerarqui","LLNorma","Fecha","LLEscala","LLEstado","SHAPE_Length"], returnGeometry: false, orderByFields: ["LLNombre"] })
+                        .then(function(result) { return { ok: true, result: result }; })
+                        .catch(function(error) { return { ok: false, error: error }; })
                 ]);
                 if (!isRenderCycleCurrent(cycleId)) return;
 
                 var extentResult = results[0];
-                var features = (results[1] && results[1].features) || [];
+                var featureQuery = results[1];
+                if (!featureQuery || !featureQuery.ok) {
+                    layer.visible = false;
+                    setMunicipalServiceMessage(true, featureQuery && featureQuery.error);
+                    return;
+                }
+
+                setMunicipalServiceMessage(false);
+                var features = (featureQuery.result && featureQuery.result.features) || [];
                 var lineNameLookup = buildLineNameLookup(features);
 
                 var renderer = new UniqueValueRenderer({ field: "LLIdentif", defaultSymbol: { type: "simple-line", color: [180,180,180,255], width: 2.5 } });
@@ -1149,17 +1409,33 @@ window.require([
 
                 layer.visible = true;
                 actualizarLeyendaLimitesMunicipales(features);
-                bindLegendToggle(layer, features);
 
                 savedChartLayer = layer;
                 savedChartConfig = config;
                 savedChartWhere = enhancedWhereClause;
                 savedChartFeatures = features;
+                municipalActiveCodes = [];
+                var seenMunicipalCodes = {};
+                features.forEach(function(f) {
+                    var code = String(f.attributes["LLIdentif"] || "");
+                    if (code && !seenMunicipalCodes[code]) {
+                        seenMunicipalCodes[code] = true;
+                        municipalActiveCodes.push(code);
+                    }
+                });
+                selectedStatusLabel = "";
 
                 renderChartMunicipios(layer, config, enhancedWhereClause, {
                     title: buildLimitesChartTitle(config.title || "L\u00edmites municipales"),
                     prefilteredFeatures: features
                 });
+                setupMunicipalSync({
+                    view: view,
+                    layer: layer,
+                    features: features,
+                    baseWhere: enhancedWhereClause
+                });
+                renderStatusDoughnut(features, { title: buildStatusChartTitle() });
                 if (!isRenderCycleCurrent(cycleId)) return;
 
                 if (municipioActual) {
@@ -1191,19 +1467,28 @@ window.require([
                     diccionarioDepartamentos: diccionarioDepartamentos
                 });
 
+            },
+            onError: function(error) {
+                if (!isRenderCycleCurrent(cycleId)) return;
+                setMunicipalServiceMessage(true, error);
             }
         });
     }
 
     async function cargarLimitesDepartamentos() {
         var cycleId = renderCycleId;
+        var selectedDepto = (deptoActual && deptoActual !== "0" && deptoActual !== "COL")
+            ? String(deptoActual)
+            : "";
 
         hideAllLimitesLayers();
         clearAuxiliaryTerritoryLayer();
+        destroyStatusDoughnut();
+        setMunicipalServiceMessage(false);
         if (layerGlobal) layerGlobal.visible = false;
 
         createDepartamentosLayer({
-            FeatureLayer: FeatureLayer, map: map, LIMITES_CONFIG: LIMITES_CONFIG, deptoActual: deptoActual,
+            FeatureLayer: FeatureLayer, map: map, LIMITES_CONFIG: LIMITES_CONFIG, deptoActual: "",
             onReady: async function(args) {
                 if (!isRenderCycleCurrent(cycleId)) return;
 
@@ -1214,24 +1499,27 @@ window.require([
                 setWhereBase(whereClause);
                 setLegendLayerTitle(config.title);
                 updateMapViewBadge("L\u00edmites departamentales");
+                deptoLayerRef = layer;
+                window._departamentosLayerGlobal = layer;
 
                 var lc = document.getElementById("legendContent");
                 if (lc) lc.innerHTML = "";
 
                 var results = await Promise.all([
                     layer.queryExtent({ where: whereClause }).catch(function() { return null; }),
-                    renderChartDepartamentos(layer, config, whereClause, { title: buildLimitesChartTitle(config.title || "L\u00edmites departamentales") })
+                    renderChartDepartamentos(layer, config, whereClause, { title: (config.title || "L\u00edmites departamentales") + " en Colombia" })
                 ]);
                 if (!isRenderCycleCurrent(cycleId)) return;
 
                 var extentResult = results[0];
-                if (extentResult && extentResult.extent && shouldZoom(extentResult.extent)) {
+                if (selectedDepto) {
+                    applyDeptoSelection(selectedDepto, { updateSelect: false, zoom: true });
+                } else if (extentResult && extentResult.extent && shouldZoom(extentResult.extent)) {
                     await zoomToExtent(extentResult.extent, reused ? 0 : 400);
+                    clearDeptoChartHighlight();
                 }
 
                 actualizarLeyendaDepartamentosLimites();
-                deptoLayerRef = layer;
-                window._departamentosLayerGlobal = layer;
 
                 var legendContentEl = document.getElementById("legendContent");
                 if (legendContentEl && !legendContentEl._deptoLegendBound) {

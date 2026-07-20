@@ -1,4 +1,4 @@
-import { createBarChartRenderer } from "../renderers/barChartRenderer.js?v=connectivity-numeric-box-labels-20260604";
+import { createBarChartRenderer } from "../renderers/barChartRenderer.js?v=connectivity-tab-resize-20260716";
 import { renderPieChart } from "../renderers/pieChartRenderer.js";
 import { renderLineChart } from "../renderers/lineChartRenderer.js";
 import { renderDoughnutChart } from "../renderers/doughnutChartRenderer.js";

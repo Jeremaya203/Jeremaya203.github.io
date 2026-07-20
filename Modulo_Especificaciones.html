@@ -10,6 +10,12 @@
   <link rel="stylesheet" href="./navbar-footer.css">
   <link rel="stylesheet" href="./oot-complementario.css">
   <link rel="stylesheet" href="./especificaciones.css">
+  <link rel="stylesheet" href="./inline-extracted.css">
+    <link rel="stylesheet" href="mobile-warning.css">
+  <script defer src="mobile-warning.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/12.16.0/firebase-auth-compat.js"></script>
+  <script defer src="js/shared-auth.js"></script>
 </head>
 <body>
   <div id="oot-navbar-placeholder"></div>
@@ -17,9 +23,9 @@
   <div class="page-banner">
     <div class="container">
       <nav aria-label="breadcrumb">
-        <ol class="breadcrumb" style="background:transparent;padding:0;margin-bottom:12px;">
-          <li class="breadcrumb-item"><a href="./index.html" style="color:rgba(255,255,255,0.75);">Inicio</a></li>
-          <li class="breadcrumb-item active" style="color:#fff;" aria-current="page">Especificaciones OT</li>
+        <ol id="ie-especif-1" class="breadcrumb">
+          <li class="breadcrumb-item"><a id="ie-especif-2" href="./index.html">Inicio</a></li>
+          <li id="ie-especif-3" class="breadcrumb-item active" aria-current="page">Especificaciones OT</li>
         </ol>
       </nav>
       <div>
@@ -52,7 +58,7 @@
     </div>
 
     <!-- Grid de archivos -->
-    <div id="grid-archivos" class="row" style="display:none"></div>
+    <div id="grid-archivos" class="row"></div>
   </main>
 
   <div id="oot-footer-placeholder"></div>

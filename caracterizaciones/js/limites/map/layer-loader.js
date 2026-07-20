@@ -1,3 +1,5 @@
+import { convertAreaToKm2 } from "../utils.js?v=depto-area-km2-20260716";
+
 // ── Caché de capas para reutilización ──
 let _municipiosLayer = null;
 let _departamentosLayer = null;
@@ -35,6 +37,8 @@ function escapeHtml(value) {
 }
 
 function formatAreaKm2(value) {
+    if (value === null || value === undefined || value === "") return "";
+
     const number = Number(value);
     if (!Number.isFinite(number)) return "";
 
@@ -76,16 +80,42 @@ function buildWhereMunicipios(config, deptoActual, municipioActual) {
 }
 
 function buildWhereDepartamentos(config, deptoActual) {
+    const fixedWhere = config.fixedWhere || "1=1";
     if (deptoActual && deptoActual !== "0" && deptoActual !== "COL") {
-        return `${config.filterField} = '${escapeSqlString(deptoActual)}'`;
+        return `(${fixedWhere}) AND (${config.filterField} = '${escapeSqlString(deptoActual)}')`;
     }
-    return "1=1";
+    return fixedWhere;
+}
+
+function resolveCodedFieldLabel(layer, fieldName, value) {
+    const codedValues = layer?.fields
+        ?.find(field => String(field.name).toLowerCase() === String(fieldName).toLowerCase())
+        ?.domain
+        ?.codedValues;
+    if (!codedValues?.length) return value;
+
+    const match = codedValues.find(item => String(item.code) === String(value));
+    return match?.name || value;
+}
+
+function buildDepartmentRenderer() {
+    return {
+        type: "simple",
+        symbol: {
+            type: "simple-fill",
+            color: [76, 0, 115, 0.08],
+            outline: {
+                color: [76, 0, 115, 1],
+                width: 2
+            }
+        }
+    };
 }
 
 // ── createOrUpdateMunicipiosLayer ──
 export function createOrUpdateMunicipiosLayer({
     FeatureLayer, map, LIMITES_CONFIG, deptoActual, municipioActual,
-    onReady
+    onReady, onError
 }) {
     const config = LIMITES_CONFIG.MUNICIPIOS;
     if (!config) return null;
@@ -98,7 +128,8 @@ export function createOrUpdateMunicipiosLayer({
         _municipiosLayer.visible = false;
         _departamentosLayer && (_departamentosLayer.visible = false);
         if (onReady) {
-            onReady({ layer: _municipiosLayer, config, whereClause: whereLimites, reused: true });
+            Promise.resolve(onReady({ layer: _municipiosLayer, config, whereClause: whereLimites, reused: true }))
+                .catch(error => { if (onError) onError(error); });
         }
         return { layer: _municipiosLayer, config, whereClause: whereLimites, reused: true };
     }
@@ -110,7 +141,8 @@ export function createOrUpdateMunicipiosLayer({
         _departamentosLayer && (_departamentosLayer.visible = false);
         _municipiosConfigHash = cacheKey;
         if (onReady) {
-            onReady({ layer: _municipiosLayer, config, whereClause: whereLimites, reused: true });
+            Promise.resolve(onReady({ layer: _municipiosLayer, config, whereClause: whereLimites, reused: true }))
+                .catch(error => { if (onError) onError(error); });
         }
         return { layer: _municipiosLayer, config, whereClause: whereLimites, reused: true };
     }
@@ -161,10 +193,10 @@ export function createOrUpdateMunicipiosLayer({
 
             const rows = fields
                 .filter(f => f.value !== null && f.value !== undefined && String(f.value).trim() !== "")
-                .map(f => `<tr><td style="font-weight:600;padding:4px 8px 4px 0;white-space:nowrap;vertical-align:top;color:#555;">${f.label}</td><td style="padding:4px 0;color:#222;">${String(f.value).replace(/</g, "<").replace(/>/g, ">")}</td></tr>`);
+                .map(f => `<tr><td class="oot-js-limites-layerloader-1">${escapeHtml(f.label)}</td><td class="oot-js-limites-layerloader-2">${escapeHtml(f.value)}</td></tr>`);
 
             if (fechaStr) {
-                rows.push(`<tr><td style="font-weight:600;padding:4px 8px 4px 0;white-space:nowrap;vertical-align:top;color:#555;">Fecha</td><td style="padding:4px 0;color:#222;">${fechaStr}</td></tr>`);
+                rows.push(`<tr><td class="oot-js-limites-layerloader-1">Fecha</td><td class="oot-js-limites-layerloader-2">${escapeHtml(fechaStr)}</td></tr>`);
             }
 
             const table = document.createElement("table");
@@ -181,7 +213,9 @@ export function createOrUpdateMunicipiosLayer({
     map.add(layer);
 
     layer.when(() => {
-        if (onReady) onReady({ layer, config, whereClause: whereLimites, reused: false });
+        if (onReady) return onReady({ layer, config, whereClause: whereLimites, reused: false });
+    }).catch(error => {
+        if (onError) onError(error);
     });
 
     return { layer, config, whereClause: whereLimites, reused: false };
@@ -201,6 +235,7 @@ export function createOrUpdateDepartamentosLayer({
     // Si la capa ya existe con el mismo filtro, solo actualizar visibilidad
     if (_departamentosLayer && _departamentosConfigHash === cacheKey) {
         _departamentosLayer.visible = true;
+        _departamentosLayer.renderer = buildDepartmentRenderer();
         _municipiosLayer && (_municipiosLayer.visible = false);
         if (onReady) {
             onReady({ layer: _departamentosLayer, config, whereClause: whereLimites, reused: true });
@@ -212,6 +247,7 @@ export function createOrUpdateDepartamentosLayer({
     if (_departamentosLayer) {
         _departamentosLayer.definitionExpression = whereLimites;
         _departamentosLayer.visible = true;
+        _departamentosLayer.renderer = buildDepartmentRenderer();
         _municipiosLayer && (_municipiosLayer.visible = false);
         _departamentosConfigHash = cacheKey;
         if (onReady) {
@@ -227,25 +263,32 @@ export function createOrUpdateDepartamentosLayer({
         outFields: config.outFields || ["*"],
         opacity: 0.85,
         visible: true,
-        popupEnabled: true
+        popupEnabled: true,
+        renderer: buildDepartmentRenderer()
     });
 
     layer.popupTemplate = {
-        title: "{DeNombre}",
-        outFields: ["DeCodigo", "DeNombre", "DeArea", "DeNorma"],
+        title: `{${config.nameField || "dpnombre"}}`,
+        outFields: config.outFields || ["*"],
         content: function(feature) {
             const att = feature.graphic.attributes || {};
+            const codeField = config.filterField || "dpcodigo";
+            const nameField = config.nameField || "dpnombre";
+            const areaField = config.areaField || config.valueField || "dparea";
+            const normaField = config.normaField || "dpnorma";
+            const sourceField = config.sourceField || "fuente";
             const rows = [
-                { label: "C\u00f3digo DANE", value: att.DeCodigo },
-                { label: "Departamento", value: att.DeNombre },
-                { label: "\u00c1rea (km\u00b2)", value: formatAreaKm2(att.DeArea) },
-                { label: "Normatividad", value: att.DeNorma }
+                { label: "C\u00f3digo DANE", value: att[codeField] },
+                { label: "Departamento", value: resolveCodedFieldLabel(layer, nameField, att[nameField]) },
+                { label: "\u00c1rea (km\u00b2)", value: formatAreaKm2(convertAreaToKm2(att[areaField], config.areaUnit)) },
+                { label: "Normatividad", value: att[normaField] },
+                { label: "Fuente", value: att[sourceField] }
             ]
                 .filter(row => row.value !== null && row.value !== undefined && String(row.value).trim() !== "")
                 .map(row => `
                     <tr>
-                        <td style="font-weight:600;padding:4px 8px 4px 0;white-space:nowrap;vertical-align:top;color:#555;">${escapeHtml(row.label)}</td>
-                        <td style="padding:4px 0;color:#222;">${escapeHtml(row.value)}</td>
+                        <td class="oot-js-limites-layerloader-1">${escapeHtml(row.label)}</td>
+                        <td class="oot-js-limites-layerloader-2">${escapeHtml(row.value)}</td>
                     </tr>
                 `);
 

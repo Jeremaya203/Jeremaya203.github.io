@@ -12,6 +12,18 @@ function stripViaFerreaPrefix(label) {
     return String(label || "").replace(VIA_FERREA_PREFIX_REGEX, "").trim();
 }
 
+const CONNECTIVITY_BAR_LAYOUT = {
+    canvasHeight: 400,
+    disableHorizontalScroll: true,
+    responsive: false,
+    barSizing: {
+        barPercentage: 0.76,
+        categoryPercentage: 0.78,
+        maxBarThickness: 42,
+        minBarLength: 4
+    }
+};
+
 export const CONECTIVIDAD_FERREA_BAR_CHART_CONFIG = {
     id: "conectividad-férrea",
     tabLabel: "Vias férreas",
@@ -19,8 +31,7 @@ export const CONECTIVIDAD_FERREA_BAR_CHART_CONFIG = {
     library: "chart.js",
     title: "Conectividad férrea",
     titleTemplate: "Conectividad férrea del {mpcategor} de {mpnombre}, {dpnombre}",
-    canvasHeight: 380,
-    disableHorizontalScroll: true,
+    ...CONNECTIVITY_BAR_LAYOUT,
     xAxis: {
         field: "vobservacion",
         label: "Observacion",
@@ -79,8 +90,7 @@ export const CONECTIVIDAD_FLUVIAL_BAR_CHART_CONFIG = {
     library: "chart.js",
     title: "Conectividad fluvial",
     titleTemplate: "Conectividad fluvial del {mpcategor} de {mpnombre}, {dpnombre}",
-    canvasHeight: 380,
-    disableHorizontalScroll: true,
+    ...CONNECTIVITY_BAR_LAYOUT,
     xAxis: {
         field: "vifmodalidad",
         label: "Modalidad",
@@ -189,8 +199,7 @@ export const INFRAESTRUCTURA_COMPLEMENTARIA_BAR_CHART_CONFIG = {
     library: "chart.js",
     title: "Infraestructura complementaria",
     titleTemplate: "Infraestructura complementaria del {mpcategor} de {mpnombre}, {dpnombre}",
-    canvasHeight: 390,
-    disableHorizontalScroll: true,
+    ...CONNECTIVITY_BAR_LAYOUT,
     url: INFRAESTRUCTURA_COMPLEMENTARIA_SERVICE_URL,
     layerUrl: INFRAESTRUCTURA_COMPLEMENTARIA_SERVICE_URL,
     serviceUrl: INFRAESTRUCTURA_COMPLEMENTARIA_SERVICE_URL,
@@ -255,13 +264,33 @@ export const CONECTIVIDAD_TERRESTRE_BAR_CHART_CONFIG = {
     id: "conectividad-terrestre",
     type: "bar",
     library: "chart.js",
+    ...CONNECTIVITY_BAR_LAYOUT,
     title: "Conectividad terrestre",
     titleTemplate: "Conectividad terrestre del municipio de {mpnombre}, {dpnombre}",
     tabLabel: "Vias terrestres",
 
 
-    xAxis: { field: "vclasmintrans", label: "Clasificación vial MinTransporte" },
-    yAxis: { field: "vitlong", label: "Longitud (Km)", decimals: 2, suffix: "Km" },
+    xAxis: {
+        field: "vclasmintrans",
+        label: "Clasificación vial MinTransporte",
+        autoSkip: true,
+        maxTicksLimit: 6,
+        maxRotation: 0,
+        minRotation: 0,
+        fontSize: 9,
+        tickPadding: 8,
+        maxLineLength: 14,
+        maxLines: 2,
+        bottomPadding: 10
+    },
+    yAxis: {
+        field: "vitlong",
+        label: "Longitud (Km)",
+        decimals: 2,
+        suffix: "Km",
+        grace: "18%",
+        tickPadding: 8
+    },
 
     aggregation: "sum",
     sourcesFromVariants: true,
@@ -318,7 +347,7 @@ export const TIEMPOS_DESPLAZAMIENTO_PIE_CHART_CONFIG = {
     type: "pie",
     library: "chart.js",
     title: "Tiempos de desplazamiento",
-    titleTemplate: "Relacion de tiempos de desplazamiento desde la cabecera municipal de {mpnombre}, {dpnombre}",
+    titleTemplate: "Relación de tiempos de desplazamiento desde la cabecera municipal de {mpnombre}, {dpnombre}",
     url: TIEMPOS_DESPLAZAMIENTO_SERVICE_URL,
     layerUrl: TIEMPOS_DESPLAZAMIENTO_SERVICE_URL,
     serviceUrl: TIEMPOS_DESPLAZAMIENTO_SERVICE_URL,
@@ -366,8 +395,8 @@ export const INSTITUCIONES_EDUCACION_BAR_CHART_CONFIG = {
     layerId: 28,
     source: "SE_IES",
     fields: ["mpcodigo", "mpnombre", "dpnombre", "mpcategor", "mpitp", "mpit", "mpiuet", "mpuni", "mpstotalbs"],
-    xAxis: { field: "caracter_acad", label: "Caracter academico" },
-    yAxis: { field: "cantidad", label: "Numero de instituciones", decimals: 0 },
+    xAxis: { field: "caracter_acad", label: "Carácter académico" },
+    yAxis: { field: "cantidad", label: "Número de instituciones", decimals: 0 },
     categoryFields: ["mpitp", "mpit", "mpiuet", "mpuni", "mpstotalbs"],
     filter: {
         municipalityField: "mpcodigo",
@@ -395,7 +424,7 @@ export const SALUD_BAR_CHART_CONFIG = {
     source: "SE_SLD",
     fields: ["mpcodigo", "mpnombre", "dpnombre", "mpcategor", "no_prestadores", "nprivada", "npublica", "nmixta"],
     xAxis: { field: "tipo_cobertura", label: "Naturaleza de cobertura en salud" },
-    yAxis: { field: "cantidad", label: "Numero de instituciones", decimals: 0 },
+    yAxis: { field: "cantidad", label: "Número de instituciones", decimals: 0 },
     categoryFields: ["nprivada", "npublica", "nmixta"],
     legendField: "no_prestadores",
     dedupeLegendByLabel: true,

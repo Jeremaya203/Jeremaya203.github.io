@@ -1,1 +1,1 @@
-import "./application/app/socieconomicoApp.js?v=component-nav-socio-20260627";
+import "./application/app/socieconomicoApp.js?v=department-map-municipality-selection-20260717b";

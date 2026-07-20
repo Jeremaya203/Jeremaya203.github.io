@@ -6,7 +6,7 @@ export async function initializeBiofisico() {
     resetBiofisicoState();
 
     if (!bootstrapPromise) {
-        bootstrapPromise = import("./main.js?v=component-nav-biofisico-20260623");
+        bootstrapPromise = import("./main.js?v=clima-stations-cleanup-20260717");
     }
 
     await bootstrapPromise;

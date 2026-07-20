@@ -1,10 +1,10 @@
 ﻿/**
  * biofisicoTerritory.loader.js
  * 
- * MÃ³dulo que encapsula toda la carga de datos territoriales:
+ * Módulo que encapsula toda la carga de datos territoriales:
  * - Diccionarios municipio/departamento
  * - Info de municipio
- * - CÃ³digos de municipios desde FeatureLayer
+ * - Códigos de municipios desde FeatureLayer
  * - Renderizado de selects
  * - URL navigation helpers
  */
@@ -29,7 +29,7 @@ import {
  * Todas las propiedades de ctx son getters/setters a AppState.
  * 
  * @param {Object} ctx - BiofisicoContext (getters/setters a AppState)
- * @param {Object} dependencies - Dependencias especÃ­ficas
+ * @param {Object} dependencies - Dependencias 
  * @returns {Object} API del loader territorial
  */
 export function createTerritoryLoader(ctx, dependencies = {}) {
@@ -92,7 +92,7 @@ export function createTerritoryLoader(ctx, dependencies = {}) {
 
     async function actualizarResumen() {
         // El config se obtiene desde el estado (via ctx)
-        // Pero getActiveLayerConfig es una funciÃ³n del scope de main
+        // Pero getActiveLayerConfig es una función del scope de main
         // que debemos recibir como dependencia
         if (typeof actualizarResumenLocal === "function") {
             actualizarResumenLocal(municipioInfo);
@@ -161,7 +161,7 @@ export function createTerritoryLoader(ctx, dependencies = {}) {
         updateMapViewBadge("Relieve");
     }
 
-    // ============ RESET DE BÃšSQUEDA ============
+    // ============ RESET DE BUSQUEDA ============
 
     function resetSearchState() {
         ctx.municipioActual = "";
@@ -225,7 +225,6 @@ export function createTerritoryLoader(ctx, dependencies = {}) {
         ctx.currentSubLayerIndex = (idxHipsoDepto >= 0) ? idxHipsoDepto : 0;
     }
 
-    // ============ API PÃšBLICA ============
 
     return {
         cargarDiccionarioMunicipios,

@@ -4,12 +4,14 @@ import {
     hasRenderableActiveLayer,
     isStaleLayerRender
 } from "./mapUtils.js";
-import { getBiofisicoMapRegistryEntry } from "./mapRegistry.js";
+import { getBiofisicoMapRegistryEntry } from "./mapRegistry.js?v=clima-stations-cleanup-20260717";
 import {
     createBiofisicoFeatureLayer,
+    createBiofisicoImageryLayer,
     createBiofisicoVariantLayers,
     configureVariantLayerLabels
-} from "./mapLayerFactory.js?v=cuencas-no-map-labels-20260617";
+} from "./mapLayerFactory.js?v=pendientes-imageserver-20260716";
+import { coloresPendientes } from "../config.js?v=pendientes-imageserver-20260716";
 import {
     buildFeatureQuerySignature,
     createChartPrefetchQuery,
@@ -27,6 +29,7 @@ import {
 export function createMapController({ getState }) {
     let activeLayerRenderKey = "";
     let activeLayerStructureKey = "";
+    let activeMapGroup = "";
 
     function getRenderKey(config) {
         const state = getState();
@@ -73,9 +76,49 @@ export function createMapController({ getState }) {
             state.currentMode,
             state.currentSubLayerIndex,
             config?.id || "",
-            config?.url || "",
+            config?.mapUrl || config?.url || "",
             variantKeys
         ].join("::");
+    }
+
+    function isPendientesImageryConfig(config) {
+        return config?.id === "pendientes" &&
+            config?.mapLayerType === "imagery" &&
+            Boolean(config?.mapUrl);
+    }
+
+    function shouldUsePendientesImagery(deps) {
+        return isPendientesImageryConfig(deps.config) &&
+            deps.getFiltroNivel?.() === "MUNI" &&
+            Boolean(String(deps.getMunicipioActual?.() || "").trim());
+    }
+
+    function buildPendientesImageryWhere(deps) {
+        const field = deps.config?.mapNameField || "name";
+        const municipio = String(deps.getMunicipioActual?.() || "").trim();
+
+        if (deps.getFiltroNivel?.() === "MUNI" && municipio) {
+            return `${field} LIKE '%_${municipio.replace(/'/g, "''")}'`;
+        }
+
+        return "1=0";
+    }
+
+    async function zoomToPendientesCatalogExtent(deps, where) {
+        const response = await deps.esriRequest(`${deps.config.mapUrl}/query`, {
+            query: {
+                where,
+                returnExtentOnly: true,
+                returnGeometry: false,
+                f: "json"
+            },
+            responseType: "json"
+        });
+        const extentJson = response?.data?.extent;
+        if (!extentJson) return;
+
+        const extent = new deps.Extent(extentJson);
+        await deps.view.goTo(extent.expand(1.2));
     }
 
     function buildRiesgoCcDepartmentWhere(deps) {
@@ -91,10 +134,14 @@ export function createMapController({ getState }) {
     }
 
     function getMapWhereForConfig(deps) {
+        if (shouldUsePendientesImagery(deps)) {
+            return buildPendientesImageryWhere(deps);
+        }
         return buildRiesgoCcDepartmentWhere(deps) || deps.getWhereBase() || "1=1";
     }
 
-function canReuseSingleLayer(deps, config, nextStructureKey) {
+    function canReuseSingleLayer(deps, config, nextStructureKey) {
+        if (shouldUsePendientesImagery(deps)) return false;
         if (!config || Array.isArray(config.variants) && config.variants.length) return false;
         if (nextStructureKey !== activeLayerStructureKey) return false;
 
@@ -135,8 +182,10 @@ function canReuseSingleLayer(deps, config, nextStructureKey) {
         const config = deps.getActiveLayerConfig();
         if (!config) return;
 
+        const nextMapGroup = getBiofisicoMapRegistryEntry(config).group || deps.getCurrentMode();
         const nextRenderKey = getRenderKey(config);
         if (nextRenderKey === activeLayerRenderKey && hasActiveRenderableLayer()) {
+            activeMapGroup = nextMapGroup;
             const activeLayer = deps.getChartLayerGlobal?.() || deps.getLayerGlobal?.();
             if (activeLayer) {
                 deps.actualizarGrafica(activeLayer, config);
@@ -147,6 +196,7 @@ function canReuseSingleLayer(deps, config, nextStructureKey) {
 
         const nextStructureKey = buildLayerStructureKey(config);
         if (canReuseSingleLayer(deps, config, nextStructureKey)) {
+            activeMapGroup = nextMapGroup;
             const currentCycle = deps.incrementRenderCycle();
             activeLayerRenderKey = nextRenderKey;
             renderReusedSingleLayer({
@@ -158,10 +208,22 @@ function canReuseSingleLayer(deps, config, nextStructureKey) {
             return;
         }
 
-        deps.clearLayers();
+        const preserveStationsLayer = activeMapGroup === "CLIMA" && nextMapGroup === "CLIMA";
+        deps.clearLayers({ preserveStationsLayer });
+        activeMapGroup = nextMapGroup;
         const currentCycle = deps.incrementRenderCycle();
         activeLayerRenderKey = nextRenderKey;
         activeLayerStructureKey = nextStructureKey;
+
+        if (shouldUsePendientesImagery({ ...deps, config })) {
+            renderPendientesImageryLayer({
+                ...deps,
+                config,
+                currentCycle,
+                cargarCapaStart
+            });
+            return;
+        }
 
         if (Array.isArray(config.variants) && config.variants.length) {
             renderVariantLayers({
@@ -177,6 +239,83 @@ function canReuseSingleLayer(deps, config, nextStructureKey) {
             config,
             currentCycle,
             cargarCapaStart
+        });
+    }
+
+    function renderPendientesImageryLayer(deps) {
+        const mapWhere = buildPendientesImageryWhere(deps);
+        const imageryLayer = createBiofisicoImageryLayer({
+            ImageryLayer: deps.ImageryLayer,
+            config: deps.config,
+            mosaicWhere: mapWhere,
+            visible: true
+        });
+        const chartLayer = createBiofisicoFeatureLayer({
+            FeatureLayer: deps.FeatureLayer,
+            config: deps.config,
+            definitionExpression: deps.buildDefinitionExpression({
+                baseWhere: deps.getWhereBase()
+            }),
+            visible: false
+        });
+
+        deps.setLayerGlobal(imageryLayer);
+        deps.setChartLayerGlobal(chartLayer);
+        deps.syncStateFromGlobals();
+        deps.setLegendLayer(imageryLayer, deps.config.title);
+        deps.actualizarFuente(chartLayer);
+        addBiofisicoLayerToMap(deps.map, imageryLayer);
+        deps.actualizarResumen();
+
+        const legendEntries = Object.entries(coloresPendientes)
+            .sort(([left], [right]) => Number(left) - Number(right));
+        deps.actualizarLeyenda(
+            legendEntries.map(([, info]) => info.label),
+            legendEntries.map(([, info]) => info.color),
+            legendEntries.map(([code]) => code)
+        );
+
+        deps.view.whenLayerView(imageryLayer)
+            .then(layerView => {
+                if (deps.getLayerGlobal() !== imageryLayer) return;
+                deps.setLayerViewGlobal(layerView);
+            })
+            .catch(error => {
+                const message = String(error?.message || "").toLowerCase();
+                if (message.includes("cancelled")) return;
+                console.error("whenLayerView pendientes error:", error);
+            });
+
+        deps.actualizarGrafica(chartLayer, deps.config, { skipSyncMap: true });
+
+        const zoomPromise = zoomToPendientesCatalogExtent(deps, mapWhere)
+            .catch(error => {
+                const message = String(error?.message || "").toLowerCase();
+                if (error?.name === "AbortError" || message.includes("aborted")) return;
+                console.error("queryExtent pendientes error:", error);
+            });
+
+        imageryLayer.when(async () => {
+            if (isStaleLayerRender({
+                currentCycle: deps.currentCycle,
+                renderCycleId: deps.getRenderCycleId(),
+                layerGlobal: deps.getLayerGlobal(),
+                expectedLayer: imageryLayer
+            })) return;
+
+            await zoomPromise;
+
+            deps.recordBiofisicoMetric(
+                "cargarCapaActual.pendientesImagery",
+                getMapNow() - deps.cargarCapaStart,
+                {
+                    configId: deps.config.id,
+                    mode: deps.getCurrentMode(),
+                    where: mapWhere
+                }
+            );
+        }).catch(error => {
+            console.error("No se pudo cargar el mapa de pendientes:", error);
         });
     }
 
@@ -333,7 +472,10 @@ function canReuseSingleLayer(deps, config, nextStructureKey) {
         ) {
             const st = deps.ensureStationsLayer();
             st.definitionExpression = deps.getWhereBase();
-            deps.map.add(st);
+            deps.setStationsLayer?.(st);
+            if (!deps.map.layers.includes(st)) {
+                deps.map.add(st);
+            }
         }
 
         deps.actualizarResumen();
@@ -491,9 +633,12 @@ function canReuseSingleLayer(deps, config, nextStructureKey) {
         ) {
             const st = deps.ensureStationsLayer();
             st.definitionExpression = where;
-            try {
-                deps.map.add(st);
-            } catch (_) {}
+            deps.setStationsLayer?.(st);
+            if (!deps.map.layers.includes(st)) {
+                try {
+                    deps.map.add(st);
+                } catch (_) {}
+            }
         }
 
         deps.actualizarResumen();

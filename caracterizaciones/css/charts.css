@@ -273,6 +273,24 @@
     max-height: none !important;
 }
 
+.chart-card.economic-activities-chart-active.chart-ready #chart {
+    height: unset !important;
+    min-height: unset !important;
+}
+
+.chart-card.economic-activities-chart-active .pib-chart-scroll {
+    overflow-y: hidden !important;
+    overflow-x: hidden !important;
+    max-height: none !important;
+    scrollbar-width: none;
+}
+
+.chart-card.economic-activities-chart-active .pib-chart-scroll::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
 .chart-card.chart-scrollable {
     padding-bottom: 0;
 }

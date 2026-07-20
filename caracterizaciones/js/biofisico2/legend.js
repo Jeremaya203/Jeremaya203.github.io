@@ -14,7 +14,7 @@
         const uniqueValueInfos = r.uniqueValueInfos || rendererJson?.uniqueValueInfos || [];
         const uniqueValueGroups = r.uniqueValueGroups || rendererJson?.uniqueValueGroups || [];
 
-        // Caso 1: renderer clÃ¡sico
+        // Caso 1: renderer clasico
         uniqueValueInfos.forEach(info => {
             const val = info.value ?? "";
             const lbl = info.label || String(val);
@@ -24,7 +24,7 @@
             codes.push(String(val));
         });
 
-        // Caso 2: renderer agrupado (como degradaciÃ³n del suelo)
+        // Caso 2: renderer agrupado 
         uniqueValueGroups.forEach(group => {
             (group.classes || []).forEach(cls => {
                 const rawValues = Array.isArray(cls?.values) && cls.values.length
@@ -169,7 +169,7 @@ export function sortLegendEntries(config, entries) {
         return entries.slice().sort((a,b)=>(idx.get(a.label) ?? 9999) - (idx.get(b.label) ?? 9999));
     }
 
-    // EscorrentÃ­a numÃ©rico
+
     if (config.isHidro && config.hidroType === "escorrentia") {
         const inv = new Map(Object.entries(coloresEscorrentia || {}).map(([k,v])=>[v.label, Number(k)]));
         return entries.slice().sort((a,b)=>(inv.get(a.label) ?? 9999) - (inv.get(b.label) ?? 9999));
@@ -199,21 +199,21 @@ export function sortLegendEntries(config, entries) {
         return match ? Number(match[0]) : 9999;
     };
 
-    // PrecipitaciÃ³n: ordenar dinÃ¡micamente por el primer nÃºmero del label
+
     if (config.isClima && config.climaType === "precip") {
         return entries.slice().sort((a, b) => {
             return extraerValorOrden(a.label) - extraerValorOrden(b.label);
         });
     }
 
-    // Temperatura: ordenar dinÃ¡micamente por rango y mandar "> x" al final
+    
     if (config.isClima && config.climaType === "temp") {
         return entries.slice().sort((a, b) => {
             return extraerValorOrden(a.label) - extraerValorOrden(b.label);
         });
     }
 
-    // Por defecto: alfabÃ©tico
+
     return entries.slice().sort((a,b)=>String(a.label).localeCompare(String(b.label), "es"));
 }
 
@@ -243,7 +243,7 @@ export function syncLegendToLabelSelection(clickedLabel){
         return _normTxt(lbl) === target;
     });
 
-    // Si no encontrÃ³ match exacto, no rompas nada
+    
     if (!hit) return;
 
     // Estado global (si existe)

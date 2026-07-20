@@ -1,0 +1,44 @@
+.oot-mobile-warning-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(10, 22, 40, 0.88);
+    font-family: "Public Sans", Arial, sans-serif;
+}
+
+.oot-mobile-warning-box {
+    background: #ffffff;
+    border-radius: 12px;
+    max-width: 360px;
+    width: 100%;
+    padding: 28px 24px;
+    text-align: center;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.oot-mobile-warning-title {
+    margin: 0 0 12px;
+    font-size: 18px;
+    color: #0f2340;
+}
+
+.oot-mobile-warning-text {
+    margin: 0 0 20px;
+    font-size: 14px;
+    color: #333333;
+    line-height: 1.5;
+}
+
+.oot-mobile-warning-button {
+    background: #0f2340;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 28px;
+    font-size: 14px;
+    cursor: pointer;
+}

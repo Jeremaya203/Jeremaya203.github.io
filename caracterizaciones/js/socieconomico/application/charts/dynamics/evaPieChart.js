@@ -1,6 +1,6 @@
 import { renderPieChart } from "../renderers/pieChartRenderer.js";
 import { toNum } from "../../utils/shared.js";
-import { buildAdaptiveFont, createZoomOptions, ensureZoomKeepsVisibleData, formatChartLabel, resolveChartLabel } from "../core/chartOptions.js?v=global-safe-zoom-labels-20260604";
+import { buildAdaptiveFont, createZoomOptions, ensureZoomKeepsVisibleData, formatChartLabel } from "../core/chartOptions.js?v=global-safe-zoom-labels-20260604";
 import { configureScrollableChartViewport, prepareVisibleChartCanvas, setChartTitle } from "../ui/chartPanel.js?v=local-chart-title-20260529";
 import { setChartStatus } from "../ui/chartStatus.js";
 import { destroyCanvasChart } from "../core/chartLifecycle.js";
@@ -181,6 +181,23 @@ function areaTickStep(scale, totalRows) {
     if (visibleRows <= 24) return 1;
     if (visibleRows <= 36) return 2;
     return Math.ceil(visibleRows / 18);
+}
+
+function getAreaRowLabelY(chart, rowIndex) {
+    const yPixels = [];
+    (chart.data?.datasets || []).forEach((_, datasetIndex) => {
+        if (!chart.isDatasetVisible(datasetIndex)) return;
+        const bar = chart.getDatasetMeta(datasetIndex)?.data?.[rowIndex];
+        if (!bar || !Number.isFinite(bar.y)) return;
+        yPixels.push(bar.y);
+    });
+    if (yPixels.length) {
+        return yPixels.reduce((sum, y) => sum + y, 0) / yPixels.length;
+    }
+    const yScale = chart.scales?.y;
+    return typeof yScale?.getPixelForValue === "function"
+        ? yScale.getPixelForValue(rowIndex)
+        : null;
 }
 
 export function createEvaPieChartController({
@@ -436,12 +453,16 @@ export function createEvaPieChartController({
         return json.features || [];
     }
 
-    function formatHa(value) {
+    function formatHaNumber(value) {
         const n = Number(value);
-        return `${Number.isFinite(n) ? n.toLocaleString("es-CO", {
+        return Number.isFinite(n) ? n.toLocaleString("es-CO", {
             minimumFractionDigits: 1,
             maximumFractionDigits: 1
-        }) : "0,0"} Ha`;
+        }) : "0,0";
+    }
+
+    function formatHa(value) {
+        return `${formatHaNumber(value)} Ha`;
     }
 
     function aggregateByCycle(features, categories = []) {
@@ -521,41 +542,90 @@ export function createEvaPieChartController({
             .sort((a, b) => (b.transitorio + b.permanente) - (a.transitorio + a.permanente));
     }
 
+    function createAreaYAxisLabelsPlugin() {
+        return {
+            id: "eva-area-y-axis-labels",
+            afterDatasetsDraw(chart) {
+                const yScale = chart.scales?.y;
+                const labels = chart.data?.labels || [];
+                const chartArea = chart.chartArea;
+                if (!yScale || !labels.length || !chartArea) return;
+
+                const tickOptions = chart.options?.scales?.y?.ticks || {};
+                const fontSize = tickOptions.font?.size || 9;
+                const fontWeight = tickOptions.font?.weight || "600";
+                const padding = tickOptions.padding ?? 6;
+                const step = areaTickStep(yScale, labels.length);
+                const { ctx } = chart;
+
+                ctx.save();
+                ctx.fillStyle = tickOptions.color || "#334155";
+                ctx.font = `${fontWeight} ${fontSize}px Outfit, sans-serif`;
+                ctx.textAlign = "right";
+                ctx.textBaseline = "middle";
+
+                const labelX = yScale.right - padding;
+                labels.forEach((label, rowIndex) => {
+                    if (step > 1 && rowIndex % step !== 0) return;
+                    const centerY = getAreaRowLabelY(chart, rowIndex);
+                    if (!Number.isFinite(centerY)) return;
+                    if (centerY < chartArea.top - 4 || centerY > chartArea.bottom + 4) return;
+                    const text = String(label ?? "").trim();
+                    if (!text) return;
+                    ctx.fillText(text, labelX, centerY);
+                });
+                ctx.restore();
+            }
+        };
+    }
+
+    function drawAreaBarValueLabel(ctx, chart, bar, label) {
+        const chartArea = chart.chartArea || {};
+        const gap = 4;
+        const textWidth = ctx.measureText(label).width;
+        const barEnd = Math.max(bar.base ?? 0, bar.x ?? 0);
+
+        ctx.fillStyle = "#333333";
+        ctx.textAlign = "left";
+        let labelX = barEnd + gap;
+        const maxX = Number.isFinite(chartArea.right)
+            ? chartArea.right - textWidth - 2
+            : labelX;
+        labelX = Math.min(labelX, maxX);
+        ctx.fillText(label, labelX, bar.y);
+    }
+
     function createAreaValueLabelsPlugin() {
         return {
             id: "eva-area-value-labels",
             afterDatasetsDraw(chart) {
                 const { ctx } = chart;
-                ctx.save();
-                ctx.font = "600 10px Outfit, sans-serif";
-                ctx.fillStyle = "#334155";
-                ctx.textBaseline = "middle";
                 const chartArea = chart.chartArea;
-                const maxBars = (chart.data.datasets || []).reduce((max, _, datasetIndex) => {
-                    const datasetMeta = chart.getDatasetMeta(datasetIndex);
-                    return Math.max(max, (datasetMeta?.data || []).length);
-                }, 0);
-                if (maxBars > 14) {
-                    ctx.restore();
-                    return;
-                }
-                const labelStep = maxBars > 30 ? 3 : (maxBars > 14 ? 2 : 1);
-                chart.data.datasets.forEach((dataset, datasetIndex) => {
+                if (!chartArea) return;
+
+                const rowCount = Math.max(
+                    ...(chart.data.datasets || []).map((_, datasetIndex) =>
+                        chart.getDatasetMeta(datasetIndex)?.data?.length || 0
+                    ),
+                    0
+                );
+                const compact = rowCount > 12;
+                const fontSize = compact ? 9 : 10;
+
+                ctx.save();
+                ctx.font = `500 ${fontSize}px Outfit, sans-serif`;
+                ctx.textBaseline = "middle";
+
+                (chart.data.datasets || []).forEach((dataset, datasetIndex) => {
+                    if (!chart.isDatasetVisible(datasetIndex)) return;
                     const meta = chart.getDatasetMeta(datasetIndex);
-                    meta.data.forEach((bar, index) => {
-                        if (labelStep > 1 && index % labelStep !== 0) return;
+                    (meta?.data || []).forEach((bar, index) => {
                         const value = Number(dataset.data[index]);
                         if (!Number.isFinite(value) || value <= 0) return;
-                        const label = formatHa(value);
-                        const xScale = chart.scales?.x;
-                        const zeroX = typeof xScale?.getPixelForValue === "function" ? xScale.getPixelForValue(0) : chartArea.left;
-                        const barWidth = Math.abs((bar.x ?? zeroX) - zeroX);
-                        if (barWidth < 22) return;
-                        if (bar.y < chartArea.top + 8 || bar.y > chartArea.bottom - 8) return;
-                        const labelWidth = ctx.measureText(label).width;
-                        const y = bar.y;
-                        ctx.textAlign = "left";
-                        ctx.fillText(label, Math.min(chartArea.right - labelWidth - 4, bar.x + 8), y);
+                        if (!bar || !Number.isFinite(bar.y)) return;
+                        if (bar.y < chartArea.top + 4 || bar.y > chartArea.bottom - 4) return;
+
+                        drawAreaBarValueLabel(ctx, chart, bar, formatHaNumber(value));
                     });
                 });
                 ctx.restore();
@@ -1529,33 +1599,34 @@ export function createEvaPieChartController({
                         },
                         grid: { display: false },
                         border: { display: false },
+                        afterFit(axis) {
+                            const labels = axis.chart?.data?.labels || [];
+                            const fontSize = denseRows ? 8 : 9;
+                            const maxChars = Math.max(
+                                8,
+                                ...labels.map(label => String(label ?? "").trim().length)
+                            );
+                            axis.width = Math.min(
+                                220,
+                                Math.max(96, Math.ceil(maxChars * fontSize * 0.52) + 12)
+                            );
+                        },
                         ticks: {
-                            display: true,
+                            display: false,
                             autoSkip: false,
                             maxTicksLimit: rows.length,
                             color: "#334155",
                             padding: denseRows ? 7 : 6,
-                            crossAlign: "far",
                             font: {
                                 size: denseRows ? 8 : 9,
                                 weight: "600",
                                 family: "Outfit, sans-serif"
-                            },
-                            callback(value, index) {
-                                const labels = this.chart?.data?.labels || [];
-                                const rowIndex = Number.isFinite(Number(value)) ? Number(value) : index;
-                                const step = areaTickStep(this, labels.length);
-                                if (step > 1 && rowIndex % step !== 0) return "";
-                                return resolveChartLabel(labels, rowIndex, {
-                                    maxLineLength: labels.length > 14 ? 12 : 15,
-                                    maxLines: 1
-                                });
                             }
                         }
                     }
                 }
             },
-            plugins: [createAreaValueLabelsPlugin()]
+            plugins: [createAreaYAxisLabelsPlugin(), createAreaValueLabelsPlugin()]
         });
         areaChartInstance.$evaAreaOriginalState = {
             labels: rows.map(row => row.label),

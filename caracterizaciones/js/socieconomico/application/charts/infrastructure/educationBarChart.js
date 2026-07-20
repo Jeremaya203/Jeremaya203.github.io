@@ -7,6 +7,7 @@ import { renderDoughnutChart } from "../renderers/doughnutChartRenderer.js";
 import { getRendererLegendItems, getRendererVisualForValue } from "../core/chartSymbolUtils.js?v=support-infra-rest-legend2-20260516";
 import { destroyCanvasChart } from "../core/chartLifecycle.js";
 import { createAdaptiveBarValueLabelsPlugin } from "../core/adaptiveBarValueLabels.js?v=global-safe-zoom-labels-20260604";
+import { escapeHtml } from "../../../../shared/security/security-utils.js";
 
 const CATEGORY_COLOR_STOPS = [
     "rgba(21, 128, 61, 1)",
@@ -640,7 +641,7 @@ export function createEducationBarChartController({
             title: (event) => {
                 const attrs = event?.graphic?.attributes || {};
                 const place = readablePlace(attrs);
-                return `${place.mpnombre || attrs.mpnombre || ""}, ${place.dpnombre || attrs.dpnombre || ""}`.trim().replace(/^,\s*|\s*,$/g, "");
+                return escapeHtml(`${place.mpnombre || attrs.mpnombre || ""}, ${place.dpnombre || attrs.dpnombre || ""}`.trim().replace(/^,\s*|\s*,$/g, ""));
             },
             content: (event) => {
                 const attrs = event?.graphic?.attributes || {};
@@ -655,13 +656,13 @@ export function createEducationBarChartController({
                         const value = resolvePopupValue(field.name, attrs, attrs[field.name]);
                         return `
                             <tr>
-                                <th style="text-align:left; padding:4px 8px 4px 0; vertical-align:top;">${field.alias || field.name}</th>
-                                <td style="padding:4px 0; vertical-align:top;">${String(value)}</td>
+                                <th class="oot-js-socio-edu-1">${escapeHtml(field.alias || field.name)}</th>
+                                <td class="oot-js-socio-edu-2">${escapeHtml(value)}</td>
                             </tr>
                         `;
                     });
                 return rows.length
-                    ? `<table style="border-collapse:collapse; width:100%;">${rows.join("")}</table>`
+                    ? `<table class="oot-js-socio-edu-3">${rows.join("")}</table>`
                     : "<p>Sin atributos descriptivos disponibles.</p>";
             }
         };
@@ -1093,7 +1094,7 @@ export function createEducationBarChartController({
                 );
             } else {
                 const municipalityRendererCode = String(attrs?.[chartConfig.legendField || chartConfig.mapInteractionField || "mpcracdm"] ?? "").trim();
-                const municipalityRendererLabel = rendererLabelForCode(municipalityRendererCode) || "Caracter academico";
+                const municipalityRendererLabel = rendererLabelForCode(municipalityRendererCode) || "Carácter académico";
                 const municipalityRendererColor = codeToCssColor(municipalityRendererCode) || rows[0]?.color || "#999";
                 window.actualizarLeyenda(
                     municipalityRendererCode ? [municipalityRendererLabel] : [],

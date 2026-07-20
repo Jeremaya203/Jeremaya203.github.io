@@ -1,6 +1,6 @@
 import { getChartBaseWhere, getChartFields } from "../core/chartUtils.js?v=travel-time-pie-20260511";
 import { getChartSymbolLookups, getRendererLegendItems, getRendererVisualForValue } from "../core/chartSymbolUtils.js?v=travel-time-pie-20260511";
-import { renderPieChart } from "../renderers/pieChartRenderer.js?v=travel-time-pie-20260511";
+import { renderPieChart } from "../renderers/pieChartRenderer.js?v=shared-pie-labels-20260701";
 import { prepareVisibleChartCanvas, setChartTitle } from "../ui/chartPanel.js?v=local-chart-title-20260529";
 import { setChartStatus } from "../ui/chartStatus.js";
 import { MUNICIPALITY_REQUIRED_CHART_MESSAGE, hasMunicipalitySelection } from "../ui/municipalityRequiredState.js?v=global-municipality-required-state-20260604";
@@ -174,7 +174,7 @@ export function createTravelTimePieChartController({
             });
     }
 
-    async function actualizarGrafica(layer, config) {
+    async function actualizarGrafica(layer, config, options = {}) {
         const chartConfig = config?.chartConfig;
         if (!chartConfig || chartConfig.type !== "pie" || chartConfig.library !== "chart.js") return false;
 
@@ -219,7 +219,7 @@ export function createTravelTimePieChartController({
         query.where = where;
         query.outFields = [...new Set(getChartFields(chartConfig))];
         query.returnGeometry = false;
-        if (chartConfig?.filter?.scope !== "allDepartments") {
+        if (!options.skipSyncMap && chartConfig?.filter?.scope !== "allDepartments") {
             applyWhereToActiveLayers?.(where);
         }
 

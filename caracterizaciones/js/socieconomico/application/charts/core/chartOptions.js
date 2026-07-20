@@ -572,9 +572,33 @@ export function createVerticalStackedBarOptions({
     };
 }
 
+function generatePercentLegendLabels(chart, formatValue) {
+    const dataset = chart.data?.datasets?.[0];
+    const labels = chart.data?.labels || [];
+    const values = (dataset?.data || []).map(value => Number(value) || 0);
+    const total = values.reduce((sum, value) => sum + value, 0);
+    return labels.map((label, index) => {
+        const value = values[index] || 0;
+        const percent = total > 0 ? (value / total) * 100 : 0;
+        const fillStyle = Array.isArray(dataset?.backgroundColor)
+            ? dataset.backgroundColor[index]
+            : dataset?.backgroundColor;
+        const hidden = Boolean(chart.getDatasetMeta?.(0)?.data?.[index]?.hidden);
+        return {
+            text: `${normalizeLabelText(label)}: ${formatValue(percent)}`,
+            fillStyle: fillStyle || "#999",
+            strokeStyle: "#fff",
+            lineWidth: 1,
+            hidden,
+            index
+        };
+    });
+}
+
 export function createPieChartOptions({
     formatValue = value => value,
     showLegend = true,
+    legendShowPercent = false,
     onSliceClick,
     onSliceHover,
     onSliceLeave
@@ -588,7 +612,14 @@ export function createPieChartOptions({
             legend: {
                 display: showLegend,
                 position: "bottom",
-                labels: { boxWidth: 12, color: "#334155", font: { size: 11, weight: "600" } }
+                labels: {
+                    boxWidth: 12,
+                    color: "#334155",
+                    font: { size: 11, weight: "600" },
+                    ...(legendShowPercent
+                        ? { generateLabels: chart => generatePercentLegendLabels(chart, formatValue) }
+                        : {})
+                }
             },
             tooltip: {
                 callbacks: {

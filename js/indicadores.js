@@ -19,7 +19,7 @@ async function cargarCatalogo() {
     catalogo = d.asuntos;
     renderizarSidebar(catalogo);
   } catch {
-    document.getElementById('lista-indicadores').innerHTML = '<p class="text-xs text-center py-8" style="color:var(--oot-red)">Error cargando catálogo.</p>';
+    document.getElementById('lista-indicadores').innerHTML = '<p class="text-xs text-center py-8 oot-js-indicadores-1">Error cargando catálogo.</p>';
   }
 }
 
@@ -38,10 +38,10 @@ function renderizarSidebar(asuntos) {
     html += '<div class="asunto-grupo" data-asunto="' + asunto + '">';
     html += '<div class="asunto-header" data-oot-click="toggleAsunto" data-oot-arg="' + slug + '">';
     html += '<div class="flex items-center gap-2">';
-    html += '<span class="material-symbols-outlined text-base" style="color:var(--oot-teal)">' + ico + '</span>';
-    html += '<span class="asunto-title text-xs font-bold uppercase tracking-wider" style="color:var(--oot-tx2)">' + escapeHtml(asunto) + '</span>';
+    html += '<span class="material-symbols-outlined text-base oot-js-indicadores-2">' + ico + '</span>';
+    html += '<span class="asunto-title text-xs font-bold uppercase tracking-wider oot-js-indicadores-3">' + escapeHtml(asunto) + '</span>';
     html += '</div>';
-    html += '<span class="asunto-chevron open material-symbols-outlined text-sm" style="color:var(--oot-tx3)" id="chev-' + slug + '">expand_more</span>';
+    html += '<span class="asunto-chevron open material-symbols-outlined text-sm oot-js-indicadores-4" id="chev-' + slug + '">expand_more</span>';
     html += '</div>';
     html += '<div class="asunto-body space-y-2 pb-2" id="body-' + slug + '">';
     for (const ind of indicadores) {
@@ -51,20 +51,20 @@ function renderizarSidebar(asuntos) {
       if (!ind.disponible) {
         html += '<div class="ind-card disabled" id="card-' + ind.id + '" data-nombre="' + ind.nombre.toLowerCase() + '" title="No disponible">';
         html += '<div class="flex items-start justify-between gap-2">';
-        html += '<p class="text-xs font-semibold leading-snug flex-1" style="color:var(--oot-tx3)">' + escapeHtml(ind.nombre) + '</p>';
-        html += '<span class="px-1.5 py-0.5 rounded text-xs font-bold" style="background:var(--oot-s2);color:var(--oot-tx3)">Pendiente</span>';
+        html += '<p class="text-xs font-semibold leading-snug flex-1 oot-js-indicadores-4">' + escapeHtml(ind.nombre) + '</p>';
+        html += '<span class="px-1.5 py-0.5 rounded text-xs font-bold oot-js-indicadores-5">Pendiente</span>';
         html += '</div>';
-        html += '<p class="text-xs mt-1" style="color:var(--oot-tx3)">' + ind.unidad + ' · ' + ind.fuente + '</p>';
+        html += '<p class="text-xs mt-1 oot-js-indicadores-4">' + ind.unidad + ' · ' + ind.fuente + '</p>';
         html += '</div>';
         continue;
       }
       html += '<div class="ind-card" id="card-' + ind.id + '" data-oot-click="seleccionarIndicador" data-oot-arg="' + ind.id + '" data-nombre="' + ind.nombre.toLowerCase() + '">';
       html += '<div class="flex items-start justify-between gap-2">';
-      html += '<p class="text-xs font-semibold leading-snug flex-1" style="color:var(--oot-tx)">' + escapeHtml(ind.nombre) + '</p>';
+      html += '<p class="text-xs font-semibold leading-snug flex-1 oot-js-indicadores-6">' + escapeHtml(ind.nombre) + '</p>';
       html += badge;
       html += '</div>';
-      if (ind.resumen) html += '<p class="text-xs mt-1 leading-snug" style="color:var(--oot-tx2)">' + ind.resumen + '</p>';
-      html += '<p class="text-xs mt-1" style="color:var(--oot-tx3)">' + ind.unidad + ' · ' + ind.fuente + '</p>';
+      if (ind.resumen) html += '<p class="text-xs mt-1 leading-snug oot-js-indicadores-3">' + ind.resumen + '</p>';
+      html += '<p class="text-xs mt-1 oot-js-indicadores-4">' + ind.unidad + ' · ' + ind.fuente + '</p>';
       html += '</div>';
     }
     html += '</div></div>';
@@ -323,8 +323,8 @@ function renderizarChoroplethNacional(geo, statsData) {
     const p = e.features[0].properties;
     const val = p.valor;
     _nacionalPopup.setLngLat(e.lngLat)
-      .setHTML(`<strong style="color:#fff">${escapeHtml(p.dept_nombre || '')}</strong><br>
-        <span style="color:#7de0c4">${val != null ? _fmt(val) + ' ' + escapeHtml(String(statsData.unidad||'')) : 'Sin datos'}</span>`)
+      .setHTML(`<strong class="oot-js-indicadores-11">${escapeHtml(p.dept_nombre || '')}</strong><br>
+        <span class="oot-js-indicadores-12">${val != null ? _fmt(val) + ' ' + escapeHtml(String(statsData.unidad||'')) : 'Sin datos'}</span>`)
       .addTo(mapa);
   };
   mapa.on('mousemove','lyr-nacional-fill', _onMoveNac);
@@ -371,7 +371,7 @@ function renderizarChoroplethNacional(geo, statsData) {
   const total = sorted.reduce((s,x)=>s+x.val, 0);
   const cards = document.getElementById('stats-cards');
   if (cards) cards.innerHTML =
-    `<div class="stat-card" style="grid-column:span 2">
+    `<div class="stat-card oot-js-indicadores-7">
       <div class="stat-val">${_fmt(Math.round(total))}</div>
       <div class="stat-label">Total nacional (${statsData.unidad})</div>
     </div>
@@ -380,11 +380,11 @@ function renderizarChoroplethNacional(geo, statsData) {
 
   const detalle = document.getElementById('stats-detalle');
   if (detalle) detalle.innerHTML =
-    '<p class="text-xs font-bold uppercase tracking-wider mb-2" style="color:var(--oot-tx3)">Ranking departamentos</p>' +
+    '<p class="text-xs font-bold uppercase tracking-wider mb-2 oot-js-indicadores-4">Ranking departamentos</p>' +
     sorted.slice(0,10).map((x,i) =>
       `<div class="flex justify-between border-b border-ot-b1 py-1">
-        <span style="color:var(--oot-tx2)">${i+1}. ${NOMBRES_DEPTS[x.code]||x.code}</span>
-        <span style="font-weight:600;color:var(--oot-teal)">${_fmt(x.val)} ${statsData.unidad}</span>
+        <span class="oot-js-indicadores-3">${i+1}. ${NOMBRES_DEPTS[x.code]||x.code}</span>
+        <span class="oot-js-indicadores-13">${_fmt(x.val)} ${statsData.unidad}</span>
       </div>`
     ).join('');
 
@@ -682,7 +682,6 @@ function _notaSinTile() {
   if (!n) {
     n = document.createElement('div');
     n.id = 'nota-sin-tile';
-    n.style.cssText = 'font-size:11px;color:var(--oot-tx3);padding:6px 8px;font-style:italic;';
     cont.appendChild(n);
   }
   // H-16 / Obs 20: el 404 del tile puede ser "sin datos en esa unidad" o "los .pmtiles no se
@@ -735,7 +734,7 @@ async function cargarCapaPMTiles(data, colorMap) {
     const p = (e.features && e.features[0] && e.features[0].properties) || {};
     new maplibregl.Popup({ closeButton: true, maxWidth: '240px' })
       .setLngLat(e.lngLat)
-      .setHTML('<div style="font-weight:700;font-size:13px;color:var(--oot-tx)">' + escapeHtml(p[catField] || p.categoria_ind || id) + '</div>')
+      .setHTML('<div class="oot-js-indicadores-14">' + escapeHtml(p[catField] || p.categoria_ind || id) + '</div>')
       .addTo(mapa);
   };
   mapa.on('click', layerId + '-fill', onClick);
@@ -870,12 +869,12 @@ function cargarCapasEnMapa(data) {
       };
       const onClick = (e) => {
         const props = e.features[0].properties;
-        let html = '<div style="font-weight:700;font-size:13px;margin-bottom:5px;color:var(--oot-tx)">' + escapeHtml(props.categoria_ind || nombre) + '</div>';
+        let html = '<div class="oot-js-indicadores-15">' + escapeHtml(props.categoria_ind || nombre) + '</div>';
         for (const [k, v] of Object.entries(props)) {
           if (k === 'categoria_ind' || k.startsWith('_')) continue;
           if (v !== null && v !== undefined && String(v).trim() !== '') {
             const label = ALIAS_CAMPOS[k] || k.replace(/_/g, ' ');
-            html += '<div style="display:flex;gap:6px;margin-top:3px;font-size:11px;color:var(--oot-tx2)"><span style="font-weight:600">' + escapeHtml(label) + ':</span><span>' + escapeHtml(String(v)) + '</span></div>';
+            html += '<div class="oot-js-indicadores-16"><span class="oot-js-indicadores-17">' + escapeHtml(label) + ':</span><span>' + escapeHtml(String(v)) + '</span></div>';
           }
         }
         new maplibregl.Popup({ closeButton: true, maxWidth: '260px' })
@@ -952,7 +951,7 @@ function agregarToggleCapa(nombre, color, layerId) {
   btn.className = 'capa-btn activa';
   btn.style.setProperty('--color', color);
   btn.dataset.layer = layerId;
-  btn.innerHTML = '<span class="capa-dot" style="--color:' + color + '"></span> ' + nombre.replace(/_/g, ' ');
+  btn.innerHTML = '<span class="capa-dot"></span> ' + nombre.replace(/_/g, ' ');
   btn.onclick = () => toggleCapa(btn, layerId, color);
   cont.appendChild(btn);
 }
@@ -968,13 +967,16 @@ function toggleCapa(btn, layerId, color) {
 
 function renderizarLeyenda(leyenda) {
   const cont = document.getElementById('leyenda-container');
-  if (!leyenda || leyenda.length === 0) { cont.innerHTML = '<p class="text-xs" style="color:var(--oot-tx3)">Sin leyenda</p>'; return; }
+  if (!leyenda || leyenda.length === 0) { cont.innerHTML = '<p class="text-xs oot-js-indicadores-4">Sin leyenda</p>'; return; }
   cont.innerHTML = leyenda.map(l => `
-    <div class="flex items-center gap-2 text-xs" style="color:var(--oot-tx2)">
-      <span class="leyenda-dot" style="background:${escapeHtml(l.color)}"></span>
+    <div class="flex items-center gap-2 text-xs oot-js-indicadores-3">
+      <span class="leyenda-dot" data-color="${escapeHtml(l.color)}"></span>
       <span>${escapeHtml(l.label)}</span>
     </div>
   `).join('');
+  cont.querySelectorAll('.leyenda-dot').forEach(function(dot) {
+    dot.style.background = dot.dataset.color;
+  });
 }
 
 function renderizarStats(stats, unidad, id, leyenda) {
@@ -993,12 +995,12 @@ function renderizarStats(stats, unidad, id, leyenda) {
     const haDefor = stats.area_deforestada_pnn_ha != null ? _fmt(stats.area_deforestada_pnn_ha) : '—';
     cardHtml = '<div class="stat-card"><div class="stat-val">' + _fmt(stats.parques_nacionales) + '</div><div class="stat-label">Parques</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + _fmt(stats.area_pnn_terrestre_ha) + '</div><div class="stat-label">Ha PNN</div></div>' +
-      '<div class="stat-card" style="grid-column:span 2;border-color:#dc2626;background:rgba(208,64,64,0.1)"><div class="stat-val" style="color:var(--oot-red-l)">' + haDefor + '</div><div class="stat-label">Ha Deforestadas 2021–2022</div></div>';
+      '<div class="stat-card oot-js-indicadores-8"><div class="stat-val oot-js-indicadores-9">' + haDefor + '</div><div class="stat-label">Ha Deforestadas 2021–2022</div></div>';
   } else if (id === 'priorizacion_agro') {
-    cardHtml = '<div class="stat-card" style="grid-column:span 2"><div class="stat-val">' + _fmt(stats.total_ha) + '</div><div class="stat-label">Ha total cruce</div></div>' +
+    cardHtml = '<div class="stat-card oot-js-indicadores-7"><div class="stat-val">' + _fmt(stats.total_ha) + '</div><div class="stat-label">Ha total cruce</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + _fmt(stats.area_agricola_ha) + '</div><div class="stat-label">Ha Agrícola</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + _fmt(stats.area_ganadera_ha) + '</div><div class="stat-label">Ha Ganadera</div></div>' +
-      '<div class="stat-card" style="grid-column:span 2"><div class="stat-val">' + _fmt(stats.area_agroforestal_ha) + '</div><div class="stat-label">Ha Agroforestal</div></div>';
+      '<div class="stat-card oot-js-indicadores-7"><div class="stat-val">' + _fmt(stats.area_agroforestal_ha) + '</div><div class="stat-label">Ha Agroforestal</div></div>';
   } else if (id === 'brecha_expansion') {
     cardHtml = '<div class="stat-card"><div class="stat-val">' + (stats.d_fuera_pct ?? '—') + '%</div><div class="stat-label">D_fuera</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + _fmt(stats.area_perimetros_ha) + '</div><div class="stat-label">Ha perímetro</div></div>';
@@ -1006,7 +1008,7 @@ function renderizarStats(stats, unidad, id, leyenda) {
     cardHtml = '<div class="stat-card"><div class="stat-val">' + (stats.d_dentro_pct ?? '—') + '%</div><div class="stat-label">D_dentro</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + _fmt(stats.predios_rurales_dentro) + '</div><div class="stat-label">Predios rurales dentro</div></div>';
   } else if (id === 'tensiones_territoriales') {
-    cardHtml = '<div class="stat-card" style="grid-column:span 2"><div class="stat-val">' + _fmt(stats.total_conflictos) + '</div><div class="stat-label">Conflictos de uso del suelo</div></div>';
+    cardHtml = '<div class="stat-card oot-js-indicadores-7"><div class="stat-val">' + _fmt(stats.total_conflictos) + '</div><div class="stat-label">Conflictos de uso del suelo</div></div>';
   } else {
     // Solo valores escalares (nunca objetos/arrays → evita "[object Object]")
     const entries = Object.entries(stats)
@@ -1014,41 +1016,41 @@ function renderizarStats(stats, unidad, id, leyenda) {
       .slice(0, 2);
     cardHtml = entries.map(([k, v]) => '<div class="stat-card"><div class="stat-val">' + _fmt(v) + '</div><div class="stat-label">' + k.replace(/_/g, ' ') + '</div></div>').join('');
   }
-  cards.innerHTML = cardHtml || '<p class="text-xs" style="color:var(--oot-tx3);grid-column:span 2">Sin estadísticas</p>';
+  cards.innerHTML = cardHtml || '<p class="text-xs oot-js-indicadores-10">Sin estadísticas</p>';
 
   renderizarTorta(stats, id, leyenda);
 
   let detalleHtml = '';
   if (stats.por_categoria) {
-    detalleHtml += '<p class="text-xs font-bold uppercase tracking-wider mb-2" style="color:var(--oot-tx3)">Por categoría</p>';
+    detalleHtml += '<p class="text-xs font-bold uppercase tracking-wider mb-2 oot-js-indicadores-4">Por categoría</p>';
     for (const [cat, vals] of Object.entries(stats.por_categoria)) {
       const vStr = typeof vals === 'object' ? 'Personas: ' + _fmt(vals.personas) + ' · Hogares: ' + _fmt(vals.hogares) : _fmt(vals);
-      detalleHtml += '<div class="flex justify-between border-b border-ot-b1 py-1"><span style="color:var(--oot-tx2)">' + escapeHtml(cat) + '</span><span style="font-weight:600">' + vStr + '</span></div>';
+      detalleHtml += '<div class="flex justify-between border-b border-ot-b1 py-1"><span class="oot-js-indicadores-3">' + escapeHtml(cat) + '</span><span class="oot-js-indicadores-17">' + vStr + '</span></div>';
     }
   }
   if (stats.por_categoria_ha) {
-    detalleHtml += '<p class="text-xs font-bold uppercase tracking-wider mb-2 mt-3" style="color:var(--oot-tx3)">Área (ha)</p>';
+    detalleHtml += '<p class="text-xs font-bold uppercase tracking-wider mb-2 mt-3 oot-js-indicadores-4">Área (ha)</p>';
     for (const [cat, ha] of Object.entries(stats.por_categoria_ha)) {
-      detalleHtml += '<div class="flex justify-between border-b border-ot-b1 py-1"><span style="color:var(--oot-tx2)">' + escapeHtml(cat) + '</span><span style="font-weight:600">' + _fmt(ha) + ' ha</span></div>';
+      detalleHtml += '<div class="flex justify-between border-b border-ot-b1 py-1"><span class="oot-js-indicadores-3">' + escapeHtml(cat) + '</span><span class="oot-js-indicadores-17">' + _fmt(ha) + ' ha</span></div>';
     }
   }
   if (stats.por_cruce && Array.isArray(stats.por_cruce)) {
-    detalleHtml += '<p class="text-xs font-bold uppercase tracking-wider mb-2 mt-3" style="color:var(--oot-tx3)">Cruce</p>';
+    detalleHtml += '<p class="text-xs font-bold uppercase tracking-wider mb-2 mt-3 oot-js-indicadores-4">Cruce</p>';
     for (const row of stats.por_cruce) {
       const cat = row.tipo_front + ' — ' + row.Vocacion;
-      detalleHtml += '<div class="flex justify-between border-b border-ot-b1 py-1"><span style="color:var(--oot-tx2)">' + escapeHtml(cat) + '</span><span style="font-weight:600">' + _fmt(row.area_ha) + ' ha <span style="color:var(--oot-tx3)">(' + row.porcentaje + '%)</span></span></div>';
+      detalleHtml += '<div class="flex justify-between border-b border-ot-b1 py-1"><span class="oot-js-indicadores-3">' + escapeHtml(cat) + '</span><span class="oot-js-indicadores-17">' + _fmt(row.area_ha) + ' ha <span class="oot-js-indicadores-4">(' + row.porcentaje + '%)</span></span></div>';
     }
   }
   if (stats.conteos_por_tipo && typeof stats.conteos_por_tipo === 'object') {
-    detalleHtml += '<p class="text-xs font-bold uppercase tracking-wider mb-2 mt-3" style="color:var(--oot-tx3)">Por tipo de conflicto</p>';
+    detalleHtml += '<p class="text-xs font-bold uppercase tracking-wider mb-2 mt-3 oot-js-indicadores-4">Por tipo de conflicto</p>';
     for (const [cat, n] of Object.entries(stats.conteos_por_tipo)) {
-      detalleHtml += '<div class="flex justify-between border-b border-ot-b1 py-1"><span style="color:var(--oot-tx2)">' + escapeHtml(cat) + '</span><span style="font-weight:600">' + _fmt(n) + '</span></div>';
+      detalleHtml += '<div class="flex justify-between border-b border-ot-b1 py-1"><span class="oot-js-indicadores-3">' + escapeHtml(cat) + '</span><span class="oot-js-indicadores-17">' + _fmt(n) + '</span></div>';
     }
   }
   if (stats.nota) {
-    detalleHtml += '<p class="text-xs mt-3 italic" style="color:var(--oot-tx3)">' + escapeHtml(stats.nota) + '</p>';
+    detalleHtml += '<p class="text-xs mt-3 italic oot-js-indicadores-4">' + escapeHtml(stats.nota) + '</p>';
   }
-  detalle.innerHTML = detalleHtml || '<p class="text-xs" style="color:var(--oot-tx3)">Sin estadísticas adicionales</p>';
+  detalle.innerHTML = detalleHtml || '<p class="text-xs oot-js-indicadores-4">Sin estadísticas adicionales</p>';
 }
 
 const PALETA_CHART = ['#0891b2','#0e7490','#06b6d4','#22d3ee','#67e8f9','#155e75','#164e63','#a5f3fc'];
@@ -1220,7 +1222,7 @@ function volarAParque(nombre) {
     const centro = bounds.getCenter();
     new maplibregl.Popup({ closeButton: true, maxWidth: '220px' })
       .setLngLat(centro)
-      .setHTML('<div style="font-weight:700;font-size:13px;margin-bottom:5px;color:var(--oot-tx)">' + escapeHtml(feature.properties.ap_nombre || '') + '</div><div style="font-size:11px;color:var(--oot-tx2)"><span style="font-weight:600">Deforestación:</span> ' + ha.toLocaleString('es-CO') + ' Ha</div>')
+      .setHTML('<div class="oot-js-indicadores-15">' + escapeHtml(feature.properties.ap_nombre || '') + '</div><div class="oot-js-indicadores-18"><span class="oot-js-indicadores-17">Deforestación:</span> ' + ha.toLocaleString('es-CO') + ' Ha</div>')
       .addTo(mapa);
   }
   setTimeout(_limpiarHighlight, 6000);

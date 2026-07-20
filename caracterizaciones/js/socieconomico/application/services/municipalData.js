@@ -1,3 +1,128 @@
+import { socioeconomicoFeatureLayerUrl } from "./serviceRoots.js";
+
+const DICCIONARIO_URL = "https://serviciosgeovisor.igac.gov.co:8080/Geovisor/config?cmd=config_diccionario2";
+const TERRITORIOS_SOCIOECONOMICO_URL = socioeconomicoFeatureLayerUrl(2);
+const DICCIONARIO_TIMEOUT_MS = 2500;
+const FALLBACK_TIMEOUT_MS = 5000;
+
+const SPECIAL_DEPARTMENT_NAMES = {
+    "00": "\u00c1rea en litigio",
+    "11": "Bogot\u00e1, D.C.",
+    "88": "San Andr\u00e9s y Providencia"
+};
+
+function specialDepartmentName(code) {
+    return SPECIAL_DEPARTMENT_NAMES[String(code || "").trim()] || "";
+}
+
+function normalizeMunicipioCode(value) {
+    const code = String(value || "").trim();
+    return /^\d{5}$/.test(code) ? code : "";
+}
+
+function normalizeDepartmentCode(value) {
+    const code = String(value || "").trim();
+    return /^\d{2}$/.test(code) ? code : "";
+}
+
+function normalizeName(value) {
+    return String(value || "").trim();
+}
+
+function sortMunicipios(a, b) {
+    return String(a.nombre || "").localeCompare(String(b.nombre || ""), "es", { sensitivity: "base" })
+        || String(a.codigo || "").localeCompare(String(b.codigo || ""), "es", { sensitivity: "base" });
+}
+
+async function fetchJsonWithTimeout(url, options = {}, timeoutMs = FALLBACK_TIMEOUT_MS) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        if (!response.ok) throw new Error("HTTP " + response.status + " al consultar " + url);
+        return await response.json();
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+function normalizeTerritorialData({ municipios = [], departamentos = [] } = {}) {
+    const diccionarioMunicipios = {};
+    const diccionarioDepartamentos = {};
+    const todosMunicipios = [];
+    const seenMunicipios = new Set();
+
+    municipios.forEach(item => {
+        const codigo = normalizeMunicipioCode(item.codigo ?? item.id ?? item.mpcodigo ?? item.MpCodigo);
+        const nombreOriginal = normalizeName(item.nombre ?? item.text ?? item.mpnombre ?? item.MpNombre);
+        if (!codigo || !nombreOriginal || seenMunicipios.has(codigo)) return;
+
+        const nombre = codigo === "00000" ? specialDepartmentName("00") : nombreOriginal;
+        const depto = codigo.slice(0, 2);
+
+        seenMunicipios.add(codigo);
+        diccionarioMunicipios[codigo] = nombre;
+        todosMunicipios.push({ codigo, nombre, depto });
+    });
+
+    departamentos.forEach(item => {
+        const codigo = normalizeDepartmentCode(item.codigo ?? item.id ?? item.dpcodigo ?? item.DpCodigo);
+        if (!codigo) return;
+
+        const nombre = specialDepartmentName(codigo)
+            || normalizeName(item.nombre ?? item.text ?? item.dpnombre ?? item.DpNombre)
+            || codigo;
+        diccionarioDepartamentos[codigo] = nombre;
+    });
+
+    todosMunicipios.forEach(municipio => {
+        if (!diccionarioDepartamentos[municipio.depto]) {
+            diccionarioDepartamentos[municipio.depto] = specialDepartmentName(municipio.depto) || municipio.depto;
+        }
+    });
+
+    todosMunicipios.sort(sortMunicipios);
+
+    return {
+        diccionarioMunicipios,
+        diccionarioDepartamentos,
+        todosMunicipios
+    };
+}
+
+function assertValidTerritorialData(data, sourceName) {
+    if (data?.todosMunicipios?.length > 0) return data;
+    throw new Error(sourceName + " no devolvio municipios validos.");
+}
+
+async function cargarTerritoriosDesdeDiccionario() {
+    const json = await fetchJsonWithTimeout(DICCIONARIO_URL, {}, DICCIONARIO_TIMEOUT_MS);
+    const unidades = Array.isArray(json?.UNIDAD) ? json.UNIDAD : [];
+
+    return normalizeTerritorialData({
+        municipios: unidades.filter(unit => unit?.type === "MUNI"),
+        departamentos: unidades.filter(unit => unit?.type === "DEPTO")
+    });
+}
+
+async function cargarTerritoriosDesdeSocioeconomico() {
+    const params = new URLSearchParams({
+        where: "1=1",
+        outFields: "mpcodigo,mpnombre,dpcodigo,dpnombre",
+        returnDistinctValues: "true",
+        returnGeometry: "false",
+        f: "json"
+    });
+    const json = await fetchJsonWithTimeout(TERRITORIOS_SOCIOECONOMICO_URL + "/query?" + params.toString(), {}, FALLBACK_TIMEOUT_MS);
+    const features = Array.isArray(json?.features) ? json.features : [];
+
+    return normalizeTerritorialData({
+        municipios: features.map(feature => feature?.attributes || {}),
+        departamentos: features.map(feature => feature?.attributes || {})
+    });
+}
+
 export function getMunicipioDisplayName(municipio, diccionarioMunicipios = {}) {
     const codigo = String(municipio?.codigo ?? municipio ?? "").trim();
     const nombre = String(municipio?.nombre ?? diccionarioMunicipios[codigo] ?? "").trim();
@@ -10,8 +135,6 @@ export function getMunicipioDisplayName(municipio, diccionarioMunicipios = {}) {
 }
 
 export function createMunicipalDataController({
-    FeatureLayer,
-    layersConfig,
     getDiccionarioMunicipios,
     setDiccionarioMunicipios,
     getDiccionarioDepartamentos,
@@ -21,35 +144,40 @@ export function createMunicipalDataController({
 }) {
     async function cargarDiccionarioMunicipios() {
         try {
-            const url = "https://serviciosgeovisor.igac.gov.co:8080/Geovisor/config?cmd=config_diccionario2";
-            const res = await fetch(url);
-            const json = await res.json();
-            const municipios = { ...getDiccionarioMunicipios() };
-            const departamentos = { ...getDiccionarioDepartamentos() };
-
-            if (json && json.UNIDAD) {
-                json.UNIDAD
-                    .filter(unit => unit.type === "MUNI")
-                    .forEach(muni => {
-                        municipios[muni.id] = muni.text;
-                    });
-
-                json.UNIDAD
-                    .filter(unit => unit.type === "DEPTO")
-                    .forEach(depto => {
-                        departamentos[depto.id] = depto.id === "00"
-                            ? "Área en litigio"
-                            : depto.id === "88"
-                                ? "San Andrés y Providencia"
-                                : depto.text;
-                    });
-            }
-
-            setDiccionarioMunicipios(municipios);
-            setDiccionarioDepartamentos(departamentos);
-        } catch (e) {
-            console.error("Error cargando diccionario", e);
+            const data = assertValidTerritorialData(
+                await cargarTerritoriosDesdeDiccionario(),
+                "Diccionario GeoVisor"
+            );
+            aplicarDatosTerritoriales(data);
+            return;
+        } catch (error) {
+            console.warn("Diccionario GeoVisor no disponible. Se usara FeatureServer/2 como respaldo:", error);
         }
+
+        try {
+            const data = assertValidTerritorialData(
+                await cargarTerritoriosDesdeSocioeconomico(),
+                "FeatureServer/2 socioeconomico"
+            );
+            aplicarDatosTerritoriales(data);
+        } catch (fallbackError) {
+            console.error("Error cargando diccionario territorial socioeconomico", fallbackError);
+        }
+    }
+
+    function aplicarDatosTerritoriales(data) {
+        const municipios = {
+            ...getDiccionarioMunicipios(),
+            ...data.diccionarioMunicipios
+        };
+        const departamentos = {
+            ...getDiccionarioDepartamentos(),
+            ...data.diccionarioDepartamentos
+        };
+
+        setDiccionarioMunicipios(municipios);
+        setDiccionarioDepartamentos(departamentos);
+        setTodosMunicipios(data.todosMunicipios);
     }
 
     function buildMunicipiosFromDictionary() {
@@ -77,44 +205,13 @@ export function createMunicipalDataController({
             await cargarDiccionarioMunicipios();
         }
 
-        if (buildMunicipiosFromDictionary()) return;
-
-        const tempLayer = new FeatureLayer({
-            url: layersConfig.RELIEVE[0].url
-        });
-
-        const query = tempLayer.createQuery();
-        query.where = "1=1";
-        query.outFields = ["mpcodigo"];
-        query.returnDistinctValues = true;
-        query.returnGeometry = false;
-
-        try {
-            const res = await tempLayer.queryFeatures(query);
-
-            if (!res || !res.features || res.features.length === 0) {
-                console.warn("No hay municipios disponibles (servicio vacio)");
-                return;
-            }
-
-            const diccionarioMunicipios = getDiccionarioMunicipios();
-            const codigos = [...new Set(res.features.map(feature => feature.attributes.mpcodigo))].sort();
-
-            setTodosMunicipios(codigos.map(codigo => ({
-                codigo,
-                nombre: diccionarioMunicipios[codigo] || codigo,
-                depto: codigo.substring(0, 2)
-            })));
-
+        if (getTodosMunicipios().length) {
             cargarDepartamentos();
             renderizarMunicipios();
-        } catch (e) {
-            console.error("Error cargando municipios", e);
-            if (!buildMunicipiosFromDictionary()) {
-                cargarDepartamentos();
-                renderizarMunicipios();
-            }
+            return;
         }
+
+        if (buildMunicipiosFromDictionary()) return;
     }
 
     function cargarDepartamentos() {

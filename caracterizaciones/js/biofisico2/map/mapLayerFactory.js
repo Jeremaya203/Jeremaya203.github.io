@@ -18,6 +18,33 @@ export function createBiofisicoFeatureLayer({
     });
 }
 
+export function createBiofisicoImageryLayer({
+    ImageryLayer,
+    config,
+    mosaicWhere = "1=0",
+    visible = true,
+    opacity = 0.88
+}) {
+    const layerOptions = {
+        url: config.mapUrl,
+        title: config.title,
+        opacity,
+        visible,
+        popupEnabled: false,
+        mosaicRule: {
+            where: mosaicWhere || "1=0"
+        }
+    };
+
+    if (config.mapRasterFunctionName) {
+        layerOptions.rasterFunction = {
+            functionName: config.mapRasterFunctionName
+        };
+    }
+
+    return new ImageryLayer(layerOptions);
+}
+
 export function createBiofisicoVariantLayers({
     FeatureLayer,
     config,

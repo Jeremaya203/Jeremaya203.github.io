@@ -19,7 +19,7 @@ export function renderBiofisicoSubTabs({
         if (summary) summary.textContent = "Cargando información...";
         if (legendTitle) legendTitle.textContent = "Leyenda";
         if (legendContent) {
-            legendContent.innerHTML = `<p style="margin:0; color:#666;">Cargando información...</p>`;
+            legendContent.innerHTML = `<p class="oot-js-biofisico-controls-1">Cargando información...</p>`;
             legendContent.classList.remove("collapsed");
         }
 

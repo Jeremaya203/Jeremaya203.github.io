@@ -255,7 +255,7 @@ function actualizarLeyenda(labels, colors, codes = null, options = {}) {
 
             if (!config) {
                 content.innerHTML =
-                    "<p style='margin:0; color:#666;'>No hay capa activa</p>";
+                    "<p class='oot-js-socio-legend-1'>No hay capa activa</p>";
                 title.textContent = "Leyenda";
                 return;
             }
@@ -264,7 +264,7 @@ function actualizarLeyenda(labels, colors, codes = null, options = {}) {
             window.__lastLegendRenderKey = window.__lastLegendRenderKey || "";
 
             if (!labels || !labels.length) {
-                content.innerHTML = "<p style='margin:0; color:#666;'>Sin clases</p>";
+                content.innerHTML = "<p class='oot-js-socio-legend-1'>Sin clases</p>";
                 const legendState = window.__legendState || {};
                 window.__legendState = {
                     ...legendState,

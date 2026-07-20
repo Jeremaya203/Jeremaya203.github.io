@@ -2,7 +2,7 @@
 window.OOT.log('[DETERMINANTES] Verificando bibliotecas...');
 if (typeof maplibregl === 'undefined') {
   console.error('[DETERMINANTES] ERROR: maplibregl NO está cargado');
-  document.getElementById('mapa-container').innerHTML = '<div style="padding:20px;color:var(--oot-red);">ERROR: No se cargó maplibre-gl. Verifique su conexión.</div>';
+  document.getElementById('mapa-container').innerHTML = '<div class="oot-js-determinantes-11">ERROR: No se cargó maplibre-gl. Verifique su conexión.</div>';
 } else {
   window.OOT.log('[DETERMINANTES] maplibregl OK:', typeof maplibregl);
 }
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.key === 'Escape' && drawMode) {
       drawMode = false;
       drawCoords = [];
-      const hintEl = document.getElementById('map-hint');
+      const hintEl = document.getElementById('map-hint-det');
       if (hintEl) hintEl.classList.remove('active');
       if (mapa && mapa.getCanvas()) mapa.getCanvas().style.cursor = '';
       if (mapa && mapa.doubleClickZoom) mapa.doubleClickZoom.enable();
@@ -226,7 +226,7 @@ function iniciarDibujo() {
   
   drawMode = true;
   drawCoords = [];
-  const hintEl = document.getElementById('map-hint');
+  const hintEl = document.getElementById('map-hint-det');
   if (hintEl) hintEl.classList.add('active');
   if (mapa.getCanvas()) mapa.getCanvas().style.cursor = 'crosshair';
 
@@ -299,7 +299,7 @@ function actualizarDibujo() {
 function finalizarDibujo() {
   if (!mapa || drawCoords.length < 3) return;
   drawMode = false;
-  const hintEl = document.getElementById('map-hint');
+  const hintEl = document.getElementById('map-hint-det');
   if (hintEl) hintEl.classList.remove('active');
   if (mapa.getCanvas()) mapa.getCanvas().style.cursor = '';
   if (mapa.doubleClickZoom) mapa.doubleClickZoom.enable();
@@ -379,35 +379,65 @@ function handleFileSelect() {
       } catch(err) { window.OOT.notify('Error: ' + err.message, 'error'); }
     };
     reader.readAsText(file);
-  } else if (ext === 'zip' || ext === 'kmz' || ext === 'kml') {
-    // Subir directamente al backend
-    const formData = new FormData();
-    formData.append('zona', file);
-    fetch(API + '/api/determinantes/upload', { method: 'POST', body: formData })
-      .then(r => r.ok ? r.json() : Promise.reject(new Error('Upload fallido')))
-      .then(data => {
-        rutaZona = data.ruta;
-        mostrarArchivoCargado(file.name);
-        // Para KMZ/KML/SHP no tenemos GeoJSON local para dibujar; el backend lo procesará.
-        if (data.formato === 'geojson' && data.ruta) {
-          _avisoPreview(false);
-          return fetch(data.ruta).then(r => r.json()).then(gj => {
-            zonaGeoJSON = gj;
-            dibujarZonaEnMapa(gj);
-          });
-        }
-        // H-19: sin vista previa local para este formato → aviso explícito (no dejar el
-        // mapa vacío en silencio, que induce a pensar que la carga falló).
-        _avisoPreview(true, 'Vista previa en el mapa no disponible para ' + ext.toUpperCase() +
-          '. El archivo se cargó correctamente; la zona se dibujará al ejecutar el análisis.');
-      })
-      .catch(err => window.OOT.notify('Error subiendo archivo: ' + err.message, 'error'));
+  } else if (ext === 'zip') {
+    // H-19: Validar que el zip contenga al menos un archivo .shp en el navegador
+    validarZipContieneShp(file, function(valido) {
+      if (!valido) {
+        window.OOT.notify('El archivo ZIP no contiene un Shapefile válido. Asegúrese de incluir el archivo .shp dentro del ZIP junto con los archivos .dbf, .shx y .prj.', 'error');
+        input.value = '';
+        return;
+      }
+      subirArchivoBackend(file, ext);
+    });
+  } else if (ext === 'kmz' || ext === 'kml') {
+    subirArchivoBackend(file, ext);
   } else {
     window.OOT.notify(ext === 'shp'
       ? 'Un shapefile debe subirse comprimido en un .zip que incluya también .dbf, .shx y .prj.'
       : 'Formato no soportado: ' + ext, 'warn');
   }
   input.value = '';
+}
+
+function validarZipContieneShp(file, callback) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const buffer = e.target.result;
+      const decoder = new TextDecoder('utf-8', { fatal: false });
+      const text = decoder.decode(new Uint8Array(buffer));
+      if (text.indexOf('.shp') !== -1 || text.indexOf('.SHP') !== -1) {
+        callback(true);
+      } else {
+        callback(false);
+      }
+    } catch(err) {
+      callback(false);
+    }
+  };
+  const slice = file.slice(0, Math.min(file.size, 1024 * 1024));
+  reader.readAsArrayBuffer(slice);
+}
+
+function subirArchivoBackend(file, ext) {
+  const formData = new FormData();
+  formData.append('zona', file);
+  fetch(API + '/api/determinantes/upload', { method: 'POST', body: formData })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('Upload fallido')))
+    .then(data => {
+      rutaZona = data.ruta;
+      mostrarArchivoCargado(file.name);
+      if (data.formato === 'geojson' && data.ruta) {
+        _avisoPreview(false);
+        return fetch(data.ruta).then(r => r.json()).then(gj => {
+          zonaGeoJSON = gj;
+          dibujarZonaEnMapa(gj);
+        });
+      }
+      _avisoPreview(true, 'Vista previa en el mapa no disponible para ' + ext.toUpperCase() +
+        '. El archivo se cargó correctamente; la zona se dibujará al ejecutar el análisis.');
+    })
+    .catch(err => window.OOT.notify('Error subiendo archivo: ' + err.message, 'error'));
 }
 
 // H-19: muestra/oculta el aviso de "sin vista previa" para formatos no-GeoJSON.
@@ -837,16 +867,16 @@ function mostrarResultados(data) {
     // Uso pretendido badge
     if (data.uso_pretendido) {
       const usoEl = document.createElement('div');
-      usoEl.style.cssText = 'font-size:11px;color:var(--oot-tx2);margin-bottom:12px;padding:8px 10px;background:var(--oot-s2);border-radius:8px;display:flex;align-items:center;gap:6px;';
-      usoEl.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px;color:var(--oot-ochre);">work</span> Uso analizado: <strong>' + window.OOT.escapeHtml(String(data.uso_pretendido)) + '</strong>';
+      usoEl.className = 'oot-js-determinantes-39';
+      usoEl.innerHTML = '<span class="material-symbols-outlined oot-js-determinantes-1">work</span> Uso analizado: <strong>' + window.OOT.escapeHtml(String(data.uso_pretendido)) + '</strong>';
       listEl.appendChild(usoEl);
     }
 
     if (evalNorm.length === 0) {
-      listEl.innerHTML += '<div style="color:var(--oot-tx3);font-size:12px;text-align:center;padding:24px 8px;">No se encontraron predios que cumplan el área mínima en esta zona.</div>';
+      listEl.innerHTML += '<div class="oot-js-determinantes-12">No se encontraron predios que cumplan el área mínima en esta zona.</div>';
     } else {
       const hdr = document.createElement('div');
-      hdr.style.cssText = 'font-size:10px;font-weight:700;color:var(--oot-tx3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;';
+      hdr.className = 'oot-js-determinantes-40';
       hdr.textContent = 'Predios Evaluados (' + evalNorm.length + ')';
       listEl.appendChild(hdr);
 
@@ -858,35 +888,40 @@ function mostrarResultados(data) {
         const labelCorto = viab.replace(/^[\u{1F534}\u{1F7E1}\u{1F7E2}⚪️]/u, '').trim().split('\n')[0];
 
         const card = document.createElement('div');
-        card.style.cssText = 'margin-bottom:10px;border-radius:10px;overflow:hidden;border:1px solid ' + color + '44;';
+        card.className = 'oot-js-determinantes-41';
+        card.style.borderColor = color + '44';
 
         const header = document.createElement('div');
-        header.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 12px;background:' + color + '18;cursor:pointer;';
+        header.className = 'oot-js-determinantes-42';
+        header.style.background = color + '18';
         header.innerHTML =
-          '<span style="font-size:16px;flex-shrink:0;">' + icon + '</span>' +
-          '<div style="flex:1;min-width:0;">' +
-            '<div style="font-size:11px;font-weight:700;color:var(--oot-tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + window.OOT.escapeHtml(String(npn)) + '">' + window.OOT.escapeHtml(String(npn)) + '</div>' +
-            '<div style="font-size:10px;color:var(--oot-tx3);">' + (predio.area_ha || '?') + ' ha · ' + window.OOT.escapeHtml(String(predio.clase_pendiente || '—')) + '</div>' +
+          '<span class="oot-js-determinantes-13">' + icon + '</span>' +
+          '<div class="oot-js-determinantes-9">' +
+            '<div class="oot-js-determinantes-14" title="' + window.OOT.escapeHtml(String(npn)) + '">' + window.OOT.escapeHtml(String(npn)) + '</div>' +
+            '<div class="oot-js-determinantes-15">' + (predio.area_ha || '?') + ' ha · ' + window.OOT.escapeHtml(String(predio.clase_pendiente || '—')) + '</div>' +
           '</div>' +
-          '<span style="font-size:10px;font-weight:700;color:' + color + ';white-space:nowrap;flex-shrink:0;">' + window.OOT.escapeHtml(String(labelCorto)) + '</span>' +
-          '<span class="material-symbols-outlined" style="font-size:16px;color:var(--oot-tx3);flex-shrink:0;">expand_more</span>';
+          '<span class="oot-js-determinantes-viab-label">' + window.OOT.escapeHtml(String(labelCorto)) + '</span>' +
+          '<span class="material-symbols-outlined oot-js-determinantes-2">expand_more</span>';
+        const viabLabelEl = header.querySelector('.oot-js-determinantes-viab-label');
+        if (viabLabelEl) viabLabelEl.style.color = color;
 
         const body = document.createElement('div');
-        body.style.cssText = 'display:none;padding:10px 12px;background:var(--oot-s2);';
+        body.className = 'oot-js-determinantes-43';
 
         (predio.veredictos || []).forEach(function(v) {
           const vc = _viabColor(v.veredicto || '');
           const vi = _viabIcon(v.veredicto || '');
           const fund = (v.fundamento || '').substring(0, 250);
           const detDiv = document.createElement('div');
-          detDiv.style.cssText = 'margin-bottom:8px;padding:8px;border-radius:6px;border-left:3px solid ' + vc + ';background:var(--oot-bg);';
+          detDiv.className = 'oot-js-determinantes-44';
+          detDiv.style.borderLeftColor = vc;
           detDiv.innerHTML =
-            '<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;">' +
-              '<span style="font-size:13px;">' + vi + '</span>' +
-              '<span style="font-size:11px;font-weight:700;color:var(--oot-tx);">' + esc(v.determinante || '—') + '</span>' +
+            '<div class="oot-js-determinantes-16">' +
+              '<span class="oot-js-determinantes-17">' + vi + '</span>' +
+              '<span class="oot-js-determinantes-18">' + esc(v.determinante || '—') + '</span>' +
             '</div>' +
-            (v.categoria ? '<div style="font-size:10px;color:var(--oot-tx3);margin-bottom:4px;">Categoría: ' + esc(v.categoria) + '</div>' : '') +
-            '<div style="font-size:10px;color:var(--oot-tx2);line-height:1.5;">' + esc(fund) + (fund.length === 250 ? '…' : '') + '</div>';
+            (v.categoria ? '<div class="oot-js-determinantes-19">Categoría: ' + esc(v.categoria) + '</div>' : '') +
+            '<div class="oot-js-determinantes-20">' + esc(fund) + (fund.length === 250 ? '…' : '') + '</div>';
           body.appendChild(detDiv);
         });
 
@@ -957,7 +992,7 @@ function mostrarResultados(data) {
     
     if (prediosGeo.features.length > 0) {
       const header = document.createElement('div');
-      header.style.cssText = 'font-size:11px;font-weight:700;color:var(--oot-tx3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;';
+      header.className = 'oot-js-determinantes-45';
       header.textContent = 'Predios Encontrados (' + prediosGeo.features.length + ')';
       listEl.appendChild(header);
       
@@ -970,11 +1005,11 @@ function mostrarResultados(data) {
         item.className = 'determinante-item';
         item.style.marginBottom = '8px';
         item.innerHTML = `
-          <div class="determinante-header" style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="determinante-name" style="font-size:12px;">${window.OOT.escapeHtml(String(npn))}</span>
-            <span style="font-size:10px;color:var(--oot-tx3);background:var(--oot-s2);padding:2px 6px;border-radius:4px;">${nDets} det.</span>
+          <div class="determinante-header oot-js-determinantes-3">
+            <span class="determinante-name oot-js-determinantes-4">${window.OOT.escapeHtml(String(npn))}</span>
+            <span class="oot-js-determinantes-21">${nDets} det.</span>
           </div>
-          <div class="determinante-desc" style="font-size:11px;color:var(--oot-tx2);">Área: ${window.OOT.escapeHtml(String(area))}</div>
+          <div class="determinante-desc oot-js-determinantes-5">Área: ${window.OOT.escapeHtml(String(area))}</div>
         `;
         item.style.cursor = 'pointer';
         item.onclick = () => {
@@ -986,12 +1021,12 @@ function mostrarResultados(data) {
         listEl.appendChild(item);
       });
     } else {
-      listEl.innerHTML = '<div class="text-xs text-center p-4" style="color:var(--oot-tx3);">No se encontraron predios en esta zona</div>';
+      listEl.innerHTML = '<div class="text-xs text-center p-4 oot-js-determinantes-6">No se encontraron predios en esta zona</div>';
     }
     
     if (data.aviso) {
       const avisoEl = document.createElement('div');
-      avisoEl.style.cssText = 'margin-top:12px;padding:10px;background:rgba(244,168,51,0.1);border:1px solid rgba(244,168,51,0.2);border-radius:8px;font-size:11px;color:var(--oot-ochre);';
+      avisoEl.className = 'oot-js-determinantes-46';
       avisoEl.textContent = data.aviso;
       listEl.appendChild(avisoEl);
     }
@@ -1021,12 +1056,12 @@ function mostrarResultados(data) {
     
     Object.entries(porCategoria).forEach(([cat, items]) => {
       const catHeader = document.createElement('div');
-      catHeader.style.cssText = 'display:flex;align-items:center;gap:8px;margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--oot-b2);';
+      catHeader.className = 'oot-js-determinantes-47';
       // cat proviene de la API (vocabulario controlado, pero se escapa por consistencia/H-12).
       catHeader.innerHTML = `
-        <span class="material-symbols-outlined" style="color:var(--oot-ochre);font-size:16px;">${iconosCat[cat] || 'category'}</span>
-        <span style="font-size:11px;font-weight:700;color:var(--oot-tx3);text-transform:uppercase;letter-spacing:0.05em;">${window.OOT.escapeHtml(String(cat))}</span>
-        <span style="margin-left:auto;font-size:10px;color:var(--oot-tx3);">${items.length}</span>
+        <span class="material-symbols-outlined oot-js-determinantes-7">${iconosCat[cat] || 'category'}</span>
+        <span class="oot-js-determinantes-22">${window.OOT.escapeHtml(String(cat))}</span>
+        <span class="oot-js-determinantes-23">${items.length}</span>
       `;
       listEl.appendChild(catHeader);
       
@@ -1041,10 +1076,10 @@ function mostrarResultados(data) {
           : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
         const nombreDet = det.determinante || det.nombre || ('Determinante ' + (idx + 1));
         item.innerHTML = `
-          <div class="determinante-header" style="display:flex;align-items:center;gap:8px;">
-            <span class="determinante-name" style="flex:1;min-width:0;">${_esc(nombreDet)}</span>
-            <button class="det-eye" title="Mostrar / ocultar en el mapa" style="flex-shrink:0;display:flex;align-items:center;justify-content:center;width:26px;height:26px;padding:0;background:transparent;border:none;border-radius:6px;color:var(--oot-tx2);cursor:pointer;">
-              <span class="material-symbols-outlined" style="font-size:18px;">visibility</span>
+          <div class="determinante-header oot-js-determinantes-8">
+            <span class="determinante-name oot-js-determinantes-9">${_esc(nombreDet)}</span>
+            <button class="det-eye oot-js-determinantes-24" title="Mostrar / ocultar en el mapa">
+              <span class="material-symbols-outlined oot-js-determinantes-10">visibility</span>
             </button>
           </div>
           <div class="determinante-desc">Cobertura: ${cobertura} (${areaInt})</div>
@@ -1092,7 +1127,7 @@ function mostrarResultados(data) {
   }
   
   if (determinantes.length === 0 && !reporte) {
-    listEl.innerHTML = '<div class="text-xs text-center p-4" style="color:var(--oot-tx3);">No se encontraron determinantes</div>';
+    listEl.innerHTML = '<div class="text-xs text-center p-4 oot-js-determinantes-6">No se encontraron determinantes</div>';
   }
   
   const reglasList = document.getElementById('reglas-list');
@@ -1102,7 +1137,7 @@ function mostrarResultados(data) {
     const reglasKeys = Object.keys(reglas);
     if (reglasKeys.length > 0) {
       const reglasHeader = document.createElement('div');
-      reglasHeader.style.cssText = 'font-bold text-sm mb-3 mt-4';
+      reglasHeader.className = 'oot-js-determinantes-48';
       reglasHeader.style.color = 'var(--oot-tx)';
       reglasHeader.textContent = 'Reglas Aplicadas';
       reglasList.appendChild(reglasHeader);
@@ -1118,13 +1153,16 @@ function mostrarResultados(data) {
       reglasKeys.forEach(key => {
         const cfg = REGLA_CONFIG[key] || { nombre: key, color: 'var(--oot-tx3)' };
         const reglaEl = document.createElement('div');
-        reglaEl.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px;margin-bottom:8px;background:var(--oot-s2);border-radius:8px;border-left:3px solid ' + cfg.color;
+        reglaEl.className = 'oot-js-determinantes-49';
+        reglaEl.style.borderLeftColor = cfg.color;
         const tieneDatos = reglas[key] && reglas[key].features && reglas[key].features.length > 0;
         reglaEl.innerHTML = `
-          <span style="color:${cfg.color};font-size:16px;">${tieneDatos ? '🔴' : '⚪'}</span>
-          <span style="font-size:12px;font-weight:600;color:var(--oot-tx);">${cfg.nombre}</span>
-          <span style="margin-left:auto;font-size:10px;color:var(--oot-tx3);">${tieneDatos ? reglas[key].features.length + ' entidades' : 'sin datos'}</span>
+          <span class="oot-js-determinantes-regla-dot">${tieneDatos ? '🔴' : '⚪'}</span>
+          <span class="oot-js-determinantes-25">${cfg.nombre}</span>
+          <span class="oot-js-determinantes-23">${tieneDatos ? reglas[key].features.length + ' entidades' : 'sin datos'}</span>
         `;
+        const reglaDotEl = reglaEl.querySelector('.oot-js-determinantes-regla-dot');
+        if (reglaDotEl) reglaDotEl.style.color = cfg.color;
         reglasList.appendChild(reglaEl);
       });
     }
@@ -1337,10 +1375,10 @@ function mostrarResultadosMapa(data) {
       const npn = p.numero_predial || 'N/A';
       const viab = p.viabilidad || '⚪ Sin datos';
       const area = p.Shape_Area ? (p.Shape_Area / 10000).toFixed(2) + ' ha' : 'N/A';
-      let html = '<div style="font-family:var(--fn-body);padding:4px;">';
-      html += '<div style="font-weight:700;font-size:13px;margin-bottom:6px;color:var(--oot-tx);border-bottom:1px solid var(--oot-b2);padding-bottom:4px;">Predio ' + escV(npn) + '</div>';
-      html += '<div style="font-size:12px;margin-top:4px;">' + escV(viab) + '</div>';
-      html += '<div style="font-size:11px;color:var(--oot-tx2);margin-top:4px;">Área: ' + escV(area) + '</div>';
+      let html = '<div class="oot-js-determinantes-26">';
+      html += '<div class="oot-js-determinantes-27">Predio ' + escV(npn) + '</div>';
+      html += '<div class="oot-js-determinantes-28">' + escV(viab) + '</div>';
+      html += '<div class="oot-js-determinantes-29">Área: ' + escV(area) + '</div>';
       html += '</div>';
       new maplibregl.Popup({ closeButton: true, maxWidth: '300px' }).setLngLat(e.lngLat).setHTML(html).addTo(mapa);
     };
@@ -1382,15 +1420,15 @@ function mostrarResultadosMapa(data) {
       const npn = p.numero_predial || 'N/A';
       const nDets = p.n_determinantes || 0;
       const area = p.Shape_Area ? (p.Shape_Area / 10000).toFixed(2) + ' ha' : 'N/A';
-      let html = '<div style="font-family:var(--fn-body);padding:4px;">';
-      html += '<div style="font-weight:700;font-size:13px;margin-bottom:6px;color:var(--oot-tx);border-bottom:1px solid var(--oot-b2);padding-bottom:4px;">Predio ' + escapeP(npn) + '</div>';
-      html += '<div style="font-size:11px;color:var(--oot-tx2);">Área: ' + escapeP(area) + '</div>';
-      html += '<div style="font-size:11px;color:var(--oot-ochre);margin-top:4px;">' + nDets + ' determinante(s) asociado(s)</div>';
+      let html = '<div class="oot-js-determinantes-26">';
+      html += '<div class="oot-js-determinantes-27">Predio ' + escapeP(npn) + '</div>';
+      html += '<div class="oot-js-determinantes-5">Área: ' + escapeP(area) + '</div>';
+      html += '<div class="oot-js-determinantes-30">' + nDets + ' determinante(s) asociado(s)</div>';
       if (p.det_json) {
         try {
           const dets = JSON.parse(p.det_json);
           if (Array.isArray(dets) && dets.length > 0) {
-            html += '<div style="margin-top:6px;font-size:10px;color:var(--oot-tx3);">Nombres: ' + escapeP(dets.map(d => d.nomdet || d.nombre || '—').join(', ')) + '</div>';
+            html += '<div class="oot-js-determinantes-31">Nombres: ' + escapeP(dets.map(d => d.nomdet || d.nombre || '—').join(', ')) + '</div>';
           }
         } catch(_) {}
       }
@@ -1538,16 +1576,16 @@ function mostrarPopupDeterminantes() {
     const onClick = function(e) {
       const p = e.features[0].properties || {};
       resaltarDeterminante(p.determ, p.nomdet);   // resaltar polígono completo en amarillo
-      let html = '<div style="font-family:var(--fn-body);padding:4px;max-height:300px;overflow-y:auto;">';
+      let html = '<div class="oot-js-determinantes-32">';
       const nombre = p.nomdet || p.nombre || p.determinante || p.NOMDET || 'Determinante sin nombre';
-      html += '<div style="font-weight:700;font-size:13px;margin-bottom:8px;color:var(--oot-tx);border-bottom:1px solid var(--oot-b2);padding-bottom:6px;">' + esc(nombre) + '</div>';
+      html += '<div class="oot-js-determinantes-33">' + esc(nombre) + '</div>';
       const tipo = p.tdeterm || p.tipo || p.determ || p.tipo_deter || p.nivel || '';
-      if (tipo) html += '<div style="margin-top:6px;"><span style="font-size:10px;font-weight:600;color:var(--oot-tx3);">TIPO:</span> <span style="font-size:12px;color:var(--oot-ochre);">' + esc(tipo) + '</span></div>';
+      if (tipo) html += '<div class="oot-js-determinantes-34"><span class="oot-js-determinantes-35">TIPO:</span> <span class="oot-js-determinantes-36">' + esc(tipo) + '</span></div>';
       const cat = p.categoria || p.cat || '';
-      if (cat) html += '<div style="margin-top:4px;"><span style="font-size:10px;font-weight:600;color:var(--oot-tx3);">CATEGORÍA:</span> <span style="font-size:12px;color:var(--oot-tx2);">' + esc(cat) + '</span></div>';
+      if (cat) html += '<div class="oot-js-determinantes-37"><span class="oot-js-determinantes-35">CATEGORÍA:</span> <span class="oot-js-determinantes-38">' + esc(cat) + '</span></div>';
       Object.entries(p).forEach(([k, v]) => {
         if (v !== null && v !== undefined && v !== '' && !['nomdet','nombre','determinante','NOMDET','tdeterm','tipo','determ','categoria','cat','tipo_deter','nivel'].includes(k)) {
-          html += '<div style="margin-top:4px;"><span style="font-size:10px;font-weight:600;color:var(--oot-tx3);">' + esc(k.replace(/_/g,' ').toUpperCase()) + ':</span> <span style="font-size:11px;color:var(--oot-tx2);">' + esc(String(v).substring(0, 100)) + '</span></div>';
+          html += '<div class="oot-js-determinantes-37"><span class="oot-js-determinantes-35">' + esc(k.replace(/_/g,' ').toUpperCase()) + ':</span> <span class="oot-js-determinantes-5">' + esc(String(v).substring(0, 100)) + '</span></div>';
         }
       });
       html += '</div>';

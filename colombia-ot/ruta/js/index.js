@@ -1,4 +1,4 @@
-﻿var web_service = "https://serviciosgeovisor.igac.gov.co:8080/Geovisor/";
+var web_service = window.OOT_COT_API_BASE || "https://serviciosgeovisor.igac.gov.co:8080/Geovisor/";
 var loading;
 
 
@@ -1789,3 +1789,45 @@ $(function() {
 //    });
 //});
 
+$(document).ready(function () {
+    if (window.OOT && window.OOT.loadShell) {
+        window.OOT.loadShell();
+    }
+
+    if ($.fn.mapster) {
+        try {
+            $('#imagehome').mapster({
+                staticState: false,
+                fillColor: "",
+                stroke: true,
+                strokeColor: "",
+                strokeOpacity: 1.0,
+                strokeWidth: 2,
+                render_highlight: {
+                    fillOpacity: 0,
+                    fillColor: "FFeedd",
+                    stroke: true,
+                    strokeOpacity: 1.0,
+                    strokeColor: "EC6654",
+                    strokeWidth: 2
+                }
+            });
+        } catch (e) {
+            console.error("Error al inicializar ImageMapster:", e);
+        }
+    }
+
+    // Bindings para remover onclick inline (CSP)
+    $(document).on("click", ".close-login-btn", function (e) {
+        e.preventDefault();
+        closeLogin();
+    });
+    $(document).on("click", "#logoutBtn", function (e) {
+        e.preventDefault();
+        signOut();
+    });
+    $(document).on("click", ".btn-close-anuncio, #boton-cerrar", function (e) {
+        e.preventDefault();
+        $("#primeranuncio").hide();
+    });
+});

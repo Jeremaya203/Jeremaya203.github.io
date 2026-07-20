@@ -583,10 +583,13 @@ function resolveTitle(chartConfig, attrs = {}) {
             button.className = "livestock-metric-legend__item";
             button.dataset.datasetIndex = String(datasetIndex);
             button.setAttribute("aria-pressed", "true");
-            button.innerHTML = `
-                <span class="livestock-metric-legend__swatch" style="background:${color}"></span>
-                <span class="livestock-metric-legend__label">${dataset.label || ""}</span>
-            `;
+            const swatch = document.createElement("span");
+            swatch.className = "livestock-metric-legend__swatch";
+            swatch.style.backgroundColor = String(color);
+            const label = document.createElement("span");
+            label.className = "livestock-metric-legend__label";
+            label.textContent = dataset.label || "";
+            button.append(swatch, label);
             button.addEventListener("click", event => {
                 event.preventDefault();
                 event.stopPropagation();

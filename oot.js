@@ -82,12 +82,12 @@ const OOT = {
       if (!cont) {
         cont = document.createElement('div');
         cont.id = 'oot-toast-cont';
-        cont.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:99999;display:flex;flex-direction:column;gap:8px;max-width:340px;';
+        cont.className = 'oot-toast-cont';
         document.body.appendChild(cont);
       }
       const t = document.createElement('div');
-      const bg = tipo === 'error' ? '#b3261e' : (tipo === 'warn' ? '#9a6700' : '#0a1628');
-      t.style.cssText = `background:${bg};color:#fff;padding:10px 14px;border-radius:8px;font-size:13px;line-height:1.4;box-shadow:0 4px 14px rgba(0,0,0,0.3);opacity:0;transition:opacity .2s;`;
+      const bgClass = tipo === 'error' ? 'oot-toast-error' : (tipo === 'warn' ? 'oot-toast-warn' : 'oot-toast-info');
+      t.className = 'oot-toast ' + bgClass;
       t.textContent = String(msg);
       cont.appendChild(t);
       requestAnimationFrame(() => { t.style.opacity = '1'; });

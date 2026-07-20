@@ -19,10 +19,6 @@ export function crearGraficaBubbleOrdenSuelo({ xLabels, yLabels, datasets, isDep
         const ordenValue = point.yValue;
         const fertilidadValue = point.xValue;
 
-        console.log("Orden label:", point.yLabel);
-        console.log("Fertilidad label:", point.xLabel);
-        console.log("Orden value:", ordenValue);
-        console.log("Fertilidad value:", fertilidadValue);
 
         await zoomMapaOrdenSuelo(ordenValue, fertilidadValue);
     }

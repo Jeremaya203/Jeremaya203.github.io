@@ -84,7 +84,8 @@ export function createAdaptiveBarValueLabelsPlugin({
 
                     const props = bar.getProps?.(["x", "y", "base", "width", "height"], true) || bar;
                     const isHorizontal = String(chart.options?.indexAxis || "").toLowerCase() === "y";
-                    if (!barIntersectsChartArea(props, chartArea, isHorizontal)) return;
+                    const isZeroValue = value === 0;
+                    if (!isZeroValue && !barIntersectsChartArea(props, chartArea, isHorizontal)) return;
 
                     const textWidth = ctx.measureText(text).width;
                     const boxWidth = textWidth + 10;
@@ -104,7 +105,9 @@ export function createAdaptiveBarValueLabelsPlugin({
                         centerY = Number(props.y);
                     } else {
                         centerX = Number(props.x);
-                        centerY = fitsInside
+                        centerY = isZeroValue
+                            ? Math.max(chartArea.top + boxHeight / 2, Math.min(chartArea.bottom - boxHeight / 2, Number(props.base) - boxHeight / 2 - 5))
+                            : fitsInside
                             ? (Number(props.y) + Number(props.base)) / 2
                             : Number(props.y) - boxHeight / 2 - 5;
                     }

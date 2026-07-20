@@ -1,13 +1,13 @@
 import { createChartCore } from "./core/chartCore.js";
 import { createChartInteractions } from "./chartInteractions.js?v=pib-stable-bar-width-20260523";
-import { createBarChartRenderer } from "./renderers/barChartRenderer.js?v=global-safe-zoom-labels-20260604";
-import { createTravelTimePieChartController } from "./infrastructure/travelTimePieChart.js?v=travel-time-municipality-required-20260604";
+import { createBarChartRenderer } from "./renderers/barChartRenderer.js?v=connectivity-tab-resize-20260716";
+import { createTravelTimePieChartController } from "./infrastructure/travelTimePieChart.js?v=department-map-municipality-selection-20260717b";
 import { createEducationBarChartController } from "./infrastructure/educationBarChart.js?v=tourism-legend-on-empty-chart-20260604";
-import { createEquipamientosChartController } from "./infrastructure/equipamientosChart.js?v=global-safe-zoom-labels-20260604";
+import { createEquipamientosChartController } from "./infrastructure/equipamientosChart.js?v=equipamientos-bar-values-20260707b";
 import { getRendererLegendItems, getRendererVisualForValue } from "./core/chartSymbolUtils.js?v=connectivity-line-style-legend-20260602";
-import { createPublicServicesRadarChartController } from "./conditions/publicServicesRadarChart.js?v=global-municipality-required-state-20260604";
+import { createPublicServicesRadarChartController } from "./conditions/publicServicesRadarChart.js?v=department-map-municipality-selection-20260717";
 import { createPovertyGroupedBarChartController } from "./povertyGroupedBarChart.js?v=poverty-first-entry-visible-message-20260604";
-import { createEconomicActivitiesBarChartController } from "./dynamics/economicActivitiesBarChart.js?v=economic-pointer-pan-20260604";
+import { createEconomicActivitiesBarChartController } from "./dynamics/economicActivitiesBarChart.js?v=economic-no-scroll-20260707";
 import {
     chartRequiresMunicipality,
     hasMunicipalitySelection,
@@ -17,7 +17,7 @@ import {
 // Dynamic charts configs
 import { createLivestockCensusBarChartController } from "../charts/dynamics/livestockCensusBarChart.js?v=global-safe-zoom-labels-20260604";
 import { createGreenBusinessFloatingBarChartController } from "../charts/dynamics/greenBusinessFloatingBarChart.js?v=irrigation-pointer-pan-20260604";
-import { createEvaPieChartController } from "./dynamics/evaPieChart.js?v=global-safe-zoom-labels-20260604";
+import { createEvaPieChartController } from "./dynamics/evaPieChart.js?v=eva-area-bar-values-20260707e";
 
 export function createPibBarChartController({
     getActiveLayerConfig,
@@ -357,7 +357,7 @@ export function createPibBarChartController({
             hideConnectivityTabs();
         }
 
-        barRenderer.prepareVisibleChartCanvas(canvas);
+        barRenderer.prepareVisibleChartCanvas(canvas, config.chartConfig);
         barRenderer.setChartTitle(config.chartConfig.title || config.title);
         barRenderer.setChartStatus(canvas, "Cargando gráfico...");
     }
@@ -544,7 +544,7 @@ export function createPibBarChartController({
             window.activeFeatureLayer = nextPrimaryLayer;
         }
 
-        window.__connectivityDebug = {
+        if (window.__SOCIOECONOMICO_DEBUG__ === true) window.__connectivityDebug = {
             activeChartId: activeConnectivityChartId,
             activeUrls: [...activeUrls],
             activeWhere: chartWhere,
@@ -573,7 +573,6 @@ export function createPibBarChartController({
                 opacity: layer?.opacity
             }))
         };
-        console.info("connectivity:sync-map-layers", window.__connectivityDebug);
 
         return {
             layer: nextPrimaryLayer,
@@ -737,7 +736,7 @@ export function createPibBarChartController({
         setActiveChartContext(variant.chartConfig);
         const syncState = await syncConnectivityMapLayers(config, variant.chartConfig);
         barRenderer.setChartTitle(variant.chartConfig.title || config.title);
-        barRenderer.prepareVisibleChartCanvas(canvas);
+        barRenderer.prepareVisibleChartCanvas(canvas, variant.chartConfig);
         barRenderer.setChartTitle(barRenderer.resolveTitle(variant.chartConfig, config, variant.rows));
         barRenderer.renderRowsIntoChart(canvas, variant.rows, variant.chartConfig, variant.layer, {
             baseWhere: syncState?.activeWhere,
@@ -749,6 +748,10 @@ export function createPibBarChartController({
         chartCore.schedule(async () => {
             const config = getActiveLayerConfig?.();
             if (!config?.chartConfig) return;
+            const renderOptions = {
+                skipSyncMap: config.keepDepartmentMapOnMunicipality === true
+                    && getFiltroNivel?.() === "MUNI"
+            };
             if (isMunicipalityRequiredWithoutSelection(config)) {
                 hideConnectivityTabs();
                 setActiveChartContext(config.chartConfig);
@@ -794,7 +797,7 @@ export function createPibBarChartController({
                 chartInteractions.installDefaultLegendHooks?.();
                 const pieLayer = resolveChartLayer(config, config.chartConfig);
                 if (!pieLayer) return;
-                await travelTimePieController.actualizarGrafica(pieLayer, config);
+                await travelTimePieController.actualizarGrafica(pieLayer, config, renderOptions);
                 return;
             }
             if (config.chartConfig.type === "radar") {
@@ -802,7 +805,7 @@ export function createPibBarChartController({
                 setActiveChartContext(config.chartConfig);
                 const radarLayer = resolveChartLayer(config, config.chartConfig);
                 if (!radarLayer) return;
-                await publicServicesRadarController.actualizarGrafica(radarLayer, config);
+                await publicServicesRadarController.actualizarGrafica(radarLayer, config, renderOptions);
                 return;
             }
             if (isGreenBusinessChart(config.chartConfig)) {
@@ -839,7 +842,7 @@ export function createPibBarChartController({
                         const syncState = await syncConnectivityMapLayers(config, activeVariant.chartConfig);
                         await syncConnectivityLegendFromFilteredData(activeVariant.chartConfig, syncState);
                         barRenderer.setChartTitle(activeVariant.chartConfig.title || config.title);
-                        barRenderer.prepareVisibleChartCanvas(canvas);
+                        barRenderer.prepareVisibleChartCanvas(canvas, activeVariant.chartConfig);
                         barRenderer.setChartStatus(canvas, "Seleccione un municipio para ver la información.");
                         canvas.style.setProperty("display", "none", "important");
                         return;
@@ -856,7 +859,7 @@ export function createPibBarChartController({
                 }
 
                 barRenderer.setChartTitle(chartConfig.title || config.title);
-                barRenderer.prepareVisibleChartCanvas(canvas);
+                barRenderer.prepareVisibleChartCanvas(canvas, chartConfig);
                 const rows = await barRenderer.queryChartRowsFromRest(config, chartConfig);
                 if (!rows.length) {
                     barRenderer.setChartStatus(canvas, "No hay datos para el filtro seleccionado.");
@@ -883,13 +886,13 @@ export function createPibBarChartController({
                             console.error("El fallback del gráfico PIB fallo:", fallbackError);
                         }
                     }
-                    barRenderer.prepareVisibleChartCanvas(canvas);
+                    barRenderer.prepareVisibleChartCanvas(canvas, chartConfig);
                     barRenderer.setChartStatus(canvas, "El servicio del gráfico no está disponible en este momento.");
                     return;
                 }
 
                 console.error("No se pudo forzar el render visual del gráfico:", error);
-                barRenderer.prepareVisibleChartCanvas(canvas);
+                barRenderer.prepareVisibleChartCanvas(canvas, chartConfig);
                 barRenderer.setChartStatus(canvas, `No se pudo cargar el gráfico: ${String(error?.message || error)}`);
             }
         }, delay);
@@ -949,7 +952,6 @@ export function createPibBarChartController({
     }
 
     async function actualizarGrafica(layer, config, options = {}) {
-        console.log("CHART CONFIG ACTIVO:", config?.title, config?.chartConfig?.id, config?.chartConfig?.type);
 
         if (isMunicipalityRequiredWithoutSelection(config)) {
             setActiveChartContext(config.chartConfig);
@@ -988,14 +990,14 @@ export function createPibBarChartController({
         
         if (isEquipamientosChart(config?.chartConfig)) {
             setActiveChartContext(config.chartConfig);
-            await equipamientosController.actualizarGrafica(layer, config);
+            await equipamientosController.actualizarGrafica(layer, config, options);
             return;
         }
 
         if (isAttributeCategoryChart(config?.chartConfig)) {
             setActiveChartContext(config.chartConfig);
             chartInteractions.installDefaultLegendHooks?.();
-            await educationBarController.actualizarGrafica(layer, config);
+            await educationBarController.actualizarGrafica(layer, config, options);
             return;
         }
 
@@ -1009,13 +1011,13 @@ export function createPibBarChartController({
         if (config?.chartConfig?.type === "pie") {
             setActiveChartContext(config.chartConfig);
             chartInteractions.installDefaultLegendHooks?.();
-            await travelTimePieController.actualizarGrafica(layer, config);
+            await travelTimePieController.actualizarGrafica(layer, config, options);
             return;
         }
 
         if (config?.chartConfig?.type === "radar") {
             setActiveChartContext(config.chartConfig);
-            await publicServicesRadarController.actualizarGrafica(layer, config);
+            await publicServicesRadarController.actualizarGrafica(layer, config, options);
             return;
         }
 

@@ -1,16 +1,18 @@
+import { escapeHtml, escapeHtmlWithBreaks, escapeSqlString, normalizeMunicipalityCode } from "./shared/security/security-utils.js";
+
 // determinantes.js — Requerimiento 0: Contexto Legal > Determinantes
 // Queries layer 19 (CL_DTS) and table 25 (CL_ADS) from componentecontextolegal
-
-const BASE_URL = "https://mapas2.igac.gov.co/server4/rest/services/ordenamiento/componentecontextolegal/MapServer";
+https://mapas2.igac.gov.co/server4/rest/services/ordenamiento/componentecontextolegal
+const BASE_URL = "/MapServer";
 const LAYER_DTS = `${BASE_URL}/19`; // CL_DTS (Determinantes - polygon layer)
 const TABLE_ADS = `${BASE_URL}/25`; // CL_ADS (Analisis determinantes - table)
 
 const DETERM_DOMAIN = {
     1: "1_Ambientales",
-    2: "2_Soberanía Alimentaria",
+    2: "Soberanía Alimentaria",
     3: "3_Patrimoniales",
     4: "4_Infraestructura",
-    5: "5_Áreas Metropolitana y Suburbanización",
+    5: "5_Áreas Metropolitanas y Suburbanización",
     6: "6_Proyectos Turísticos Especiales"
 };
 
@@ -23,22 +25,24 @@ export async function cargarDeterminantes(mpcodigo, containerSelector = "#summar
     const container = document.querySelector(containerSelector);
     if (!container) return;
 
-    if (!mpcodigo) {
-        container.innerHTML = '<p style="margin:0;color:#666;">Seleccione un municipio para ver las determinantes.</p>';
+    const safeMunicipalityCode = normalizeMunicipalityCode(mpcodigo);
+
+    if (!safeMunicipalityCode) {
+        container.innerHTML = '<p class="oot-js-carac-determinantes-1">Seleccione un municipio para ver las determinantes.</p>';
         return;
     }
 
-    container.innerHTML = '<p style="margin:0;color:#666;">Cargando determinantes...</p>';
+    container.innerHTML = '<p class="oot-js-carac-determinantes-1">Cargando determinantes...</p>';
 
     try {
         // Step 1: Query layer 19 for figuras matching this municipality
-        const where = `mpcodigo = '${mpcodigo}' AND confactadm = 1 AND determ <> 4`;
+        const where = `mpcodigo = '${escapeSqlString(safeMunicipalityCode)}' AND confactadm = 1 AND determ <> 4`;
         const qUrl = `${LAYER_DTS}/query?where=${encodeURIComponent(where)}&outFields=iddts,nomdet,determ,actadm,descrip&returnGeometry=false&orderByFields=determ,nomdet&f=json`;
         const res = await fetch(qUrl).then(r => r.json());
         const features = res?.features || [];
 
         if (!features.length) {
-            container.innerHTML = '<p style="margin:0;color:#666;">No se encontraron determinantes para este municipio.</p>';
+            container.innerHTML = '<p class="oot-js-carac-determinantes-1">No se encontraron determinantes para este municipio.</p>';
             return;
         }
 
@@ -74,16 +78,16 @@ export async function cargarDeterminantes(mpcodigo, containerSelector = "#summar
 
         for (const key of Object.keys(groups).sort((a, b) => Number(a) - Number(b))) {
             const group = groups[key];
-            html += `<div class="det-group-title">${group.label}</div>`;
+            html += `<div class="det-group-title">${escapeHtml(group.label)}</div>`;
 
             for (const fig of group.items) {
                 html += `
-                <div class="det-item" data-iddts="${fig.iddts}">
+                <div class="det-item" data-iddts="${escapeHtml(fig.iddts)}">
                     <div class="det-item-header">
                         <span class="det-arrow">▶</span>
-                        <span class="det-name">${fig.nomdet}</span>
+                        <span class="det-name">${escapeHtml(fig.nomdet)}</span>
                     </div>
-                    <div class="det-item-body" style="display:none;">
+                    <div class="det-item-body oot-js-carac-determinantes-2">
                         <p class="det-loading">Cargando...</p>
                     </div>
                 </div>`;
@@ -115,16 +119,16 @@ export async function cargarDeterminantes(mpcodigo, containerSelector = "#summar
                 if (body.dataset.loaded) return;
 
                 try {
-                    const aUrl = `${TABLE_ADS}/query?where=${encodeURIComponent(`iddts = '${iddts}'`)}&outFields=tcldnorm,tclanalisis&returnGeometry=false&f=json`;
+                    const aUrl = `${TABLE_ADS}/query?where=${encodeURIComponent(`iddts = '${escapeSqlString(iddts)}'`)}&outFields=tcldnorm,tclanalisis&returnGeometry=false&f=json`;
                     const aRes = await fetch(aUrl).then(r => r.json());
                     const attrs = aRes?.features?.[0]?.attributes;
 
                     let content = "";
                     if (attrs?.tcldnorm) {
-                        content += `<div class="det-section"><strong>Descripción normativa</strong><p>${attrs.tcldnorm}</p></div>`;
+                        content += `<div class="det-section"><strong>Descripción normativa</strong><p>${escapeHtmlWithBreaks(attrs.tcldnorm)}</p></div>`;
                     }
                     if (attrs?.tclanalisis) {
-                        content += `<div class="det-section"><strong>Análisis temático</strong><p>${attrs.tclanalisis}</p></div>`;
+                        content += `<div class="det-section"><strong>Análisis temático</strong><p>${escapeHtmlWithBreaks(attrs.tclanalisis)}</p></div>`;
                     }
                     if (!content) {
                         content = '<p class="det-empty">Sin descripción disponible.</p>';
@@ -134,13 +138,13 @@ export async function cargarDeterminantes(mpcodigo, containerSelector = "#summar
                     body.dataset.loaded = "1";
                 } catch (e) {
                     body.innerHTML = '<p class="det-empty">Error al cargar información.</p>';
-                    console.warn("Error fetching CL_ADS for", iddts, e);
+                    console.warn("No se pudo consultar el detalle de la determinante.");
                 }
             });
         });
 
     } catch (e) {
-        container.innerHTML = '<p style="margin:0;color:#c00;">Error al consultar determinantes.</p>';
+        container.innerHTML = '<p class="oot-js-carac-determinantes-3">Error al consultar determinantes.</p>';
         console.error("cargarDeterminantes error:", e);
     }
 }

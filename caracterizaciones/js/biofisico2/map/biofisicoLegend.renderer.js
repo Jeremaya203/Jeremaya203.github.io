@@ -33,7 +33,7 @@ export function renderBiofisicoLegend({
     if (!content || !title) return;
 
     if (!config) {
-        content.innerHTML = "<p style='margin:0; color:#666;'>No hay capa activa</p>";
+        content.innerHTML = "<p class='oot-js-biofisico-legend-1'>No hay capa activa</p>";
         title.textContent = "Leyenda";
         return;
     }
@@ -42,7 +42,7 @@ export function renderBiofisicoLegend({
     window.__lastLegendRenderKey = window.__lastLegendRenderKey || "";
 
     if (!labels || !labels.length) {
-        content.innerHTML = "<p style='margin:0; color:#666;'>Sin clases</p>";
+        content.innerHTML = "<p class='oot-js-biofisico-legend-1'>Sin clases</p>";
         return;
     }
 
@@ -106,7 +106,7 @@ export function renderBiofisicoLegend({
     keys = normalizedItems.map(item => item.code);
 
     if (!labels.length) {
-        content.innerHTML = "<p style='margin:0; color:#666;'>Sin clases</p>";
+        content.innerHTML = "<p class='oot-js-biofisico-legend-1'>Sin clases</p>";
         window.__legendState = {
             ...(window.__legendState || {}),
             allCodes: [],
@@ -120,6 +120,7 @@ export function renderBiofisicoLegend({
     content.innerHTML = "";
 
     const fragment = document.createDocumentFragment();
+    const isInteractive = config.legendInteractive !== false;
     const allCodes = keys.map(value => String(value ?? "").trim()).filter(Boolean);
     const fields = getLegendFilterFields(config, layer);
     const field = fields[0] || null;
@@ -153,15 +154,17 @@ export function renderBiofisicoLegend({
         const isActive = activeCodes.has(code);
         row.className = "legend-item legend-row";
         row.dataset.code = code;
-        row.setAttribute("role", "button");
-        row.setAttribute("tabindex", "0");
-        row.setAttribute("aria-pressed", isActive ? "true" : "false");
-        row.title = "Activar/desactivar categoria";
+        if (isInteractive) {
+            row.setAttribute("role", "button");
+            row.setAttribute("tabindex", "0");
+            row.setAttribute("aria-pressed", isActive ? "true" : "false");
+            row.title = "Activar/desactivar categoria";
+        }
         row.style.display = "flex";
         row.style.alignItems = "center";
         row.style.gap = "8px";
         row.style.marginBottom = "6px";
-        row.style.cursor = "pointer";
+        row.style.cursor = isInteractive ? "pointer" : "default";
 
         row.classList.toggle("active", isActive);
 
@@ -194,6 +197,7 @@ export function renderBiofisicoLegend({
 
 function getLegendFilterFields(config, layer) {
     if (!config) return [];
+    if (config.legendInteractive === false) return [];
 
     const url = String(layer?.url || "");
 

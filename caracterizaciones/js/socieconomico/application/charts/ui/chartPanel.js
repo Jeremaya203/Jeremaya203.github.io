@@ -148,8 +148,8 @@ export function configureScrollableChartViewport(canvas, {
         ? "grab"
         : "default";
 
-    canvas.style.height = `${contentHeight}px`;
-    canvas.style.minHeight = `${contentHeight}px`;
+    canvas.style.setProperty("height", `${contentHeight}px`, "important");
+    canvas.style.setProperty("min-height", `${contentHeight}px`, "important");
     canvas.height = Math.round(contentHeight);
     return container;
 }

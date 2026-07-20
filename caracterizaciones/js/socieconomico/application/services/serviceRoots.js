@@ -2,7 +2,7 @@ export const SOCIOECONOMICO_SERVICE_ROOT = globalThis.__SOCIOECONOMICO_SERVICE_R
     || "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componentesocioeconomico/MapServer";
 
 export const SOCIOECONOMICO_FEATURE_SERVICE_ROOT = globalThis.__SOCIOECONOMICO_FEATURE_SERVICE_ROOT__
-    || "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componentesocioeconomico/FeatureServer";
+    || "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componentesocioeconomico/MapServer";
 
 export function socioeconomicoLayerUrl(layerId) {
     return `${String(SOCIOECONOMICO_SERVICE_ROOT).replace(/\/+$/, "")}/${layerId}`;

@@ -54,10 +54,40 @@ export function normalizeCode(value) {
     return String(value ?? "").trim();
 }
 
+export function convertAreaToKm2(value, sourceUnit = "km2") {
+    if (value === null || value === undefined || value === "") return null;
+
+    const number = Number(value);
+    if (!Number.isFinite(number)) return null;
+
+    return String(sourceUnit).toLowerCase() === "ha"
+        ? number / 100
+        : number;
+}
+
+export function normalizeDepartamentoDisplayName(value, codigoDepto = "") {
+    const codigo = String(codigoDepto ?? "").trim();
+    const nombre = String(value ?? "").trim();
+    const normalized = nombre
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+
+    if (
+        codigo === "88" ||
+        normalized === "san andres, providencia y santa catalina" ||
+        normalized === "san andres providencia y santa catalina"
+    ) {
+        return "San Andr\u00e9s y Providencia";
+    }
+
+    return nombre;
+}
+
 export function getDepartamentoDisplayName(codigoDepto, diccionarioDepartamentos = {}) {
     const codigo = String(codigoDepto ?? "").trim();
     if (codigo === "00") return "Área en litigio";
-    return diccionarioDepartamentos[codigo] || codigo;
+    return normalizeDepartamentoDisplayName(diccionarioDepartamentos[codigo] || codigo, codigo);
 }
 
 export function getMunicipioDisplayName(municipio, diccionarioMunicipios = {}) {

@@ -1,4 +1,4 @@
-import { pendientesPolarHandler } from "./relief/slopes.chart.js?v=pendientes-loading-no-generic-20260617";
+import { pendientesPolarHandler } from "./relief/slopes.chart.js?v=pendientes-imageserver-20260716";
 import { hipsometriaDeptoAggHandler, hipsometriaMunicipalHandler } from "./relief/hypsometry.chart.js?v=hipsometria-muni-height-20260619";
 import { bf3GeoformasDeptoPieHandler, geoformasDualHandler } from "./relief/geoforms.chart.js?v=geoformas-depto-title-fix-20260618";
 import { climaDeptoAggStackedHandler, temperaturaStackedHandler } from "./climate/temperature.chart.js";

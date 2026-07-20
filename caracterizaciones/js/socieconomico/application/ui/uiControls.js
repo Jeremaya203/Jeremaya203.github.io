@@ -20,7 +20,7 @@ export function initModuleDropdown(dropdownId, triggerId, menuSelector, onItemCl
     const dropdown = document.getElementById(dropdownId);
     const trigger = document.getElementById(triggerId);
     const menu = dropdown?.querySelector(menuSelector);
-    const items = dropdown?.querySelectorAll(".dropdown-item");
+    const items = dropdown?.querySelectorAll(".dropdown-item, .dropdown-subitem");
 
     if (!dropdown || !trigger || !menu || !items?.length) return;
 
@@ -46,7 +46,6 @@ export function initModuleDropdown(dropdownId, triggerId, menuSelector, onItemCl
             if (typeof onItemClick === "function") {
                 onItemClick(target, item);
             } else {
-                console.log("Seleccionado:", target);
             }
 
             dropdown.classList.remove("open");
@@ -63,7 +62,6 @@ export function initDropdownDescargables() {
     const items = document.querySelectorAll(".descargables-menu .descargables-item");
 
     if (!dropdown || !trigger || !panel) {
-        console.log("Dropdown descargables no encontrado");
         return;
     }
 
@@ -87,7 +85,6 @@ export function initDropdownDescargables() {
             if (target === "memoria") {
                 document.getElementById("btnDescargarPDF")?.click();
             } else if (target === "bd") {
-                console.log("Descargar base de datos espacial");
                 // Logica para descargar la base de datos espacial
 
             }
@@ -181,7 +178,6 @@ export function createUiControlsController({
                 if (typeof onItemClick === "function") {
                     onItemClick(target, item);
                 } else {
-                    console.log("Seleccionado:", target);
                 }
 
                 dropdown.classList.remove("open");
@@ -265,12 +261,10 @@ export function createUiControlsController({
                     setCurrentMode("SOCIOECONOMIC");
                 }
 
-                console.log("ANTES renderSubTabs");
 
 
                 setCurrentSubLayerIndex(0);
                 renderSubTabs();
-                console.log("Despues renderSubTabs");
                 (cargarCapaActual || window.cargarCapaActual)?.();
             }
         );
@@ -286,7 +280,6 @@ export function createUiControlsController({
         const items = document.querySelectorAll(".descargables-menu .descargables-item");
 
         if (!dropdown || !trigger || !panel) {
-            console.log("Dropdown descargables no encontrado");
             return;
         }
 
@@ -310,7 +303,6 @@ export function createUiControlsController({
                 if (target === "memoria") {
                     document.getElementById("btnDescargarPDF")?.click();
                 } else if (target === "bd") {
-                    console.log("Descargar base de datos espacial");
                 }
 
                 dropdown.classList.remove("open");

@@ -1,4 +1,4 @@
-/*fonts - rutas locales */
+﻿/*fonts - rutas locales */
 @font-face {
 font-family: 'Geometria Bold';
 src: url('/fonts/Geometria-Bold.ttf') format('truetype');
@@ -71,14 +71,14 @@ font-style: normal;
 
 @font-face {
 font-family: 'Gill Sans Std Condensed';
-src: url('./fonts/GillSansStd-BoldCondensed.woff2') format('woff2');
+src: url('/fonts/GillSansStd-BoldCondensed.woff2') format('woff2');
 font-weight: bold;
 font-style: normal;
 }
 
 @font-face {
 font-family: 'Gill Sans';
-src: url(./fonts/GillSansStd-Bold.woff2) format('woff2'), url(./fonts/GillSansStd-Bold.woff) format('woff');
+src: url(/fonts/GillSansStd-Bold.woff2) format('woff2'), url(/fonts/GillSansStd-Bold.woff) format('woff');
 font-weight: bold;
 font-style: normal;
 }

@@ -74,13 +74,13 @@ import {
     pickExistingField,
     pickVariantByScale
 } from "./map/map.helpers.js";
-import { createMapController } from "./map/mapController.js?v=geoformas-scale-sync-20260618";
-import { createMapRenderContext } from "./map/mapRenderContext.js?v=riesgo-cc-yellow-outline-20260616";
+import { createMapController } from "./map/mapController.js?v=clima-stations-cleanup-20260717";
+import { createMapRenderContext } from "./map/mapRenderContext.js?v=clima-stations-cleanup-20260717";
 import {
     readBiofisicoState,
     syncBiofisicoStateFromLocals
 } from "./state/biofisico.state.js";
-import { clearLayers as clearMapLayers } from "./map/layers.js";
+import { clearLayers as clearMapLayers } from "./map/layers.js?v=clima-stations-cleanup-20260717";
 import {
     zoomToLayerObjectId,
     resetToColombia
@@ -105,9 +105,8 @@ import {
     LEYENDA_RIESGO_CC,
     coloresCondicionEcos,
     condicionLabelToCode,
-    coloresPendientes,
-    pendientesLabelToCode
-} from "./config.js?v=hipsometria-muni-height-20260619";
+    coloresPendientes
+} from "./config.js?v=pendientes-imageserver-20260716";
 
 import {
     debounce,
@@ -134,9 +133,9 @@ import {
     syncLegendToLabelSelection,
     sortLegendEntries,
     toggleBiofisicoLegend
-} from "./map/biofisicoLegend.renderer.js?v=riesgo-cc-yellow-outline-20260616";
-import { applyWhereToLayers, createBiofisicoStationsLayer } from "./map/biofisicoMap.renderer.js";
-import { createChartController } from "./charts/chartController.js?v=hipsometria-muni-height-20260619";
+} from "./map/biofisicoLegend.renderer.js?v=pendientes-imageserver-20260716";
+import { applyWhereToLayers, createBiofisicoStationsLayer } from "./map/biofisicoMap.renderer.js?v=clima-stations-cleanup-20260717";
+import { createChartController } from "./charts/chartController.js?v=pendientes-imageserver-20260716";
 import {
     destroyDualChartInstances,
     renderGeoformasDualCharts,
@@ -238,11 +237,11 @@ function syncStateFromGlobals() {
 }
 
 
-function clearLayers() {
+function clearLayers(options = {}) {
     syncStateFromGlobals();
 
     clearRiesgoCcMunicipioHighlight();
-    clearMapLayers();
+    clearMapLayers(options);
 
     const state = readBiofisicoState([
         "layerGlobal",
@@ -343,7 +342,7 @@ function ensureMunicipalLayerIndex(prevId) {
 
 
 
-    // ProtecciÃ³n extra: evitar quedar en una capa departamental
+    // Proteccion extra: evitar quedar en una capa departamental
     const cfg = list[currentSubLayerIndex];
     if (cfg && DEPTO_ONLY_LAYER_IDS.has(cfg.id)) {
         currentSubLayerIndex = 0;
@@ -384,7 +383,7 @@ syncStateFromGlobals();
 let currentMode = 'RELIEVE'; // RELIEVE | CLIMA
 let stationsLayer = null;
 
-let currentSubLayerIndex = 0; // Ãndice dentro del array de configuration
+let currentSubLayerIndex = 0; 
 let layerGlobal = null;
 let layerViewGlobal = null;
 let whereBase = "";
@@ -399,7 +398,7 @@ window.__geoformaPaisajeColorMap = {};
 let diccionarioDepartamentos = {};
 let todosMunicipios = []; // Array de {codigo, nombre, depto}
 const municipiosPorDepartamentoCache = new Map();
-let layersGlobal = []; // para manejar mÃºltiples capas (cuencas)
+let layersGlobal = []; // para manejar multiples capas (cuencas)
 let chartLayerGlobal = null;
 
 let map = null;
@@ -521,7 +520,7 @@ async function zoomMapaGeoformas(paisajeValue, relieveValue = null) {
     const relVal = fmtVal(relieveValue);
 
     if (!paisVal) {
-        console.warn("No se recibiÃ³ paisaje para filtrar geoformas");
+        console.warn("No se recibió paisaje para filtrar geoformas");
         return;
     }
 
@@ -554,7 +553,7 @@ async function zoomMapaGeoformas(paisajeValue, relieveValue = null) {
             }
             return false;
         } catch (err) {
-            console.warn("FallÃ³ queryExtent geoformas con:", where, err);
+            console.warn("Falló queryExtent geoformas con:", where, err);
             return false;
         }
     }
@@ -577,7 +576,7 @@ async function zoomMapaVocacion(vocacionValue, usoValue = null) {
     const layer = layerGlobal;
 
     if (!layer || !view) {
-        console.warn("No hay layerGlobal o view disponible para vocaciÃ³n");
+        console.warn("No hay layerGlobal o view disponible para vocación");
         return;
     }
 
@@ -593,7 +592,7 @@ async function zoomMapaVocacion(vocacionValue, usoValue = null) {
     const usoVal = fmtVal(usoValue);
 
     if (!vocVal) {
-        console.warn("No se recibiÃ³ vocaciÃ³n para filtrar");
+        console.warn("No se recibió vocación para filtrar");
         return;
     }
 
@@ -628,7 +627,7 @@ async function zoomMapaVocacion(vocacionValue, usoValue = null) {
             }
             return false;
         } catch (err) {
-            console.warn("FallÃ³ queryExtent vocaciÃ³n con:", where, err);
+            console.warn("Falló queryExtent vocación con:", where, err);
             return false;
         }
     }
@@ -644,7 +643,7 @@ async function zoomMapaVocacion(vocacionValue, usoValue = null) {
         updateLegendByExtent(layer, cfg);
     }
 
-    console.warn("No se pudo hacer zoom para vocaciÃ³n");
+    console.warn("No se pudo hacer zoom para vocación");
 }
 
 
@@ -667,7 +666,7 @@ async function zoomMapaOrdenSuelo(ordenValue, fertilidadValue) {
     const fertClause = sqlEquals("fertilidad", fertilidadValue);
 
     if (ordVal === null) {
-        console.warn("No se recibiÃ³ orden de suelo vÃ¡lido para filtrar");
+        console.warn("No se recibió orden de suelo válido para filtrar");
         return;
     }
 
@@ -697,7 +696,7 @@ async function zoomMapaOrdenSuelo(ordenValue, fertilidadValue) {
             }
             return false;
         } catch (err) {
-            console.warn("FallÃ³ queryExtent con:", where, err);
+            console.warn("Falló queryExtent con:", where, err);
             return false;
         }
     }
@@ -709,7 +708,7 @@ async function zoomMapaOrdenSuelo(ordenValue, fertilidadValue) {
 
     if (await tryExtent(whereSoloOrden)) return;
 
-    console.warn("No se pudo hacer zoom con ningÃºn filtro");
+    console.warn("No se pudo hacer zoom con ningún filtro");
 }
 
 
@@ -736,14 +735,14 @@ function setActiveVariantLayerByScale() {
 
     setLegendLayer(desired, legendTitle);
 
-    // 2) AQUÃ MISMO va lo de cuencas (antes de actualizar grÃ¡fica)
+    // 2) AQUÍ MISMO va lo de cuencas (antes de actualizar gráfica)
     if (config.isHidro && config.hidroType === "cuencas" && desired.layerId === 20) {
         fetch(desired.url + "?f=pjson")
         .then(r => r.json())
         .then(json => {
             window.cuencasDict = buildCuencasDictFromRenderer(json);
 
-            // si justo cambiÃ³ la capa, renderiza con el dict ya listo
+            // si cambió la capa visible, actualizar gráfica
             if (changed) {
             const chartL = chartLayerGlobal || desired;
             chartL.when(() => window.actualizarGrafica?.(chartL, config));
@@ -754,13 +753,13 @@ function setActiveVariantLayerByScale() {
         return { changed, layer: desired };
     }
 
-    // 3) TU LÃ“GICA NORMAL (para todas las demÃ¡s capas)
+    // 3) Logica normal de actualizar gráfica si cambió la capa visible
     if (changed) {
         const chartL = chartLayerGlobal || desired;
         chartL.when(() => window.actualizarGrafica?.(chartL, config));
     }
 
-    // despuÃ©s de escoger active y setear visibles:
+    // Despues de escoger active y setear visibles:
     if (layerGlobal) {
         if (![19, 20, 21].includes(Number(layerGlobal.layerId))) {
             layerGlobal.labelsVisible = false;
@@ -820,6 +819,7 @@ require([
     "esri/Map",
     "esri/views/MapView",
     "esri/layers/FeatureLayer",
+    "esri/layers/ImageryLayer",
     "esri/Basemap",
     "esri/layers/TileLayer",
     "esri/layers/VectorTileLayer",
@@ -834,7 +834,7 @@ require([
     "esri/widgets/ScaleBar",
     "esri/request",
 
-    ], function(EsriMap, MapView, FeatureLayer, Basemap, TileLayer, VectorTileLayer, Legend,
+    ], function(EsriMap, MapView, FeatureLayer, ImageryLayer, Basemap, TileLayer, VectorTileLayer, Legend,
     GraphicsLayer, Graphic, Extent, Home, Locate, BasemapGallery, Expand,ScaleBar,esriRequest) {
 
     GraphicsLayerCtor = GraphicsLayer;
@@ -970,7 +970,7 @@ require([
                     try {
                         prepareSectionLoadingState();
                     } catch (error) {
-                        console.error("Error preparando cambio de secciÃ³n biofÃ­sica:", error);
+                        console.error("Error preparando cambio de sección biofísica:", error);
                     }
                 } else {
                     destroyChartInstance();
@@ -1056,7 +1056,7 @@ require([
         }
     }
     
-    // InicializaciÃ³n (al final del bootstrap para asegurar handlers y DOM listos)
+
 
     function init() {
         bindMainButtonEvents({
@@ -1113,7 +1113,7 @@ require([
             highlightHandle = null;
         }
 
-        // Limpiar grÃ¡fica
+        // Limpiar grafica
         destroyChartInstance();
 
         // Limpiar leyenda
@@ -1121,7 +1121,7 @@ require([
         const legendContent = document.getElementById("legendContent");
         if (legendTitle) legendTitle.textContent = "Leyenda";
         if (legendContent) {
-            legendContent.innerHTML = `<p style="margin:0; color:#666;">Seleccione un departamento o municipio</p>`;
+            legendContent.innerHTML = `<p class="oot-js-biofisico-main-1">Seleccione un departamento o municipio</p>`;
             legendContent.classList.remove("collapsed");
         }
 
@@ -1182,7 +1182,7 @@ require([
             try {
                 prepareSectionLoadingState();
             } catch (error) {
-                console.error("Error preparando cambio de categorÃ­a biofÃ­sica:", error);
+                console.error("Error preparando cambio de categoría biofísica:", error);
             }
             cargarCapaActual();
         } else {
@@ -1281,7 +1281,7 @@ require([
             if (selectedDept && selectedDept !== "0" && selectedDept !== "COL" && !selectedMuni) {
                 const deptName = diccionarioDepartamentos?.[selectedDept] || diccionarioDepartamentos?.[deptoActual] || selectedDept;
                 const title = document.getElementById("chartTitle");
-                if (title) title.textContent = `DistribuciÃ³n de Geoformas en ${deptName}`;
+                if (title) title.textContent = `Distribución de Geoformas en ${deptName}`;
             }
         }
     }
@@ -1317,9 +1317,11 @@ require([
                 ordenSismica: ORDEN_SISMICA
             });
             bindLegendClickOnce();
-            applyChartCategoryFilterFromLegend();
-            window.__biofisicoApplyGeoformasChartFilter?.(window.__legendState?.activeCodes);
-            window.__biofisicoApplyOrdenSueloChartFilter?.(window.__legendState?.activeCodes);
+            if (config?.legendInteractive !== false) {
+                applyChartCategoryFilterFromLegend();
+                window.__biofisicoApplyGeoformasChartFilter?.(window.__legendState?.activeCodes);
+                window.__biofisicoApplyOrdenSueloChartFilter?.(window.__legendState?.activeCodes);
+            }
         } catch (e) {
             console.error("actualizarLeyenda error:", e);
         }
@@ -1344,6 +1346,7 @@ require([
         content.addEventListener("click", async (e) => {
             const item = e.target.closest(".legend-item");
             if (!item) return;
+            if (getActiveLayerConfig()?.legendInteractive === false) return;
 
             const code = String(item.dataset.code ?? "").trim();
             if (!code) return;
@@ -1506,6 +1509,7 @@ require([
     }
 
     async function setOnlyChartCategoryActive(label, index = -1, dataset = null) {
+        if (getActiveLayerConfig()?.id === "pendientes") return false;
         const st = window.__legendState;
         if (!st || !Array.isArray(st.allCodes) || !st.allCodes.length) return false;
 
@@ -1563,6 +1567,7 @@ require([
     }
 
     async function restoreAllChartCategories() {
+        if (getActiveLayerConfig()?.id === "pendientes") return false;
         const st = window.__legendState;
         if (!st || !Array.isArray(st.allCodes) || !st.allCodes.length) return false;
 
@@ -1635,6 +1640,7 @@ require([
 
         view.__biofisicoCategoryClickBound = true;
         view.on("click", async (event) => {
+            if (getActiveLayerConfig()?.id === "pendientes") return;
             const targets = getLegendTargetLayers().filter(layer => layer && !layer.destroyed);
             if (!targets.length) return;
 
@@ -1667,6 +1673,7 @@ require([
         }
 
         const handler = async (event) => {
+            if (getActiveLayerConfig()?.id === "pendientes") return;
             const active = typeof chart.getElementsAtEventForMode === "function"
                 ? chart.getElementsAtEventForMode(event, "nearest", { intersect: true }, false)
                 : [];
@@ -2051,6 +2058,7 @@ require([
         if (!st?.field) return;
         const legendContent = document.getElementById("legendContent");
         const config = getActiveLayerConfig();
+        if (config?.legendInteractive === false) return;
         const isCuencasLegend = config?.isHidro && config?.hidroType === "cuencas";
         const isEcosistemasLegend = config?.isEcosistema && config?.ecosistemaType === "ecosistemas";
         const isDeforestacionLegend = config?.isEcosistema && config?.ecosistemaType === "deforestacion";
@@ -2296,7 +2304,7 @@ require([
         optionColombia.textContent = "Colombia";
         selectDepto.appendChild(optionColombia);
 
-        // Obtener departamentos Ãºnicos
+        // Obtener departamentos 
         const deptosUnicos = [...new Set(todosMunicipios.map(m => m.depto))].sort((codigoA, codigoB) => {
             const nombreA = getDepartamentoDisplayName(codigoA, diccionarioDepartamentos);
             const nombreB = getDepartamentoDisplayName(codigoB, diccionarioDepartamentos);
@@ -2761,7 +2769,7 @@ require([
         } catch (_) {}
     }
 
-    function setBiofisicoLoadingMessage(message = "Cargando informaciÃ³n...") {
+    function setBiofisicoLoadingMessage(message = "Cargando información...") {
         const title = document.getElementById("chartTitle");
         const summary = document.getElementById("summaryDiv");
         const legendTitle = document.getElementById("legendTitle");
@@ -2772,7 +2780,7 @@ require([
         if (summary) summary.textContent = message;
         if (legendTitle) legendTitle.textContent = "Leyenda";
         if (legendContent) {
-            legendContent.innerHTML = `<p style="margin:0; color:#666;">${message}</p>`;
+            legendContent.innerHTML = `<p class="oot-js-biofisico-main-1">${message}</p>`;
             legendContent.classList.remove("collapsed");
             delete legendContent.dataset.legendSelectedCode;
             delete legendContent.dataset.legendFilterStatus;
@@ -2793,7 +2801,9 @@ require([
         clearHighlight();
         destroyChartInstance();
         clearChartCanvasPixels();
-        clearLayers();
+        clearLayers({
+            preserveStationsLayer: currentMode === "CLIMA" && Boolean(stationsLayer)
+        });
         setBiofisicoLoadingMessage();
 
         window.__legendState = {
@@ -3148,11 +3158,9 @@ require([
         if (type === 'bar' && !isVertical && !isEcosistemasChart) {
             labels = labels.map(l => wrapLabel(l, 22));
         }
-        //  TÃ­tulos de ejes segÃºn capa/tipo
+        
         const axisTitles = getAxisTitles(layerConfig, type, isVertical, datasets);
-
         const ctx = document.getElementById("chart").getContext("2d");
-
         const isPieLike = (type === "doughnut" || type === "pie");
         const chartDatasets = datasets || [{
             label: (type === 'radar') ? "" : (type === 'line' ? "Cobertura (%)" : "%"),
@@ -3257,7 +3265,7 @@ require([
                                 return `${label}: ${value.toFixed(2)}%`;
                             }
 
-                            // Resto de grÃ¡ficos
+                            
                             const datasetLabel = String(context.dataset.label || "").trim();
                             const isNoiseDatasetLabel = /^(%|porcentaje|cobertura\s*\(%\)|cobertura|valor\s*\(%\))$/i
                                 .test(datasetLabel);
@@ -3289,11 +3297,7 @@ require([
                 const el = elements[0];
                 let clickedLabel = chartInstance.data.labels?.[el.index];
 
-                if (Array.isArray(clickedLabel)) clickedLabel = clickedLabel.join(" ");
-
-                // =========================
-                // STACKED BIOFÃSICO
-                // =========================
+                if (Array.isArray(clickedLabel)) clickedLabel = clickedLabel.join(" ");    
                 if (datasets !== null && el.datasetIndex !== undefined) {
                     const dataset = chartInstance.data.datasets[el.datasetIndex];
                     const segment = dataset?.__segments?.[el.index];
@@ -3316,7 +3320,7 @@ require([
                 }
 
                 // =========================
-                // FLUJO NORMAL BIOFÃSICO
+                // FLUJO NORMAL BIOFISICO
                 // =========================
                 if (clickedLabel != null) {
                     filtrarPorAtributo(String(clickedLabel));
@@ -3554,7 +3558,7 @@ require([
                 };
             }
 
-            // Ajuste dinÃ¡mico del alto del canvas segÃºn cantidad de datos
+            // Ajuste dinamico del alto del canvas segun cantidad de datos
             const chartCanvas = document.getElementById("chart");
             if (chartCanvas) {
                 const chartCard = chartCanvas.closest(".chart-card");
@@ -3659,26 +3663,7 @@ require([
                 }
 
                 const cfg = getActiveLayerConfig();
-            if (cfg?.id === "pendientes") {
-                const code = pendientesLabelToCode[clickedLabel.toLowerCase()];
-
-                if (code) {
-                    const whereZoom = `(${whereBase || "1=1"}) AND categoria = ${code}`;
-
-                    applyWhereToActiveLayers(whereZoom);
-                    updateLegendByExtent?.(layerGlobal, cfg);
-
-                    const extentLayer = layerGlobal;
-                    if (extentLayer) {
-                        cachedQueryExtent(extentLayer, { where: whereZoom }).then(res => {
-                            if (res?.extent) view.goTo(res.extent.expand(1.3));
-                        });
-                    }
-
-                    syncLegendToLabelSelection(clickedLabel);
-                    return;
-                }
-            }
+            if (cfg?.id === "pendientes") return;
         }
 
         if (typeof prevOnClick === "function") {
@@ -3825,7 +3810,7 @@ require([
         (r.uniqueValueInfos || []).forEach(info => {
             const v = String(info.value ?? "").trim();
             const label = String(info.label ?? v).trim();
-            const col = getSymbolColorRGBA(info.symbol) || "#999"; //  AHORA SÃ
+            const col = getSymbolColorRGBA(info.symbol) || "#999"; 
 
             if (v) m.set(v, { label, color: col });
             if (label) m.set(normKey(label), { label, color: col });
@@ -4000,7 +3985,7 @@ require([
             null;
     }
 
-    // 1) Decide quÃ© campos necesita la query segÃºn la capa activa
+    // 1) Decide que campos necesita la query según la capa activa
     function getLegendOutFields(config, layer) {
         if (config.isDeptoRiskCount) return [];
         if (config.isBF3) return ["paisaje"];
@@ -4060,17 +4045,17 @@ require([
         return [config.labelField, config.valueField || "porcentaje"].filter(Boolean); // conflictos
         }
 
-        // FenÃ³menos
+        // Fenomenos
         if (config.isFenomenos && config.fenomenosType === "degradacion") {
             return ["gradodeg", config.labelField, config.valueField || "porcentaje"].filter(Boolean);
         }
         if (config.isFenomenos) return [config.labelField, config.valueField || "porcentaje"].filter(Boolean);
 
-        // Default (HipsometrÃ­a etc)
+        // Default (Hipsometría etc)
         return [config.labelField, config.valueField || "porcentaje"].filter(Boolean);
         }
 
-        // 2) Mapea atributos => {label,color} segÃºn tu lÃ³gica/diccionarios
+
     function buildLegendEntryFromAttrs(config, attrs, layer) {
         if (!config || !attrs) return null;
 
@@ -4096,7 +4081,7 @@ require([
             // 1) primero intenta tu diccionario de colores (coloresBiofisico.js)
             let info = (coloresOrdenSuelo && coloresOrdenSuelo[code]) ? coloresOrdenSuelo[code] : null;
 
-            // 2) si no estÃ¡, cae al renderer real de la capa (labels+colores oficiales)
+            // 2) si no está, cae al renderer real de la capa (labels+colores oficiales)
             if (!info && typeof buildDictFromUniqueValueRenderer === "function") {
                 const dict = buildDictFromUniqueValueRenderer(layer);
                 info = dict.get(code) || null;
@@ -4166,7 +4151,7 @@ require([
             return { label: info?.label || code, color: info?.color || "#999", code };
         }
 
-        // HidrografÃ­a
+        // Hidrografía
         if (config.isHidro) {
             if (config.hidroType === "cuencas") {
             const rendererEntry = getRendererEntryFromAttrs(layer, attrs);
@@ -4185,13 +4170,13 @@ require([
                 ""
             ).trim();
             return {
-                label: rendererEntry?.label || fallbackCode || "Sin categorÃ­a",
+                label: rendererEntry?.label || fallbackCode || "Sin categoría",
                 color: rendererEntry?.color || getLayerRendererFallbackColor(layer) || "#5f7fec",
                 code: rendererEntry?.code || fallbackCode
             };
             }
 
-            // escorrentÃ­a
+            // escorrentía
             const code = String(attrs[config.labelField] ?? "");
             const info = coloresEscorrentia?.[code];
             return { label: info?.label || code, color: info?.color || "#999", code };
@@ -4254,7 +4239,7 @@ require([
             }
         }
 
-        // FenÃ³menos
+        // Fenómenos
         if (config.isFenomenos) {
             let code = "";
 
@@ -4274,16 +4259,16 @@ require([
             return { label: info?.label || code, color: info?.color || "#999", code };
         }
 
-        // Default (hipsometrÃ­a y otros simples)
+        // Default (hipsometría y otros simples)
         const code = String(attrs[config.labelField] ?? "");
 
-        // hipsometrÃ­a municipal y departamental (deptoAgg)
+        // hipsometría municipal y departamental (deptoAgg)
         if (config.id === "hipsometria" || config.id === "hipsometria_depto" || config.isDeptoAgg) {
             const info = coloresHipsometricos?.[code];
             return { label: info?.label || code, color: info?.color || "#999", code };
         }
 
-        // si no sabes quÃ© dict usar, deja label=code
+        // si no sabes qué dict usar, deja label=code
         return { label: code, color: "#999", code };
         }
 
@@ -4416,12 +4401,13 @@ require([
             }
 
             if (config.id === "pendientes" && config.isPendientesPolar) {
-                const entries = await buildLegendEntriesFromVisibleFeatures(layer, config);
+                const entries = Object.entries(coloresPendientes)
+                    .sort(([left], [right]) => Number(left) - Number(right));
 
                 actualizarLeyenda(
-                    entries.map(item => item.label),
-                    entries.map(item => item.color),
-                    entries.map(item => item.code)
+                    entries.map(([, info]) => info.label),
+                    entries.map(([, info]) => info.color),
+                    entries.map(([code]) => code)
                 );
                 return;
             }
@@ -4637,6 +4623,9 @@ require([
 
     mapRenderContext = createMapRenderContext({
         FeatureLayer,
+        ImageryLayer,
+        Extent,
+        esriRequest,
         map,
         view,
         getActiveLayerConfig,
@@ -4652,8 +4641,10 @@ require([
         getLayersGlobal: () => layersGlobal,
         getChartLayerGlobal: () => chartLayerGlobal,
         setLayerGlobal: value => { layerGlobal = value; },
+        setChartLayerGlobal: value => { chartLayerGlobal = value; },
         setLayerViewGlobal: value => { layerViewGlobal = value; },
         setLayersGlobal: value => { layersGlobal = value; },
+        setStationsLayer: value => { stationsLayer = value; },
         getScaleHandle: () => scaleHandle,
         setScaleHandle: value => { scaleHandle = value; },
         buildDefinitionExpression,
@@ -4679,7 +4670,8 @@ require([
     });
 
     function applyWhereToActiveLayers(where) {
-        // si estÃ¡s en cuencas (3 capas), aplica a todas
+        if (getActiveLayerConfig()?.id === "pendientes") return;
+        // si estas en cuencas (3 capas), aplica a todas
         if (layersGlobal.length) {
             layersGlobal.forEach(l => l.definitionExpression = where);
             return;

@@ -273,7 +273,7 @@ function resetLegendUiForSearch() {
     const legendContent = document.getElementById("legendContent");
     if (legendTitle) legendTitle.textContent = "Leyenda";
     if (legendContent) {
-        legendContent.innerHTML = `<p style="margin:0; color:#666;">Seleccione un departamento o municipio</p>`;
+        legendContent.innerHTML = `<p class="oot-js-biofisico-events-1">Seleccione un departamento o municipio</p>`;
         legendContent.classList.remove("collapsed");
     }
 

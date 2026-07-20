@@ -253,7 +253,8 @@ async function onMunicipioChange() {
     cargarInfoMunicipio(codigo);
     const activeConfig = getActiveLayerConfig();
     const keepDepartmentContext = activeConfig?.key === "POVERTY_LEVEL"
-        || activeConfig?.key === "SUPPORT_INFRASTRUCTURE";
+        || activeConfig?.key === "SUPPORT_INFRASTRUCTURE"
+        || activeConfig?.keepDepartmentMapOnMunicipality === true;
     if (activeConfig?.key === "PIB_DEPARTMENT") {
         window.__pibMapVariantKey = "VALOR_AGREGADO";
         activeConfig.chartVariantKey = "VALOR_AGREGADO";

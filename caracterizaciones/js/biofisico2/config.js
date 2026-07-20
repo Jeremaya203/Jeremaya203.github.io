@@ -14,6 +14,11 @@ export const LAYERS_CONFIG = {
             id: "pendientes",
             title: "Pendientes",
             url: "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componentebiofisico/MapServer/7",
+            mapUrl: "https://mapas2.igac.gov.co/image2/rest/services/ot/BF_PED/ImageServer",
+            mapLayerType: "imagery",
+            mapNameField: "name",
+            mapRasterFunctionName: "Raster Function Template",
+            legendInteractive: false,
             outFields: [
                 "categoria",
                 "rangop",

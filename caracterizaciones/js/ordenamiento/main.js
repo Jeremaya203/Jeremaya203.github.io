@@ -4,7 +4,7 @@ import {
 import {
     resetOrdenamientoUI,
     syncChartSideLayout
-} from "./modules/ordenamiento/ordenamiento.ui.js?v=vigencia-section-20260623";
+} from "./modules/ordenamiento/ordenamiento.ui.js?v=vigencia-native-scroll-20260715";
 import { initOverview } from "./map/overview.js";
 import { initScaleBar } from "./map/scale.js";
 import {
@@ -28,7 +28,7 @@ import {
 import {
     MUNICIPIOS_SOURCE_LAYER_URL,
     ORDENAMIENTO_CONFIG,
-} from "./config.js?v=vigencia-estado-chart-20260623";
+} from "./config.js?v=rural-area-fallback-20260716";
 
 import {
     debounce,
@@ -450,6 +450,9 @@ let ruralCategoriaDefaultInfo = null;
 // o al repetir un territorio. Clave: where -> { catRows, useRows }.
 const zonificacionRuralStatsCache = new Map();
 const ZONIFICACION_RURAL_STATS_CACHE_LIMIT = 60;
+const vigenciaStatsCache = new Map();
+const vigenciaStatsInFlight = new Map();
+const VIGENCIA_STATS_CACHE_LIMIT = 80;
 window.__ruralCategoriaColorMap = {};
 window.__vocacionSelectedLabel = null;
 window.__vocacionPairColorMap = {};
@@ -1129,14 +1132,7 @@ function initAllDropdowns() {
 
 function getArcgisRequire() {
     const directRequire = globalThis.require || window.require || (typeof require === "function" ? require : null);
-    if (typeof directRequire === "function") return directRequire;
-
-    try {
-        const globalRequire = (0, eval)("typeof require === 'function' ? require : null");
-        return typeof globalRequire === "function" ? globalRequire : null;
-    } catch (_) {
-        return null;
-    }
+    return typeof directRequire === "function" ? directRequire : null;
 }
 
 function waitForArcgisRequire(timeoutMs = 10000) {
@@ -1415,7 +1411,7 @@ if (typeof arcgisRequire !== "function") {
             const legendContent = document.getElementById("legendContent");
             if (legendTitle) legendTitle.textContent = "Leyenda";
             if (legendContent) {
-                legendContent.innerHTML = `<p style="margin:0; color:#666;">Seleccione un departamento o municipio</p>`;
+                legendContent.innerHTML = `<p class="oot-js-ordenamiento-main-1">Seleccione un departamento o municipio</p>`;
                 legendContent.classList.remove("collapsed");
             }
 
@@ -1647,7 +1643,7 @@ if (typeof arcgisRequire !== "function") {
                 if (!content || !title) return;
 
                 if (!config) {
-                    content.innerHTML = "<p style='margin:0; color:#666;'>No hay capa activa</p>";
+                    content.innerHTML = "<p class='oot-js-ordenamiento-main-1'>No hay capa activa</p>";
                     title.textContent = "Leyenda";
                     return;
                 }
@@ -1656,7 +1652,7 @@ if (typeof arcgisRequire !== "function") {
                 window.__lastLegendRenderKey = window.__lastLegendRenderKey || "";
 
                 if (!labels || !labels.length) {
-                    content.innerHTML = "<p style='margin:0; color:#666;'>Sin clases</p>";
+                    content.innerHTML = "<p class='oot-js-ordenamiento-main-1'>Sin clases</p>";
                     return;
                 }
 
@@ -2083,6 +2079,8 @@ if (typeof arcgisRequire !== "function") {
                         clasificacionVisualLayer.sublayers = [{
                             id: sublayerId,
                             visible: false,
+                            minScale: 0,
+                            maxScale: 0,
                             definitionExpression: "1=0"
                         }];
                     }
@@ -2467,6 +2465,21 @@ if (typeof arcgisRequire !== "function") {
             return sublayer || null;
         }
 
+        function allowClasificacionSublayerAtAllScales(sublayer) {
+            if (!sublayer) return false;
+
+            let changed = false;
+            if (Number(sublayer.minScale || 0) !== 0) {
+                sublayer.minScale = 0;
+                changed = true;
+            }
+            if (Number(sublayer.maxScale || 0) !== 0) {
+                sublayer.maxScale = 0;
+                changed = true;
+            }
+            return changed;
+        }
+
         function reapplyClasificacionVisualWhenReady(whereClause, cycleId, source = "layer-ready") {
             if (!clasificacionVisualLayer || clasificacionVisualLayer.destroyed) return;
 
@@ -2475,7 +2488,7 @@ if (typeof arcgisRequire !== "function") {
                     ? clasificacionVisualLayer.when()
                     : null
             )
-                .then(() => {
+                .then(async () => {
                     if (
                         cycleId !== renderCycleId ||
                         !clasificacionVisualLayer ||
@@ -2483,6 +2496,22 @@ if (typeof arcgisRequire !== "function") {
                     ) {
                         return;
                     }
+
+                    const sublayerId = ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO.mapServerLayerId ?? 1;
+                    const sublayer = getClasificacionVisualSublayer(sublayerId);
+                    if (sublayer && typeof sublayer.load === "function") {
+                        await sublayer.load();
+                    }
+
+                    if (
+                        cycleId !== renderCycleId ||
+                        !clasificacionVisualLayer ||
+                        clasificacionVisualLayer.destroyed
+                    ) {
+                        return;
+                    }
+
+                    allowClasificacionSublayerAtAllScales(sublayer);
 
                     applyClasificacionVisualWhere(whereClause, {
                         updateCategoryLayers: false,
@@ -2597,15 +2626,18 @@ if (typeof arcgisRequire !== "function") {
             const forceRefresh = options.forceRefresh === true;
             const visualWhere = getClasificacionVisualWhere(where);
             const canRenderVisual = visualWhere !== "1=0";
+            const useMunicipalFeatureVisual = Boolean(municipioActual && canRenderVisual);
             let didChange = false;
 
-            if (updateFeatureLayer && layerGlobal && !layerGlobal.destroyed) {
-                if (layerGlobal.definitionExpression !== where) {
-                    layerGlobal.definitionExpression = where;
+            if ((updateFeatureLayer || municipioActual) && layerGlobal && !layerGlobal.destroyed) {
+                if (layerGlobal.definitionExpression !== visualWhere) {
+                    layerGlobal.definitionExpression = visualWhere;
                     didChange = true;
                 }
-                if (layerGlobal.visible !== false) {
-                    layerGlobal.visible = false;
+                if (layerGlobal.minScale !== 0) layerGlobal.minScale = 0;
+                if (layerGlobal.maxScale !== 0) layerGlobal.maxScale = 0;
+                if (layerGlobal.visible !== useMunicipalFeatureVisual) {
+                    layerGlobal.visible = useMunicipalFeatureVisual;
                     didChange = true;
                 }
             }
@@ -2613,8 +2645,9 @@ if (typeof arcgisRequire !== "function") {
             if (!updateVisual) return;
 
             if (clasificacionVisualLayer && !clasificacionVisualLayer.destroyed) {
-                if (clasificacionVisualLayer.visible !== canRenderVisual) {
-                    clasificacionVisualLayer.visible = canRenderVisual;
+                const showMapImage = canRenderVisual && !useMunicipalFeatureVisual;
+                if (clasificacionVisualLayer.visible !== showMapImage) {
+                    clasificacionVisualLayer.visible = showMapImage;
                     didChange = true;
                 }
             }
@@ -2622,19 +2655,31 @@ if (typeof arcgisRequire !== "function") {
             const sublayerId = ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO.mapServerLayerId ?? 1;
             const sublayer = getClasificacionVisualSublayer(sublayerId);
             if (sublayer) {
+                sublayer.renderer = buildClasificacionSueloRenderer(
+                    ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO
+                );
+                if (allowClasificacionSublayerAtAllScales(sublayer)) {
+                    didChange = true;
+                }
                 if (sublayer.definitionExpression !== visualWhere) {
                     sublayer.definitionExpression = visualWhere;
                     didChange = true;
                 }
-                if (sublayer.visible !== canRenderVisual) {
-                    sublayer.visible = canRenderVisual;
+                const showMapImage = canRenderVisual && !useMunicipalFeatureVisual;
+                if (sublayer.visible !== showMapImage) {
+                    sublayer.visible = showMapImage;
                     didChange = true;
                 }
             } else if (clasificacionVisualLayer && !clasificacionVisualLayer.destroyed) {
                 clasificacionVisualLayer.sublayers = [{
                     id: sublayerId,
                     visible: canRenderVisual,
-                    definitionExpression: visualWhere
+                    minScale: 0,
+                    maxScale: 0,
+                    definitionExpression: visualWhere,
+                    renderer: buildClasificacionSueloRenderer(
+                        ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO
+                    )
                 }];
                 didChange = true;
                 markClasificacionPerf("visual-sublayer-reset", renderCycleId, {
@@ -2727,6 +2772,7 @@ if (typeof arcgisRequire !== "function") {
             const config = ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO;
             const codes = getClasificacionCategoryCodes(items);
             const canRender = getClasificacionVisualWhere(baseWhere) !== "1=0";
+            const isPrewarm = options.prewarm === true;
             const opacity = clasificacionCategoryModeActive ? 0.92 : 0.001;
             const legendState = window.__legendState?.isClasificacionSuelo ? window.__legendState : null;
             let created = 0;
@@ -2735,7 +2781,7 @@ if (typeof arcgisRequire !== "function") {
             for (const code of codes) {
                 const categoryWhere = buildClasificacionCategoryWhere(baseWhere, code);
                 const paletteInfo = CLASIFICACION_SUELO_PALETTE[String(code)] || {};
-                const shouldShow = canRender && (
+                const shouldShow = canRender && !isPrewarm && (
                     !clasificacionCategoryModeActive ||
                     !legendState?.activeCodes ||
                     legendState.activeCodes.has(String(code))
@@ -2752,14 +2798,26 @@ if (typeof arcgisRequire !== "function") {
                         sublayers: [{
                             id: config.mapServerLayerId ?? 1,
                             visible: shouldShow,
-                            definitionExpression: categoryWhere
+                            minScale: 0,
+                            maxScale: 0,
+                            definitionExpression: categoryWhere,
+                            renderer: buildClasificacionSueloRenderer(config)
                         }]
                     });
                     clasificacionCategoryLayers.set(String(code), layer);
                     map.add(layer);
+                    layer.when(() => {
+                        allowClasificacionSublayerAtAllScales(
+                            layer.findSublayerById?.(config.mapServerLayerId ?? 1)
+                        );
+                    }).catch(() => { });
                     created++;
                 } else {
                     const sublayer = layer.findSublayerById?.(config.mapServerLayerId ?? 1);
+                    allowClasificacionSublayerAtAllScales(sublayer);
+                    if (sublayer) {
+                        sublayer.renderer = buildClasificacionSueloRenderer(config);
+                    }
                     if (sublayer && sublayer.definitionExpression !== categoryWhere) {
                         sublayer.definitionExpression = categoryWhere;
                         updated++;
@@ -2817,6 +2875,33 @@ if (typeof arcgisRequire !== "function") {
             let changed = false;
 
             clasificacionCategoryModeActive = true;
+
+            if (municipioActual && layerGlobal && !layerGlobal.destroyed) {
+                const compiled = getClasificacionLegendFilter(state);
+                if (layerGlobal.definitionExpression !== compiled.where) {
+                    layerGlobal.definitionExpression = compiled.where;
+                    changed = true;
+                }
+                const shouldShowFeatureLayer = compiled.where !== "1=0";
+                if (layerGlobal.visible !== shouldShowFeatureLayer) {
+                    layerGlobal.visible = shouldShowFeatureLayer;
+                    changed = true;
+                }
+                if (clasificacionVisualLayer && !clasificacionVisualLayer.destroyed) {
+                    clasificacionVisualLayer.visible = false;
+                }
+                for (const layer of clasificacionCategoryLayers.values()) {
+                    if (layer && !layer.destroyed) layer.visible = false;
+                }
+
+                markClasificacionPerf("category-toggle-applied", renderCycleId, {
+                    active: activeCodes.size,
+                    all: state.allCodes?.length || clasificacionCategoryLayers.size,
+                    changed,
+                    municipalFeatureLayer: true
+                });
+                return true;
+            }
 
             if (clasificacionVisualLayer && !clasificacionVisualLayer.destroyed && clasificacionVisualLayer.visible !== false) {
                 clasificacionVisualLayer.visible = false;
@@ -3007,6 +3092,7 @@ if (typeof arcgisRequire !== "function") {
                 node.classList.toggle("active", isActive);
                 node.classList.toggle("off", !isActive);
                 node.setAttribute("aria-pressed", isActive ? "true" : "false");
+                node.style.opacity = isActive ? "1" : "0.35";
             });
         }
 
@@ -3313,10 +3399,7 @@ if (typeof arcgisRequire !== "function") {
                     config.ordenamientoType === "vigencia" &&
                     String(filterField).toLowerCase() === "mdanmcodig"
                 ) {
-                    const codigosMunicipales = todosMunicipios
-                        .filter(m => String(m.depto) === String(effectiveDepto))
-                        .map(m => m.codigo);
-                    whereOrdenamiento = sqlInList(filterField, codigosMunicipales);
+                    whereOrdenamiento = sqlStartsWith(filterField, effectiveDepto);
                 } else if (config.deptoFilterField) {
                     whereOrdenamiento = sqlEquals(config.deptoFilterField, effectiveDepto);
                 } else if (
@@ -3334,10 +3417,7 @@ if (typeof arcgisRequire !== "function") {
             const deptoCode = deptoActual || (municipioActual ? normalizeCode(municipioActual).substring(0, 2) : "");
             if (!deptoCode || deptoCode === "0" || deptoCode === "COL") return "1=1";
 
-            const codigosMunicipales = todosMunicipios
-                .filter(m => String(m.depto) === String(deptoCode))
-                .map(m => m.codigo);
-            return sqlInList(filterField, codigosMunicipales);
+            return sqlStartsWith(filterField, deptoCode);
         }
 
         function getVigenciaMapDisplayWhere(config, chartWhere) {
@@ -3854,11 +3934,6 @@ if (typeof arcgisRequire !== "function") {
                 removeVigenciaVisualLayers();
                 removeClasificacionVisualLayers();
             }
-            const isClasificacionDeptoOnly =
-                isClasificacionSuelo &&
-                !municipioActual &&
-                filtroNivel === "DEPTO" &&
-                Boolean(deptoActual);
             if (!isClasificacionSuelo) {
                 cancelClasificacionAuxiliaryLoad();
                 cancelClasificacionCategoryPrewarm();
@@ -3876,8 +3951,14 @@ if (typeof arcgisRequire !== "function") {
                 clasificacionVisualLayer &&
                 !clasificacionVisualLayer.destroyed &&
                 String(clasificacionVisualLayer.url || "").replace(/\/+$/, "") === visualUrl;
+            const canReuseVigenciaLayer =
+                isVigencia &&
+                layerGlobal &&
+                !layerGlobal.destroyed &&
+                String(layerGlobal.url || "").replace(/\/+$/, "") === configUrl;
+            const canReuseDataLayer = canReuseClasificacionLayer || canReuseVigenciaLayer;
 
-            if (!canReuseClasificacionLayer) {
+            if (!canReuseDataLayer) {
                 clearLayers();
                 resetClasificacionCategoryVisuals();
                 if (isClasificacionSuelo) {
@@ -3937,7 +4018,7 @@ if (typeof arcgisRequire !== "function") {
                 });
             }
 
-            const newLayer = canReuseClasificacionLayer
+            const newLayer = canReuseDataLayer
                 ? layerGlobal
                 : new FeatureLayer({
                     url: config.url,
@@ -3946,11 +4027,19 @@ if (typeof arcgisRequire !== "function") {
                         : vigenciaMapWhere,
                     outFields: config.outFields || ["*"],
                     opacity: 0.85,
+                    minScale: isClasificacionSuelo ? 0 : undefined,
+                    maxScale: isClasificacionSuelo ? 0 : undefined,
+                    listMode: isClasificacionSuelo ? "hide" : undefined,
+                    popupEnabled: !isClasificacionSuelo,
                     visible: !isClasificacionSuelo
                 });
+            const vigenciaMapWhereChanged = isVigencia && (
+                !canReuseVigenciaLayer ||
+                String(newLayer.__vigenciaMapWhere || "") !== String(vigenciaMapWhere)
+            );
 
             if (isClasificacionSuelo && !canReuseClasificacionLayer) {
-                const visualWhere = isClasificacionDeptoOnly
+                const visualWhere = hasClasificacionTerritoryFilter()
                     ? "1=0"
                     : getClasificacionVisualWhere(whereOrdenamiento);
                 const canRenderVisual = visualWhere !== "1=0";
@@ -3963,7 +4052,10 @@ if (typeof arcgisRequire !== "function") {
                     sublayers: [{
                         id: config.mapServerLayerId ?? 1,
                         visible: canRenderVisual,
-                        definitionExpression: visualWhere
+                        minScale: 0,
+                        maxScale: 0,
+                        definitionExpression: visualWhere,
+                        renderer: buildClasificacionSueloRenderer(config)
                     }]
                 });
 
@@ -3979,9 +4071,15 @@ if (typeof arcgisRequire !== "function") {
 
             newLayer.opacity = 0.85;
             if (isClasificacionSuelo) {
+                newLayer.renderer = buildClasificacionSueloRenderer(config);
                 newLayer.visible = false;
             } else {
-                newLayer.definitionExpression = vigenciaMapWhere;
+                if (newLayer.definitionExpression !== vigenciaMapWhere) {
+                    newLayer.definitionExpression = vigenciaMapWhere;
+                }
+                if (isVigencia) {
+                    newLayer.__vigenciaMapWhere = vigenciaMapWhere;
+                }
                 newLayer.visible = true;
             }
 
@@ -3989,8 +4087,19 @@ if (typeof arcgisRequire !== "function") {
                 applyAreasActividadPaletteRenderer(newLayer, config);
             }
 
-            if (!canReuseClasificacionLayer && !isClasificacionSuelo) {
+            if (!canReuseDataLayer) {
                 map.add(newLayer);
+            }
+            if (isClasificacionSuelo) {
+                newLayer.when(() => {
+                    if (currentCycle !== renderCycleId || layerGlobal !== newLayer || newLayer.destroyed) return;
+                    newLayer.minScale = 0;
+                    newLayer.maxScale = 0;
+                    applyClasificacionVisualWhere(whereOrdenamiento, {
+                        updateCategoryLayers: false,
+                        source: "feature-layer-ready"
+                    });
+                }).catch(() => { });
             }
             // Áreas de actividad: eliminar capas residuales (departamento/municipio
             // anterior) para que NO coexistan con la consulta actual. Se reafirma al
@@ -4044,11 +4153,12 @@ if (typeof arcgisRequire !== "function") {
                     actualizarLeyendaClasificacionSuelo("Clasificación del suelo", []);
                     setOrdenamientoInitialChartState();
                 }
-                if (isClasificacionDeptoOnly) {
+                if (hasClasificacionTerritoryFilter()) {
+                    const territorySource = municipioActual ? "municipality" : "department";
                     applyClasificacionVisualWhere("1=0", {
                         updateFeatureLayer: false,
                         updateCategoryLayers: false,
-                        source: "render-before-dept-zoom"
+                        source: `render-before-${territorySource}-zoom`
                     });
                     try {
                         await withTimeout(zoomClasificacionToTerritory(currentCycle), 5000, false);
@@ -4061,10 +4171,10 @@ if (typeof arcgisRequire !== "function") {
                     applyClasificacionVisualWhere(whereOrdenamiento, {
                         updateCategoryLayers: false,
                         forceRefresh: true,
-                        source: "render-after-dept-zoom"
+                        source: `render-after-${territorySource}-zoom`
                     });
-                    nudgeClasificacionVisualPaint(currentCycle, "department-after-zoom");
-                    reapplyClasificacionVisualWhenReady(whereOrdenamiento, currentCycle, "department-layer-ready");
+                    nudgeClasificacionVisualPaint(currentCycle, `${territorySource}-after-zoom`);
+                    reapplyClasificacionVisualWhenReady(whereOrdenamiento, currentCycle, `${territorySource}-layer-ready`);
                 } else {
                     applyClasificacionVisualWhere(whereOrdenamiento, {
                         updateCategoryLayers: false,
@@ -4130,11 +4240,17 @@ if (typeof arcgisRequire !== "function") {
                 } else {
                     clearVigenciaMunicipioHighlight();
                 }
-                withTimeout(
-                    zoomOrdenamientoLayerToWhere(newLayer, vigenciaMapWhere, currentCycle, { skipNational: true }),
-                    5000,
-                    false
-                );
+                if (vigenciaMapWhereChanged) {
+                    void withTimeout(
+                        zoomOrdenamientoLayerToWhere(newLayer, vigenciaMapWhere, currentCycle, { skipNational: true }),
+                        5000,
+                        false
+                    ).catch((error) => {
+                        if (String(error?.name || "") !== "AbortError") {
+                            console.warn("No se pudo completar el zoom de Vigencia:", error);
+                        }
+                    });
+                }
                 return;
             }
 
@@ -4253,23 +4369,44 @@ if (typeof arcgisRequire !== "function") {
         const CLASIFICACION_SUELO_PALETTE = {
             "1": {
                 label: "Urbano",
-                fillColor: "rgba(204, 140, 0, 1)",
-                outlineColor: "rgba(204, 140, 0, 1)",
+                fillColor: "#F57A7A",
+                outlineColor: "#E1E1E1",
                 outlineWidth: 1
             },
             "2": {
                 label: "Rural",
-                fillColor: "rgba(233, 255, 190, 1)",
-                outlineColor: "rgba(207, 230, 166, 1)",
+                fillColor: "#E9FFBE",
+                outlineColor: "#E1E1E1",
                 outlineWidth: 1
             },
             "3": {
                 label: "Expansión urbana",
-                fillColor: "rgba(166, 13, 13, 1)",
-                outlineColor: "rgba(166, 13, 13, 1)",
+                fillColor: "#FFAA00",
+                outlineColor: "#E1E1E1",
                 outlineWidth: 1
             }
         };
+
+        function buildClasificacionSueloRenderer(config = ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO) {
+            const field = config?.typeField || "tipo_clasificacion_suelo";
+
+            return {
+                type: "unique-value",
+                field,
+                uniqueValueInfos: Object.entries(CLASIFICACION_SUELO_PALETTE).map(([code, info]) => ({
+                    value: code,
+                    label: info.label,
+                    symbol: {
+                        type: "simple-fill",
+                        color: info.fillColor,
+                        outline: {
+                            color: info.outlineColor,
+                            width: info.outlineWidth
+                        }
+                    }
+                }))
+            };
+        }
 
         function getClasificacionFallbackItems() {
             return Object.entries(CLASIFICACION_SUELO_PALETTE).map(([code, info]) => ({
@@ -4333,14 +4470,14 @@ if (typeof arcgisRequire !== "function") {
         }
 
         const AREA_ACTIVIDAD_PALETTE = {
-            "1": { fillColor: "rgba(255, 250, 38, 1)", outlineColor: "rgba(242, 237, 25, 1)", outlineWidth: 1, label: "Residencial" },
-            "2": { fillColor: "rgba(255, 0, 28, 1)", outlineColor: "rgba(230, 0, 0, 1)", outlineWidth: 1, label: "Comercial" },
-            "3": { fillColor: "rgba(0, 152, 166, 1)", outlineColor: "rgba(0, 128, 140, 1)", outlineWidth: 1, label: "Servicios" },
-            "4": { fillColor: "rgba(242, 64, 128, 1)", outlineColor: "rgba(217, 38, 102, 1)", outlineWidth: 1, label: "Industrial" },
-            "5": { fillColor: "rgba(25, 102, 204, 1)", outlineColor: "rgba(0, 77, 179, 1)", outlineWidth: 1, label: "Institucional dotacional" },
-            "6": { fillColor: "rgba(255, 115, 13, 1)", outlineColor: "rgba(230, 89, 0, 1)", outlineWidth: 1, label: "Mixto" },
-            "7": { fillColor: "rgba(137, 205, 102, 1)", outlineColor: "rgba(137, 205, 102, 1)", outlineWidth: 1, label: "Protección" },
-            "8": { fillColor: "#BDBDBD", outlineColor: "rgba(0,0,0,0)", outlineWidth: 1, label: "Otro" }
+            "1": { fillColor: "#FFD966", outlineColor: "#666666", outlineWidth: 0.3, label: "Residencial" },
+            "2": { fillColor: "#F4A261", outlineColor: "#666666", outlineWidth: 0.3, label: "Comercial" },
+            "3": { fillColor: "#5DADE2", outlineColor: "#666666", outlineWidth: 0.3, label: "Servicios" },
+            "4": { fillColor: "#F57AB6", outlineColor: "#666666", outlineWidth: 0.3, label: "Industrial" },
+            "5": { fillColor: "#8E7CC3", outlineColor: "#666666", outlineWidth: 0.3, label: "Institucional" },
+            "6": { fillColor: "#8E7CC3", outlineColor: "#666666", outlineWidth: 0.3, label: "Dotacional" },
+            "7": { fillColor: "#D7C29E", outlineColor: "#666666", outlineWidth: 0.3, label: "Mixto" },
+            "8": { fillColor: "#98E600", outlineColor: "#666666", outlineWidth: 0.3, label: "Otro" }
         };
 
         function getAreaActividadPaletteInfo(code) {
@@ -4559,10 +4696,11 @@ if (typeof arcgisRequire !== "function") {
             "#D81B60"
         ];
         let vigenciaRendererDict = null;
+        let vigenciaRendererDictPromise = null;
         const VIGENCIA_TIPO_LABELS = {
-            EOT: "Esquema de ordenamiento Territorial",
-            PBOT: "Plan Básico de ordenamiento Territorial",
-            POT: "Plan de ordenamiento Territorial",
+            EOT: "Esquema de Ordenamiento Territorial",
+            PBOT: "Plan Básico de Ordenamiento Territorial",
+            POT: "Plan de Ordenamiento Territorial",
             SIN_POT: "Sin POT"
         };
         const VIGENCIA_TIPO_ORDER = ["EOT", "PBOT", "POT", "SIN_POT"];
@@ -4571,46 +4709,61 @@ if (typeof arcgisRequire !== "function") {
 
         async function ensureVigenciaRendererDict(layerUrl) {
             if (vigenciaRendererDict) return vigenciaRendererDict;
+            if (vigenciaRendererDictPromise) return vigenciaRendererDictPromise;
 
-            const url = String(layerUrl || ORDENAMIENTO_CONFIG.VIGENCIA.url).replace(/\/+$/, "") + "?f=pjson";
-            const res = await fetch(url);
-            const json = await res.json();
-            const renderer = json?.drawingInfo?.renderer || {};
-            const infos = renderer?.uniqueValueInfos || [];
-            const groups = renderer?.uniqueValueGroups || [];
-            const dict = {};
+            vigenciaRendererDictPromise = (async () => {
+                try {
+                    const url = String(layerUrl || ORDENAMIENTO_CONFIG.VIGENCIA.url).replace(/\/+$/, "") + "?f=pjson";
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const json = await res.json();
+                    const renderer = json?.drawingInfo?.renderer || {};
+                    const infos = renderer?.uniqueValueInfos || [];
+                    const groups = renderer?.uniqueValueGroups || [];
+                    const dict = {};
 
-            infos.forEach((info, index) => {
-                const code = String(info.value ?? info.label ?? "").trim();
-                if (!code) return;
+                    infos.forEach((info, index) => {
+                        const code = String(info.value ?? info.label ?? "").trim();
+                        if (!code) return;
 
-                dict[code] = {
-                    code,
-                    label: String(info.label || code).trim(),
-                    color: rgbaArrayToCss(info?.symbol?.color, VIGENCIA_FALLBACK_COLORS[index % VIGENCIA_FALLBACK_COLORS.length]),
-                    borderColor: rgbaArrayToCss(info?.symbol?.outline?.color, "rgba(0,0,0,0)"),
-                    borderWidth: Number(info?.symbol?.outline?.width || 1)
-                };
-            });
+                        dict[code] = {
+                            code,
+                            label: String(info.label || code).trim(),
+                            color: rgbaArrayToCss(info?.symbol?.color, VIGENCIA_FALLBACK_COLORS[index % VIGENCIA_FALLBACK_COLORS.length]),
+                            borderColor: rgbaArrayToCss(info?.symbol?.outline?.color, "rgba(0,0,0,0)"),
+                            borderWidth: Number(info?.symbol?.outline?.width || 1)
+                        };
+                    });
 
-            groups.forEach(group => {
-                (group.classes || []).forEach((cls, index) => {
-                    const values = cls.values?.[0] || [];
-                    const code = String(values[0] ?? cls.label ?? "").trim();
-                    if (!code || dict[code]) return;
+                    groups.forEach(group => {
+                        (group.classes || []).forEach((cls, index) => {
+                            const values = cls.values?.[0] || [];
+                            const code = String(values[0] ?? cls.label ?? "").trim();
+                            if (!code || dict[code]) return;
 
-                    dict[code] = {
-                        code,
-                        label: String(cls.label || code).trim(),
-                        color: rgbaArrayToCss(cls?.symbol?.color, VIGENCIA_FALLBACK_COLORS[index % VIGENCIA_FALLBACK_COLORS.length]),
-                        borderColor: rgbaArrayToCss(cls?.symbol?.outline?.color, "rgba(0,0,0,0)"),
-                        borderWidth: Number(cls?.symbol?.outline?.width || 1)
-                    };
-                });
-            });
+                            dict[code] = {
+                                code,
+                                label: String(cls.label || code).trim(),
+                                color: rgbaArrayToCss(cls?.symbol?.color, VIGENCIA_FALLBACK_COLORS[index % VIGENCIA_FALLBACK_COLORS.length]),
+                                borderColor: rgbaArrayToCss(cls?.symbol?.outline?.color, "rgba(0,0,0,0)"),
+                                borderWidth: Number(cls?.symbol?.outline?.width || 1)
+                            };
+                        });
+                    });
 
-            vigenciaRendererDict = dict;
-            return vigenciaRendererDict;
+                    vigenciaRendererDict = dict;
+                } catch (error) {
+                    console.warn("Vigencia: no se pudieron cargar los metadatos de simbologia; se usaran colores locales.", error);
+                    vigenciaRendererDict = {};
+                }
+                return vigenciaRendererDict;
+            })();
+
+            try {
+                return await vigenciaRendererDictPromise;
+            } finally {
+                if (!vigenciaRendererDict) vigenciaRendererDictPromise = null;
+            }
         }
 
         function getVigenciaRendererInfo(layer, code, index = 0) {
@@ -4718,37 +4871,68 @@ if (typeof arcgisRequire !== "function") {
             }));
         }
 
-        async function fetchVigenciaCountByField(layer, config, whereClause, fieldName) {
-            const objectIdField = layer?.objectIdField || "OBJECTID";
+        async function fetchVigenciaRows(layer, config, whereClause, fieldNames = []) {
             const layerUrl = config.url || layer.url;
             const where = whereClause || layer.definitionExpression || "1=1";
-            const safeField = fieldName || "PotTipo";
+            const safeFields = Array.from(new Set(fieldNames.filter(Boolean)));
+            const cacheKey = [
+                "raw",
+                String(layerUrl || "").replace(/\/+$/, ""),
+                String(where),
+                safeFields.map(field => String(field).toLowerCase()).sort().join(",")
+            ].join("|");
 
-            try {
-                const js = await withTimeout(
-                    arcRestQuery(layerUrl, {
-                        f: "json",
-                        where,
-                        groupByFieldsForStatistics: safeField,
-                        outStatistics: JSON.stringify([{
-                            statisticType: "count",
-                            onStatisticField: objectIdField,
-                            outStatisticFieldName: "total"
-                        }]),
-                        returnGeometry: "false"
-                    }, { timeoutMs: 9000 }),
-                    10000,
-                    null
-                );
-
-                if (Array.isArray(js?.features)) {
-                    return js.features.map(feature => feature.attributes || {});
-                }
-            } catch (e) {
-                console.warn(`Vigencia: no se pudo agrupar por ${safeField}.`, e);
+            if (vigenciaStatsCache.has(cacheKey)) {
+                return vigenciaStatsCache.get(cacheKey).map(row => ({ ...row }));
+            }
+            if (vigenciaStatsInFlight.has(cacheKey)) {
+                const pendingRows = await vigenciaStatsInFlight.get(cacheKey);
+                return pendingRows.map(row => ({ ...row }));
             }
 
-            return [];
+            const requestPromise = (async () => {
+                try {
+                    const js = await arcRestQuery(layerUrl, {
+                        f: "json",
+                        where,
+                        outFields: safeFields.join(","),
+                        returnGeometry: "false",
+                        resultRecordCount: "2000"
+                    }, { timeoutMs: 8000 });
+                    return Array.isArray(js?.features)
+                        ? js.features.map(feature => feature.attributes || {})
+                        : [];
+                } catch (error) {
+                    console.warn(`Vigencia: no respondio la consulta liviana (${safeFields.join(", ")}).`, error);
+                    return [];
+                }
+            })();
+
+            vigenciaStatsInFlight.set(cacheKey, requestPromise);
+            try {
+                const rows = await requestPromise;
+                if (rows.length) {
+                    vigenciaStatsCache.set(cacheKey, rows.map(row => ({ ...row })));
+                    while (vigenciaStatsCache.size > VIGENCIA_STATS_CACHE_LIMIT) {
+                        vigenciaStatsCache.delete(vigenciaStatsCache.keys().next().value);
+                    }
+                }
+                return rows.map(row => ({ ...row }));
+            } finally {
+                vigenciaStatsInFlight.delete(cacheKey);
+            }
+        }
+
+        function countVigenciaRowsByField(rows, fieldName) {
+            const grouped = new Map();
+            for (const row of rows || []) {
+                const code = String(row?.[fieldName] ?? "Sin clasificar").trim() || "Sin clasificar";
+                grouped.set(code, (grouped.get(code) || 0) + 1);
+            }
+            return Array.from(grouped.entries()).map(([code, total]) => ({
+                [fieldName]: code,
+                total
+            }));
         }
 
         function buildVigenciaCountItems(rows, fieldName, colorResolver) {
@@ -4832,6 +5016,7 @@ if (typeof arcgisRequire !== "function") {
             const chartCard = chartCanvas?.closest(".chart-card");
             if (!chartCanvas || !chartCard) return null;
 
+            chartCard.classList.add("chart-card--vigencia");
             chartCanvas.style.display = "none";
             chartCanvas.style.visibility = "hidden";
             chartCanvas.style.opacity = "0";
@@ -4850,11 +5035,12 @@ if (typeof arcgisRequire !== "function") {
                     <canvas id="vigenciaTipoChart"></canvas>
                 </div>
             </div>
-            <div class="vigencia-chart-block">
+            <div class="vigencia-chart-block vigencia-chart-block--estado">
                 <h4 class="vigencia-chart-title">${buildOrdenamientoChartTitle("Estado de vigencia de los instrumentos")}</h4>
                 <div class="vigencia-canvas-wrap">
                     <canvas id="vigenciaEstadoChart"></canvas>
                 </div>
+                <div class="vigencia-chart-legend vigencia-chart-legend--estado" aria-label="Leyenda del estado de vigencia"></div>
             </div>
         `;
 
@@ -4869,10 +5055,18 @@ if (typeof arcgisRequire !== "function") {
             return items.filter(item => activeCodes.has(String(item.code)));
         }
 
+        function updateVigenciaChartSize(wrap, itemCount) {
+            if (!wrap) return;
+            const size = getOrdenamientoPieChartHeight(itemCount, { compact: true });
+            wrap.style.setProperty("--vigencia-chart-size", `${size}px`);
+        }
+
         function applyVigenciaChartItems(chart, allItems = [], activeCodes = null) {
             if (!chart?.data?.datasets?.[0]) return;
             const activeItems = getVigenciaActiveItems(allItems, activeCodes);
             const dataset = chart.data.datasets[0];
+            const wrap = chart.canvas?.closest(".vigencia-canvas-wrap");
+            updateVigenciaChartSize(wrap, activeItems.length);
 
             // Reconstruir el gráfico SOLO con las categorías activas y
             // re-normalizar los porcentajes entre ellas, para que la torta
@@ -4932,6 +5126,9 @@ if (typeof arcgisRequire !== "function") {
                 ? options.activeCodes
                 : new Set(allItems.map(item => String(item.code)));
             const initialItems = getVigenciaActiveItems(allItems, activeCodes);
+            const wrap = canvas.closest(".vigencia-canvas-wrap");
+            updateVigenciaChartSize(wrap, initialItems.length);
+            canvas.style.height = "100%";
 
             const chart = new Chart(canvas.getContext("2d"), {
                 type: "doughnut",
@@ -4950,14 +5147,25 @@ if (typeof arcgisRequire !== "function") {
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false,
+                    maintainAspectRatio: true,
+                    aspectRatio: 1,
                     cutout: "58%",
+                    radius: "88%",
+                    onClick(_event, elements, activeChart) {
+                        if (!elements?.length || typeof options.onSelect !== "function") return;
+
+                        const dataIndex = elements[0].index;
+                        const code = activeChart?.data?.datasets?.[0]?.codes?.[dataIndex];
+                        if (code === null || code === undefined || String(code).trim() === "") return;
+
+                        options.onSelect(String(code), activeChart);
+                    },
                     layout: {
                         padding: {
-                            top: 6,
-                            right: 8,
-                            bottom: 6,
-                            left: 8
+                            top: 2,
+                            right: 34,
+                            bottom: 2,
+                            left: 34
                         }
                     },
                     plugins: {
@@ -4979,7 +5187,10 @@ if (typeof arcgisRequire !== "function") {
                             }
                         }
                     }
-                }
+                },
+                plugins: [
+                    createOrdenamientoPiePercentageLabelsPlugin()
+                ]
             });
             chart.$vigenciaItems = allItems;
             chart.$vigenciaActiveCodes = activeCodes;
@@ -4987,6 +5198,23 @@ if (typeof arcgisRequire !== "function") {
             chart.update?.("none");
             renderVigenciaChartLegend(chart);
             updateVigenciaChartEmptyState(chart);
+
+            canvas.ondblclick = event => {
+                if (typeof options.onRestore !== "function") return;
+
+                const hits = typeof chart.getElementsAtEventForMode === "function"
+                    ? chart.getElementsAtEventForMode(
+                        event,
+                        "nearest",
+                        { intersect: true },
+                        true
+                    )
+                    : [];
+                if (hits.length) return;
+
+                options.onRestore(chart);
+            };
+
             return chart;
         }
 
@@ -5086,6 +5314,16 @@ if (typeof arcgisRequire !== "function") {
             if (!safeCode || !state?.activeCodes) return;
 
             state.activeCodes = new Set([safeCode]);
+            syncVigenciaLegendDom(state);
+            applyVigenciaLegendFilter(state);
+            syncVigenciaChartWithLegend(state);
+        }
+
+        function restoreVigenciaAllCategories() {
+            const state = window.__legendState;
+            if (!state?.isVigencia || !Array.isArray(state.allCodes)) return;
+
+            state.activeCodes = new Set(state.allCodes.map(code => String(code)));
             syncVigenciaLegendDom(state);
             applyVigenciaLegendFilter(state);
             syncVigenciaChartWithLegend(state);
@@ -5229,8 +5467,7 @@ if (typeof arcgisRequire !== "function") {
             try {
                 if (currentOrdenamientoTab !== "VIGENCIA" || layerGlobal !== layer || layer?.destroyed) return;
                 setOrdenamientoChartLoading();
-                await ensureVigenciaRendererDict(config.url || layer.url);
-                if (currentOrdenamientoTab !== "VIGENCIA" || layerGlobal !== layer || layer?.destroyed) return;
+                const rendererPromise = ensureVigenciaRendererDict(config.url || layer.url);
 
                 const typeField = config.typeField || "PotTipo";
                 const estadoField = config.statusField || "estado_instrumento";
@@ -5242,14 +5479,20 @@ if (typeof arcgisRequire !== "function") {
                     !!mapLegendWhere &&
                     String(mapLegendWhere).trim() !== String(whereClause || "").trim();
 
-                const [tipoRows, estadoRows, legendTipoRows] = await Promise.all([
-                    fetchVigenciaCountByField(layer, config, whereClause, typeField),
-                    fetchVigenciaCountByField(layer, config, whereClause, estadoField),
+                const [, chartRows, legendRows] = await Promise.all([
+                    rendererPromise,
+                    fetchVigenciaRows(layer, config, whereClause, [typeField, estadoField]),
                     needsSeparateLegend
-                        ? fetchVigenciaCountByField(layer, config, mapLegendWhere, typeField)
+                        ? fetchVigenciaRows(layer, config, mapLegendWhere, [typeField])
                         : Promise.resolve(null)
                 ]);
                 if (currentOrdenamientoTab !== "VIGENCIA" || layerGlobal !== layer || layer?.destroyed) return;
+
+                const tipoRows = countVigenciaRowsByField(chartRows, typeField);
+                const estadoRows = countVigenciaRowsByField(chartRows, estadoField);
+                const legendTipoRows = needsSeparateLegend
+                    ? countVigenciaRowsByField(legendRows || [], typeField)
+                    : null;
 
                 const items = buildVigenciaTipoItems(tipoRows, typeField);
                 const estadoItems = buildVigenciaCountItems(
@@ -5286,6 +5529,12 @@ if (typeof arcgisRequire !== "function") {
                 vigenciaEstadoItemsFull = estadoItems;
                 vigenciaTipoChartInstance = createVigenciaDoughnut(chartTargets.tipoCanvas, items, {
                     activeCodes: new Set(items.map(item => String(item.code))),
+                    onSelect(code) {
+                        applyVigenciaSingleSelection(code);
+                    },
+                    onRestore() {
+                        restoreVigenciaAllCategories();
+                    },
                     onToggle(_code, activeSet) {
                         const state = window.__legendState;
                         if (!state?.isVigencia) return;
@@ -5516,37 +5765,57 @@ if (typeof arcgisRequire !== "function") {
                 applyZonificacionRuralPaletteRenderer(layer, config);
 
                 const areaField = config.areaField || "UsoArea";
+                const areaFallbackField = config.areaFallbackField || "st_area(shape)";
                 const categoryField = config.categoryField || "Tipo_Categoria_Rural";
                 const useField = config.useField || "Uso_Principal";
                 const statsWhere = whereClause || layer.definitionExpression || "1=1";
                 const statsCacheKey = `${config.url || layer.url}|${statsWhere}`;
+
+                const hasPositiveArea = rows => Array.isArray(rows) && rows.some(row => {
+                    const value = Number(row?.sum_area);
+                    return Number.isFinite(value) && value > 0;
+                });
+
+                const fetchRuralStats = async groupField => {
+                    const primaryRows = await fetchGroupedStats({
+                        layerUrl: config.url || layer.url,
+                        where: statsWhere,
+                        groupField,
+                        sumField: areaField,
+                        outFieldName: "sum_area",
+                        timeoutMs: 20000
+                    });
+
+                    if (hasPositiveArea(primaryRows) || areaFallbackField === areaField) {
+                        return primaryRows;
+                    }
+
+                    return fetchGroupedStats({
+                        layerUrl: config.url || layer.url,
+                        where: statsWhere,
+                        groupField,
+                        sumField: areaFallbackField,
+                        outFieldName: "sum_area",
+                        timeoutMs: 20000
+                    });
+                };
 
                 // Reutilizar resultados ya consultados para el mismo filtro (mismo
                 // departamento/municipio). Si no hay caché, consultar y guardar.
                 let catRows;
                 let useRows;
                 const cachedStats = zonificacionRuralStatsCache.get(statsCacheKey);
-                if (cachedStats) {
+                if (
+                    cachedStats &&
+                    hasPositiveArea(cachedStats.catRows) &&
+                    hasPositiveArea(cachedStats.useRows)
+                ) {
                     catRows = cachedStats.catRows;
                     useRows = cachedStats.useRows;
                 } else {
                     [catRows, useRows] = await Promise.all([
-                        fetchGroupedStats({
-                            layerUrl: config.url || layer.url,
-                            where: statsWhere,
-                            groupField: categoryField,
-                            sumField: areaField,
-                            outFieldName: "sum_area",
-                            timeoutMs: 20000
-                        }),
-                        fetchGroupedStats({
-                            layerUrl: config.url || layer.url,
-                            where: statsWhere,
-                            groupField: useField,
-                            sumField: areaField,
-                            outFieldName: "sum_area",
-                            timeoutMs: 20000
-                        })
+                        fetchRuralStats(categoryField),
+                        fetchRuralStats(useField)
                     ]);
                     // Guardar solo respuestas válidas (evita cachear fallos/vacíos
                     // por timeouts del servicio, que sí deben poder reintentarse).
@@ -6099,7 +6368,7 @@ if (typeof arcgisRequire !== "function") {
 
                 if (!municipioActual) {
                     div.innerHTML = `
-                <p style="margin:0;">
+                <p class="oot-js-ordenamiento-main-2">
                     Visualización nacional de la zonificación del suelo rural.
                     Seleccione un municipio para ver el resumen específico.
                 </p>
@@ -6114,23 +6383,23 @@ if (typeof arcgisRequire !== "function") {
                 // vacía ni nula: mostrar un mensaje controlado.
                 if (!catItems.length && !useItems.length) {
                     div.innerHTML = `
-                <p style="margin:0 0 8px 0;"><b>Municipio:</b> ${escapeHtml(getMunicipioDisplayName(municipioActual, diccionarioMunicipios))}</p>
-                <p style="margin:0;">No existe texto descriptivo para la categoría seleccionada en este municipio.</p>
+                <p class="oot-js-ordenamiento-main-3"><b>Municipio:</b> ${escapeHtml(getMunicipioDisplayName(municipioActual, diccionarioMunicipios))}</p>
+                <p class="oot-js-ordenamiento-main-2">No existe texto descriptivo para la categoría seleccionada en este municipio.</p>
             `;
                     return;
                 }
 
                 div.innerHTML = `
-            <p style="margin:0 0 8px 0;"><b>Municipio:</b> ${escapeHtml(getMunicipioDisplayName(municipioActual, diccionarioMunicipios))}</p>
-            <p style="margin:0 0 8px 0;"><b>Categorías rurales identificadas:</b> ${catItems.length}</p>
-            <p style="margin:0 0 8px 0;"><b>Categoría predominante:</b> ${topCat ? escapeHtml(topCat.label) : "Sin información"}</p>
-            <p style="margin:0;"><b>Uso principal predominante:</b> ${topUso ? escapeHtml(topUso.label) : "Sin información"}</p>
+            <p class="oot-js-ordenamiento-main-3"><b>Municipio:</b> ${escapeHtml(getMunicipioDisplayName(municipioActual, diccionarioMunicipios))}</p>
+            <p class="oot-js-ordenamiento-main-3"><b>Categorías rurales identificadas:</b> ${catItems.length}</p>
+            <p class="oot-js-ordenamiento-main-3"><b>Categoría predominante:</b> ${topCat ? escapeHtml(topCat.label) : "Sin información"}</p>
+            <p class="oot-js-ordenamiento-main-2"><b>Uso principal predominante:</b> ${topUso ? escapeHtml(topUso.label) : "Sin información"}</p>
         `;
             } catch (e) {
                 console.warn("No se pudo construir el resumen de zonificación rural:", e);
                 div.style.display = "";
                 div.innerHTML = `
-                <p style="margin:0;">No existe texto descriptivo para la categoría seleccionada en este municipio.</p>
+                <p class="oot-js-ordenamiento-main-2">No existe texto descriptivo para la categoría seleccionada en este municipio.</p>
             `;
             }
         }
@@ -6145,7 +6414,7 @@ if (typeof arcgisRequire !== "function") {
 
             if (!municipioResumen) {
                 div.innerHTML = `
-                <p style="margin:0;">
+                <p class="oot-js-ordenamiento-main-2">
                     Visualización nacional de la clasificación del suelo.
                     Seleccione un municipio para ver el resumen específico.
                 </p>
@@ -6210,12 +6479,12 @@ if (typeof arcgisRequire !== "function") {
                         ? `Texto normativo especifico (${escapeHtml(selectedLabel)}):`
                         : "Texto normativo:";
                     normHtml = `
-                    <p style="margin:8px 0 0 0;"><b>${title}</b></p>
-                    <div>${[...new Set(textos)].map(t => `<p style="margin:4px 0;">${escapeHtml(t).replace(/\n/g, "<br>")}</p>`).join("")}</div>
+                    <p class="oot-js-ordenamiento-main-4"><b>${title}</b></p>
+                    <div>${[...new Set(textos)].map(t => `<p class="oot-js-ordenamiento-main-5">${escapeHtml(t).replace(/\n/g, "<br>")}</p>`).join("")}</div>
                 `;
                 } else if (selectedTypeValue) {
                     normHtml = `
-                    <p style="margin:8px 0 0 0;"><b>Texto normativo:</b> No existe texto normativo para la categoría seleccionada en este municipio.</p>
+                    <p class="oot-js-ordenamiento-main-4"><b>Texto normativo:</b> No existe texto normativo para la categoría seleccionada en este municipio.</p>
                 `;
                 }
             } catch (e) {
@@ -6238,9 +6507,9 @@ if (typeof arcgisRequire !== "function") {
             }
 
             div.innerHTML = `
-            <p style="margin:0 0 8px 0;"><b>Municipio:</b> ${escapeHtml(getMunicipioDisplayName(municipioResumen, diccionarioMunicipios))}</p>
-            <p style="margin:0 0 8px 0;"><b>Categorías identificadas:</b> ${items.length}</p>
-            <p style="margin:0 0 8px 0;"><b>Tipo predominante:</b> ${topItem ? escapeHtml(topItem.label) : "Sin información"}</p>
+            <p class="oot-js-ordenamiento-main-3"><b>Municipio:</b> ${escapeHtml(getMunicipioDisplayName(municipioResumen, diccionarioMunicipios))}</p>
+            <p class="oot-js-ordenamiento-main-3"><b>Categorías identificadas:</b> ${items.length}</p>
+            <p class="oot-js-ordenamiento-main-3"><b>Tipo predominante:</b> ${topItem ? escapeHtml(topItem.label) : "Sin información"}</p>
             ${normHtml}
         `;
         }
@@ -6320,7 +6589,7 @@ if (typeof arcgisRequire !== "function") {
 
             if (!municipioActual) {
                 div.innerHTML = `
-                <p style="margin:0;">
+                <p class="oot-js-ordenamiento-main-2">
                     Visualización nacional de las áreas de actividad.
                     Seleccione un municipio para ver la descripción normativa.
                 </p>
@@ -6337,7 +6606,7 @@ if (typeof arcgisRequire !== "function") {
                 .replace(/\n/g, "<br>");
 
             let normHtml = `
-            <p style="margin:10px 0 0 0;">
+            <p class="oot-js-ordenamiento-main-6">
                 <b>Descripción normativa:</b> No se encontró información normativa para este municipio.
             </p>
         `;
@@ -6380,20 +6649,20 @@ if (typeof arcgisRequire !== "function") {
                         const texto = a[config.normativaSpecificTextField] || "";
 
                         return `
-                        <div style="margin-top:12px;">
-                            <p style="margin:0 0 4px 0;"><b>${esc(usoLabel)}</b></p>
-                            <p style="margin:0;">${esc(texto)}</p>
+                        <div class="oot-js-ordenamiento-main-7">
+                            <p class="oot-js-ordenamiento-main-8"><b>${esc(usoLabel)}</b></p>
+                            <p class="oot-js-ordenamiento-main-2">${esc(texto)}</p>
                         </div>
                     `;
                     }).join("");
 
                     normHtml = `
                     ${generalText ? `
-                        <p style="margin:10px 0 4px 0;"><b>Texto normativo general:</b></p>
-                        <p style="margin:0;">${esc(generalText)}</p>
+                        <p class="oot-js-ordenamiento-main-9"><b>Texto normativo general:</b></p>
+                        <p class="oot-js-ordenamiento-main-2">${esc(generalText)}</p>
                     ` : ""}
 
-                    <p style="margin:12px 0 4px 0;"><b>Texto normativo por uso:</b></p>
+                    <p class="oot-js-ordenamiento-main-10"><b>Texto normativo por uso:</b></p>
                     ${bloques}
                 `;
                 }
@@ -6450,7 +6719,7 @@ if (typeof arcgisRequire !== "function") {
 
             if (!municipioActual) {
                 div.innerHTML = `
-                <p style="margin:0;">
+                <p class="oot-js-ordenamiento-main-2">
                     Seleccione un municipio para ver la descripción normativa.
                 </p>
             `;
@@ -6463,7 +6732,7 @@ if (typeof arcgisRequire !== "function") {
                 actualizarResumenAreasActividad(config, null);
             } else {
                 div.innerHTML = `
-                <p style="margin:0;">
+                <p class="oot-js-ordenamiento-main-2">
                     Cargando descripción normativa...
                 </p>
             `;
@@ -6515,6 +6784,185 @@ if (typeof arcgisRequire !== "function") {
             });
         }
 
+        function drawAreasActividadSliceLabels(ctx, options = {}) {
+            const slices = Array.isArray(options.slices) ? options.slices : [];
+            const total = Number(options.total) || 0;
+            if (!slices.length || total <= 0) return;
+
+            const cx = Number(options.cx) || 0;
+            const cy = Number(options.cy) || 0;
+            const outerRadius = Number(options.outerRadius) || 0;
+            const innerRadius = Number(options.innerRadius) || 0;
+            const cssWidth = Number(options.cssWidth) || 0;
+            const cssHeight = Number(options.cssHeight) || 0;
+            const chartRight = Math.max(0, cssWidth - (Number(options.legendWidth) || 0) - 6);
+            const chartLeft = 6;
+            const fontSize = slices.length >= 10 ? 8 : slices.length >= 7 ? 9 : 10;
+            const labelHeight = fontSize + 8;
+            const labelPadX = 5;
+            const textColor = "#17352d";
+            const labelBg = "rgba(255,250,240,0.94)";
+            const labelStroke = "rgba(23,53,45,0.18)";
+            const connectorColor = "rgba(23,53,45,0.58)";
+            const internalBoxes = [];
+            const externalLabels = [];
+
+            const overlaps = (box, boxes) => boxes.some(other =>
+                box.left < other.right &&
+                box.right > other.left &&
+                box.top < other.bottom &&
+                box.bottom > other.top
+            );
+
+            const roundRect = (x, y, width, height, radius = 5) => {
+                const r = Math.min(radius, width / 2, height / 2);
+                ctx.beginPath();
+                ctx.moveTo(x + r, y);
+                ctx.lineTo(x + width - r, y);
+                ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+                ctx.lineTo(x + width, y + height - r);
+                ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+                ctx.lineTo(x + r, y + height);
+                ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+                ctx.lineTo(x, y + r);
+                ctx.quadraticCurveTo(x, y, x + r, y);
+                ctx.closePath();
+            };
+
+            const drawText = (text, x, y) => {
+                ctx.save();
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.font = `700 ${fontSize}px Arial, sans-serif`;
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = "rgba(255,250,240,0.88)";
+                ctx.strokeText(text, x, y);
+                ctx.fillStyle = textColor;
+                ctx.fillText(text, x, y);
+                ctx.restore();
+            };
+
+            ctx.save();
+            ctx.font = `700 ${fontSize}px Arial, sans-serif`;
+
+            slices.forEach(slice => {
+                const value = Number(slice?.item?.value || 0);
+                if (!Number.isFinite(value) || value <= 0) return;
+
+                const percent = (value / total) * 100;
+                const text = formatOrdenamientoPiePercentLabel(percent);
+                if (!text) return;
+
+                const angleSize = Math.abs(Number(slice.end) - Number(slice.start));
+                const angle = Number(slice.start) + (Number(slice.end) - Number(slice.start)) / 2;
+                const radialWidth = outerRadius - innerRadius;
+                const midRadius = innerRadius + radialWidth * 0.62;
+                const arcLength = angleSize * Math.max(midRadius, 1);
+                const textWidth = ctx.measureText(text).width + 5;
+                const cos = Math.cos(angle);
+                const sin = Math.sin(angle);
+                const internalX = cx + cos * midRadius;
+                const internalY = cy + sin * midRadius;
+                const internalBox = {
+                    left: internalX - textWidth / 2,
+                    right: internalX + textWidth / 2,
+                    top: internalY - labelHeight / 2,
+                    bottom: internalY + labelHeight / 2
+                };
+                const fitsInsideChart = internalBox.left >= chartLeft &&
+                    internalBox.right <= chartRight &&
+                    internalBox.top >= 6 &&
+                    internalBox.bottom <= cssHeight - 6;
+                const hasInternalSpace = angleSize >= 0.22 &&
+                    arcLength >= textWidth + 4 &&
+                    radialWidth >= 14;
+
+                if (fitsInsideChart && hasInternalSpace && !overlaps(internalBox, internalBoxes)) {
+                    internalBoxes.push(internalBox);
+                    drawText(text, internalX, internalY);
+                    return;
+                }
+
+                const side = cos >= 0 ? "right" : "left";
+                const boxWidth = textWidth + labelPadX * 2;
+                const baseX = side === "right"
+                    ? Math.min(chartRight - boxWidth, cx + outerRadius + 18)
+                    : Math.max(chartLeft, cx - outerRadius - 18 - boxWidth);
+                externalLabels.push({
+                    text,
+                    side,
+                    boxWidth,
+                    boxX: baseX,
+                    y: cy + sin * (outerRadius + 14),
+                    anchorX: cx + cos * outerRadius,
+                    anchorY: cy + sin * outerRadius,
+                    elbowX: cx + cos * (outerRadius + 11),
+                    elbowY: cy + sin * (outerRadius + 11)
+                });
+            });
+
+            const adjustExternalLabels = items => {
+                const sorted = items.sort((a, b) => a.y - b.y);
+                const minY = labelHeight / 2 + 6;
+                const maxY = cssHeight - labelHeight / 2 - 6;
+                const gap = labelHeight + 2;
+
+                sorted.forEach((item, index) => {
+                    const previous = sorted[index - 1];
+                    const minAllowed = previous ? previous.y + gap : minY;
+                    item.y = Math.max(minAllowed, Math.min(maxY, item.y));
+                });
+
+                for (let i = sorted.length - 2; i >= 0; i--) {
+                    sorted[i].y = Math.min(sorted[i].y, sorted[i + 1].y - gap);
+                }
+
+                sorted.forEach(item => {
+                    item.y = Math.max(minY, Math.min(maxY, item.y));
+                });
+            };
+
+            adjustExternalLabels(externalLabels.filter(item => item.side === "left"));
+            adjustExternalLabels(externalLabels.filter(item => item.side === "right"));
+
+            ctx.strokeStyle = connectorColor;
+            ctx.lineWidth = 1;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+            ctx.textBaseline = "middle";
+            ctx.font = `700 ${fontSize}px Arial, sans-serif`;
+
+            externalLabels.forEach(item => {
+                const boxY = item.y - labelHeight / 2;
+                const lineEndX = item.side === "right" ? item.boxX - 3 : item.boxX + item.boxWidth + 3;
+
+                ctx.beginPath();
+                ctx.moveTo(item.anchorX, item.anchorY);
+                ctx.lineTo(item.elbowX, item.elbowY);
+                ctx.lineTo(lineEndX, item.y);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(item.anchorX, item.anchorY, 1.2, 0, Math.PI * 2);
+                ctx.fillStyle = textColor;
+                ctx.fill();
+
+                ctx.fillStyle = labelBg;
+                ctx.strokeStyle = labelStroke;
+                roundRect(item.boxX, boxY, item.boxWidth, labelHeight, 5);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = textColor;
+                ctx.textAlign = "left";
+                ctx.fillText(item.text, item.boxX + labelPadX, item.y);
+
+                ctx.strokeStyle = connectorColor;
+            });
+
+            ctx.restore();
+        }
+
         function updateZonificacionRuralChartEmptyMessage(chart, isEmpty) {
             const canvas = chart?.canvas || document.getElementById("chart");
             if (!canvas) return;
@@ -6534,6 +6982,12 @@ if (typeof arcgisRequire !== "function") {
 
             showOrdenamientoChartCanvas();
             document.getElementById("chartHighlightOverlay")?.remove();
+            canvas.classList.remove("chart-canvas--pie-like");
+            canvas.classList.add("chart-canvas--ordenamiento-adaptive");
+            const chartCard = canvas.closest(".chart-card");
+            chartCard?.classList.remove("chart-card--pie-like");
+            chartCard?.classList.add("chart-card--ordenamiento-adaptive");
+            chartCard?.classList.add("chart-card--areas-activity");
             if (chartInstance) {
                 chartInstance.destroy();
                 chartInstance = null;
@@ -6541,12 +6995,26 @@ if (typeof arcgisRequire !== "function") {
 
             const rect = canvas.getBoundingClientRect();
             const cssWidth = Math.max(320, Math.floor(rect.width || canvas.clientWidth || 360));
-            const cssHeight = Math.max(260, Math.floor(rect.height || canvas.clientHeight || 280));
+            const activeFilters = window.__aa_active_filters instanceof Set
+                ? window.__aa_active_filters
+                : new Set(items.map(item => String(item.code)));
+            const chartItems = items.filter(item => activeFilters.has(String(item.code)));
+            const legendItems = window.__aa_all_items?.length ? window.__aa_all_items : items;
+            const adaptiveLayout = getOrdenamientoAdaptiveChartLayout(legendItems.length);
+            const legendColumns = cssWidth >= 560 ? 3 : cssWidth >= 380 ? 2 : 1;
+            const legendRowHeight = 20;
+            const legendRows = Math.max(1, Math.ceil(Math.max(legendItems.length, 1) / legendColumns));
+            const legendAreaHeight = legendRows * legendRowHeight + 20;
+            const cssHeight = Math.min(
+                adaptiveLayout.max,
+                Math.max(adaptiveLayout.min, adaptiveLayout.size, 220 + legendAreaHeight)
+            );
             const dpr = window.devicePixelRatio || 1;
 
             canvas.style.display = "block";
             canvas.style.visibility = "visible";
             canvas.style.opacity = "1";
+            canvas.style.setProperty("--ordenamiento-chart-size", `${cssHeight}px`);
             canvas.style.height = `${cssHeight}px`;
             canvas.width = Math.round(cssWidth * dpr);
             canvas.height = Math.round(cssHeight * dpr);
@@ -6555,19 +7023,14 @@ if (typeof arcgisRequire !== "function") {
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             ctx.clearRect(0, 0, cssWidth, cssHeight);
 
-            const activeFilters = window.__aa_active_filters instanceof Set
-                ? window.__aa_active_filters
-                : new Set(items.map(item => String(item.code)));
-            const chartItems = items.filter(item => activeFilters.has(String(item.code)));
-            const legendItems = window.__aa_all_items?.length ? window.__aa_all_items : items;
             const isUserDisabledEmpty = Boolean(legendItems.length && chartItems.length === 0);
 
             const total = chartItems.reduce((sum, item) => sum + Number(item.value || 0), 0) || 1;
-            const legendWidth = cssWidth >= 420 ? 150 : 110;
-            const cx = Math.max(105, (cssWidth - legendWidth) * 0.48);
-            const cy = cssHeight * 0.48;
-            const outerRadius = Math.max(70, Math.min((cssWidth - legendWidth) * 0.34, cssHeight * 0.42));
-            const innerRadius = outerRadius * 0.48;
+            const chartAreaHeight = Math.max(180, cssHeight - legendAreaHeight);
+            const cx = cssWidth * 0.5;
+            const cy = chartAreaHeight * 0.52;
+            const outerRadius = Math.max(86, Math.min(cssWidth * 0.39, chartAreaHeight * 0.46));
+            const innerRadius = outerRadius * (adaptiveLayout.cutout / 100);
             let start = -Math.PI / 2;
             const slices = [];
 
@@ -6607,50 +7070,97 @@ if (typeof arcgisRequire !== "function") {
             updateAreasActividadChartEmptyMessage(canvas, isUserDisabledEmpty, {
                 left: 0,
                 top: 0,
-                width: Math.max(1, cssWidth - legendWidth),
-                height: cssHeight
+                width: Math.max(1, cssWidth),
+                height: chartAreaHeight
             });
 
-            const legendX = Math.min(cssWidth - legendWidth + 8, cx + outerRadius + 24);
-            let legendY = Math.max(28, cy - (legendItems.length * 20) / 2);
-            const legendHits = [];
+            drawAreasActividadSliceLabels(ctx, {
+                slices,
+                total,
+                cx,
+                cy,
+                innerRadius,
+                outerRadius,
+                cssWidth,
+                cssHeight: chartAreaHeight,
+                legendWidth: 0
+            });
 
+            const chartDescription = chartItems.map(item => {
+                const paletteItem = buildAreaActividadItem(item.code, Number(item.value || 0));
+                const percent = total ? (Number(item.value || 0) / total) * 100 : 0;
+                return `${paletteItem.label}: ${formatOrdenamientoPiePercentLabel(percent)}`;
+            }).join("; ");
+            canvas.setAttribute(
+                "aria-label",
+                chartDescription
+                    ? `Distribucion de areas de actividad. ${chartDescription}`
+                    : "Distribucion de areas de actividad sin categorias activas."
+            );
+
+            const legendTop = chartAreaHeight + 12;
+            const legendHits = [];
             ctx.font = "11px Arial, sans-serif";
             ctx.textBaseline = "middle";
-            legendItems.forEach(item => {
+            const legendEntries = legendItems.map(item => {
                 const code = String(item.code);
-                const isActive = activeFilters.has(code);
                 const paletteItem = buildAreaActividadItem(code, Number(item.value || 0));
-                const rowTop = legendY - 10;
-                const rowHeight = 20;
                 const labelText = String(paletteItem.label || code);
-                const labelX = legendX + 18;
-
-                ctx.save();
-                ctx.globalAlpha = isActive ? 1 : 0.35;
-                ctx.fillStyle = String(paletteItem.color || "#BDBDBD");
-                ctx.fillRect(legendX, legendY - 6, 12, 12);
-                ctx.fillStyle = "#666";
-                ctx.fillText(labelText, labelX, legendY);
-                if (!isActive) {
-                    const textWidth = ctx.measureText(labelText).width;
-                    ctx.beginPath();
-                    ctx.strokeStyle = "#666";
-                    ctx.lineWidth = 1;
-                    ctx.moveTo(labelX, legendY);
-                    ctx.lineTo(labelX + textWidth, legendY);
-                    ctx.stroke();
-                }
-                ctx.restore();
-
-                legendHits.push({
+                return {
                     code,
-                    x: legendX,
-                    y: rowTop,
-                    width: legendWidth - 8,
-                    height: rowHeight
+                    paletteItem,
+                    labelText,
+                    width: Math.min(cssWidth - 28, 18 + ctx.measureText(labelText).width + 16)
+                };
+            });
+            const legendRowsData = [];
+            legendEntries.forEach((entry, index) => {
+                const row = Math.floor(index / legendColumns);
+                if (!legendRowsData[row]) legendRowsData[row] = [];
+                legendRowsData[row].push(entry);
+            });
+
+            legendRowsData.forEach((rowItems, row) => {
+                const legendY = legendTop + row * legendRowHeight;
+                const gap = rowItems.length > 1 ? 18 : 0;
+                const rowWidth = rowItems.reduce((sum, entry) => sum + entry.width, 0) + gap * Math.max(0, rowItems.length - 1);
+                let legendX = Math.max(14, (cssWidth - rowWidth) / 2);
+
+                rowItems.forEach(entry => {
+                    const isActive = activeFilters.has(entry.code);
+                    const labelX = legendX + 18;
+                    const rowTop = legendY - 10;
+
+                    ctx.save();
+                    ctx.globalAlpha = isActive ? 1 : 0.35;
+                    ctx.fillStyle = String(entry.paletteItem.color || "#BDBDBD");
+                    ctx.fillRect(legendX, legendY - 6, 12, 12);
+                    ctx.strokeStyle = String(entry.paletteItem.borderColor || "#666666");
+                    ctx.lineWidth = Number(entry.paletteItem.borderWidth ?? 0.3);
+                    ctx.strokeRect(legendX, legendY - 6, 12, 12);
+                    ctx.fillStyle = "#666";
+                    ctx.fillText(entry.labelText, labelX, legendY);
+                    if (!isActive) {
+                        const textWidth = ctx.measureText(entry.labelText).width;
+                        ctx.beginPath();
+                        ctx.strokeStyle = "#666";
+                        ctx.lineWidth = 1;
+                        ctx.moveTo(labelX, legendY);
+                        ctx.lineTo(labelX + textWidth, legendY);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+
+                    legendHits.push({
+                        code: entry.code,
+                        x: legendX,
+                        y: rowTop,
+                        width: entry.width,
+                        height: legendRowHeight
+                    });
+
+                    legendX += entry.width + gap;
                 });
-                legendY += 20;
             });
 
             areasActividadCanvasChartState = {
@@ -7680,7 +8190,7 @@ if (typeof arcgisRequire !== "function") {
                 || buildWhereOrdenamientoForCurrentTerritory(config);
 
             if (!items.length) {
-                content.innerHTML = "<p style='margin:0; color:#666;'>Sin clases</p>";
+                content.innerHTML = "<p class='oot-js-ordenamiento-main-1'>Sin clases</p>";
                 window.__legendState = {
                     allCodes: [],
                     activeCodes: new Set(),
@@ -7723,9 +8233,9 @@ if (typeof arcgisRequire !== "function") {
                 const borderWidth = Number(paletteItem.borderWidth || 0);
 
                 html += `
-                <div class="legend-item active" data-code="${safeCode}" style="opacity:1;">
+                <div class="legend-item active oot-js-ordenamiento-main-11" data-code="${safeCode}">
                     <div class="legend-color"
-                        style="background:${color}; border:${borderWidth}px solid ${borderColor};">
+                        data-legend-color="${color}" data-legend-border-width="${borderWidth}" data-legend-border-color="${borderColor}">
                     </div>
                     <div class="legend-label">${escapeHtml(paletteItem.label)}</div>
                 </div>
@@ -7733,6 +8243,11 @@ if (typeof arcgisRequire !== "function") {
             });
 
             content.innerHTML = html;
+
+            content.querySelectorAll(".legend-color[data-legend-color]").forEach(el => {
+                el.style.background = el.dataset.legendColor;
+                el.style.border = el.dataset.legendBorderWidth + "px solid " + el.dataset.legendBorderColor;
+            });
 
             content.querySelectorAll(".legend-item").forEach(el => {
                 el.addEventListener("click", function (event) {
@@ -7901,7 +8416,7 @@ if (typeof arcgisRequire !== "function") {
             }
 
             if (!items.length) {
-                content.innerHTML = "<div style='color:black;'>Sin clases</div>";
+                content.innerHTML = "<div class='oot-js-ordenamiento-main-12'>Sin clases</div>";
                 return;
             }
 
@@ -7931,7 +8446,7 @@ if (typeof arcgisRequire !== "function") {
                 swatch.style.minWidth = "12px";
                 swatch.style.borderRadius = "2px";
                 swatch.style.background = paletteItem.color;
-                swatch.style.border = `1px solid ${paletteItem.borderColor}`;
+                swatch.style.border = `${Number(paletteItem.borderWidth ?? 0.3)}px solid ${paletteItem.borderColor}`;
 
                 const label = document.createElement("span");
                 label.className = "legend-label";
@@ -8249,6 +8764,271 @@ if (typeof arcgisRequire !== "function") {
             return { xTitle, yTitle };
         }
 
+        function formatOrdenamientoPiePercentLabel(value) {
+            const number = Number(value);
+            if (!Number.isFinite(number)) return "";
+
+            return `${number.toLocaleString("es-CO", {
+                maximumFractionDigits: 2,
+                minimumFractionDigits: number % 1 === 0 ? 0 : 1
+            })}%`;
+        }
+
+        function createOrdenamientoPiePercentageLabelsPlugin() {
+            return {
+                id: "ordenamientoPiePercentageLabels",
+                afterDatasetsDraw(chart) {
+                    const chartType = chart.config?.type;
+                    if (chartType !== "pie" && chartType !== "doughnut") return;
+                    if ((chart.data?.datasets || []).length > 1) return;
+
+                    const { ctx, chartArea } = chart;
+                    const internalBoxes = [];
+                    const externalLabels = [];
+                    const visibleValues = (chart.data?.datasets?.[0]?.data || [])
+                        .map(value => Number(value))
+                        .filter(value => Number.isFinite(value) && value > 0);
+                    const totalVisible = visibleValues.length;
+                    const crowded = totalVisible >= 10;
+                    const veryCrowded = totalVisible >= 14;
+                    const fontSize = veryCrowded ? 8 : crowded ? 9 : 10;
+                    const labelHeight = fontSize + 8;
+                    const externalGap = veryCrowded ? 12 : crowded ? 13 : 15;
+                    const labelPadX = veryCrowded ? 4 : 5;
+                    const connectorColor = "rgba(23,53,45,0.55)";
+                    const textColor = "#17352d";
+                    const labelBg = "rgba(255,250,240,0.94)";
+                    const labelStroke = "rgba(23,53,45,0.16)";
+                    ctx.font = `600 ${fontSize}px sans-serif`;
+
+                    const overlaps = (box, boxes) => boxes.some(other =>
+                        box.left < other.right &&
+                        box.right > other.left &&
+                        box.top < other.bottom &&
+                        box.bottom > other.top
+                    );
+
+                    const drawText = (text, x, y, align = "center") => {
+                        ctx.save();
+                        ctx.textAlign = align;
+                        ctx.textBaseline = "middle";
+                        ctx.font = `600 ${fontSize}px sans-serif`;
+                        ctx.lineWidth = 3;
+                        ctx.strokeStyle = "rgba(255,250,240,0.86)";
+                        ctx.strokeText(text, x, y);
+                        ctx.fillStyle = textColor;
+                        ctx.fillText(text, x, y);
+                        ctx.restore();
+                    };
+
+                    const roundRect = (x, y, width, height, radius = 5) => {
+                        const r = Math.min(radius, height / 2, width / 2);
+                        ctx.beginPath();
+                        ctx.moveTo(x + r, y);
+                        ctx.lineTo(x + width - r, y);
+                        ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+                        ctx.lineTo(x + width, y + height - r);
+                        ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+                        ctx.lineTo(x + r, y + height);
+                        ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+                        ctx.lineTo(x, y + r);
+                        ctx.quadraticCurveTo(x, y, x + r, y);
+                        ctx.closePath();
+                    };
+
+                    chart.data.datasets.forEach((dataset, datasetIndex) => {
+                        const meta = chart.getDatasetMeta(datasetIndex);
+                        if (!meta || meta.hidden) return;
+
+                        meta.data.forEach((arc, dataIndex) => {
+                            if (!arc || arc.hidden) return;
+                            if (chart.getDataVisibility && !chart.getDataVisibility(dataIndex)) return;
+
+                            const rawValue = dataset.data?.[dataIndex];
+                            const value = Number(rawValue);
+                            if (!Number.isFinite(value) || value <= 0) return;
+
+                            const text = formatOrdenamientoPiePercentLabel(value);
+                            if (!text) return;
+
+                            const arcProps = typeof arc.getProps === "function"
+                                ? arc.getProps(["x", "y", "startAngle", "circumference", "outerRadius", "innerRadius"], true)
+                                : arc;
+                            const centerX = Number(arcProps.x ?? arc.x ?? 0);
+                            const centerY = Number(arcProps.y ?? arc.y ?? 0);
+                            const circumference = Number(arcProps.circumference || 0);
+                            const outerRadius = Number(arcProps.outerRadius || 0);
+                            const innerRadius = Number(arcProps.innerRadius || 0);
+                            const radialWidth = outerRadius - innerRadius;
+                            const angle = Number(arcProps.startAngle || 0) + circumference / 2;
+                            const midRadius = innerRadius + radialWidth * 0.58;
+                            const arcLength = Math.abs(circumference) * Math.max(midRadius, 1);
+                            const textWidth = ctx.measureText(text).width + 4;
+                            const cos = Math.cos(angle);
+                            const sin = Math.sin(angle);
+                            const internalX = centerX + cos * midRadius;
+                            const internalY = centerY + sin * midRadius;
+                            const internalBox = {
+                                left: internalX - textWidth / 2,
+                                right: internalX + textWidth / 2,
+                                top: internalY - labelHeight / 2,
+                                bottom: internalY + labelHeight / 2
+                            };
+                            const fitsInsideChart = internalBox.left >= chartArea.left + 2 &&
+                                internalBox.right <= chartArea.right - 2 &&
+                                internalBox.top >= chartArea.top + 2 &&
+                                internalBox.bottom <= chartArea.bottom - 2;
+                            const hasInternalSpace = Math.abs(circumference) >= (veryCrowded ? 0.14 : crowded ? 0.16 : 0.18) &&
+                                arcLength >= textWidth + 2 &&
+                                radialWidth >= 10;
+
+                            if (fitsInsideChart && hasInternalSpace && !overlaps(internalBox, internalBoxes)) {
+                                internalBoxes.push(internalBox);
+                                drawText(text, internalX, internalY);
+                                return;
+                            }
+
+                            const side = Math.cos(angle) >= 0 ? "right" : "left";
+                            const startRadius = Math.max(innerRadius, outerRadius - 0.5);
+                            externalLabels.push({
+                                text,
+                                side,
+                                y: centerY + sin * (outerRadius + 16),
+                                anchorX: centerX + cos * startRadius,
+                                anchorY: centerY + sin * startRadius,
+                                elbowX: centerX + cos * (outerRadius + (veryCrowded ? 11 : 15)),
+                                elbowY: centerY + sin * (outerRadius + (veryCrowded ? 11 : 15)),
+                                boxWidth: textWidth,
+                                textX: side === "right"
+                                    ? Math.min(chartArea.right - textWidth - 2, centerX + outerRadius + (veryCrowded ? 22 : 30))
+                                    : Math.max(chartArea.left + textWidth + 2, centerX - outerRadius - (veryCrowded ? 22 : 30))
+                            });
+                        });
+                    });
+
+                    const adjustExternalLabels = (items) => {
+                        const sorted = items.sort((a, b) => a.y - b.y);
+                        const minY = chartArea.top + labelHeight / 2 + 2;
+                        const maxY = chartArea.bottom - labelHeight / 2 - 2;
+
+                        sorted.forEach((item, index) => {
+                            const previous = sorted[index - 1];
+                            const minAllowed = previous ? previous.y + externalGap : minY;
+                            item.y = Math.max(minAllowed, Math.min(maxY, item.y));
+                        });
+
+                        for (let i = sorted.length - 2; i >= 0; i--) {
+                            sorted[i].y = Math.min(sorted[i].y, sorted[i + 1].y - externalGap);
+                        }
+
+                        sorted.forEach(item => {
+                            item.y = Math.max(minY, Math.min(maxY, item.y));
+                        });
+                    };
+
+                    adjustExternalLabels(externalLabels.filter(item => item.side === "left"));
+                    adjustExternalLabels(externalLabels.filter(item => item.side === "right"));
+
+                    ctx.save();
+                    ctx.strokeStyle = connectorColor;
+                    ctx.lineWidth = veryCrowded ? 0.9 : 1;
+                    ctx.lineCap = "round";
+                    ctx.lineJoin = "round";
+                    ctx.fillStyle = textColor;
+                    ctx.font = `600 ${fontSize}px sans-serif`;
+                    ctx.textBaseline = "middle";
+
+                    externalLabels.forEach(item => {
+                        const boxX = item.side === "right"
+                            ? item.textX
+                            : item.textX - item.boxWidth;
+                        const boxY = item.y - labelHeight / 2;
+                        const lineEndX = item.side === "right" ? boxX - 3 : boxX + item.boxWidth + 3;
+
+                        ctx.beginPath();
+                        ctx.moveTo(item.anchorX, item.anchorY);
+                        ctx.lineTo(item.elbowX, item.elbowY);
+                        ctx.lineTo(lineEndX, item.y);
+                        ctx.stroke();
+
+                        ctx.beginPath();
+                        ctx.arc(item.anchorX, item.anchorY, veryCrowded ? 1 : 1.2, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        ctx.fillStyle = labelBg;
+                        ctx.strokeStyle = labelStroke;
+                        ctx.lineWidth = 1;
+                        roundRect(boxX, boxY, item.boxWidth, labelHeight, 5);
+                        ctx.fill();
+                        ctx.stroke();
+
+                        ctx.fillStyle = textColor;
+                        ctx.textAlign = "left";
+                        ctx.fillText(item.text, boxX + labelPadX, item.y);
+
+                        ctx.strokeStyle = connectorColor;
+                        ctx.lineWidth = veryCrowded ? 0.9 : 1;
+                    });
+
+                    ctx.restore();
+                }
+            };
+        }
+
+        function getOrdenamientoAdaptiveChartLayout(itemCount) {
+            const count = Math.max(0, Number(itemCount) || 0);
+            const screenW = window.innerWidth || 1200;
+            const isSmallScreen = screenW <= 768;
+            const isVerySmallScreen = screenW <= 480;
+
+            const min = isVerySmallScreen ? 300 : isSmallScreen ? 325 : 330;
+            const ideal = isVerySmallScreen ? 335 : isSmallScreen ? 355 : 370;
+            const max = isVerySmallScreen ? 375 : isSmallScreen ? 400 : 420;
+            let size = ideal;
+
+            if (count <= 3) {
+                size = min;
+            } else if (count <= 6) {
+                size = ideal - 10;
+            } else if (count > 8) {
+                const step = isVerySmallScreen ? 5 : 6;
+                size = ideal + (count - 8) * step;
+            }
+
+            size = Math.min(max, Math.max(min, Math.round(size)));
+
+            return {
+                min,
+                ideal,
+                max,
+                size,
+                cutout: count <= 4 ? 62 : count <= 9 ? 59 : 56,
+                radius: count <= 4 ? 82 : count <= 9 ? 80 : 75,
+                legendFontSize: count >= 15 ? 8 : count >= 10 ? 9 : 10,
+                legendPadding: count >= 12 ? 6 : 8,
+                outerPadding: count >= 10 ? 46 : 34
+            };
+        }
+
+        function getOrdenamientoPieChartHeight(itemCount, options = {}) {
+            const count = Math.max(0, Number(itemCount) || 0);
+            const screenW = window.innerWidth || 1200;
+            const isSmallScreen = screenW <= 768;
+            const isVerySmallScreen = screenW <= 480;
+
+            if (!options.compact) {
+                return getOrdenamientoAdaptiveChartLayout(count).size;
+            }
+
+            const base = isSmallScreen ? 340 : 370;
+            const extra = count > 8
+                ? (count - 8) * (isVerySmallScreen ? 10 : isSmallScreen ? 9 : 8)
+                : 0;
+            const maxHeight = isSmallScreen ? 450 : 460;
+
+            return Math.min(maxHeight, Math.max(base, base + extra));
+        }
+
         function crearGrafica(labels, values, colors, type = 'bar', isVertical = false, datasets = null) {
             const layerConfig = (currentMainModule === "ORDENAMIENTO")
                 ? (ORDENAMIENTO_CONFIG[currentOrdenamientoTab] || null)
@@ -8279,6 +9059,70 @@ if (typeof arcgisRequire !== "function") {
                 fill: type === 'radar'
             }];
 
+            const pieItemCount = isPieLike
+                ? Math.max(
+                    Array.isArray(labels) ? labels.length : 0,
+                    ...(chartDatasets || []).map(dataset => Array.isArray(dataset?.data) ? dataset.data.length : 0)
+                )
+                : 0;
+            const isClasificacionSueloChart = layerConfig?.ordenamientoType === "clasificacion_suelo";
+            const isZonificacionRuralChart = currentMainModule === "ORDENAMIENTO" &&
+                currentOrdenamientoTab === "ZONIFICACION_RURAL";
+            const isAdaptiveOrdenamientoChart = isPieLike &&
+                currentMainModule === "ORDENAMIENTO" &&
+                (isZonificacionRuralChart || isClasificacionSueloChart);
+            const baseAdaptivePieLayout = isAdaptiveOrdenamientoChart
+                ? getOrdenamientoAdaptiveChartLayout(pieItemCount)
+                : null;
+            const adaptiveSizeBoost = isClasificacionSueloChart
+                ? ((window.innerWidth || 1200) <= 480 ? 24 : 32)
+                : (isZonificacionRuralChart
+                    ? ((window.innerWidth || 1200) <= 480 ? 20 : 28)
+                    : 0);
+            const adaptiveSizeLimit = baseAdaptivePieLayout
+                ? baseAdaptivePieLayout.max + (isZonificacionRuralChart ? adaptiveSizeBoost : 0)
+                : 0;
+            const adaptivePieLayout = baseAdaptivePieLayout
+                ? {
+                    ...baseAdaptivePieLayout,
+                    size: Math.min(
+                        adaptiveSizeLimit,
+                        baseAdaptivePieLayout.size + adaptiveSizeBoost
+                    )
+                }
+                : null;
+            const legendPosition = isAdaptiveOrdenamientoChart || isClasificacionSueloChart
+                ? "bottom"
+                : (datasets ? "right" : "bottom");
+
+            const renderCanvas = ctx.canvas;
+            const chartCard = renderCanvas.closest(".chart-card");
+            chartCard?.classList.remove("chart-card--vigencia");
+            chartCard?.classList.remove("chart-card--areas-activity");
+            renderCanvas.classList.toggle("chart-canvas--pie-like", isPieLike);
+            chartCard?.classList.toggle("chart-card--pie-like", isPieLike);
+            renderCanvas.classList.toggle("chart-canvas--ordenamiento-adaptive", isAdaptiveOrdenamientoChart);
+            chartCard?.classList.toggle("chart-card--ordenamiento-adaptive", isAdaptiveOrdenamientoChart);
+
+            if (adaptivePieLayout) {
+                renderCanvas.style.setProperty(
+                    "--ordenamiento-chart-size",
+                    `${adaptivePieLayout.size}px`
+                );
+            } else {
+                renderCanvas.style.removeProperty("--ordenamiento-chart-size");
+            }
+
+            if (isPieLike) {
+                renderCanvas.style.height = "";
+                renderCanvas.style.maxHeight = "";
+                renderCanvas.style.aspectRatio = "";
+            } else {
+                renderCanvas.style.width = "";
+                renderCanvas.style.maxWidth = "";
+                renderCanvas.style.aspectRatio = "";
+            }
+
             const isStacked = Array.isArray(datasets) && datasets.length > 0;
             // Solo forzamos 0-100 en clima apilado
             const isPercentStacked = isStacked && layerConfig?.isClima === true && layerConfig?.isStacked === true;
@@ -8288,6 +9132,14 @@ if (typeof arcgisRequire !== "function") {
                 data: { labels, datasets: chartDatasets },
                 options: {
                     responsive: true,
+                    layout: isPieLike ? {
+                        padding: {
+                            top: pieItemCount >= 10 ? 12 : 8,
+                            right: adaptivePieLayout?.outerPadding ?? (isClasificacionSueloChart ? 34 : (pieItemCount >= 10 ? 48 : 34)),
+                            bottom: isClasificacionSueloChart ? 18 : (pieItemCount >= 10 ? 12 : 8),
+                            left: adaptivePieLayout?.outerPadding ?? (pieItemCount >= 10 ? 48 : 34)
+                        }
+                    } : undefined,
                     plugins: {
                         legend: {
                             display: (
@@ -8296,10 +9148,11 @@ if (typeof arcgisRequire !== "function") {
                                 type === 'polarArea' ||
                                 datasets !== null
                             ),
-                            position: datasets ? 'right' : 'bottom',
+                            position: legendPosition,
                             labels: {
-                                boxWidth: 12,
-                                font: { size: 10 },
+                                boxWidth: adaptivePieLayout ? 10 : 12,
+                                padding: adaptivePieLayout?.legendPadding,
+                                font: { size: adaptivePieLayout?.legendFontSize ?? 10 },
                                 usePointStyle: type === "polarArea",
                                 pointStyle: "rectRounded"
                             }
@@ -8459,6 +9312,25 @@ if (typeof arcgisRequire !== "function") {
                     }
                 }
             };
+
+            if (isPieLike) {
+                config.options.maintainAspectRatio = !isAdaptiveOrdenamientoChart;
+                if (!isAdaptiveOrdenamientoChart) {
+                    config.options.aspectRatio = 1;
+                }
+                if (type === "doughnut") {
+                    config.options.cutout = adaptivePieLayout
+                        ? `${adaptivePieLayout.cutout}%`
+                        : (pieItemCount >= 10 ? "52%" : "56%");
+                    config.options.radius = adaptivePieLayout
+                        ? `${adaptivePieLayout.radius}%`
+                        : (pieItemCount >= 10 ? "76%" : "82%");
+                }
+                config.plugins = [
+                    ...(config.plugins || []),
+                    createOrdenamientoPiePercentageLabelsPlugin()
+                ];
+            }
 
             // =========================
             // Config por tipo

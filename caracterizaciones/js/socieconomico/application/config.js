@@ -4,11 +4,11 @@ import {
     INSTITUCIONES_EDUCACION_BAR_CHART_CONFIG,
     SALUD_BAR_CHART_CONFIG,
     EQUIPAMIENTOS_DUAL_CHART_CONFIG
-} from "./charts/configs/infraestructuraChartsConfig.js?v=popup-department-exception-20260604";
+} from "./charts/configs/infraestructuraChartsConfig.js?v=connectivity-tab-resize-20260716";
 import {
     POVERTY_IPM_NBI_GROUPED_CONFIG,
     PUBLIC_SERVICES_RADAR_CHART_CONFIG
-} from "./charts/configs/condicionesChartsConfig.js?v=global-municipality-required-state-20260604";
+} from "./charts/configs/condicionesChartsConfig.js?v=telecom-diccionario-url-20260707";
 import { socioeconomicoLayerUrl } from "./services/serviceRoots.js?v=sigi-service-roots-20260604";
 
 import {
@@ -102,6 +102,7 @@ export const LAYERS_CONFIG = {
             id: 201,
             title: "Tiempos de desplazamiento",
             key: "TRAVEL_TIME",
+            keepDepartmentMapOnMunicipality: true,
             filterField: "mpcodigo",
             type: "feature-layer",
             chartConfig: TIEMPOS_DESPLAZAMIENTO_PIE_CHART_CONFIG,
@@ -117,12 +118,14 @@ export const LAYERS_CONFIG = {
             id: 202,
             title: "Instituciones de educación",
             key: "EDUCATION",
+            keepDepartmentMapOnMunicipality: true,
             url: socioeconomicoLayerUrl(28),
         },
         {
             id: 203,
             title: "Salud",
             key: "HEALTH",
+            keepDepartmentMapOnMunicipality: true,
             filterField: "mpcodigo",
             type: "feature-layer",
             chartConfig: SALUD_BAR_CHART_CONFIG,
@@ -138,6 +141,7 @@ export const LAYERS_CONFIG = {
             id: 204,
             title: "Equipamientos",
             key: "FACILITIES",
+            keepDepartmentMapOnMunicipality: true,
             filterField: "mpcodigo",
             type: "table-layer",
             chartConfig: EQUIPAMIENTOS_DUAL_CHART_CONFIG,
@@ -157,7 +161,7 @@ SOCIOECONOMIC_CONDITIONS: [
             key: "POVERTY_LEVEL",
             url: socioeconomicoLayerUrl(49),
             mapLayerUrl: socioeconomicoLayerUrl(36),
-            mapLayerLegendHeading: "Indice de pobreza multidimensional",
+            mapLayerLegendHeading: "Índice de pobreza multidimensional",
             supplementaryMapLayers: [
                 {
                     url: socioeconomicoLayerUrl(34),
@@ -165,7 +169,7 @@ SOCIOECONOMIC_CONDITIONS: [
                 },
                 {
                     url: socioeconomicoLayerUrl(35),
-                    legendHeading: "Necesidades basicas insatisfechas"
+                    legendHeading: "Necesidades básicas insatisfechas"
                 }
             ],
             filterField: "mpcodigo",
@@ -186,6 +190,7 @@ SOCIOECONOMIC_CONDITIONS: [
             id: 301,
             title: "Servicios públicos",
             key: "PUBLIC_SERVICES",
+            keepDepartmentMapOnMunicipality: true,
             variants: [
                 {
                     key: "acueducto",
@@ -220,58 +225,6 @@ SOCIOECONOMIC_CONDITIONS: [
             valueField: "porcentaje",
             isGeoforma: false,
             summaryField: 'hps'
-        },
-        {
-            id: "pendientes",
-            title: "Pendientes",
-            url: "https://mapas2.igac.gov.co/server/rest/services/ordenamiento/componentebiofisico/MapServer/7",
-            outFields: [
-                "categoria",
-                "rangop",
-                "porcentaje",
-                "areat",
-                "mpcodigo",
-                "mpnombre",
-                "dpcodigo",
-                "dpnombre"
-            ],
-            labelField: "categoria",
-            valueField: "porcentaje",
-            isRelieve: true,
-            isPendientesPolar: true,
-            summaryField: "ped"
-        },
-        {
-            id: 'geoformas',
-            title: 'Geoformas',
-            outFields: ["paisaje", "trelieve", "porcentaje", "mpnombre", "dpnombre"],
-            valueField: "porcentaje",
-            isGeoforma: true,
-            isGeoformaDualChart: true,
-            hasScaleVariants: true,
-
-            variants: [
-                {
-                    key: "geoformas_paisaje",
-                    url: "https://mapas2.igac.gov.co/server/rest/services/ordenamiento/componentebiofisico/MapServer/8",
-                    minScale: 22000000,
-                    maxScale: 2000000
-                },
-                {
-                    key: "geoformas_relieve",
-                    url: "https://mapas2.igac.gov.co/server/rest/services/ordenamiento/componentebiofisico/MapServer/9",
-                    minScale: 2000000,
-                    maxScale: 1
-                }
-            ],
-
-            geoAgg: {
-                field1: "paisaje",
-                field2: "trelieve",
-                valueField: "porcentaje"
-            },
-
-            summaryField: 'gfr'
         },
         
     ]}

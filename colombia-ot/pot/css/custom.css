@@ -1,0 +1,93 @@
+/* custom.css - Estilos del módulo POT extraídos para cumplimiento de CSP */
+
+/* --- Estilos Comunes --- */
+nav.oot-dark-nav {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 140px !important;
+    min-height: 140px !important;
+    background: #0f2340 !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    z-index: 10100 !important;
+}
+nav.oot-dark-links {
+    display: flex !important;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    height: auto !important;
+    background: transparent !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    min-height: 0 !important;
+}
+
+/* --- Estilos específicos de pot/index.html (Página de Inicio del buscador) --- */
+body.calcite:not(.buscador-body) {
+    padding-top: 140px !important;
+}
+
+.image-container {
+    padding: 80px 0;
+    max-width: 500px;
+    margin: auto;
+}
+
+.image-container .text {
+    font-size: 16px;
+    color: #878787;
+    text-align: center;
+    margin-top: -20px;
+}
+
+.modal::before {
+    content: '';
+    display: inline-block;
+    height: 20%;
+    vertical-align: middle;
+    margin-right: -4px;
+}
+
+/* --- Estilos específicos de pot/buscador.html (Geovisor del buscador) --- */
+body.calcite.buscador-body {
+    padding-top: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+}
+.calcite-map {
+    top: 0 !important;
+    height: 100vh !important;
+}
+.calcite-map .calcite-map-absolute {
+    top: 140px !important;
+    height: calc(100vh - 140px) !important;
+}
+#mainDiv {
+    position: absolute !important;
+    top: 140px !important;
+    height: calc(100vh - 140px) !important;
+    margin-top: 0 !important;
+}
+.calltocontext {
+    top: 187px !important;
+}
+#oot-footer-placeholder {
+    display: none !important;
+}
+
+/* --- Solución de superposición de modales con el Navbar --- */
+.modal {
+    z-index: 20000 !important;
+    top: 140px !important;
+}
+.modal-backdrop {
+    z-index: 19999 !important;
+}

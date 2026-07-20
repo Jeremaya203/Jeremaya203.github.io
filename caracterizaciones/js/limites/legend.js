@@ -66,7 +66,7 @@ export function actualizarLeyendaLimitesMunicipales(features) {
     ensureLegendStyles();
 
     if (!features || features.length === 0) {
-        content.innerHTML = `<p style="margin:0; color:#666;">No hay líneas para mostrar</p>`;
+        content.innerHTML = `<p class="oot-js-limites-legend-1">No hay líneas para mostrar</p>`;
         return;
     }
 
@@ -88,11 +88,14 @@ export function actualizarLeyendaLimitesMunicipales(features) {
 
         return `
             <button class="limites-legend-item active" type="button" data-llid="${escapeHtml(llIdentif)}" title="Mostrar u ocultar línea">
-                <span class="limites-legend-swatch" style="background:${color};"></span>
+                <span class="limites-legend-swatch" data-swatch-color="${color}"></span>
                 <span class="limites-legend-label">${escapeHtml(llNombre)}</span>
             </button>
         `;
     });
 
     content.innerHTML = items.join("");
+    content.querySelectorAll(".limites-legend-swatch[data-swatch-color]").forEach(el => {
+        el.style.background = el.dataset.swatchColor;
+    });
 }

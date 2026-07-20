@@ -1,11 +1,14 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Caracterizaciones</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
+    <link rel="stylesheet" href="css/global.css?v=responsive-20260712" />
+    <link rel="stylesheet" href="css/temas/socioeconomico.css?v=responsive-20260712" />
     <link rel="stylesheet" href="css/stylesSocieconomico.css?v=reiniciar-consulta-20260622">
     <link rel="stylesheet" href="css/charts.css?v=livestock-derived-border-20260604">
 
@@ -14,78 +17,71 @@
         .modulo-dropdown:focus-within > .dropdown-menu-custom {
             display: block !important;
         }
-
-        #dropdownSocioeconomico .dropdown-item.active {
-            position: relative;
-            text-decoration: none !important;
-            text-decoration-line: none !important;
-            text-decoration-color: transparent !important;
-        }
-
-        #dropdownSocioeconomico .dropdown-item.active::after {
-            content: "";
-            position: absolute;
-            left: 16px;
-            right: 16px;
-            bottom: 0;
-            height: 2px;
-            background: currentColor;
-            pointer-events: none;
-        }
     </style>
 
     <script src="https://js.arcgis.com/4.29/"></script>
 
-    <script>
-        const __define = window.define;
-        const __require = window.require;
-        window.define = undefined;
-        window.require = undefined;
-    </script>
+    <script src="js/shared/arcgis-noconflict-start.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js" integrity="sha384-Cs3dgUx6+jDxxuqHvVH8Onpyj2LF1gKZurLDlhqzuJmUqVYMJ0THTWpxK5Z086Zm" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js" integrity="sha384-zPzbVRXfR492Sd5D+HydTYCxxgHAfgVO8KERbLlpeH5unsmbAEXrscGUUqLZG9BM" crossorigin="anonymous"></script>
 
-    <script>
-        window.define = __define;
-        window.require = __require;
-    </script>
+    <script src="js/shared/arcgis-noconflict-end.js"></script>
+
+    <script src="js/comunicacionEntreComponentes.js?v=component-nav-security-20260716"></script>
 
     <!-- <script src="coloresBiofisico.js"></script> -->
+    <link rel="stylesheet" href="css/responsive.css?v=legend-density-bottom-20260716" />
+    <script defer src="js/responsive-nav.js?v=responsive-20260713e"></script>
+    <link rel="stylesheet" href="css/shared/descargables-modal.css?v=cubara-download-20260717" />
+    <script defer src="js/shared/analytics.js?v=20260717b"></script>
+    <script defer src="js/shared/modal/descargables-modal.js?v=cubara-download-20260717"></script>
+    <link rel="stylesheet" href="css/shared/auth-navbar.css?v=auth-session-20260716" />
+    <script src="js/shared/auth/firebase-noconflict-start.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-auth-compat.js"></script>
+    <script src="js/shared/auth/firebase-noconflict-end.js"></script>
+    <script src="js/shared/auth/firebaseConfig.js?v=auth-session-20260717"></script>
+    <script src="js/shared/auth/authSession.js?v=auth-session-20260717"></script>
+    <script src="js/shared/auth/authNavbar.js?v=auth-session-20260717"></script>
+  <link rel="stylesheet" href="css/inline-extracted.css">
+  <link rel="stylesheet" href="css-js-socio-legend.css">
+  <link rel="stylesheet" href="css-js-socio-stations.css">
+  <link rel="stylesheet" href="css-js-socio-edu.css">
+    <link rel="stylesheet" href="../mobile-warning.css">
+  <script defer src="../mobile-warning.js"></script>
 </head>
-
 
 <body>
 
     <!-- HEADER GOV -->
     <div class="barra_gov">
-        <a class="logo-gov" href="https://www.gov.co/home/" target="_blank">
-            <img alt="Logo Gov.co" src="./img/nav/header_govco.png">
+        <a class="logo-gov" href="https://www.gov.co/home/" target="_blank" rel="noopener noreferrer">
+            <img alt="Logo Gov.co" src="img/nav/header_govco.png">
         </a>
     </div>
 
     <!-- HEADER IGAC -->
-    <nav class="main-header-nav" style="z-index: 101;">
-        <div class="navbarigac" style="background: #004A69; color: white;">
+    <nav id="ie-socioeconomico-1" class="main-header-nav">
+        <div id="ie-socioeconomico-2" class="navbarigac">
             <div class="logos">
-                <a href="https://www.igac.gov.co" class="navbar-brand-igac" target="_blank">
-                    <img alt="Logo IGAC" src="./img/nav/logo.png">
+                <a href="https://www.igac.gov.co" class="navbar-brand-igac" target="_blank" rel="noopener noreferrer">
+                    <img alt="Logo IGAC" src="img/nav/logo.png">
                 </a>
-                <img src="./img/logo_ct.png" class="icono-territorial" alt="Icono">
+                <img src="img/logo_ct.png" class="icono-territorial" alt="Icono">
                 <div class="titulo-app">CARACTERIZACIONES TERRITORIALES</div>
             </div>
 
             <ul class="pl-1" id="link-list">
-                <li><a href="index.html" style="color: white !important">&#8592; Caracterizaciones</a></li>
                 <li>
-                    <a id="inicio" href="../index.html" style="color: white !important;">Inicio</a>
+                    <a id="inicio" href="/#">Inicio</a>
                 </li>
-                <li>
-                    <a id="loginBtn" onclick="gotoLogin();">
-                        <!-- <img id="userPhoto" src="./img/user.png" onerror="defaultUserPhoto();" alt="Iniciar sesion"> -->
-                        <!-- <span id="userName" style="color: white !important;">Iniciar sesion</span> -->
+                <li class="auth-nav-item">
+                    <a id="loginBtn" href="#" role="button" aria-label="Validando sesión">
+                        <span id="userName">Validando sesión...</span>
                     </a>
+                    <button type="button" id="logoutBtn" class="auth-logout-btn" hidden aria-label="Cerrar sesión">Cerrar sesión</button>
                 </li>
             </ul>
 
@@ -121,6 +117,7 @@
                 </div>
 
                 <div class="dropdown-menu-custom" id="dropdownOrdenamiento">
+                    <button class="dropdown-item" data-target="Vigencia">Vigencia</button>
                     <button class="dropdown-item" data-target="Clasificación del suelo">Clasificación del suelo</button>
                     <button class="dropdown-item" data-target="Áreas de actividad">Áreas de actividad</button>
                     <button class="dropdown-item" data-target="Zonificación de uso del suelo rural">Zonificación de uso
@@ -136,8 +133,27 @@
                 </div>
 
                 <div class="dropdown-menu-custom" id="dropdownLegal">
-                    <button class="dropdown-item" data-target="Determinantes">Determinantes</button>
-                    <button class="dropdown-item" data-target="Condicionantes">Condicionantes</button>
+                    <div class="dropdown-item-with-sub">
+                        <button class="dropdown-item" data-target="Determinantes">Determinantes</button>
+                        <div class="dropdown-submenu">
+                            <button class="dropdown-subitem" data-target="Ambientales">Ambientales</button>
+                            <button class="dropdown-subitem" data-target="Soberanía Alimentaria">Soberanía Alimentaria</button>
+                            <button class="dropdown-subitem" data-target="patrimoniales">Patrimoniales</button>
+                            <button class="dropdown-subitem" data-target="infraestructura">Infraestructura</button>
+                            <button class="dropdown-subitem" data-target="areas_metropolitanas_suburbanizacion">Áreas Metropolitanas Suburbanización</button>
+                            <button class="dropdown-subitem" data-target="proyectos_turisticos_especiales_e_infraestructura_asociada">Proyectos Turísticos Especiales e infraestructura asociada</button>
+                        </div>
+                    </div>
+                    <div class="dropdown-item-with-sub">
+                        <button class="dropdown-item" data-target="Condicionantes">Condicionantes</button>
+                        <div class="dropdown-submenu">
+                            <button class="dropdown-subitem" data-target="territorios_colectivos">Territorios Colectivos</button>
+                            <button class="dropdown-subitem" data-target="exploracion_explotacion_recursos_no_renovables">Exploración y Explotación de Recursos No Renovables</button>
+                            <button class="dropdown-subitem" data-target="acuerdo_final_paz">Acuerdo Final de Paz</button>
+                            <button class="dropdown-subitem" data-target="planes_ordenamiento_social_propiedad_rural">Planes de Ordenamiento Social de la Propiedad Rural</button>
+                            <button class="dropdown-subitem" data-target="zonas_afectadas_conflicto_armado">Zonas más Afectadas por el Conflicto Armado</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -149,7 +165,7 @@
                 </div>
 
                 <div class="dropdown-menu-custom" id="dropdownBiofisico">
-                    <button class="dropdown-item active" data-target="Relieve" id="itemRelieve">Relieve</button>
+                    <button class="dropdown-item" data-target="Relieve" id="itemRelieve">Relieve</button>
                     <button class="dropdown-item" data-target="Clima" id="itemClima">Clima</button>
                     <button class="dropdown-item" data-target="Hidrografía" id="itemHidrografia">Hidrografía</button>
                     <button class="dropdown-item" data-target="Ecosistemas" id="itemEcosistemas">Ecosistemas</button>
@@ -221,9 +237,11 @@
                         <button class="descargables-item" id="btnMemoriaTecnica" type="button">
                             Memoria técnica
                         </button>
+                        <!--
                         <button class="descargables-item" id="btnBaseDatosEspacial" type="button">
                             Base de datos espacial
                         </button>
+                        -->
                     </div>
                 </div>
 
@@ -232,7 +250,6 @@
                     class="btn-reiniciar-consulta"
                     type="button"
                     aria-label="Reiniciar consulta"
-                    title="Reiniciar consulta"
                     data-tooltip="Reiniciar consulta">
                     <img src="img/Reinicia.png" alt="">
                 </button>
@@ -243,7 +260,7 @@
 
 
     <!-- TU NAVBAR DEL VISOR -->
-    <div id="navbar" style="display:none;">
+    <div id="navbar">
         <button id="btnRelieve" class="active">Relieve</button>
         <button id="btnClima">Clima</button>
         <button id="btnHidrografia">Hidrografía</button>
@@ -286,7 +303,7 @@
                         <img src="img/List_Gray_1.png" alt="">
                     </button>
 
-                    <div id="basemapPanel" class="basemap-panel" style="display:none;">
+                    <div id="basemapPanel" class="basemap-panel">
                         <div id="basemapGalleryDiv"></div>
                     </div>
                 </div>
@@ -304,7 +321,7 @@
                 </button>
 
                 <button id="btnZoomIn" class="tool-btn" title="Acercar">
-                    <img src="img/zoomin.png" alt="">
+                    <img src="img/ZoomIn.png" alt="">
                 </button>
 
                 <button id="btnZoomOut" class="tool-btn" title="Alejar">
@@ -313,7 +330,7 @@
             </div>
 
             <!-- Panel basemaps (se abre/cierra) -->
-            <!-- <div id="basemapPanel" class="basemap-panel" style="display:none;">
+            <!-- <div id="basemapPanel" class="basemap-panel">
                 <div id="basemapGalleryDiv"></div>
             </div> -->
             <div id="mapSource" class="map-source"></div>
@@ -329,28 +346,28 @@
 
             <div class="chart-card-wrap">
                 <div class="subtabs-shell">
-                    <div class="subtabs-controls" id="subtabsControls" style="display:none;"></div>
+                    <div class="subtabs-controls" id="subtabsControls"></div>
                 </div>
 
                 <div class="chart-card">
-                    <div id="timeSliderWrap" style="display:none; margin:10px 0 14px 0;">
-                        <div id="timeSliderLabel" style="text-align:center; font-weight:600; margin-bottom:6px;">
+                    <div id="timeSliderWrap">
+                        <div id="timeSliderLabel">
                             Periodo
                         </div>
-                        <input id="timeSlider" type="range" min="0" max="0" step="1" value="0" style="width:100%;">
+                        <input id="timeSlider" type="range" min="0" max="0" step="1" value="0">
                     </div>
 
                     <h3 id="chartTitle" aria-hidden="true"></h3>
 
-                    <div id="geoformasCharts" style="display:none; margin-top:10px;">
-                        <div style="margin-bottom:22px;">
-                            <h4 id="geoPieTitle" style="margin:0 0 10px 0;"></h4>
+                    <div id="geoformasCharts">
+                        <div id="ie-socioeconomico-3">
+                            <h4 id="geoPieTitle"></h4>
                             <canvas id="geoPieChart"></canvas>
                         </div>
 
                         <div>
-                            <!-- <h4 id="geoDonutTitle" style="margin:0 0 10px 0;">Paisaje montañoso</h4> -->
-                            <div id="geoDonutSubtitle" style="margin:0 0 10px 0;"></div>
+                            <!-- <h4 id="geoDonutTitle">Paisaje montañoso</h4> -->
+                            <div id="geoDonutSubtitle"></div>
                             <canvas id="geoDonutChart"></canvas>
                         </div>
                     </div>
@@ -392,7 +409,7 @@
                     </section>
 
                     <div id="summaryDiv"
-                        style="margin-top: 15px; padding: 10px; background-color: #FFFAF0; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; line-height: 1.4;">
+                       >
                         Seleccione un municipio para ver el resumen.
                     </div>
                 </div>
@@ -402,7 +419,7 @@
 
 
     <script type="module"
-        src="./js/socieconomico/indexf.js?v=reiniciar-consulta-20260622"></script>
+        src="./js/socieconomico/indexf.js?v=department-map-municipality-selection-20260717b"></script>
 
     <footer class="footer">
         <div class="footer-wrapper">
@@ -449,22 +466,22 @@
 
                                 <div class="redes-sociales">
                                     <p>
-                                        <a href="https://www.facebook.com/IgacColombia" target="_blank">
-                                            <img class="icono-redes" src="./img/footer/facebook.svg">
+                <a href="https://www.facebook.com/IgacColombia" target="_blank" rel="noopener noreferrer">
+                                            <img class="icono-redes" src="img/footer/facebook.svg">
                                             Facebook IGAC
                                         </a>
                                     </p>
 
                                     <p>
-                                        <a href="https://twitter.com/igacColombia" target="_blank">
-                                            <img class="icono-redes" src="./img/footer/twitter.svg">
+                <a href="https://twitter.com/igacColombia" target="_blank" rel="noopener noreferrer">
+                                            <img class="icono-redes" src="img/footer/twitter.svg">
                                             Twitter IGAC
                                         </a>
                                     </p>
 
                                     <p>
-                                        <a href="https://www.instagram.com/igacColombia/" target="_blank">
-                                            <img class="icono-redes" src="./img/footer/instagram.svg">
+                <a href="https://www.instagram.com/accounts/login/?next=/igacColombia/" target="_blank" rel="noopener noreferrer">
+                                            <img class="icono-redes" src="img/footer/instagram.svg">
                                             Instagram IGAC
                                         </a>
                                     </p>
@@ -487,9 +504,9 @@
 
         <div class="gov-co-footer-pie">
             <div class="gov-co-footer-auto containerf">
-                <img class="gov-co-logo-pie-blanco" src="./img/footer/marca_colombia.png">
-                <img class="gov-co-logo-pie-mesa" src="./img/footer/header_govco.png">
-                <a class="text-white text-align-right" href="https://www.gov.co" target="_blank">
+                <img class="gov-co-logo-pie-blanco" src="img/footer/marca_colombia.png">
+                <img class="gov-co-logo-pie-mesa" src="img/footer/header_govco.png">
+                <a class="text-white text-align-right" href="https://www.gov.co" target="_blank" rel="noopener noreferrer">
                     Conoce GOV.CO aquí
                 </a>
             </div>
@@ -499,107 +516,7 @@
 
 </body>
 
-<script>
-    
-    document.addEventListener("DOMContentLoaded", () => {
-
-        document.querySelectorAll(".modulo-dropdown").forEach((dropdown) => {
-            dropdown.addEventListener("mouseenter", () => {
-                document.querySelectorAll(".modulo-dropdown.open").forEach((current) => {
-                    if (current !== dropdown) current.classList.remove("open");
-                });
-                dropdown.classList.add("open");
-            });
-
-            dropdown.addEventListener("mouseleave", () => {
-                dropdown.classList.remove("open");
-            });
-        });
-
-        /**
-         * Generic navigation between modules/components
-         * passing municipality context through URL
-         * 
-         * @param {string} triggerId
-         * @param {string} targetPage
-         */
-        function configureModuleNavigation(triggerId, targetPage) {
-
-            const trigger = document.getElementById(triggerId);
-
-            if (!trigger) {
-                console.warn(`Element not found: ${triggerId}`);
-                return;
-            }
-
-            trigger.addEventListener("click", () => {
-
-                const municipioSelect = document.getElementById("municipios");
-                const municipioId = municipioSelect?.value || "";
-
-                let url = targetPage;
-
-                if (municipioId) {
-                    url += `?id=${municipioId}`;
-                }
-                window.location.href = url;
-            });
-        }
-
-        configureModuleNavigation("biofisicoTrigger", "biofisico.html");
-        configureModuleNavigation("ordenamientoTrigger", "ordenamiento.html");
-        configureModuleNavigation("legalTrigger", "legal.html");
-        configureModuleNavigation("limitesTrigger", "limites.html");
-        configureModuleNavigation("ocupacionTrigger", "ocupacion.html");
-
-    });
-
-
-function inicializarBotonRefrescarBusqueda() {
-
-    const btnRefresh = document.getElementById("btnRefreshBusqueda");
-
-    if (!btnRefresh) return;
-
-    btnRefresh.addEventListener("click", () => {
-
-        if (typeof window.__resetSocioSearch === "function") {
-            window.__resetSocioSearch();
-            return;
-        }
-
-        const selectDepartamentos = document.getElementById("departamentos");
-        const selectMunicipios = document.getElementById("municipios");
-
-        // Reiniciar departamentos
-        if (selectDepartamentos) {
-
-            selectDepartamentos.innerHTML = `
-                <option value="">Seleccionar departamento</option>
-            `;
-
-            selectDepartamentos.value = "";
-        }
-
-        // Reiniciar municipios
-        if (selectMunicipios) {
-
-            selectMunicipios.innerHTML = `
-                <option value="">Seleccionar municipio</option>
-            `;
-
-            selectMunicipios.value = "";
-        }
-
-        // Recargar nuevamente los departamentos
-        if (typeof cargarDepartamentos === "function") {
-            cargarDepartamentos();
-        }
-
-        console.log("Filtros reiniciados");
-    });
-}
-</script>
+<script src="js/socioeconomico/page-init.js"></script>
 
 
 </html>

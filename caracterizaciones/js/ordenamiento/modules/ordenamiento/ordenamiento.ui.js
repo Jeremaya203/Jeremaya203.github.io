@@ -34,14 +34,29 @@ export function resetOrdenamientoUI({
 
 export function syncChartSideLayout(currentOrdenamientoTab) {
     const chartDiv = document.getElementById("chartDiv");
+    const mapDiv = document.getElementById("mapDiv");
     if (!chartDiv) return;
 
+    const previousTab = chartDiv.dataset.layoutTab || "";
+    const changedTab = previousTab !== currentOrdenamientoTab;
+    chartDiv.dataset.layoutTab = currentOrdenamientoTab;
+
+    const isClassification = currentOrdenamientoTab === "CLASIFICACION_SUELO";
+    const isVigencia = currentOrdenamientoTab === "VIGENCIA";
     const isMapAligned =
-        currentOrdenamientoTab === "VIGENCIA" ||
-        currentOrdenamientoTab === "CLASIFICACION_SUELO" ||
+        isVigencia ||
+        isClassification ||
         currentOrdenamientoTab === "AREAS_ACTIVIDAD";
     const isRuralTabs = currentOrdenamientoTab === "ZONIFICACION_RURAL";
 
     chartDiv.classList.toggle("chartDiv--map-aligned", isMapAligned);
+    chartDiv.classList.toggle("chartDiv--vigencia", isVigencia);
+    chartDiv.classList.toggle("chartDiv--classification", isClassification);
     chartDiv.classList.toggle("chartDiv--rural-tabs", isRuralTabs);
+    mapDiv?.classList.toggle("mapDiv--classification", isClassification);
+    mapDiv?.classList.toggle("mapDiv--rural-tabs", isRuralTabs);
+
+    if (changedTab) {
+        chartDiv.scrollTop = 0;
+    }
 }

@@ -1,8 +1,8 @@
 import {
     LAYERS_CONFIG,
-} from "../config.js?v=livestock-summary-textsource-20260604";
-import { INFRAESTRUCTURA_COMPLEMENTARIA_BAR_CHART_CONFIG } from "../charts/configs/infraestructuraChartsConfig.js?v=popup-department-exception-20260604";
-import { PUBLIC_SERVICES_RADAR_CHART_CONFIG } from "../charts/configs/condicionesChartsConfig.js?v=global-municipality-required-state-20260604";
+} from "../config.js?v=department-map-municipality-selection-20260717b";
+import { INFRAESTRUCTURA_COMPLEMENTARIA_BAR_CHART_CONFIG } from "../charts/configs/infraestructuraChartsConfig.js?v=connectivity-tab-resize-20260716";
+import { PUBLIC_SERVICES_RADAR_CHART_CONFIG } from "../charts/configs/condicionesChartsConfig.js?v=telecom-diccionario-url-20260707";
 
 import {
     createIgacSatelitalTopo,
@@ -40,13 +40,13 @@ import { createOverviewController } from "../map/overview.js";
 import { actualizarFuente } from "../map/mapHelpers.js?v=error-cleanup-20260509";
 import { createSubtabsController } from "../ui/subtabs.js?v=poverty-initial-filter-sync-20260604";
 import { toggleLegend } from "../ui/legend/legend.js";
-import { createSelectsController } from "../ui/selects.js?v=component-nav-socio-20260623";
-import { createLayerController } from "../map/layerController.js?v=tourism-department-context-20260604";
-import { createPibBarChartController } from "../charts/pibBarChart.js?v=irrigation-pointer-pan-20260604";
+import { createSelectsController } from "../ui/selects.js?v=department-map-municipality-selection-20260717";
+import { createLayerController } from "../map/layerController.js?v=department-map-municipality-selection-20260717";
+import { createPibBarChartController } from "../charts/pibBarChart.js?v=department-map-municipality-selection-20260717b";
 import { createPibSectorPieChartController } from "../charts/pibSectorPieChart.js?v=global-municipality-required-state-20260604";
 import { createPibEmpresasStackedBarChartController } from "../charts/pibEmpresasStackedBarChart.js?v=pib-sector-visible-bar-border-20260604";
 import { createCensoPecuarioDoughnutController } from "../charts/dynamics/censoPecuarioDoughnutChart.js?v=global-municipality-required-state-20260604";
-import { createEvaPieChartController } from "../charts/dynamics/evaPieChart.js?v=global-municipality-required-state-20260604";
+import { createEvaPieChartController } from "../charts/dynamics/evaPieChart.js?v=eva-area-bar-values-20260707e";
 import { prepareVisibleChartCanvas, setChartTitle } from "../charts/ui/chartPanel.js?v=local-chart-title-20260529";
 import {
     chartRequiresMunicipality,
@@ -106,8 +106,8 @@ if (educationConfig) {
         layerId: 28,
         source: "SE_IES",
         fields: ["mpcodigo", "mpnombre", "dpnombre", "mpcategor", "mpcracdm", "mpitp", "mpit", "mpiuet", "mpuni", "mpstotalbs"],
-        xAxis: { field: "caracter_acad", label: "Caracter academico" },
-        yAxis: { field: "cantidad", label: "Numero de instituciones", decimals: 0, grace: "18%", tickPadding: 8 },
+        xAxis: { field: "caracter_acad", label: "Carácter académico" },
+        yAxis: { field: "cantidad", label: "Número de instituciones", decimals: 0, grace: "18%", tickPadding: 8 },
         categoryFields: ["mpitp", "mpit", "mpiuet", "mpuni", "mpstotalbs"],
         mapInteractionField: "mpcracdm",
         legendField: "mpcracdm",
@@ -469,7 +469,7 @@ function bindExternalModuleNavigation() {
     container.dataset.externalNavBound = "true";
 
     container.addEventListener("click", (event) => {
-        const item = event.target.closest(".dropdown-item");
+        const item = event.target.closest(".dropdown-item, .dropdown-subitem");
         if (!item || !container.contains(item)) return;
 
         const dropdown = item.closest(".modulo-dropdown");
@@ -481,7 +481,7 @@ function bindExternalModuleNavigation() {
         event.preventDefault();
         event.stopPropagation();
 
-        dropdown.querySelectorAll(".dropdown-item").forEach((el) => el.classList.remove("active"));
+        dropdown.querySelectorAll(".dropdown-item, .dropdown-subitem").forEach((el) => el.classList.remove("active"));
         item.classList.add("active");
         dropdown.classList.remove("open");
 
@@ -646,10 +646,17 @@ const {
     clearChartSelections,
     destroyChart,
     manejarClickMapaAreasActividad: manejarClickMapaAreasActividadBase,
-    prepareChartPanelForConfig,
+    prepareChartPanelForConfig: prepareChartPanelForConfigBase,
     resetAuxiliaryCharts,
     renderActiveChartSoon
 } = chartController;
+
+function prepareChartPanelForConfig(config) {
+    if (config?.key !== "PIB_DEPARTMENT") {
+        setPibValueAddedLayout(false);
+    }
+    return prepareChartPanelForConfigBase(config);
+}
 
 let pibEmpresasController = null;
 const pibSectorPieController = createPibSectorPieChartController({
@@ -803,6 +810,24 @@ async function handleSupportInfrastructureMunicipalityMapClick(event) {
     return selectMunicipalityFromMapClick(municipalityCode);
 }
 
+async function handleDepartmentContextMunicipalityMapClick(event) {
+    const config = getActiveLayerConfig();
+    if (config?.keepDepartmentMapOnMunicipality !== true
+        || !["DEPTO", "MUNI"].includes(String(filtroNivel || ""))
+        || !view) {
+        return false;
+    }
+
+    const activeDepartmentCode = String(deptoActual || municipioActual?.slice?.(0, 2) || "").trim();
+    if (!activeDepartmentCode) return false;
+
+    const municipalityCode = await resolveClickedMunicipalityCode(event, activeDepartmentCode);
+    if (!municipalityCode || municipalityCode.slice(0, 2) !== activeDepartmentCode) return false;
+    if (municipalityCode === String(municipioActual || "").trim()) return false;
+
+    return selectMunicipalityFromMapClick(municipalityCode);
+}
+
 const censoPecuarioController = createCensoPecuarioDoughnutController({
     getMunicipioActual: () => municipioActual,
     getDeptoActual: () => deptoActual,
@@ -821,6 +846,7 @@ async function manejarClickMapaAreasActividad(event) {
     if (await handlePibDepartmentMunicipalityMapClick(event)) return;
     if (await handlePovertyDepartmentMunicipalityMapClick(event)) return;
     if (await handleSupportInfrastructureMunicipalityMapClick(event)) return;
+    if (await handleDepartmentContextMunicipalityMapClick(event)) return;
 
     if (isPibActive() && activePibSubitem === "valor-agregado") {
         await pibSectorPieController.handleMapClick?.(event);
@@ -889,11 +915,17 @@ function reorderPibValueAddedTextBlocks(active = false) {
     const summary = document.getElementById("summaryDiv");
     const sectorPanel = document.getElementById("pibSectorPiePanel");
     const empresasPanel = document.getElementById("pibEmpresasPanel");
+    const empresasText = document.getElementById("pibEmpresasText");
     const censoPanel = document.getElementById("censoPecuarioPanel");
     if (!summary?.parentNode) return;
 
+    if (active && empresasText?.parentNode) {
+        empresasText.parentNode.insertBefore(summary, empresasText);
+        return;
+    }
+
     if (active && empresasPanel?.parentNode) {
-        empresasPanel.parentNode.insertBefore(summary, empresasPanel.nextSibling);
+        empresasPanel.appendChild(summary);
         return;
     }
 
@@ -2157,7 +2189,7 @@ function syncSocioTerritoryStateFromSelects(selectDepto, selectMuni, municipioId
         || deptoId
         || (municipioId ? municipioId.substring(0, 2) : "");
 
-    if (resolvedDepto && selectDepto?.querySelector(`option[value="${resolvedDepto}"]`)) {
+    if (resolvedDepto && Array.from(selectDepto?.options || []).some(option => option.value === resolvedDepto)) {
         selectDepto.value = resolvedDepto;
         deptoActual = resolvedDepto;
         renderizarMunicipios(resolvedDepto);
@@ -2212,7 +2244,7 @@ async function applySocioeconomicoUrlContext() {
     if (deptoId) {
         syncSocioTerritoryStateFromSelects(selectDepto, selectMuni, "", deptoId);
         const resolvedDepto = nav.resolveDeptoSelectValue?.(selectDepto, deptoId) || deptoId;
-        if (!selectDepto.querySelector(`option[value="${resolvedDepto}"]`)) {
+        if (!Array.from(selectDepto.options).some(option => option.value === resolvedDepto)) {
             console.warn("No se pudo autoseleccionar el departamento desde la URL:", deptoId);
             return;
         }

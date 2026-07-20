@@ -233,6 +233,26 @@ body {
     gap: 16px;
 }
 
+.chart-card.chart-card--vigencia {
+    padding-top: 6px;
+}
+
+.chart-card.chart-card--vigencia #chartTitle {
+    margin-bottom: -10px;
+}
+
+.chart-card.chart-card--vigencia .vigencia-charts {
+    gap: 0;
+}
+
+.chart-card.chart-card--vigencia .vigencia-chart-block:first-child {
+    margin-top: -6px;
+}
+
+.chart-card.chart-card--vigencia .vigencia-chart-block + .vigencia-chart-block {
+    margin-top: 8px;
+}
+
 .vigencia-chart-block {
     display: flex;
     flex-direction: column;
@@ -240,12 +260,12 @@ body {
 }
 
 .vigencia-chart-title {
-    margin: 0 auto 10px auto;
+    margin: 0 auto -8px auto;
     color: var(--color-primary);
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 0.98rem;
+    font-weight: 600;
     text-align: center;
-    line-height: 1.25;
+    line-height: 1.2;
 }
 
 /* Contenedor de la torta con altura fija. El canvas se posiciona en ABSOLUTE
@@ -254,8 +274,10 @@ body {
    imposible que la leyenda se monte sobre la torta al redibujar. */
 .vigencia-canvas-wrap {
     position: relative;
-    width: 100%;
-    height: 240px;
+    width: min(100%, var(--vigencia-chart-size, 300px));
+    height: auto;
+    aspect-ratio: 1 / 1;
+    margin: 0 auto;
     flex: 0 0 auto;
 }
 
@@ -288,8 +310,14 @@ body {
     flex-wrap: wrap;
     justify-content: center;
     gap: 6px 14px;
-    margin-top: 10px;
+    margin-top: -14px;
     padding: 0 6px;
+}
+
+.vigencia-chart-legend--estado {
+    min-height: 24px;
+    margin-bottom: 4px;
+    align-items: center;
 }
 
 .vigencia-legend-item {
@@ -810,15 +838,18 @@ canvas {
 
 .navbarigac {
     width: 100%;
-    min-height: 64px;
+    height: 55px;
+    min-height: 55px;
+    max-height: 55px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0;
     /* quitar padding izquierdo */
     box-sizing: border-box;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 12px;
+    overflow: hidden;
 }
 
 .logos {
@@ -832,14 +863,17 @@ canvas {
 
 .navbar-brand-igac {
     background: white;
-    padding: 10.5px 10px;
+    height: 55px;
+    padding: 6px 10px;
     display: flex;
     align-items: center;
     margin-left: 0;
+    box-sizing: border-box;
 }
 
 .navbar-brand-igac img {
-    height: 42px;
+    height: 38px;
+    max-height: 38px;
     width: auto;
     display: block;
 }
@@ -847,15 +881,17 @@ canvas {
 .titulo-app {
     order: 2;
     padding-left: 6px;
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 600;
     color: white;
     white-space: nowrap;
+    line-height: 1.1;
 }
 
 /* ICONO NUEVO */
 .icono-territorial {
-    height: 42px;
+    height: 36px;
+    max-height: 36px;
     margin-left: 8px;
     /* separa del logo */
     margin-right: 5px;
@@ -1088,7 +1124,7 @@ canvas {
     box-sizing: border-box;
     z-index: 12000;
     display: none;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .modulo-dropdown.open>.dropdown-menu-custom {
@@ -1119,6 +1155,24 @@ canvas {
 
 .dropdown-item.active {
     font-weight: 700;
+}
+
+.dropdown-menu-custom .dropdown-item.active,
+.dropdown-menu-custom .dropdown-subitem.active {
+    position: relative;
+    text-decoration: none !important;
+}
+
+.dropdown-menu-custom .dropdown-item.active::after,
+.dropdown-menu-custom .dropdown-subitem.active::after {
+    content: "";
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    bottom: 6px;
+    height: 2px;
+    background: currentColor;
+    pointer-events: none;
 }
 
 /* =========================
@@ -1155,7 +1209,7 @@ canvas {
 }
 
 .limites .dropdown-item.active {
-    text-decoration: underline;
+    text-decoration: none;
     text-decoration-color: #9a5a23;
     text-underline-offset: 10px;
     text-decoration-thickness: 2px;
@@ -1166,7 +1220,7 @@ canvas {
 }
 
 .ordenamiento .dropdown-item.active {
-    text-decoration: underline;
+    text-decoration: none;
     text-decoration-color: #6b4693;
     text-underline-offset: 10px;
     text-decoration-thickness: 2px;
@@ -1177,7 +1231,7 @@ canvas {
 }
 
 .legal .dropdown-item.active {
-    text-decoration: underline;
+    text-decoration: none;
     text-decoration-color: #b13a2f;
     text-underline-offset: 10px;
     text-decoration-thickness: 2px;
@@ -1199,7 +1253,7 @@ canvas {
 }
 
 .ocupacion .dropdown-item.active {
-    text-decoration: underline;
+    text-decoration: none;
     text-decoration-color: #1e78c8;
     text-underline-offset: 10px;
     text-decoration-thickness: 2px;
@@ -1210,7 +1264,7 @@ canvas {
 }
 
 .socioeconomico .dropdown-item.active {
-    text-decoration: underline;
+    text-decoration: none;
     text-decoration-color: #a66a11;
     text-underline-offset: 10px;
     text-decoration-thickness: 2px;
@@ -2545,11 +2599,73 @@ canvas {
     width: 100%;
 }
 
+/* Los graficos circulares necesitan un lienzo cuadrado. Las reglas generales
+   del panel asignan alturas fijas y anchos minimos para barras; esta variante
+   evita que esas dimensiones deformen los anillos. */
+.chart-card.chart-card--pie-like {
+    overflow-x: hidden;
+}
+
+#chart.chart-canvas--pie-like {
+    width: min(100%, 520px) !important;
+    height: auto !important;
+    min-width: 0 !important;
+    max-width: 520px !important;
+    max-height: none !important;
+    aspect-ratio: 1 / 1;
+    margin: 0 auto;
+}
+
+/* Escala compartida para Zonificacion rural, Areas de actividad y
+   Clasificacion del suelo. El valor lo calcula el render segun la cantidad de
+   categorias y siempre queda limitado por un minimo y un maximo. */
+.chart-card.chart-card--ordenamiento-adaptive {
+    overflow-x: hidden;
+}
+
+/* Deja aire entre el titulo y el anillo de Areas de actividad sin afectar
+   los demas graficos que comparten el ajuste adaptativo. */
+.chart-card.chart-card--areas-activity #chart {
+    margin-top: 8px;
+}
+
+#chart.chart-canvas--ordenamiento-adaptive {
+    min-width: 0 !important;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#chart.chart-canvas--pie-like.chart-canvas--ordenamiento-adaptive {
+    width: min(100%, var(--ordenamiento-chart-size, 370px)) !important;
+    max-width: var(--ordenamiento-chart-size, 370px) !important;
+    height: var(--ordenamiento-chart-size, 370px) !important;
+    max-height: var(--ordenamiento-chart-size, 370px) !important;
+}
+
+#chart.chart-canvas--ordenamiento-adaptive:not(.chart-canvas--pie-like) {
+    height: var(--ordenamiento-chart-size, 370px) !important;
+    max-height: var(--ordenamiento-chart-size, 370px) !important;
+}
+
 /* Alineacion lateral al mapa: Clasificacion del suelo y Areas de actividad. */
 #chartDiv.chartDiv--map-aligned {
     display: flex;
     flex-direction: column;
     padding-top: 12px;
+}
+
+@media (min-width: 1101px) {
+    #mapDiv.mapDiv--classification,
+    #mapDiv.mapDiv--rural-tabs {
+        width: 67%;
+    }
+
+    #chartDiv.chartDiv--classification,
+    #chartDiv.chartDiv--rural-tabs {
+        width: 33%;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
 }
 
 #chartDiv.chartDiv--map-aligned .chart-side-panel {
@@ -2584,6 +2700,29 @@ canvas {
     min-height: 0;
     display: flex;
     flex-direction: column;
+}
+
+@media (min-width: 1101px) {
+    #chartDiv.chartDiv--vigencia {
+        align-self: flex-start;
+        height: calc(100% - 56px);
+        min-height: 0;
+        max-height: calc(100% - 56px);
+        overflow-y: auto !important;
+    }
+
+    #chartDiv.chartDiv--vigencia .chart-side-panel,
+    #chartDiv.chartDiv--vigencia .chart-card-wrap,
+    #chartDiv.chartDiv--vigencia .chart-card {
+        flex: 0 0 auto;
+        height: auto;
+        min-height: 0;
+    }
+
+    #chartDiv.chartDiv--vigencia .chart-card {
+        overflow-y: visible;
+    }
+
 }
 
 /* Zonificacion rural: conservar subtabs y espaciado actual. */
@@ -2658,6 +2797,10 @@ canvas {
 @media (max-width: 600px) {
     #chart {
         min-width: 760px;
+    }
+
+    #chart.chart-canvas--pie-like {
+        min-width: 0 !important;
     }
 }
 
@@ -2747,19 +2890,50 @@ canvas {
 .modulo-dropdown:focus-within > .dropdown-menu-custom {
     display: block !important;
 }
-
-#dropdownOrdenamiento .dropdown-item.active {
+.dropdown-item-with-sub {
     position: relative;
-    text-decoration: none !important;
 }
 
-#dropdownOrdenamiento .dropdown-item.active::after {
-    content: "";
+.dropdown-item-with-sub > .dropdown-item {
+    width: 100%;
+}
+
+.dropdown-submenu {
     position: absolute;
-    left: 16px;
-    right: 16px;
-    bottom: 0;
-    height: 2px;
-    background: currentColor;
-    pointer-events: none;
+    top: 0;
+    left: calc(100% + 1px);
+    width: max-content;
+    min-width: 340px;
+    max-width: min(420px, calc(100vw - 280px));
+    background: #FFFAF0;
+    border-radius: 0 12px 12px 12px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+    padding: 6px 0;
+    display: none;
+    z-index: 13000;
+}
+
+.dropdown-item-with-sub:hover > .dropdown-submenu,
+.dropdown-item-with-sub:focus-within > .dropdown-submenu {
+    display: block;
+}
+
+.dropdown-subitem {
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 10px 20px;
+    font-size: 14px;
+    line-height: 1.2;
+    color: #b13a2f;
+    cursor: pointer;
+    font-weight: 500;
+    font-family: "Outfit", sans-serif;
+    box-sizing: border-box;
+    white-space: normal;
+}
+
+.dropdown-subitem:hover {
+    background: rgba(0, 0, 0, 0.04);
 }

@@ -1,0 +1,8 @@
+.DS_Store
+.env
+agenda.md
+.pruebas/
+.node_modules/
+.agents
+pruebas/
+observatorio-tierra-y-territorio/

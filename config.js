@@ -47,25 +47,31 @@ window.OOT_BASE = (function () {
 window.OOT_ENV_API = window.OOT_ENV_API || {
   'localhost':                      '',   // desarrollo (api.py sirve el sitio)
   '127.0.0.1':                      '',
-  '':                               '',   // file:// o same-origin sin host
-  // --- PLACEHOLDERS institucionales: definir con el equipo de infraestructura ---
-  'pruebas-colombiaot.igac.gov.co': 'https://api-pruebas-oot.igac.gov.co', // TODO infra
-  'colombiaot.igac.gov.co':         'https://api-oot.igac.gov.co',         // TODO infra
+  'jeremaya203.github.io':          'https://expansys-meetings-bandwidth-activists.trycloudflare.com',   // file:// o same-origin sin host
+  // --- Ambientación institucional del IGAC ---
+  'pruebas-colombiaot.igac.gov.co': 'https://api-pruebas-oot.igac.gov.co', // Ambiente de pruebas
+  'colombiaot.igac.gov.co':         'https://api-oot.igac.gov.co',         // Ambiente de producción
 };
 // Override explícito SOLO para desarrollo (p.ej. exponer un backend local por túnel):
 // defina  window.OOT_API_REMOTE = 'https://xxxx.trycloudflare.com'  ANTES de este script.
 // NUNCA debe ser el default de producción → por eso ya no se hardcodea ninguna URL aquí.
-window.OOT_API_REMOTE = window.OOT_API_REMOTE || '';
-// Host conocido → su backend de ambiente; host desconocido → override de dev o same-origin.
-window.OOT_API_BASE = (location.hostname in window.OOT_ENV_API)
-  ? window.OOT_ENV_API[location.hostname]
-  : (window.OOT_API_REMOTE || '');
+window.OOT_API_REMOTE = window.OOT_API_REMOTE || 'https://expansys-meetings-bandwidth-activists.trycloudflare.com';
+// Priorizar el override remoto (túnel de desarrollo) si está definido.
+// Si no, resolver según el mapa de ambientes.
+window.OOT_API_BASE = window.OOT_API_REMOTE || (
+  (location.hostname in window.OOT_ENV_API)
+    ? window.OOT_ENV_API[location.hostname]
+    : ''
+);
 
 // ── Vector tiles (.pmtiles de indicadores) ────────────────────────────────────
 // '' = se sirven desde el MISMO origen que el sitio (carpeta /tiles/ junto al frontend).
 // Si los sirve el backend, pon aquí su URL base (normalmente la misma que OOT_API_BASE);
 // en ese caso el backend debe exponer /tiles/*.pmtiles con CORS + soporte HTTP Range.
-window.OOT_TILES_BASE = '';
+window.OOT_TILES_BASE = window.OOT_TILES_BASE || '';
+if (!window.OOT_TILES_BASE && window.OOT_API_BASE) {
+  window.OOT_TILES_BASE = window.OOT_API_BASE;
+}
 
 // ── Hardening de runtime (obs 12, 26) ─────────────────────────────────────────
 // Bandera de depuración: false en producción → silencia console.log/console.debug
@@ -75,6 +81,8 @@ window.OOT_DEBUG = window.OOT_DEBUG || false;
 if (!window.OOT_DEBUG && typeof console !== 'undefined') {
   console.log = function () {};
   console.debug = function () {};
+  console.info = function () {};
+  console.warn = function () {};
 }
 // Favicon institucional en TODAS las páginas (sin editar cada <head>).
 (function () {
@@ -88,63 +96,28 @@ if (!window.OOT_DEBUG && typeof console !== 'undefined') {
   } catch (e) {}
 })();
 
-// ── Analítica GA4 y Google Tag Manager (H-03) ──────────────────────────────────
-// Mide visitas y uso de la plataforma.
+// ── Analítica GA4 (obs 3) ─────────────────────────────────────────────────────
+// Mide visitas y uso de la plataforma (page_view automático en todas las páginas).
+// ID de medición reutilizado de la plataforma institucional. Para desactivar: '' .
 window.OOT_GA4_ID = (typeof window.OOT_GA4_ID === 'string') ? window.OOT_GA4_ID : 'G-78PPLF47WW';
-window.OOT_GTM_ID = (typeof window.OOT_GTM_ID === 'string') ? window.OOT_GTM_ID : 'GTM-PPLF47WW';
-
 (function () {
   try {
-    // 1. Cargar Google Analytics 4
-    if (window.OOT_GA4_ID) {
-      var s = document.createElement('script');
-      s.async = true;
-      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + window.OOT_GA4_ID;
-      (document.head || document.documentElement).appendChild(s);
-      window.dataLayer = window.dataLayer || [];
-      window.gtag = function () { dataLayer.push(arguments); };
-      gtag('js', new Date());
-      gtag('config', window.OOT_GA4_ID);
-    }
-    
-    // 2. Cargar Google Tag Manager
-    if (window.OOT_GTM_ID) {
-      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-      })(window,document,'script','dataLayer',window.OOT_GTM_ID);
-    }
+    if (!window.OOT_GA4_ID) return;
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + window.OOT_GA4_ID;
+    (document.head || document.documentElement).appendChild(s);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { dataLayer.push(arguments); };
+    gtag('js', new Date());
+    gtag('config', window.OOT_GA4_ID);
   } catch (e) {}
 })();
-
 // Helper de eventos para instrumentar acciones: OOT.track('nombre', { param: valor }).
 window.OOT = window.OOT || {};
 window.OOT.track = function (evento, params) {
-  try {
-    if (window.gtag) window.gtag('event', evento, params || {});
-    if (window.dataLayer) window.dataLayer.push({ event: evento, eventParams: params || {} });
-  } catch (e) {}
+  try { if (window.gtag) window.gtag('event', evento, params || {}); } catch (e) {}
 };
-
-// Disparadores globales para descargas de documentos (.pdf, .zip)
-document.addEventListener('click', function (e) {
-  try {
-    var a = e.target.closest('a');
-    if (a && a.href) {
-      var url = a.href.toLowerCase();
-      if (url.endsWith('.pdf') || url.endsWith('.zip')) {
-        var ext = url.endsWith('.pdf') ? 'pdf' : 'zip';
-        var filename = a.href.substring(a.href.lastIndexOf('/') + 1) || 'archivo';
-        window.OOT.track('descarga_documento', {
-          tipo: ext,
-          nombre_archivo: filename,
-          url: a.href
-        });
-      }
-    }
-  } catch (err) {}
-});
 
 // URL del backend de Colombia OT — reservada para fase 2
 // Cuando se integre la API de Colombia OT, definir esta variable antes de usarla.
@@ -182,7 +155,7 @@ window.OOT_MODULOS = {
 
 // Rutas prefijadas con OOT_BASE para portabilidad en subpath (a raíz = idénticas).
 window.OOT_COT_WRAPPERS = {
-  pot:          (window.OOT_BASE || '') + '/colombia-ot/pot.html',
+  pot:          (window.OOT_BASE || '') + '/colombia-ot/pot/index.html',
   ruta:         (window.OOT_BASE || '') + '/colombia-ot/ruta/index.html',
   cartillas:    (window.OOT_BASE || '') + '/colombia-ot/cartillas.html',
   // Obs 24: wrappers inertes (aún NO presentes en colombia-ot/). Reactivar cuando exista
@@ -355,6 +328,22 @@ window.OOT.loadShell = async function() {
     document.querySelectorAll('#link-list a[data-page], .navbarnavigac a[data-page], .oot-dark-links a[data-page]').forEach(el => {
       if (el.dataset.page === page) el.classList.add('active');
     });
+
+    // Botones #oot-login-btn/#oot-logout-btn viven en navbar.html: recién existen aquí,
+    // tras la inyección.
+    // - Páginas heredadas de colombiaot.gov.co (cargue, colombia-ot/pot) ya traen su PROPIO
+    //   modal Firebase/FirebaseUI funcional (#modalLogin + gotoLogin()) — reusarlo evita
+    //   inicializar Firebase dos veces en la misma página.
+    // - El resto usa js/shared-auth.js (OOT.auth), más liviano (sin FirebaseUI/jQuery).
+    if (window.OOT.auth) {
+      window.OOT.auth.bindNavbar();
+    } else if (typeof window.gotoLogin === 'function') {
+      const loginBtn = document.getElementById('oot-login-btn');
+      if (loginBtn && !loginBtn.dataset.ootBound) {
+        loginBtn.dataset.ootBound = '1';
+        loginBtn.addEventListener('click', (e) => { e.preventDefault(); window.gotoLogin(); });
+      }
+    }
   }, 50);
 
   // Sincronizar el alto real del navbar (ver _ootSyncNavbarH)

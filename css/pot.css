@@ -1,0 +1,260 @@
+.DEPTO {
+    font-weight: bold;
+    padding-left: 1em;
+}
+
+.ALL {
+    font-weight: bold;
+    line-height: normal;
+}
+
+.PAIS {
+    font-weight: bold;
+}
+
+.MUNI {
+    padding-left: 1em;
+    padding-left: 2em;
+    font-style: italic;
+}
+
+section {
+    padding-top: 80px;
+}
+
+select {
+    width: 100%;
+}
+
+/* bloque busqueda */
+.bloqBusqueda {
+    background-image: url('/images/recursos/bgBloqBusqueda.png');
+    background-position: bottom;
+    background-repeat: no-repeat;
+    background-size: cover;
+    padding: 150px 0 197px;
+}
+
+.bloqBusqueda .title {
+    text-align: center;
+    font-size: 24px;
+    height: 24px;
+    margin-bottom: 50px;
+}
+
+.bloqBusqueda .containerForm {
+    display: flex;
+    justify-content: center;
+}
+
+.bloqBusqueda .containerForm .formInputs {
+    display: flex;
+    justify-content: space-between;
+}
+
+.bloqBusqueda .containerForm .formInputs .row {
+    display: flex;
+    margin-right: 5px;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.bloqBusqueda .containerForm .formInputs .col-md-6 {
+    display: flex;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.btnVerTodos {
+    margin-left: -5px;
+    margin-right: -5px;
+    color: var(--azul-igac);
+}
+
+.carousel-inner td {
+    width: 20%;
+}
+
+.carousel-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 0 5px;
+    cursor: pointer;
+}
+
+.carousel-container img {
+    width: 100%;
+    height: auto;
+    margin-bottom: 15px;
+}
+
+
+.carousel-container .title {
+    font-size: 20px;
+    height: 22px;
+    margin-bottom: 10px;
+}
+
+.carousel-container p {
+    color: #fff;
+    width: 100%;
+    font-size: 14px;
+    height: 16px;
+    text-align: center;
+}
+
+.carousel-container.antioquia {
+    background: #002735;
+}
+
+.grandes-cifras {
+    background: var(--bg-igac-gris);
+    margin-top: 60px;
+    margin-bottom: 0px;
+    padding-top: 200px;
+    padding-bottom: 350px;
+}
+
+.grandes-cifras .row-cifras .rightside-container .statements-content {
+    background: #6445E1;
+}
+
+.grandes-cifras .row-cifras .rightside-container .statements-circle {
+    background: #FCE58F;
+}
+
+/*carouselRecursos Colores*/
+#carouselRecursos div {
+     color: #002735;
+}
+
+#carouselRecursos .amazonas div {
+    background: #059370 !important;
+}
+
+#carouselRecursos .narino div {
+    background: #F9BB15 !important;
+}
+
+#carouselRecursos .laguajira div {
+    background: #F5F7D4 !important;
+}
+
+#carouselRecursos .boyaca div {
+    background: #EF846E !important;
+}
+
+#carouselRecursos .huila div {
+    background: #A2B8DF !important;
+}
+
+#carouselRecursos .valledelcauca div {
+    background: #F9BB15 !important;
+}
+
+#carouselRecursos .guabiare div {
+    background: #FBE67F !important;
+}
+
+#carouselRecursos .cundinamarca div {
+    background: #E9BE1F !important;
+}
+
+#carouselRecursos .sanandresyprovidencia div {
+    background: #FFDF84 !important;
+}
+
+#carouselRecursos .vichada div {
+    background: #0A7C58 !important;
+}
+
+#carouselRecursos .arauca div {
+    background: #5F9CD4 !important;
+}
+
+#carouselRecursos .bolivar div {
+    background: #204977 !important;
+}
+
+#carouselRecursos .casanare div {
+    background: #F4E5A4 !important;
+}
+
+#carouselRecursos .cordoba div {
+    background: #4ABD95 !important;
+}
+
+#carouselRecursos .nortedesantander div {
+    background: #154651 !important;
+    color: #fff;
+}
+
+#carouselRecursos .risaralda div {
+    background: #E8C77F !important;
+}
+
+#carouselRecursos .antioquia div {
+    background: #4982C3 !important;
+}
+
+#carouselRecursos .tolima div {
+    background: #B1C2E4 !important;
+}
+
+#carouselRecursos .choco div {
+    background: #EC6755 !important;
+}
+
+#carouselRecursos .cesar div {
+    background: #6E95CD !important;
+}
+
+#carouselRecursos .quindio div {
+    background: #F9C85E !important;
+}
+
+#carouselRecursos .sucre div {
+    background: #F7BEAC !important;
+}
+
+#carouselRecursos .guainia div {
+    background: #002735 !important;
+}
+
+#carouselRecursos .meta div {
+    background: #01B185 !important;
+}
+
+#carouselRecursos .santander div {
+    background: #6AC5AD !important;
+}
+
+#carouselRecursos .vaupes div {
+    background: #014051 !important;
+}
+
+#carouselRecursos .atlantico div {
+    background: #002735 !important;
+    color: #fff;
+}
+
+#carouselRecursos .caldas div {
+    background: #D45D50 !important;
+}
+
+#carouselRecursos .cauca div {
+    background: #F37366 !important;
+}
+
+#carouselRecursos .magdalena div {
+    background: #F8F5BA !important;
+}
+
+#carouselRecursos .putumayo div {
+    background: #76B7E4 !important;
+}
+
+#carouselRecursos .caqueta div {
+    background: #F7EFE0 !important;
+}

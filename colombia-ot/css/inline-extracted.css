@@ -1,0 +1,6 @@
+/* Extraido de style="" attrs inline — CSP compliance (sin !important:
+   selector por id, para no romper toggles JS via element.style.x) */
+
+/* -- cartillas.html -- */
+#estado-carga { display:none }
+#paginacion { display:none }

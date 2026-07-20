@@ -15,7 +15,7 @@ export function createStationsLayer({ FeatureLayer, STATIONS_LAYER_URL, buildPop
     let stationsLayer = null;
 
     function ensureStationsLayer() {
-        if (stationsLayer) return stationsLayer;
+        if (stationsLayer && !stationsLayer.destroyed) return stationsLayer;
 
         stationsLayer = new FeatureLayer({
             url: STATIONS_LAYER_URL,

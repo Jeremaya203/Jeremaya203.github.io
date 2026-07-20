@@ -10,15 +10,14 @@
         content="Ordenamiento territorial de Colombia | Colombia OT: Una plataforma del IGAC para la construcción colectiva de país." />
     <meta name="title" property="og:title" content="Colombia OT - DocuVisor">
     <meta property="og:type" content="website">
-    <meta name="image" property="og:image" content="https://www.colombiaot.gov.co/images/Preview.png">
+    <meta name="image" property="og:image" content="../images/home/bg-home-hero.png">
     <meta name="keywords"
-        content="Ordenamiento territorial, Plan de ordenamiento territorial, Pot colombia, Pot, Componente rural, Componente urbano, Dimensiones del diagnóstico, Igac, Observatorio de ordenamiento territorial, Datos del pot, Planificación territorial, Federación colombiana de municipios, La ruta del pot" />
+        content="Ordenamiento territorial, Plan de ordenamiento territorial, Pot colombia, Pot, Componente rural, Componente urbano, Dimensiones del diagnóstico, Igac, Colombia OT 2.0, Datos del pot, Planificación territorial, Federación colombiana de municipios, La ruta del pot" />
     <meta name="author" content="Instituto Geográfico Agustín Codazzi - IGAC" />
     <meta http-equiv="content-language" content="es" />
     <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"
         integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
 
-    <link rel="canonical" href="https://www.colombiaot.gov.co/docuvisor" />
     <link rel="shortcut icon" href="../images/favicon.ico" />
     <title>Colombia OT - DocuVisor</title>
 
@@ -37,171 +36,66 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote.min.css" />
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.css" />
-    <link rel="stylesheet" href="js/lib/dist/css/calcite-maps-bootstrap.min-v0.10.css">
-    <link rel="stylesheet" href="js/lib/dist/css/calcite-maps-arcgis-3.x.min-v0.10.css">
+    <link rel="stylesheet" href="../js/lib/dist/css/calcite-maps-bootstrap.min-v0.10.css">
+    <link rel="stylesheet" href="../js/lib/dist/css/calcite-maps-arcgis-3.x.min-v0.10.css">
 
-    <link rel="stylesheet" href="css/maestra.css">
-    <link rel="stylesheet" href="css/navbar-footer.css">
-    <link rel="stylesheet" href="css/cargue.css">
-
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-78PPLF47WW"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-
-        function gtag() {
-            dataLayer.push(arguments);
-        }
-        gtag('js', new Date());
-
-        gtag('config', 'G-78PPLF47WW');
-    </script>
+    <link rel="stylesheet" href="../css/maestra.css">
+    <link rel="stylesheet" href="../css/navbar-footer.css">
+    <link rel="stylesheet" href="../css/oot-complementario.css">
+    <link rel="stylesheet" href="../css/cargue.css">
+    <link rel="stylesheet" href="css/custom.css">
+  <link rel="stylesheet" href="css/inline-extracted.css">
+    <link rel="stylesheet" href="../mobile-warning.css">
+  <script defer src="../mobile-warning.js"></script>
 </head>
 
 <body class="calcite calcite-nav-top">
-    <div class="barra_gov">
-        <a class="logo-gov" href="https://www.gov.co/home/" target="_blank">
-            <img alt="Logo Gov.co" src="../images/nav/header_govco.png">
-        </a>
-    </div>
-
-    <nav>
-        <div class="navbarigac">
-            <div class="logos">
-                <a href="https://www.igac.gov.co" class="navbar-brand-igac" target="_blank">
-                    <img alt="Logo IGAC" src="../images/nav/logo.png">
-                </a>
-                <img src="../images/nav/colombiaOT.svg" alt="Colombia OT">
-            </div>
-            <ul id="link-list">
-                <li>
-                    <a href="../index.html" rel="noopener">Inicio</a>
-                </li>
-                <li>
-                    <a href="../colombia-ot/pot.html" rel="noopener">Los POT del país</a>
-                </li>
-				<li>
-				  	<a href="../vigencias/" rel="noopener">Visor  Vigencias POTs</a>
-                </li>
-                <li id="optionCargue" style="display: none;">
-                    <a href="./" rel="noopener">Cargue</a>
-                </li>
-                <li>
-                    <a class="collapse-button-1">Otros recursos
-                        <img src="../images/nav/ico-arrow.png" alt="">
-                    </a>
-
-                    <ul id="collapse-menu-1" class="collapse-menu-1">
-                        <li>
-                            <a href="../colombia-ot/cartillas.html">Cartillas, gu&iacute;as y manuales</a>
-                            <img src="../images/nav/ico-arrow.png" alt="Cartillas, gu&iacute;as y manuales">
-                        </li>
-                        <li>
-                            <a href="../normatividad/">Normatividad</a>
-                            <img src="../images/nav/ico-arrow.png" alt="Normatividad">
-                        </li>
-                        <li>
-                            <a href="../datosot/">Datos para el OT</a>
-                            <img src="../images/nav/ico-arrow.png" alt="Datos para el OT">
-                        </li>
-                        <li>
-                            <a href="../aplicaciones/">Aplicaciones y herramientas</a>
-                            <img src="../images/nav/ico-arrow.png" alt="Aplicaciones y herramientas">
-                        </li>
-                        <li>
-                            <a href="../documentos/">Documentos t&eacute;cnicos</a>
-                            <img src="../images/nav/ico-arrow.png" alt="Documentos t&eacute;cnicos">
-                        </li>
-                        <li>
-                            <a href="../colombia-ot/ruta/index.html">La Ruta del POT</a>
-                            <img src="../images/nav/ico-arrow.png" alt="La Ruta del POT">
-                        </li>
-                    </ul>
-                </li>
-                <li>
-                    <a class="collapse-button-2">Acerca de
-                        <img src="../images/nav/ico-arrow.png" alt="Acerca de">
-                    </a>
-
-                    <ul id="collapse-menu-2" class="collapse-menu-2">
-                        <li>
-                            <a href="../acerca-de/">Qu&eacute; es el ordenamiento territorial (OT)</a>
-                            <img src="../images/nav/ico-arrow.png" alt="Que es">
-                        </li>
-                        <li>
-                            <a href="../acerca-de/colombia-ot-del-igac.html">Colombia OT del IGAC</a>
-                            <img src="../images/nav/ico-arrow.png" alt="Colombia OT">
-                        </li>
-                        <li>
-                            <a href="../acerca-de/actores-de-colombia-ot.html">Actores de Colombia OT</a>
-                            <img src="../images/nav/ico-arrow.png" alt="Actores">
-                        </li>
-                        <li>
-                            <a href="../acerca-de/ot_del_pais_en_cifras.html">El OT del pa&iacute;s en cifras</a>
-                            <img src="../images/nav/ico-arrow.png" alt="Cifras">
-                        </li>
-                    </ul>
-                </li>
-                <li>
-                    <a id="loginBtn" onclick="gotoLogin();">
-                        <img id="userPhoto" src="../images/icono_ingreso.png" onerror="defaultUserPhoto();" alt="Iniciar sesion" />
-                        <span id="userName" style="display: none;">Iniciar sesion</span>
-                    </a>
-                </li>
-            </ul>
-            <button class='nav-bar-toggle-igac'>
-                <div class='icon-bar'></div>
-                <div class='icon-bar'></div>
-                <div class='icon-bar'></div>            </button>
-        </div>
-        <div class='navbarnavigac'>
-        </div>
-    </nav>
+    <div id="oot-navbar-placeholder"></div>
 
     <div class="calcite-map docuvisor-content">
         <div id="mainDiv" class="main-small">
             <!-- Search Panel -->
             <div id="panelSearch" class="panel collapse">
                 <div id="collapseSearch" class="panel-collapse">
-                    <div class="panel-body" style="padding: 0px;">
+                    <div id="ie-1" class="panel-body">
                         <div id="containerFiltros">
                             <div id="panelSearchFiltros" class="panel panel-default" data-toggle="popover">
                                 <div id="listOpciones">
                                     <div id="searchHeader" class="panel-heading">
-                                        <h3 class="panel-title" style="display: inline-block;">Selecciona una
+                                        <h3 id="ie-2" class="panel-title">Selecciona una
                                             opci&oacute;n</h3>
                                     </div>
-                                    <ul class="nav nav-sidebar"
-                                        style="border: 1px solid gray; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px;">
+                                    <ul id="ie-3" class="nav nav-sidebar"
+                                       >
                                         <li>
                                             <a class="dropdownToggleTwo">Los POT del país</a>
                                             <ul class="dropDownTwo">
-                                                <li id="menuDocumentos" style="display: none;">
-                                                    <a href="#" onclick="gotoDocumentos();">Documentos</a>
+                                                <li id="menuDocumentos">
+                                                    <a href="#" class="btn-goto-documentos">Documentos</a>
                                                 </li>
-                                                <li id="menuPot" style="display: none;">
-                                                    <a href="#" onclick="gotoPot();">Cartografía (XTF / GDB)</a>
+                                                <li id="menuPot">
+                                                    <a href="#" class="btn-goto-pot">Cartografía (XTF / GDB)</a>
                                                 </li>
                                             </ul>
                                         </li>
-                                        <li id="menuRecursos" style="display: none;">
-                                            <a href="#" onclick="gotoRecursos();">Otros recursos</a>
+                                        <li id="menuRecursos">
+                                            <a href="#" class="btn-goto-recursos">Otros recursos</a>
                                         </li>
                                     </ul>
                                 </div>
-                                <div id="listDocumentosPasos" style="display: none;">
+                                <div id="listDocumentosPasos">
                                     <ul class="nav nav-sidebar">
                                         <li>
-                                            <a href="#" onclick="gotoDocumentosPaso(1);">Nombre y descripción</a>
+                                            <a href="#" class="btn-goto-doc-paso" data-paso="1">Nombre y descripción</a>
                                         </li>
                                         <li>
-                                            <a href="#" onclick="gotoDocumentosPaso(2);">Detalle</a>
+                                            <a href="#" class="btn-goto-doc-paso" data-paso="2">Detalle</a>
                                         </li>
                                         <li>
-                                            <a href="#" onclick="gotoDocumentosPaso(3);">Recurso</a>
+                                            <a href="#" class="btn-goto-doc-paso" data-paso="3">Recurso</a>
                                         </li>
                                         <li>
-                                            <a href="#" onclick="gotoDocumentosPaso(4);">Resumen</a>
+                                            <a href="#" class="btn-goto-doc-paso" data-paso="4">Resumen</a>
                                         </li>
 
                                     </ul>
@@ -213,28 +107,28 @@
                 </div>
             </div>
         </div>
-        <div id="mapViewDiv" class="calcite-map-absolute main-small-map" style="background: white;">
-            <div id="alertList" style="display: none;">
+        <div id="mapViewDiv" class="calcite-map-absolute main-small-map">
+            <div id="alertList">
                 <div>
-                    <div id="alertHeader" class="alert-header" style="background-color:white;"></div>
-                    <div style="background: white;" class="alert-media">
+                    <div id="alertHeader" class="alert-header"></div>
+                    <div id="ie-4" class="alert-media">
                         <div id="alertContentLeft" class="media-left">
-                            <img alt="imagen" class="media-object" style="width: 20px; height: 20px;" src="" />
+                            <img id="ie-5" alt="imagen" class="media-object" src="" />
                         </div>
-                        <div id="alertContent" class="media-body alert-media-body" style="width: 250px;">
+                        <div id="alertContent" class="media-body alert-media-body">
                         </div>
-                        <div class="media-right" style="color: gray;" onclick="$('#alertList').hide();">
+                        <div id="ie-6" class="media-right btn-close-alert">
                             <span class="esri-icon esri-icon-close" aria-hidden="true"></span>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="row">
-                <div id="documentosDiv" class="col-md-8 contenedor-interno" style="display: none;">
+                <div id="documentosDiv" class="col-md-8 contenedor-interno">
                     <div id="documentosList">
                         <ul class="nav nav-pills">
-                            <li class="active"><a data-toggle="pill" href="#documentosMisRegistros">Mis registros</a></li>
-                            <li><a data-toggle="pill" href="#documentosRegistrosIGAC">Registros IGAC</a></li>
+                            <li id="ie-7" class="active"><a data-toggle="pill" href="#documentosMisRegistros">Mis registros</a></li>
+                            <!--<li><a data-toggle="pill" href="#documentosRegistrosIGAC">Registros IGAC</a></li>-->
                         </ul>
                         <div class="tab-content">
                             <div id="documentosMisRegistros" class="tab-pane fade in active">
@@ -242,27 +136,27 @@
                                     <div id="docViewCount">
                                     </div>
                                     <div id="docViewPage">&nbsp; | &nbsp; Ver:
-                                        <a href="#" onclick="changeLenDocs(25);">&nbsp;25&nbsp;</a>
-                                        <a href="#" onclick="changeLenDocs(50);">&nbsp;50&nbsp;</a>
-                                        <a href="#" onclick="changeLenDocs(100);">&nbsp;100&nbsp;</a>
+                                        <a href="#" class="btn-change-len" data-len="25">&nbsp;25&nbsp;</a>
+                                        <a href="#" class="btn-change-len" data-len="50">&nbsp;50&nbsp;</a>
+                                        <a href="#" class="btn-change-len" data-len="100">&nbsp;100&nbsp;</a>
                                     </div>
                                 </div>
-                                <div class="pull-right" style="margin-bottom: 20px;">
-                                    <button type="button" onclick="newDocumentos();" class="btn btn-default btn-primary">
+                                <div id="ie-8" class="pull-right">
+                                    <button type="button" id="btnNewDocumentos" class="btn btn-default btn-primary">
                                         Cargar nuevo documento
                                     </button>
                                 </div>
                                 <div class="row">
                                     <div class="col-sm-12">
                                         <div class="table-responsive">
-                                            <table id="tableDocumentos" class="table" style="width:100%">
+                                            <table id="tableDocumentos" class="table">
                                                 <thead>
                                                     <tr>
                                                         <th>#</th>
                                                         <th>Nombre</th>
                                                         <th>Unidad</th>
                                                         <th>Etapa</th>
-                                                        <th>Estado</th>
+                                                        <!--<th>Estado</th>-->
                                                         <th>Fecha</th>
                                                         <th></th>
                                                     </tr>
@@ -279,16 +173,16 @@
                                         <div class="headerResultIGAC">
                                             <div class="wrapFilters">
                                                 <div class="col-md-3Just">
-                                                    <p class="unidad-container" style="width: 100%;">
-                                                        <label style="font-size: 14px;"><strong>Unidad</strong></label>
-                                                        <select class="form-control" id="filterUnidadIGAC" style="width: 100%;font-size: 14px;">
+                                                    <p id="ie-9" class="unidad-container">
+                                                        <label id="ie-10"><strong>Unidad</strong></label>
+                                                        <select class="form-control" id="filterUnidadIGAC">
                                                         </select>
                                                     </p>
                                                 </div>
                                                 <div class="col-md-3Just">
-                                                    <p class="unidad-container" style="width: 100%;">
-                                                        <label style="font-size: 14px;"><strong>Etapa</strong></label>
-                                                        <select class="form-control" id="filterEtapaIGAC" style="width: 100%;font-size: 14px;">
+                                                    <p id="ie-11" class="unidad-container">
+                                                        <label id="ie-12"><strong>Etapa</strong></label>
+                                                        <select class="form-control" id="filterEtapaIGAC">
                                                             <option value="Todas">Todas las etapas</option>
                                                             <option value="Diagnóstico">Diagnóstico</option>
                                                             <option value="Formulación">Formulación</option>
@@ -298,9 +192,9 @@
                                                     </p>
                                                 </div>
                                                 <div class="col-md-3Just">
-                                                    <p class="unidad-container" style="width: 100%;">
-                                                        <label style="font-size: 14px;"><strong>Fecha</strong></label>
-                                                        <select class="form-control" id="filterYearIGAC" style="width: 100%;font-size: 14px;">
+                                                    <p id="ie-13" class="unidad-container">
+                                                        <label id="ie-14"><strong>Fecha</strong></label>
+                                                        <select class="form-control" id="filterYearIGAC">
                                                         </select>
                                                     </p>
                                                 </div>
@@ -309,14 +203,14 @@
                                                 <div id="docViewCountIGAC">
                                                 </div>
                                                 <div id="docViewPageIGAC">&nbsp; | &nbsp; Ver:
-                                                    <a href="#" onclick="changeLenDocsIGAC(25);">&nbsp;25&nbsp;</a>
-                                                    <a href="#" onclick="changeLenDocsIGAC(50);">&nbsp;50&nbsp;</a>
-                                                    <a href="#" onclick="changeLenDocsIGAC(100);">&nbsp;100&nbsp;</a>
+                                                    <a href="#" class="btn-change-len-igac" data-len="25">&nbsp;25&nbsp;</a>
+                                                    <a href="#" class="btn-change-len-igac" data-len="50">&nbsp;50&nbsp;</a>
+                                                    <a href="#" class="btn-change-len-igac" data-len="100">&nbsp;100&nbsp;</a>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="table-responsive">
-                                            <table id="tableDocumentosIGAC" class="table" style="width:100%">
+                                            <table id="tableDocumentosIGAC" class="table">
                                                 <thead>
                                                     <tr>
                                                         <th>#</th>
@@ -335,9 +229,9 @@
                             </div>
                         </div>
                     </div>
-                    <div id="documentosDetail" style="display: none;">
-                        <div class="pull-left" style="margin-bottom: 20px;">
-                            <a href="#" onclick="gotoDocumentos();">
+                    <div id="documentosDetail">
+                        <div id="ie-15" class="pull-left">
+                            <a href="#" class="btn-goto-documentos">
                                 <span class='glyphicon glyphicon-menu-left' aria-hidden='true'></span>
                                 &nbsp;Volver
                             </a>
@@ -345,16 +239,16 @@
                         <div class="row">
                             <div class="col-sm-12">
                                 <div id="documentosPaso1">
-                                    <div class="form-group" id="documentosIdFieldDiv" style="display: none;" >
+                                    <div class="form-group" id="documentosIdFieldDiv" >
                                         <label for="documentosIdField">ID</label>
                                         <input type="text" class="form-control" id="documentosIdField" readonly>
                                     </div>
 
                                     <div class="row">
                                         <div class="form-group col-sm-6">
-                                            <label for="documentosETField">Entidad territorial</label><label style="color: red;">&nbsp;*</label>
+                                            <label for="documentosETField">Entidad territorial</label><label id="ie-16">&nbsp;*</label>
                                             <select id="documentosETField" data-width="100%"></select>
-                                            <div class="pull-right" id="documentosET_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                            <div class="pull-right" id="documentosET_Error">Este campo es obligatorio</div>
                                         </div>
                                         <div class="form-group col-sm-6">
                                             <label for="documentosCodigoField">C&oacute;digo DANE</label>
@@ -364,35 +258,35 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="documentosFormaField">1. Forma de representaci&oacute;n</label><label style="color: red;">&nbsp;*</label>
+                                        <label for="documentosFormaField">1. Forma de representaci&oacute;n</label><label id="ie-17">&nbsp;*</label>
                                         <br />
                                         <select id="documentosFormaField" data-width="100%">
                                             <option>Documento</option>
                                             <option>Cartograf&iacute;a</option>
                                         </select>
-                                        <div class="pull-right" id="documentosForma_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                        <div class="pull-right" id="documentosForma_Error">Este campo es obligatorio</div>
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="documentosEtapaField">2. Etapa</label><label style="color: red;">&nbsp;*</label>
+                                        <label for="documentosEtapaField">2. Etapa</label><label id="ie-18">&nbsp;*</label>
                                         <select id="documentosEtapaField" data-width="100%">
                                             <option>Diagnóstico</option>
                                             <option>Evaluación y Seguimiento</option>
                                             <option>Formulación</option>
                                             <option>Implementación</option>
                                         </select>
-                                        <div class="pull-right" id="documentosEtapa_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                        <div class="pull-right" id="documentosEtapa_Error">Este campo es obligatorio</div>
                                     </div>
-                                    <div class="form-group" id="documentosComponenteDiv" style="display: none;">
+                                    <div class="form-group" id="documentosComponenteDiv">
                                         <label for="documentosComponenteField">Componente</label>
                                         <select id="documentosComponenteField" data-width="100%">
                                             <option>General</option>
                                             <option>Rural</option>
                                             <option>Urbano</option>
                                         </select>
-                                        <div class="pull-right" id="documentosComponente_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                        <div class="pull-right" id="documentosComponente_Error">Este campo es obligatorio</div>
                                     </div>
-                                    <div class="form-group" id="documentosDimensionDiv" style="display: none;">
+                                    <div class="form-group" id="documentosDimensionDiv">
                                         <label for="documentosDimensionField">Dimensión</label>
                                         <select id="documentosDimensionField" data-width="100%">
                                             <option>Ambiental</option>
@@ -402,15 +296,15 @@
                                             <option>Socio-Cultural</option>
                                             <option>Síntesis</option>
                                         </select>
-                                        <div class="pull-right" id="documentosDimension_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                        <div class="pull-right" id="documentosDimension_Error">Este campo es obligatorio</div>
                                     </div>
 
                                    <div class="form-group" id="documentosNombreDiv">
-                                        <label for="documentosNombreField">3. Nombre del documento</label><label style="color: red;">&nbsp;*</label>
+                                        <label for="documentosNombreField">3. Nombre del documento</label><label id="ie-19">&nbsp;*</label>
                                         <br />
                                         <select id="documentosNombreField" data-width="100%">
                                         </select>
-                                        <div class="pull-right" id="documentosDimension_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                        <div class="pull-right" id="documentosDimension_Error">Este campo es obligatorio</div>
                                     </div>
 
                                     <!-- <div class="form-group">
@@ -419,97 +313,97 @@
                                             placeholder="Ej. 2.0; V2; Versión 2">
                                     </div> -->
 
-                                    <div class="form-group" id="documentosDescripcionDiv" style="display: none;">
+                                    <div class="form-group" id="documentosDescripcionDiv">
                                         <label for="documentosDescripcionField">Descripci&oacute;n</label>
                                         <textarea class="form-control" id="documentosDescripcionField"></textarea>
                                     </div>
 
 
                                 </div>
-                                <div id="documentosPaso2" style="display: none;">
+                                <div id="documentosPaso2">
 
-<!-- 
-                                    <div class="form-group">
-                                        <label for="documentosTipoField">6. Tipo de documento</label>
-                                        <br />
-                                        <select id="documentosTipoField" data-width="100%">
-                                            <option>Dato</option>
-                                            <option>Normativo</option>
-                                            <option>Técnico</option>
-                                            <option>Administrativo</option>
-                                        </select>
-                                    </div> -->
+                                    <!--
+                                        <div class="form-group">
+                                            <label for="documentosTipoField">6. Tipo de documento</label>
+                                            <br />
+                                            <select id="documentosTipoField" data-width="100%">
+                                                <option>Dato</option>
+                                                <option>Normativo</option>
+                                                <option>Técnico</option>
+                                                <option>Administrativo</option>
+                                            </select>
+                                        </div> -->
 
                                     <div class="form-group">
-                                        <label for="documentosFormatoField">4. Formato</label><label style="color: red;">&nbsp;*</label>
+                                        <label for="documentosFormatoField">4. Formato</label><label id="ie-20">&nbsp;*</label>
                                         <br />
                                         <select id="documentosFormatoField" data-width="100%">
                                             <option></option>
                                             <option>PDF</option>
                                             <option>ZIP</option>
                                         </select>
-                                        <div class="pull-right" id="documentosFormato_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                        <div class="pull-right" id="documentosFormato_Error">Este campo es obligatorio</div>
                                     </div>
 
                                     <!-- <div class="form-group">
-                                        <label for="documentosFormatoField">4. Formato</label><label style="color: red;">&nbsp;*</label>
-                                        <input type="text" class="form-control" id="documentosFormatoField"
-                                            placeholder="Ingrese el formato del archivo">
-                                        <div class="pull-right" id="documentosFormato_Error" style="color: red; display: none;">Este campo es obligatorio</div>
-                                    </div> -->
+        <label for="documentosFormatoField">4. Formato</label><label id="ie-21">&nbsp;*</label>
+        <input type="text" class="form-control" id="documentosFormatoField"
+            placeholder="Ingrese el formato del archivo">
+        <div class="pull-right" id="documentosFormato_Error">Este campo es obligatorio</div>
+    </div> -->
 
 
 
                                     <div class="form-group">
-                                        <label for="documentosDateField">5. Fecha</label><label style="color: red;">&nbsp;*</label>
+                                        <label for="documentosDateField">5. Fecha</label><label id="ie-22">&nbsp;*</label>
                                         <input type="text" class="form-control" id="documentosDateField"
-                                            placeholder="Indique la fecha de creación del documento">
-                                        <div class="pull-right" id="documentosDate_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                               placeholder="Indique la fecha de creación del documento">
+                                        <div class="pull-right" id="documentosDate_Error">Este campo es obligatorio</div>
                                     </div>
-                  <!--                   <div class="form-group">
-                                        <label for="documentosCategoriaField">6. Categor&iacute;a Tem&aacute;tica</label><label style="color: red;">&nbsp;*</label>
-                                        <br />
-                                        <select id="documentosCategoriaField" data-width="100%">
-                                            <option>Agricultura</option>
-                                            <option>Ambiente</option>
-                                            <option>Biota</option>
-                                            <option>Economía</option>
-                                            <option>Elevacion</option>
-                                            <option>Estructura</option>
-                                            <option>Información geocientífica</option>
-                                            <option>Infraestructura y servicios públicos</option>
-                                            <option>Límites</option>
-                                            <option>Mapas e imágenes</option>
-                                            <option>Planeación y Catastro</option>
-                                            <option>Riesgos y desastres</option>
-                                            <option>Sociedad</option>
-                                            <option>Transporte</option>
-                                            <option>Ubicación</option>
-                                        </select>
-                                        <div class="pull-right" id="documentosCategoria_Error" style="color: red; display: none;">Este campo es obligatorio</div>
-                                    </div> -->
-
-                                    <div class="form-group">
-                                        <label for="documentosKeywordsField">6. Palabras Clave</label><label style="color: red;">&nbsp;*</label>
-                                        <select id="documentosKeywordsField" data-width="100%"></select>
-                                        <div class="pull-right" id="documentosKeywords_Error" style="color: red; display: none;">Este campo es obligatorio</div>
-                                    </div>
-
+                                    <!--                   <div class="form-group">
+                          <label for="documentosCategoriaField">6. Categor&iacute;a Tem&aacute;tica</label><label id="ie-23">&nbsp;*</label>
+                          <br />
+                          <select id="documentosCategoriaField" data-width="100%">
+                              <option>Agricultura</option>
+                              <option>Ambiente</option>
+                              <option>Biota</option>
+                              <option>Economía</option>
+                              <option>Elevacion</option>
+                              <option>Estructura</option>
+                              <option>Información geocientífica</option>
+                              <option>Infraestructura y servicios públicos</option>
+                              <option>Límites</option>
+                              <option>Mapas e imágenes</option>
+                              <option>Planeación y Catastro</option>
+                              <option>Riesgos y desastres</option>
+                              <option>Sociedad</option>
+                              <option>Transporte</option>
+                              <option>Ubicación</option>
+                          </select>
+                          <div class="pull-right" id="documentosCategoria_Error">Este campo es obligatorio</div>
+                      </div> -->
+                                    <!--
+                                <div class="form-group">
+                                    <label for="documentosKeywordsField">6. Palabras Clave</label><label id="ie-24">&nbsp;*</label>
+                                    <select id="documentosKeywordsField" data-width="100%"></select>
+                                    <div class="pull-right" id="documentosKeywords_Error">Este campo es obligatorio</div>
                                 </div>
-                                <div id="documentosPaso3" style="display: none;">
+                                    -->
+                                </div>
+                                <div id="documentosPaso3">
 
                                     <div class="form-group">
-                                        <label for="documentosResponsableField">7. Responsable</label><label style="color: red;">&nbsp;*</label>
+                                        <label for="documentosResponsableField">7. Responsable</label><label id="ie-25">&nbsp;*</label>
                                         <input type="text" class="form-control" id="documentosResponsableField"
                                             placeholder="Escriba el nombre de la entidad responsable Ej. Secretaría de Planeación Municipal de Palmira.">
-                                        <div class="pull-right" id="documentosResponsable_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                        <div class="pull-right" id="documentosResponsable_Error">Este campo es obligatorio</div>
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="documentosURLResponsableField">8. URL Responsable</label><label style="color: red;">&nbsp;*</label>
+                                        <label for="documentosURLResponsableField">8. URL Responsable</label><label id="ie-26">&nbsp;*</label>
                                         <input type="text" class="form-control" id="documentosURLResponsableField"
                                             placeholder="Indroduzca la URL de la entidad responsable del registro Ej. https://www.cali.gov.co">
-                                        <div class="pull-right" id="documentosURLResponsable_Error" style="color: red; display: none;">La URL ingresada no es válida</div>
+                                        <div class="pull-right" id="documentosURLResponsable_Error">La URL ingresada no es válida</div>
                                     </div>
 <!-- 
                                     <div class="form-group">
@@ -534,22 +428,22 @@
                                     </div> -->
 
                                     <div class="form-group">
-                                        <label for="documentosFileField">9.Cargue del documento</label><label style="color: red;">&nbsp;*</label>
+                                        <label for="documentosFileField">9.Cargue del documento</label><label id="ie-27">&nbsp;*</label>
                                         <form id="documentosFileFieldData" method="post" enctype="multipart/form-data">
                                             <input type="file" class="form-control" id="documentosFileField">
                                         </form>
-                                        <div class="pull-right" id="documentosFile_Error" style="color: red; display: none;">Este campo es obligatorio</div>
+                                        <div class="pull-right" id="documentosFile_Error">Este campo es obligatorio</div>
                                         <div class="pull-right" id="documentosFileResult">
                                         </div>
                                     </div>
 
-                                    <!-- <div class="form-group" style="display: none;" id="documentosURLFieldDiv">
+                                    <!-- <div class="form-group" id="documentosURLFieldDiv">
                                         <label for="documentosURLField">URL</label>
                                         <input type="text" class="form-control" id="documentosURLField" placeholder="">
                                     </div> -->
 
                                 </div>
-                                <div id="documentosPaso4" style="display: none;">
+                                <div id="documentosPaso4">
 
                                     <div id="documentosResumen">
                                         <div id="documentosResumenPaso1">
@@ -615,13 +509,13 @@
                                             </div>
                                             <div>
                                                 <!-- <div class="col-sm-6">
-                                                    <label for="">9. Categoría temática</label><br>
-                                                    <p id="documentosCategoriaLabel"></p>
-                                                </div> -->
-                                                <div class="col-sm-6">
-                                                    <label for="">6. Palabras clave</label><br>
-                                                    <p id="documentosKeywordsLabel"></p>
-                                                </div>
+        <label for="">9. Categoría temática</label><br>
+        <p id="documentosCategoriaLabel"></p>
+    </div>
+    <div class="col-sm-6">
+        <label for="">6. Palabras clave</label><br>
+        <p id="documentosKeywordsLabel"></p>
+    </div>-->
                                             </div>
                                         </div>
 
@@ -665,31 +559,31 @@
 
                                     </div>
 
-                                    <div class="pull-right" style="margin-top: 45px;">
-                                        <button id="btnDocumentosGuardar" onclick="salvarDocumentos();"
+                                    <div id="ie-28" class="pull-right">
+                                        <button id="btnDocumentosGuardar" 
                                             class="btn btn-default btn-primary">
                                             Confirmar y enviar
                                         </button>
                                         &nbsp;
 
-                                        <button id="btnDocumentosBorrar" onclick="borrarDocumentos();"
+                                        <button id="btnDocumentosBorrar" 
                                             class="btn btn-default btn-danger">
                                             Eliminar documento
                                         </button>
 
-                                        <button id="btnDocumentosCrear" onclick="crearDocumentos();"
+                                        <button id="btnDocumentosCrear" 
                                             class="btn btn-default btn-primary">
                                             Crear nuevo documento
                                         </button>
                                     </div>
                                 </div>
 
-                                <div class="pull-left" style="margin-top: 45px;">
-                                    <button id="btnDocumentosPasoPrev" onclick="DocumentosPasoPrev();"
-                                        class="btn btn-default btn-primary" style="display: none; margin-right: 10px;">
+                                <div id="ie-29" class="pull-left">
+                                    <button id="btnDocumentosPasoPrev" 
+                                        class="btn btn-default btn-primary">
                                         Anterior
                                     </button>
-                                    <button id="btnDocumentosPasoNext" onclick="DocumentosPasoNext();"
+                                    <button id="btnDocumentosPasoNext" 
                                         class="btn btn-default btn-primary">
                                         Siguiente
                                     </button>
@@ -699,18 +593,18 @@
                         </div>
                     </div>
                 </div>
-                <div id="recursosDiv" class="col-md-8 contenedor-interno" style="display: none;">
-                    <div id="recursosList" style="margin-right: 20px;">
-                        <div class="pull-right" style="margin-bottom: 20px;">
-                            <button type="button" onclick="newRecursos();" class="btn btn-default btn-primary"
-                                style="font-size: small;">
+                <div id="recursosDiv" class="col-md-8 contenedor-interno">
+                    <div id="recursosList">
+                        <div id="ie-30" class="pull-right">
+                            <button type="button" id="btnNewRecursos" class="btn btn-default btn-primary"
+                               >
                                 Cargar nuevo recurso
                             </button>
                         </div>
                         <div class="row">
                             <div class="col-sm-12">
                                 <div class="table-responsive">
-                                    <table id="tableRecursos" class="table" style="width:100%">
+                                    <table id="tableRecursos" class="table">
                                         <thead>
                                             <tr>
                                                 <th>#</th>
@@ -727,9 +621,9 @@
                             </div>
                         </div>
                     </div>
-                    <div id="recursosDetail" style="display: none;">
-                        <div class="pull-left" style="margin-bottom: 20px;">
-                            <a href="#" onclick="gotoRecursos();">
+                    <div id="recursosDetail">
+                        <div id="ie-31" class="pull-left">
+                            <a href="#" class="btn-goto-recursos">
                                 <span class='glyphicon glyphicon-menu-left' aria-hidden='true'></span>
                                 &nbsp;Volver
                             </a>
@@ -790,17 +684,17 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="recursosURLField">URL Principal</label>
-                                    <input type="text" class="form-control" id="recursosURLField" placeholder="http://">
+                                    <input type="text" class="form-control" id="recursosURLField" placeholder="https://">
                                 </div>
                                 <div class="form-group">
                                     <label for="recursosURL2Field">URL Secundaria</label>
                                     <input type="text" class="form-control" id="recursosURL2Field"
-                                        placeholder="http://">
+                                        placeholder="https://">
                                 </div>
                                 <div class="form-group">
                                     <label for="recursosMetadataURLField">URL Metadato</label>
                                     <input type="text" class="form-control" id="recursosMetadataURLField"
-                                        placeholder="http://">
+                                        placeholder="https://">
                                 </div>
                                 <div class="form-group">
                                     <label for="recursosNivelField">Nivel</label>
@@ -818,13 +712,13 @@
                                 </div>
 
                                 <div class="pull-right">
-                                    <button id="btnRecursosGuardar" onclick="salvarRecursos();"
+                                    <button id="btnRecursosGuardar" 
                                         class="btn btn-default btn-primary">
                                         Guardar
                                     </button>
                                     &nbsp;
 
-                                    <button id="btnRecursosBorrar" onclick="borrarRecursos();"
+                                    <button id="btnRecursosBorrar" 
                                         class="btn btn-default btn-danger">
                                         Eliminar
                                     </button>
@@ -833,18 +727,18 @@
                         </div>
                     </div>
                 </div>
-                <div id="potDiv" class="col-md-8 contenedor-interno" style="display: none;">
-                    <div id="potList" style="margin-right: 20px;">
-                        <div class="pull-left" style="margin-bottom: 20px;">
-                            <button type="button" onclick="newPot();" class="btn btn-default btn-primary"
-                                style="font-size: small;">
+                <div id="potDiv" class="col-md-8 contenedor-interno">
+                    <div id="potList">
+                        <div id="ie-32" class="pull-left">
+                            <button type="button" id="btnNewPot" class="btn btn-default btn-primary"
+                               >
                                 Cargar nuevo POT (XTF)
                             </button>
                         </div>
                         <div class="row">
                             <div class="col-sm-12">
                                 <div class="table-responsive">
-                                    <table id="tablePot" class="table" style="width:100%">
+                                    <table id="tablePot" class="table">
                                         <thead>
                                             <tr>
                                                 <th>#</th>
@@ -860,9 +754,9 @@
                             </div>
                         </div>
                     </div>
-                    <div id="potDetail" style="display: none;">
+                    <div id="potDetail">
                         <div class="pull-left">
-                            <a href="#" onclick="gotoPot();">
+                            <a href="#" class="btn-goto-pot">
                                 <span class='glyphicon glyphicon-menu-left' aria-hidden='true'></span>
                                 &nbsp;Volver
                             </a>
@@ -885,21 +779,21 @@
                                         </form>
                                         <span class="input-group-btn">
                                             <button type="button" class="btn btn-default btn-primary"
-                                                onclick="validarPot();">Validar</button>
+                                                id="btnPotValidar">Validar</button>
                                         </span>
                                     </div>
-                                    <div id="potFileValidateResult" style="padding: 10px;">
+                                    <div id="potFileValidateResult">
                                     </div>
                                 </div>
 
                                 <div class="pull-right">
-                                    <button id="btnPotGuardar" onclick="salvarPot();"
+                                    <button id="btnPotGuardar" 
                                         class="btn btn-default btn-primary">
                                         Guardar
                                     </button>
                                     &nbsp;
 
-                                    <button id="btnPotBorrar" onclick="borrarPot();" class="btn btn-default btn-danger">
+                                    <button id="btnPotBorrar"  class="btn btn-default btn-danger">
                                         Eliminar
                                     </button>
                                 </div>
@@ -907,7 +801,7 @@
                         </div>
                     </div>
                 </div>
-                <div id="instruccionesDiv" class="col-md-4 contenedor-interno" style="display: none;">
+                <div id="instruccionesDiv" class="col-md-4 contenedor-interno">
                 </div>
             </div>
         </div>
@@ -924,23 +818,23 @@
     <div id="modalLogin" class="modal fade" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
-                <div class="modal-header" style="border: none; padding-bottom: 0px;">
-                    <a href="#" class="close" onclick="closeLogin(); return false;" aria-label="Cerrar">
+                <div id="ie-33" class="modal-header">
+                    <a href="#" class="close close-login-btn" aria-label="Cerrar">
                         <span aria-hidden="true">&times;</span>
                     </a>
                     <h4 class="modal-title">Iniciar sesi&oacute;n</h4>
                 </div>
-                <div class="modal-body" style="padding-top: 0px;">
+                <div id="ie-34" class="modal-body">
                     <div id="loginContainer">
                         <div id="authContainer"></div>
                     </div>
-                    <div id="logoutContainer" style="text-align: center;padding: 10px;">
+                    <div id="logoutContainer">
                         <img id="userPhoto2" src="../images/icono_ingreso.png"
-                            style="width: 64px; height: 64px;border-radius: 50%;" alt="Imagen Usuario" />
+                            alt="Imagen Usuario" />
                         <h5>
                             <span id="userName2"></span>
                         </h5>
-                        <button id="logoutBtn" type="button" onclick="signOut();" class="btn btn-default btn-danger">
+                        <button id="logoutBtn" type="button"  class="btn btn-default btn-danger">
                             Cerrar sesi&oacute;n
                         </button>
                     </div>
@@ -952,100 +846,22 @@
     <div id="modalBienvenida" class="modal fade" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
-                <div class="modal-header" style="border: none; padding-bottom: 0px;">
-                    <a href="#" class="close" onclick="$('#modalBienvenida').modal('hide'); return false;" aria-label="Cerrar"><span aria-hidden="true">&times;</span></a>
+                <div id="ie-35" class="modal-header">
+                    <a href="#" class="close close-bienvenida-btn" aria-label="Cerrar"><span aria-hidden="true">&times;</span></a>
                 </div>
-                <div id="modalTutorialDiv" class="modal-body" style="text-align: center;padding-top: 0px;">
-                    <span style='color: #6445E1;font-size: 22px;'>BIENVENIDO AL APLICATIVO DE CARGUE DE LOS POT DEL PAÍS</span><br /><br />
+                <div id="modalTutorialDiv" class="modal-body">
+                    <span id='ie-cargue-bienvenida'>BIENVENIDO AL APLICATIVO DE CARGUE DE LOS POT DEL PAÍS</span><br /><br />
                     <p>
                         Se ha dispuesto este aplicativo para el cargue de la documentación, normativa, técnica y cartográfica de los planes de ordenamiento territorial, aprobados por los municipios según lo establecido en la Ley 2079 del 2021 en el Articulo 37. La información dispuesta de los POTS y su correspondiente actualización es responsabilidad de los municipios.                    </p>
                 </div>
-                <div class="modal-footer" style="text-align: center;padding-top: 10px;line-height: 2.5em;">
-                    <a href="#" class="btn btn-primary" onclick="$('#modalBienvenida').modal('hide'); return false;" style="background-color: #6445E1;float: right;">Aceptar</a>
+                <div id="ie-36" class="modal-footer">
+                    <a id="ie-37" href="#" class="btn btn-primary close-bienvenida-btn">Aceptar</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <footer class="footer">
-        <div class="containerf">
-            <div class="footer-container">
-                <div class="rowf">
-                    <div class="col-md-6f">
-                        <h2 class="footer-titulo">Instituto Geográfico Agustín Codazzi - IGAC</h2>
-                    </div>
-                    <div class="logos-footer col-md-6f">&nbsp;</div>
-                </div>
-                <div class="rowf">
-                    <div class="col-md-6f">
-                        <h2 class="sub-titulo-sede-gov-co">Información sede principal</h2>
-
-                        <h3>Dirección:</h3>
-                        <p>Bogotá D.C. - Carrera 30 # 48-51</p>
-
-                        <h3>Horarios de atención al ciudadano:</h3>
-                        <p>Abierto al público de lunes a viernes de 9:00 a.m. a 4:00 p.m. jornada continua Sede Central y territorial Cundinamarca (Horario de atención temporal acatando las medidas y demás regulaciones de bioseguridad)</p>
-                        <h3>Teléfono Conmutador:</h3>
-                        <p>
-                            <a href="tel:6016531888">+57 601 653 18 88</a>
-                        </p>
-                        <h3>Correo de contacto:</h3>
-                        <p>
-                            <a href="mailto:contactenos@igac.gov.co">contactenos@igac.gov.co</a>
-                        </p>
-
-                        <h3>Correo de notificaciones judiciales:</h3>
-                        <p>
-                            <a href="mailto:judiciales@igac.gov.co">judiciales@igac.gov.co</a>
-                        </p>
-                        <p>NIT: 8999990049</p>
-
-                        <p>©Copyright 2021 - Todos los derechos reservados Gobierno de Colombia</p>
-                    </div>
-                    <div class="col-md-6f">
-                        <h3>Contáctenos en nuestras redes sociales</h3>
-
-                        <div class="redes-sociales">
-                            <p>
-                                <a href="https://www.facebook.com/IgacColombia" tabindex="-1" target="_blank">
-                                    <img alt="Visitar Facebook IGAC" class="icono-redes" src="../images/footer/facebook.svg">
-                                    Facebook IGAC
-                                </a>
-                            </p>
-
-                            <p>
-                                <a href="https://twitter.com/igacColombia" tabindex="-1" target="_blank">
-                                    <img alt="Visitar Twitter IGAC" class="icono-redes" src="../images/footer/twitter.svg">
-                                    Twitter IGAC
-                                </a>
-                            </p>
-
-                            <p>
-                                <a href="https://www.instagram.com/accounts/login/?next=/igacColombia/" tabindex="-1" target="_blank"><img alt="Visitar Instagram IGAC" class="icono-redes" src="../images/footer/instagram.svg">
-                                    Instagram IGAC
-                                </a>
-                            </p>
-                        </div>
-                        <div class="footer-enlaces"><a class="btn-low">Políticas</a>
-                            <a class="btn-low">Mapa del sitio</a>
-                            <a class="btn-low">Términos y condiciones</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="gov-co-footer-pie">
-            <div class="gov-co-footer-auto containerf">
-                <img alt="Logo marca de Colombia" class="gov-co-logo-pie-blanco" src="../images/footer/marca_colombia.png">
-
-                <img alt="Logo de Gov Co" class="gov-co-logo-pie-mesa" src="../images/footer/header_govco.png">
-
-                <a class="text-white text-align-right" href="https://www.gov.co" target="_blank">
-                    Conoce GOV.CO aquí
-                </a>
-            </div>
-        </div>
-    </footer>
+    <div id="oot-footer-placeholder"></div>
 
     <script type="text/javascript" src="https://www.gstatic.com/firebasejs/7.4.0/firebase-app.js"></script>
     <script type="text/javascript" src="https://www.gstatic.com/firebasejs/7.4.0/firebase-auth.js"></script>
@@ -1078,21 +894,12 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote.min.js">
     </script>
 
-    <script type="text/javascript" src="js/navbar.js"></script>
+    <script type="text/javascript" src="../config.js"></script>
+    <script type="text/javascript" src="../oot.js"></script>
+    <script type="text/javascript" src="../js/navbar.js"></script>
     <script type="text/javascript" src="js/index.js"></script>
     <script type="text/javascript" src="js/documentosNombreOptions.js"></script>
-
-    <script>
-        $(document).ready(function () {
-            setTimeout(function () {
-                $('.calltocontext').hide()
-            }, 10000);
-
-            $('#headingSearch').on('click', function (e) {
-                $('#mainDiv').toggleClass("collapsed pressed");
-            });
-        });
-    </script>
+    <script type="text/javascript" src="js/ready.js"></script>
 
 </body>
 

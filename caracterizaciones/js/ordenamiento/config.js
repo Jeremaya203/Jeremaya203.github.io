@@ -24,7 +24,7 @@ export const ORDENAMIENTO_CONFIG = {
         chartTypes: {
             main: "doughnut"
         },
-        normativaTableUrl: "https://mapas2.igac.gov.co/server4/rest/services/ordenamiento/componentepot/MapServer/1",
+        normativaTableUrl: "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componentepot/MapServer/1",
         normativaJoinField: "mpcodigo",
         normativaTypeField: "cstiposuelo",
         normativaSpecificTextField: "csarticulo"
@@ -35,25 +35,26 @@ export const ORDENAMIENTO_CONFIG = {
     CLASIFICACION_SUELO: {
         id: "clasificacion_suelo",
         title: "Clasificación del suelo",
-        url: "https://mapas2.igac.gov.co/server/rest/services/ordenamiento/clasificacionsuelopot/FeatureServer/1",
-        mapServerUrl: "https://mapas2.igac.gov.co/server/rest/services/ordenamiento/clasificacionsuelopot/MapServer",
-        mapServerLayerId: 1,
+        url: "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componentepot/MapServer/4",
+        mapServerUrl: "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componentepot/MapServer",
+        mapServerLayerId: 4,
         outFields: [
-            "OBJECTID",
-            "Mp_Codigo",
-            "MpNombre",
-            "Tipo_Clasificacion_Suelo",
-            "CSArea"
+            "objectid",
+            "mp_codigo",
+            "mpnombre",
+            "tipo_clasificacion_suelo",
+            "csarea",
+            "ruleid"
         ],
-        filterField: "Mp_Codigo",
-        areaField: "CSArea",
-        typeField: "Tipo_Clasificacion_Suelo",
+        filterField: "mp_codigo",
+        areaField: "csarea",
+        typeField: "tipo_clasificacion_suelo",
         isOrdenamiento: true,
         ordenamientoType: "clasificacion_suelo",
         chartTypes: {
             main: "doughnut"
         },
-        normativaTableUrl: "https://mapas2.igac.gov.co/server4/rest/services/ordenamiento/componentepot/MapServer/1",
+        normativaTableUrl: "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componentepot/MapServer/1",
         normativaJoinField: "mpcodigo",
         normativaTypeField: "cstiposuelo",
         normativaSpecificTextField: "csarticulo"
@@ -62,26 +63,27 @@ export const ORDENAMIENTO_CONFIG = {
     AREAS_ACTIVIDAD: {
         id: "areas_actividad",
         title: "Áreas de actividad",
-        url: "https://mapas2.igac.gov.co/server/rest/services/ordenamiento/areasdeactividad/FeatureServer/0",
+        url: "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componentepot/MapServer/3",
 
         outFields: [
-            "OBJECTID",
-            "Mp_Codigo",
-            "MpNombre",
-            "Uso_Principal",
-            "Detalle_Uso_Principal",
-            "AActArea",
-            "RuleID"
+            "objectid",
+            "mp_codigo",
+            "mpnombre",
+            "uso_principal",
+            "detalle_uso_principal",
+            "aactarea",
+            "ruleid"
         ],
 
-        filterField: "Mp_Codigo",
-        areaField: "AActArea",
-        useField: "Uso_Principal",
+        filterField: "mp_codigo",
+        areaField: "aactarea",
+        useField: "uso_principal",
+        rendererField: "ruleid",
 
         ordenamientoType: "areas_actividad",
 
         // TABLA NORMATIVA
-        normativaTableUrl: "https://mapas2.igac.gov.co/server4/rest/services/ordenamiento/componentepot/MapServer/0",
+        normativaTableUrl: "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componentepot/MapServer/0",
         normativaJoinField: "mpcodigo",
         normativaUseField: "zuusoprincipal",
         normativaGeneralTextField: "zuarticulo",
@@ -91,29 +93,30 @@ export const ORDENAMIENTO_CONFIG = {
     ZONIFICACION_RURAL: {
         id: "zonificacion_rural",
         title: "Zonificación del suelo rural",
-        url: "https://mapas2.igac.gov.co/server/rest/services/ordenamiento/zonificacionsuelorural/FeatureServer/0",
+        url: "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componentepot/MapServer/5",
         outFields: [
-            "OBJECTID",
-            "Tipo_Categoria_Rural",
-            "Uso_Principal",
-            "Detalle_Uso_Principal",
-            "UsoArea",
-            "Mp_Codigo",
-            "MpNombre",
-            "RuleID"
+            "objectid",
+            "tipo_categoria_rural",
+            "uso_principal",
+            "detalle_uso_principal",
+            "usoarea",
+            "mp_codigo",
+            "mpnombre",
+            "ruleid"
         ],
-        filterField: "Mp_Codigo",
-        areaField: "UsoArea",
-        categoryField: "Tipo_Categoria_Rural",
-        useField: "Uso_Principal",
-        rendererField: "RuleID",
+        filterField: "mp_codigo",
+        areaField: "usoarea",
+        areaFallbackField: "st_area(shape)",
+        categoryField: "tipo_categoria_rural",
+        useField: "uso_principal",
+        rendererField: "ruleid",
         isOrdenamiento: true,
         ordenamientoType: "zonificacion_rural",
         chartTypes: {
             main: "doughnut",
             secondary: "doughnut"
         },
-        normativaTableUrl: "https://mapas2.igac.gov.co/server4/rest/services/ordenamiento/componentepot/MapServer/2"
+        normativaTableUrl: "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componentepot/MapServer/2"
     }
 };
 

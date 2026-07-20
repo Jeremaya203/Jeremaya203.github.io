@@ -236,6 +236,187 @@ body {
     display: block;
 }
 
+.municipal-service-message {
+    display: grid;
+    gap: 5px;
+    width: 100%;
+    margin: 18px 0 24px;
+    padding: 15px 16px;
+    border-left: 4px solid #c97a24;
+    background: #fff1d6;
+    color: #4f321d;
+    box-sizing: border-box;
+    font-family: "Outfit", sans-serif;
+}
+
+.municipal-service-message[hidden] {
+    display: none;
+}
+
+.municipal-service-message strong {
+    color: #9f5418;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.municipal-service-message span {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.municipal-status-chart {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 100%;
+    margin: 18px auto 20px;
+    padding-top: 12px;
+    border-top: 1px solid #ded6c8;
+    clear: both;
+    overflow: visible;
+}
+
+.municipal-status-chart h3 {
+    margin: 0 0 14px;
+    color: #a85618;
+    font-family: "Outfit", sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.municipal-status-chart__subtitle {
+    margin: -10px 0 18px;
+    color: #4d4d4d;
+    font-family: "Outfit", sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center;
+}
+
+.municipal-status-chart__subtitle:empty {
+    display: none;
+}
+
+.municipal-status-chart__canvas {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: min(48vw, 300px);
+    min-height: 248px;
+    max-height: 300px;
+    margin: 0 auto 4px;
+    overflow: visible;
+}
+
+#municipalStatusChart {
+    display: block;
+    width: min(100%, 300px) !important;
+    max-width: 300px;
+    height: min(48vw, 300px) !important;
+    max-height: 300px;
+    min-height: 248px;
+    margin: 0 auto;
+}
+
+.municipal-status-chart__legend {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    width: 100%;
+    margin: 14px auto 0;
+    justify-content: stretch;
+    overflow: visible;
+}
+
+.municipal-status-chart__legend.has-many-items {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 10px;
+}
+
+.municipal-status-chart__legend-item {
+    display: grid;
+    grid-template-columns: 12px minmax(0, 1fr);
+    align-items: start;
+    column-gap: 8px;
+    row-gap: 4px;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 34px;
+    padding: 6px 8px;
+    border: 1px solid rgba(110, 94, 75, 0.16);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.38);
+    color: #3a342d;
+    font-family: "Outfit", sans-serif;
+    font-size: 10.5px;
+    line-height: 1.35;
+    text-align: left;
+    cursor: pointer;
+    overflow: visible;
+    white-space: normal;
+    text-overflow: clip;
+}
+
+.municipal-status-chart__legend-item[aria-pressed="false"] {
+    opacity: 0.48;
+}
+
+.municipal-status-chart__legend-item.is-selected {
+    border-color: rgba(94, 42, 132, 0.55);
+    background: rgba(94, 42, 132, 0.08);
+    box-shadow: 0 0 0 1px rgba(94, 42, 132, 0.12);
+}
+
+.municipal-status-chart__legend-swatch {
+    width: 10px;
+    height: 10px;
+    margin-top: 3px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.municipal-status-chart__legend-label {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    overflow: visible !important;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    white-space: normal !important;
+    text-overflow: clip !important;
+    text-wrap: wrap;
+    hyphens: auto;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+}
+
+.municipal-status-chart__legend-value {
+    display: none;
+}
+
+@media (max-width: 560px) {
+    .municipal-status-chart {
+        width: 100%;
+    }
+
+    .municipal-status-chart__legend.has-many-items {
+        grid-template-columns: 1fr;
+    }
+}
+
+.municipal-status-chart + #timelineDiv {
+    margin-top: 18px;
+    clear: both;
+}
+
 #summaryDiv {
     margin-top: 14px;
 
@@ -708,15 +889,18 @@ canvas {
 
 .navbarigac {
     width: 100%;
-    min-height: 64px;
+    height: 55px;
+    min-height: 55px;
+    max-height: 55px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0;
     /* quitar padding izquierdo */
     box-sizing: border-box;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 12px;
+    overflow: hidden;
 }
 
 .logos {
@@ -730,14 +914,17 @@ canvas {
 
 .navbar-brand-igac {
     background: white;
-    padding: 10.5px 10px;
+    height: 55px;
+    padding: 6px 10px;
     display: flex;
     align-items: center;
     margin-left: 0;
+    box-sizing: border-box;
 }
 
 .navbar-brand-igac img {
-    height: 42px;
+    height: 38px;
+    max-height: 38px;
     width: auto;
     display: block;
 }
@@ -745,15 +932,17 @@ canvas {
 .titulo-app {
     order: 2;
     padding-left: 6px;
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 600;
     color: white;
     white-space: nowrap;
+    line-height: 1.1;
 }
 
 /* ICONO NUEVO */
 .icono-territorial {
-    height: 42px;
+    height: 36px;
+    max-height: 36px;
     margin-left: 8px;
     /* separa del logo */
     margin-right: 5px;
@@ -986,7 +1175,7 @@ canvas {
     box-sizing: border-box;
     z-index: 12000;
     display: none;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .modulo-dropdown.open>.dropdown-menu-custom {
@@ -1017,6 +1206,24 @@ canvas {
 
 .dropdown-item.active {
     font-weight: 700;
+}
+
+.dropdown-menu-custom .dropdown-item.active,
+.dropdown-menu-custom .dropdown-subitem.active {
+    position: relative;
+    text-decoration: none !important;
+}
+
+.dropdown-menu-custom .dropdown-item.active::after,
+.dropdown-menu-custom .dropdown-subitem.active::after {
+    content: "";
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    bottom: 6px;
+    height: 2px;
+    background: currentColor;
+    pointer-events: none;
 }
 
 /* =========================
@@ -1053,7 +1260,7 @@ canvas {
 }
 
 .limites .dropdown-item.active {
-    text-decoration: underline;
+    text-decoration: none;
     text-decoration-color: #9a5a23;
     text-underline-offset: 10px;
     text-decoration-thickness: 2px;
@@ -1064,7 +1271,7 @@ canvas {
 }
 
 .ordenamiento .dropdown-item.active {
-    text-decoration: underline;
+    text-decoration: none;
     text-decoration-color: #6b4693;
     text-underline-offset: 10px;
     text-decoration-thickness: 2px;
@@ -1075,19 +1282,19 @@ canvas {
 }
 
 .legal .dropdown-item.active {
-    text-decoration: underline;
+    text-decoration: none;
     text-decoration-color: #b13a2f;
     text-underline-offset: 10px;
     text-decoration-thickness: 2px;
 }
 
 .biofisico .dropdown-item {
-    color: var(--color-primary);
+    color: #0c755a;
 }
 
 .biofisico .dropdown-item.active {
     /* text-decoration: underline; */
-    text-decoration-color: var(--color-primary);
+    text-decoration-color: #0c755a;
     text-underline-offset: 10px;
     text-decoration-thickness: 2px;
 }
@@ -1097,7 +1304,7 @@ canvas {
 }
 
 .ocupacion .dropdown-item.active {
-    text-decoration: underline;
+    text-decoration: none;
     text-decoration-color: #1e78c8;
     text-underline-offset: 10px;
     text-decoration-thickness: 2px;
@@ -1108,7 +1315,7 @@ canvas {
 }
 
 .socioeconomico .dropdown-item.active {
-    text-decoration: underline;
+    text-decoration: none;
     text-decoration-color: #a66a11;
     text-underline-offset: 10px;
     text-decoration-thickness: 2px;
@@ -2441,6 +2648,10 @@ canvas {
     overflow-y: hidden;
 }
 
+.chart-card:has(#municipalStatusChartSection) {
+    overflow: visible;
+}
+
 #chart {
     display: block;
     width: 100%;
@@ -2619,22 +2830,6 @@ canvas {
 .modulo-dropdown:hover > .dropdown-menu-custom,
 .modulo-dropdown:focus-within > .dropdown-menu-custom {
     display: block !important;
-}
-
-#dropdownLimites .dropdown-item.active {
-    position: relative;
-    text-decoration: none !important;
-}
-
-#dropdownLimites .dropdown-item.active::after {
-    content: "";
-    position: absolute;
-    left: 16px;
-    right: 16px;
-    bottom: 0;
-    height: 2px;
-    background: currentColor;
-    pointer-events: none;
 }
 
 /* =========================
@@ -2886,4 +3081,51 @@ canvas {
     color: var(--color-text-primary);
     word-wrap: break-word;
     overflow-wrap: break-word;
+}
+.dropdown-item-with-sub {
+    position: relative;
+}
+
+.dropdown-item-with-sub > .dropdown-item {
+    width: 100%;
+}
+
+.dropdown-submenu {
+    position: absolute;
+    top: 0;
+    left: calc(100% + 1px);
+    width: max-content;
+    min-width: 340px;
+    max-width: min(420px, calc(100vw - 280px));
+    background: #FFFAF0;
+    border-radius: 0 12px 12px 12px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+    padding: 6px 0;
+    display: none;
+    z-index: 13000;
+}
+
+.dropdown-item-with-sub:hover > .dropdown-submenu,
+.dropdown-item-with-sub:focus-within > .dropdown-submenu {
+    display: block;
+}
+
+.dropdown-subitem {
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 10px 20px;
+    font-size: 14px;
+    line-height: 1.2;
+    color: #b13a2f;
+    cursor: pointer;
+    font-weight: 500;
+    font-family: "Outfit", sans-serif;
+    box-sizing: border-box;
+    white-space: normal;
+}
+
+.dropdown-subitem:hover {
+    background: rgba(0, 0, 0, 0.04);
 }

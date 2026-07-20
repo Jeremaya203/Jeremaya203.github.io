@@ -1,6 +1,6 @@
 import { getChartBaseWhere } from "../core/chartUtils.js?v=travel-time-pie-20260511";
 import { createHorizontalStackedBarOptions, ensureZoomKeepsVisibleData } from "../core/chartOptions.js?v=global-safe-zoom-labels-20260604";
-import { renderPieChart } from "../renderers/pieChartRenderer.js?v=equipamientos-dual-20260511";
+import { renderPieChart } from "../renderers/pieChartRenderer.js?v=shared-pie-labels-20260701";
 import { prepareVisibleChartCanvas, setChartTitle } from "../ui/chartPanel.js?v=local-chart-title-20260529";
 import { setChartStatus } from "../ui/chartStatus.js";
 import { buildAdaptiveFont, resolveChartLabel } from "../core/chartOptions.js?v=global-safe-zoom-labels-20260604";
@@ -380,6 +380,58 @@ export function createEquipamientosChartController({
         }
     }
 
+    function createEquipamientosStackedValueLabelsPlugin() {
+        return {
+            id: "equipamientos-stacked-value-labels",
+            afterDatasetsDraw(chart) {
+                const { ctx, chartArea } = chart;
+                if (!chartArea) return;
+
+                const rowCount = Math.max(
+                    ...(chart.data?.labels || []).map(label =>
+                        Array.isArray(label) ? label.length : 1
+                    ),
+                    chart.data?.labels?.length || 0
+                );
+                const fontSize = rowCount > 14 ? 8 : 9;
+
+                ctx.save();
+                ctx.font = `500 ${fontSize}px Outfit, sans-serif`;
+                ctx.textBaseline = "middle";
+
+                (chart.data?.datasets || []).forEach((dataset, datasetIndex) => {
+                    if (!chart.isDatasetVisible(datasetIndex)) return;
+                    const meta = chart.getDatasetMeta(datasetIndex);
+                    (meta?.data || []).forEach((bar, index) => {
+                        const value = Number(dataset.data?.[index]);
+                        if (!Number.isFinite(value) || value <= 0 || bar?.hidden) return;
+                        if (!bar || !Number.isFinite(bar.y)) return;
+                        if (bar.y < chartArea.top + 4 || bar.y > chartArea.bottom - 4) return;
+
+                        const barStart = Math.min(bar.base ?? 0, bar.x ?? 0);
+                        const barEnd = Math.max(bar.base ?? 0, bar.x ?? 0);
+                        const barWidth = Math.max(0, barEnd - barStart);
+                        const label = formatInteger(value);
+                        const textWidth = ctx.measureText(label).width;
+                        const fitsInside = barWidth >= textWidth + 8;
+
+                        if (fitsInside) {
+                            ctx.fillStyle = "#ffffff";
+                            ctx.textAlign = "center";
+                            ctx.fillText(label, barStart + barWidth / 2, bar.y);
+                        } else {
+                            ctx.fillStyle = "#333333";
+                            ctx.textAlign = "left";
+                            const labelX = Math.min(barEnd + 4, chartArea.right - textWidth - 2);
+                            ctx.fillText(label, labelX, bar.y);
+                        }
+                    });
+                });
+                ctx.restore();
+            }
+        };
+    }
+
     function createLinkedCategoryBorderPlugin() {
         return {
             id: "equipamientos-linked-category-border",
@@ -412,31 +464,6 @@ export function createEquipamientosChartController({
                         Math.max(0, width - ctx.lineWidth),
                         Math.max(0, height - ctx.lineWidth)
                     );
-                });
-                ctx.restore();
-            }
-        };
-    }
-
-    function renderDataLabelPlugin(id, formatter) {
-        return {
-            id,
-            afterDatasetsDraw(chart) {
-                const ctx = chart.ctx;
-                ctx.save();
-                ctx.fillStyle = "#ffffff";
-                ctx.font = "bold 11px Outfit, sans-serif";
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                chart.data.datasets.forEach((dataset, datasetIndex) => {
-                    const meta = chart.getDatasetMeta(datasetIndex);
-                    (meta?.data || []).forEach((element, index) => {
-                        const value = Number(dataset?.data?.[index]);
-                        if (!Number.isFinite(value) || value <= 0) return;
-                        const position = element.tooltipPosition?.();
-                        if (!position) return;
-                        ctx.fillText(formatter(value, dataset, index), position.x, position.y);
-                    });
                 });
                 ctx.restore();
             }
@@ -621,8 +648,7 @@ export function createEquipamientosChartController({
             onSliceClick: label => {
                 const category = categoryByLabel(rows, label);
                 if (category) applyLinkedCategoryHighlight(category.code);
-            },
-            plugins: [renderDataLabelPlugin("equipamientos-pie-labels", value => `${Number(value).toFixed(0)}%`)]
+            }
         });
 
         if (pieChart) {
@@ -731,7 +757,10 @@ export function createEquipamientosChartController({
                 datasets: stackedDatasets
             },
             options: stackedOptions,
-            plugins: [createLinkedCategoryBorderPlugin()]
+            plugins: [
+                createLinkedCategoryBorderPlugin(),
+                createEquipamientosStackedValueLabelsPlugin()
+            ]
         });
 
         return true;

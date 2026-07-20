@@ -37,9 +37,9 @@ export function buildStationsPopupContent(evt, deps) {
 
     const row = month => `
         <tr>
-        <td style="padding:4px 6px; border-bottom:1px solid #eee;">${month.key}</td>
-        <td style="padding:4px 6px; border-bottom:1px solid #eee; text-align:right;">${fmt(attributes[month.t])}</td>
-        <td style="padding:4px 6px; border-bottom:1px solid #eee; text-align:right;">${fmt(attributes[month.p])}</td>
+        <td class="oot-js-biofisico-mappopup-1">${month.key}</td>
+        <td class="oot-js-biofisico-mappopup-2">${fmt(attributes[month.t])}</td>
+        <td class="oot-js-biofisico-mappopup-2">${fmt(attributes[month.p])}</td>
         </tr>
     `;
 
@@ -57,29 +57,29 @@ export function buildStationsPopupContent(evt, deps) {
         : dpNombreRaw;
 
     return `
-        <div style="font-size:12px; line-height:1.3;">
+        <div class="oot-js-biofisico-mappopup-3">
         <div><b>Estacion:</b> ${esc(attributes.nombest)} (${esc(attributes.codest)})</div>
         <div><b>Municipio:</b> ${esc(mpNombreFinal)} (${esc(mpCode)})</div>
         <div><b>Departamento:</b> ${esc(dpNombreFinal)} (${esc(dpCode)})</div>
         <div><b>Fuente:</b> ${esc(attributes.fuente)}</div>
 
-        <hr style="margin:8px 0;">
+        <hr class="oot-js-biofisico-mappopup-4">
 
-        <div style="font-weight:600; margin-bottom:6px;">Promedios mensuales</div>
-        <table style="width:100%; border-collapse:collapse;">
+        <div class="oot-js-biofisico-mappopup-5">Promedios mensuales</div>
+        <table class="oot-js-biofisico-mappopup-6">
             <thead>
             <tr>
-                <th style="text-align:left; padding:4px 6px; border-bottom:1px solid #ddd;">Mes</th>
-                <th style="text-align:right; padding:4px 6px; border-bottom:1px solid #ddd;">Temp (C)</th>
-                <th style="text-align:right; padding:4px 6px; border-bottom:1px solid #ddd;">Precip (mm)</th>
+                <th class="oot-js-biofisico-mappopup-7">Mes</th>
+                <th class="oot-js-biofisico-mappopup-8">Temp (C)</th>
+                <th class="oot-js-biofisico-mappopup-8">Precip (mm)</th>
             </tr>
             </thead>
             <tbody>
             ${months.map(row).join("")}
             <tr>
-                <td style="padding:4px 6px; border-top:1px solid #ddd;"><b>ANUAL</b></td>
-                <td style="padding:4px 6px; border-top:1px solid #ddd; text-align:right;"><b>${fmt(attributes.temanual)}</b></td>
-                <td style="padding:4px 6px; border-top:1px solid #ddd; text-align:right;"><b>${fmt(attributes.precanual)}</b></td>
+                <td class="oot-js-biofisico-mappopup-9"><b>ANUAL</b></td>
+                <td class="oot-js-biofisico-mappopup-10"><b>${fmt(attributes.temanual)}</b></td>
+                <td class="oot-js-biofisico-mappopup-10"><b>${fmt(attributes.precanual)}</b></td>
             </tr>
             </tbody>
         </table>

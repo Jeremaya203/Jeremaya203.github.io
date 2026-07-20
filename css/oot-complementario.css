@@ -1,0 +1,1404 @@
+/* ============================================================
+   OOT MAGDALENA — Estilos complementarios para Colombia OT
+   Diseño integrado, respetando la paleta y tipografía base
+   ============================================================ */
+
+/* ── Fuentes del rediseño (Outfit headings + Montserrat cuerpo) ── */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&family=Montserrat:wght@400;500;600;700&display=swap');
+
+/* ── Variables locales ─────────────────────────────────────── */
+:root {
+    /* Paleta base IGAC (fallback cuando maestra.css no está cargada) */
+    --azul-igac:      #33669e;
+    --azul-igac-dark: #234570;
+    /* Paleta OOT Magdalena */
+    --oot-verde:   #1a7a4c;
+    --oot-verde-d: #135c39;
+    --oot-acento:  #f4a833;
+    --oot-glass:   rgba(255, 255, 255, 0.11);
+    --oot-glass-b: rgba(255, 255, 255, 0.20);
+    --oot-overlay: rgba(12, 55, 85, 0.85);
+
+    /* ═══ TOKENS DEL REDISEÑO (mockup Landing_POT) ═══════════════ */
+    /* Paleta */
+    --color-bg-deep:       #0f2340;  /* navy principal (fondo body) */
+    --color-bg-dark:       #042a42;  /* azul oscuro secundario */
+    --color-bg-panel:      #0b2e4a;  /* panel / header sticky */
+    --color-bg-card:       #16364d;  /* card base */
+    --color-bg-card-hover: #234570;  /* card hover/borde */
+    --color-gov-blue:      #36c;     /* barra GOV.CO superior */
+    --color-gov-blue-dark: #0942b3;  /* GOV.CO footer / accent links */
+    --color-accent-green:  #1f5e3a;  /* verde del gradiente diagonal */
+    --color-text-primary:  #ffffff;
+    --color-text-muted:    #e2e2e2;
+    --color-surface-light: #f5f7f9;  /* fondo del footer-card */
+    --color-surface-white: #ffffff;
+    --color-border-soft:   #e6effd;
+
+    /* Gradiente característico del fondo (navy + glows verdes en esquinas opuestas, como el mockup).
+       Se fija al viewport (background-attachment: fixed en .oot-home) para que los glows
+       enmarquen el contenido en sup-derecha / inf-izquierda sin quedar tapados por hero/footer. */
+    --gradient-page:
+        radial-gradient(55% 45% at 100% 0%,  rgba(19,92,56,0.55) 0%, rgba(19,92,56,0) 68%),
+        radial-gradient(55% 45% at 0% 100%,   rgba(19,92,56,0.50) 0%, rgba(19,92,56,0) 68%),
+        linear-gradient(165deg, #0f2340 0%, #15304f 50%, #0f2340 100%);
+
+    /* Tipografía */
+    --font-heading: 'Outfit', sans-serif;
+    --font-body:    'Montserrat', sans-serif;
+
+    /* Escala tipográfica (extraída del SVG) */
+    --fs-hero-title:  60px;
+    --fs-section-h2:  48px;
+    --fs-stat-number: 74px;
+    --fs-card-title:  31px;
+    --fs-news-title:  24px;
+    --fs-subtitle:    21px;
+    --fs-body:        18px;
+    --fs-small:       16px;
+
+    /* Radios y glassmorphism */
+    --radius-pill:   999px;
+    --radius-card:   20px;
+    --glass-bg:      rgba(22, 54, 77, 0.55);
+    --glass-border:  1px solid rgba(255, 255, 255, 0.08);
+    --glass-blur:    blur(12px);
+
+    /* Altura total del navbar (gov 30 + banda inst. 45 + barra 65) */
+    --oot-navbar-h:  140px;
+}
+
+/* ── Hero Banner (Pagina_Principal) — rediseño ──────────────── */
+.herobanner {
+    position: relative;
+    overflow: hidden;
+    background: url('./images/home/banner.png') no-repeat center bottom;
+    background-size: cover;
+    min-height: 560px;
+    display: flex;
+    align-items: center;
+}
+.herobanner::before {
+    content: '';
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    background: linear-gradient(95deg,
+        rgba(15,35,64,0.92) 0%,
+        rgba(15,35,64,0.80) 42%,
+        rgba(15,35,64,0.40) 70%,
+        rgba(15,35,64,0.15) 100%);
+    /* el overlay sigue la forma del banner (con su curva), para que debajo
+       de la curva se vea el fondo del landing y no el azul del overlay */
+    -webkit-mask-image: url('./images/home/banner.png');
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center bottom;
+    -webkit-mask-size: cover;
+    mask-image: url('./images/home/banner.png');
+    mask-repeat: no-repeat;
+    mask-position: center bottom;
+    mask-size: cover;
+}
+.herocontent {
+    z-index: 1;
+    position: relative;
+    width: 100%;
+}
+.herocontent .text-white {
+    padding: 48px 0;
+}
+.hero-text { max-width: 620px; }
+.herobanner .title {
+    font-family: var(--font-heading);
+    font-size: clamp(32px, 4.4vw, 54px);   /* ≈60px en desktop */
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    color: #fff;
+    margin-bottom: 16px;
+}
+.herobanner .subtitle {
+    font-family: var(--font-body);
+    color: #fff;
+    font-size: 18px;        /* ≈21px */
+    font-weight: 600;
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+.herobanner p {
+    font-family: var(--font-body);
+    font-size: 15px;       /* ≈18px */
+    line-height: 1.6;
+    opacity: 0.9;
+    color: #fff;
+    max-width: 520px;
+    margin-bottom: 0;
+}
+.herobanner .shape { display: none; }   /* la onda se añade en el paso de secciones */
+
+/* ═══════════════════════════════════════════════════════════
+   SECCIÓN "Accede a nuestros módulos" — 3 cards glassmorphism
+   ═══════════════════════════════════════════════════════════ */
+.oot-modulos-section {
+    background: var(--color-bg-deep);
+    padding: 56px 0;
+}
+.oot-sec-title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 40px;
+    color: #fff;
+    margin-bottom: 9.6px;
+}
+.oot-sec-sub {
+    font-family: var(--font-body);
+    font-size: 18px;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 44px;
+}
+.oot-modulos-destacados {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+.oot-modcard {
+    position: relative;
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    aspect-ratio: 2299 / 1387;   /* misma proporción que las imágenes de fondo (no recorta) */
+    display: flex;
+    background-size: cover;
+    background-position: center;
+    text-decoration: none;
+    border: var(--glass-border);
+    transition: transform 0.22s, box-shadow 0.22s;
+}
+.oot-modcard:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 18px 48px rgba(0,0,0,0.45);
+    text-decoration: none;
+}
+.oot-modcard-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(11,25,45,0.45) 0%, rgba(11,25,45,0.88) 100%);
+}
+.oot-modcard-body {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.oot-modcard-badge {
+    align-self: flex-start;
+    margin-bottom: 12px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.55);
+    border-radius: var(--radius-pill);
+    padding: 5px 16px;
+}
+.oot-modcard-title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 20px;
+    color: #fff;
+    margin: 0 0 6px;
+    line-height: 1.15;
+}
+.oot-modcard-desc {
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: rgba(255,255,255,0.82);
+    line-height: 1.55;
+    margin: 0;
+}
+@media (max-width: 900px) {
+    .oot-modulos-destacados { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+    .oot-modulos-destacados { grid-template-columns: 1fr; }
+    .oot-modulos-section { padding: 52px 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Fondo continuo del landing + secciones stats/herramientas/noticias
+   ═══════════════════════════════════════════════════════════ */
+.oot-home { background: var(--gradient-page); background-attachment: fixed; font-family: var(--font-body); }
+.oot-modulos-section { background: transparent; }   /* usa el gradiente de .oot-home */
+
+.oot-stats-section,
+.oot-herramientas-section,
+.oot-noticias-section {
+    background: transparent;
+    padding: 56px 0;
+}
+
+/* Stats (4 cards) */
+.oot-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 22px;
+    margin-top: 8px;
+}
+.oot-statcard {
+    background: var(--oot-glass);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(6px);
+    border-radius: var(--radius-card);
+    padding: 30px 16px 24px;
+    text-align: center;
+}
+.oot-statcard-num {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: clamp(30px, 3.2vw, 44px);
+    color: #fff;
+    line-height: 1;
+    margin-bottom: 10px;
+}
+.oot-statcard-lbl {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: rgba(255,255,255,0.72);
+    line-height: 1.4;
+}
+@media (max-width: 760px) {
+    .oot-stats-grid { grid-template-columns: 1fr 1fr; }
+    .oot-stats-section,
+    .oot-herramientas-section,
+    .oot-noticias-section { padding: 52px 0; }
+}
+
+/* Herramientas — tipografías del carrusel */
+.oot-mod-card h5 { font-family: var(--font-heading); }
+.oot-mod-card p,
+.oot-mod-link { font-family: var(--font-body); }
+
+/* Noticias — badge pill */
+.oot-news-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--font-heading);
+    font-size: 40px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: #fff;
+    padding: 0;
+    margin-bottom: 32px;
+}
+
+/* ── Sección "Accesos rápidos / Recursos" ────────────────────── */
+.accesos-section {
+    padding: 56px 0 48px;
+    background: #f5f7f9;
+    border-bottom: 1px solid #e9ecef;
+}
+.accesos-section .sec-eyebrow {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--oot-verde);
+    margin-bottom: 4.8px;
+}
+.accesos-section .sec-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--azul-igac-dark);
+    margin-bottom: 4.8px;
+}
+.accesos-section .sec-sub {
+    font-size: 14.1px;
+    color: #58595b;
+    margin-bottom: 32px;
+}
+.acceso-card {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    height: 200px;
+    background-size: cover;
+    background-position: center;
+    color: #fff;
+    text-decoration: none;
+    display: block;
+    transition: transform 0.22s, box-shadow 0.22s;
+}
+.acceso-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(12,55,85,0.28) 0%, rgba(12,55,85,0.82) 100%);
+    border-radius: 20px;
+    transition: background 0.22s;
+}
+.acceso-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 32px rgba(12,55,85,0.28);
+    text-decoration: none;
+    color: #fff;
+}
+.acceso-card:hover::before {
+    background: linear-gradient(180deg, rgba(12,55,85,0.38) 0%, rgba(12,55,85,0.92) 100%);
+}
+.acceso-card-body {
+    position: relative;
+    z-index: 1;
+    padding: 22.4px 24px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+.acceso-card .ac-label {
+    font-size: 11.2px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    opacity: 0.8;
+    margin-bottom: 4.8px;
+}
+.acceso-card .ac-title {
+    font-size: 16.8px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 8px;
+}
+.acceso-card .ac-desc {
+    font-size: 12.8px;
+    opacity: 0.82;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+.acceso-card .ac-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6.4px;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.45);
+    color: #fff;
+    border-radius: 30px;
+    padding: 4.8px 14.4px;
+    font-size: 12.5px;
+    font-weight: 700;
+    transition: background 0.18s;
+    width: fit-content;
+}
+.acceso-card:hover .ac-btn {
+    background: rgba(255,255,255,0.32);
+}
+
+/* ── Sección bottom (fondo de recursos) ─────────────────────── */
+.bottom-section {
+    background: url('./images/home/bg-home-recursos.png') no-repeat center;
+    background-size: cover;
+    padding: 64px 0;
+    position: relative;
+}
+.bottom-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(12,55,85,0.72);
+}
+.bottom-section .container {
+    position: relative;
+    z-index: 1;
+}
+
+@media (max-width: 1024px) {
+    .herobanner::before {
+        background: linear-gradient(95deg, rgba(15,35,64,0.93) 0%, rgba(15,35,64,0.72) 75%, rgba(15,35,64,0.45) 100%);
+    }
+}
+@media (max-width: 768px) {
+    .herobanner { min-height: 480px; }
+    .herocontent .text-white { padding: 40px 0; }
+    .herobanner::before { background: rgba(15,35,64,0.82); }
+    .acceso-card { height: 170px; margin-bottom: 16px; }
+}
+@media (max-width: 576px) {
+    .herobanner::before { background: rgba(15,35,64,0.86); }
+}
+
+/* ── Hero: badge OOT + botones CTA ───────────────────────────── */
+.oot-badge-hero {
+    display: inline-block;
+    padding: 0.28em 0.85em;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #fff;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+.hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9.6px;
+    margin-top: 20px;
+}
+
+.btn-hero-solid,
+.btn-hero-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 20px;
+    white-space: nowrap;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    text-decoration: none;
+}
+.btn-hero-solid:hover,
+.btn-hero-outline:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: #fff;
+    color: #fff;
+    text-decoration: none;
+    transform: translateY(-2px);
+}
+
+/* ── Cards "¿Qué estás buscando?" — mejoras hover ─────────────── */
+.recursos .card {
+    transition: transform 0.22s, box-shadow 0.22s;
+}
+.recursos .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(35, 69, 112, 0.22);
+}
+.recursos .card .btn:hover p {
+    font-weight: 700;
+}
+
+/* ── Divisor entre secciones ──────────────────────────────────── */
+.section-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 8px 0 32px;
+}
+.section-divider::before,
+.section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #dee2e6;
+}
+.section-divider span {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #aaa;
+    white-space: nowrap;
+}
+
+/* ── Sección principal OOT Magdalena ──────────────────────────── */
+.oot-section {
+    position: relative;
+    overflow: hidden;
+    padding: 88px 0 72px;
+    background: linear-gradient(135deg,
+        #0b2e4a 0%,
+        var(--azul-igac-dark) 45%,
+        var(--oot-verde-d) 100%
+    );
+}
+
+/* Decoración geométrica de fondo */
+.oot-section::before {
+    content: '';
+    position: absolute;
+    top: -30%;
+    right: -5%;
+    width: 480px;
+    height: 480px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.03);
+    pointer-events: none;
+}
+.oot-section::after {
+    content: '';
+    position: absolute;
+    bottom: -20%;
+    left: -8%;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    background: rgba(26, 122, 76, 0.12);
+    pointer-events: none;
+}
+
+.oot-section .container {
+    position: relative;
+    z-index: 1;
+}
+
+/* Etiqueta superior */
+.oot-eyebrow {
+    display: inline-block;
+    padding: 0.28em 0.85em;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+}
+
+.oot-section h2.oot-title {
+    font-size: 38.4px;
+    font-weight: 800;
+    line-height: 1.15;
+    color: #fff;
+    margin-bottom: 16px;
+}
+.oot-section h2.oot-title span {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.oot-section .oot-lead {
+    font-size: 15.5px;
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.65;
+    max-width: 480px;
+    margin-bottom: 28px;
+}
+
+.btn-oot-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10.4px 25.6px;
+    border-radius: 8px;
+    font-size: 14.1px;
+    font-weight: 700;
+    background: transparent;
+    color: #fff;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s;
+}
+.btn-oot-cta:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: #fff;
+    color: #fff;
+    text-decoration: none;
+}
+
+/* Tira de estadísticas OOT */
+.oot-stats-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 13.6px;
+}
+.oot-stat-box {
+    flex: 1;
+    min-width: 90px;
+    background: var(--oot-glass);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 14px;
+    padding: 20px 12px;
+    text-align: center;
+    backdrop-filter: blur(6px);
+}
+.oot-stat-box .snum {
+    font-size: 33.6px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+}
+.oot-stat-box .slbl {
+    font-size: 12.2px;
+    color: rgba(255, 255, 255, 0.65);
+    margin-top: 5.6px;
+    line-height: 1.2;
+}
+
+/* Tarjetas de módulos OOT */
+.oot-mod-card {
+    display: block;
+    height: 100%;
+    padding: 24px 21.6px;
+    background: var(--oot-glass);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 18px;
+    backdrop-filter: blur(6px);
+    color: #fff;
+    text-decoration: none;
+    transition: background 0.22s, transform 0.22s, box-shadow 0.22s;
+    cursor: pointer;
+}
+.oot-mod-card:hover {
+    background: var(--oot-glass-b);
+    transform: translateY(-5px);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.25);
+    color: #fff;
+    text-decoration: none;
+}
+.oot-mod-card.coming-soon {
+    opacity: 0.65;
+    cursor: default;
+    border-style: dashed;
+}
+.oot-mod-card.coming-soon:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.oot-mod-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.14);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #fff;
+    margin-bottom: 17.6px;
+    transition: background 0.2s;
+}
+.oot-mod-card:hover .oot-mod-icon {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.oot-mod-card h5 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+}
+.oot-mod-card p {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.45;
+    margin-bottom: 17.6px;
+}
+.oot-mod-link {
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.85);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    display: flex;
+    align-items: center;
+    gap: 5.6px;
+    transition: gap 0.2s;
+}
+.oot-mod-card:hover .oot-mod-link {
+    gap: 8.8px;
+}
+.oot-mod-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 0.22em 0.75em;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* ── Cifras Magdalena (bloque adicional) ──────────────────────── */
+.cifras-magdalena {
+    background: #fff;
+    padding: 56px 0 48px;
+    border-top: 1px solid #e9ecef;
+}
+.cifras-magdalena .sec-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--oot-verde);
+    margin-bottom: 6.4px;
+}
+.cifras-magdalena .sec-title {
+    font-size: 25.6px;
+    font-weight: 800;
+    color: var(--azul-igac-dark);
+    margin-bottom: 4.8px;
+}
+.cifras-magdalena .sec-sub {
+    color: #58595b;
+    font-size: 14.4px;
+    margin-bottom: 40px;
+}
+
+.cif-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 24px 16px;
+    border-radius: 14px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    height: 100%;
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+.cif-card:hover {
+    box-shadow: 0 4px 18px rgba(35, 69, 112, 0.12);
+    transform: translateY(-3px);
+}
+.cif-card .cif-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 13.6px;
+}
+.cif-card .cif-icon.azul   { background: #dce8f0; color: var(--azul-igac-dark); }
+.cif-card .cif-icon.verde  { background: #d4edda; color: var(--oot-verde); }
+.cif-card .cif-icon.amber  { background: #fff3cd; color: #856404; }
+.cif-card .cif-icon.rojo   { background: #f8d7da; color: #721c24; }
+.cif-card .cif-icon.cyan   { background: #d1ecf1; color: #0c5460; }
+
+.cif-card .cif-num {
+    font-size: 35.2px;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--azul-igac-dark);
+}
+.cif-card .cif-num.verde { color: var(--oot-verde); }
+.cif-card .cif-num.amber { color: #856404; }
+.cif-card .cif-num.rojo  { color: #721c24; }
+.cif-card .cif-num.cyan  { color: #0c5460; }
+.cif-card .cif-label {
+    font-size: 13.1px;
+    color: #58595b;
+    margin-top: 5.6px;
+    line-height: 1.3;
+    font-weight: 600;
+}
+
+/* ── Sección consulta suelo: título actualizado ───────────────── */
+.consultas-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+.consultas-header .badge-magdalena {
+    background: var(--oot-verde);
+    color: #fff;
+    padding: 0.25em 0.7em;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    vertical-align: middle;
+}
+
+/* ── Cabecera de página (compartida entre módulos OOT) ────────── */
+.page-banner {
+    background: linear-gradient(135deg, var(--azul-igac-dark) 0%, var(--azul-igac) 100%);
+    color: #fff;
+    padding: 72px 0 60px;
+    margin-bottom: 0;
+    position: relative;
+    overflow: hidden;
+}
+.page-banner::before {
+    content: '';
+    position: absolute;
+    top: -35%; right: -5%;
+    width: 440px; height: 440px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.045);
+    pointer-events: none;
+}
+.page-banner::after {
+    content: '';
+    position: absolute;
+    bottom: -55%; left: -3%;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(26,122,76,0.1);
+    pointer-events: none;
+}
+.page-banner > .container {
+    position: relative;
+    z-index: 1;
+}
+.page-banner h1 {
+    font-size: 36.8px;
+    font-weight: 800;
+    margin-bottom: 9.6px;
+    line-height: 1.15;
+}
+.page-banner p {
+    opacity: 0.85;
+    margin-bottom: 0;
+    font-size: 16px;
+    max-width: 640px;
+    line-height: 1.55;
+}
+.page-banner .breadcrumb-item + .breadcrumb-item::before { color: rgba(255,255,255,0.5); }
+
+/* Large faded decorative icon in banner */
+.page-banner-deco {
+    position: absolute;
+    right: 5%; top: 50%;
+    transform: translateY(-50%);
+    font-size: 144px;
+    opacity: 0.055;
+    pointer-events: none;
+    z-index: 0;
+    line-height: 1;
+}
+
+/* Banner tag pills */
+.banner-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5.6px;
+    padding: 0.25em 0.8em;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.13);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: rgba(255,255,255,0.88);
+    font-size: 11.2px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    margin-right: 6.4px;
+}
+.banner-tag.verde {
+    background: rgba(26,122,76,0.22);
+    border-color: rgba(26,122,76,0.4);
+    color: #a3ddb8;
+}
+.banner-tag.amber {
+    background: rgba(244,168,51,0.2);
+    border-color: rgba(244,168,51,0.4);
+    color: #f7d596;
+}
+
+/* ── Page banner en tablet/móvil ────────────────────────────────────────────
+   El banner no tenía media queries: 72px de padding y un h1 de 36.8px comen la
+   pantalla en un teléfono, y el icono decorativo (144px) desborda. */
+@media (max-width: 768px) {
+    .page-banner {
+        padding: 40px 0 32px;
+    }
+    .page-banner h1 {
+        font-size: 26px;
+    }
+    .page-banner p {
+        font-size: 14.5px;
+    }
+    /* Los círculos decorativos y el icono se salen del viewport en pantallas
+       angostas y disparan scroll horizontal. */
+    .page-banner-deco {
+        font-size: 84px;
+        right: -2%;
+        opacity: 0.04;
+    }
+    .page-banner::before {
+        width: 240px;
+        height: 240px;
+    }
+    .page-banner::after {
+        width: 170px;
+        height: 170px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-banner {
+        padding: 28px 0 24px;
+    }
+    .page-banner h1 {
+        font-size: 21.5px;
+    }
+    /* En teléfono el icono decorativo no aporta y sí estorba. */
+    .page-banner-deco {
+        display: none;
+    }
+}
+
+/* ── Responsive ────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+    .oot-section { padding: 56px 0 48px; }
+    .oot-section h2.oot-title { font-size: 28px; }
+    .oot-stats-strip { gap: 9.6px; }
+    .oot-stat-box { padding: 16px 8px; }
+    .oot-stat-box .snum { font-size: 25.6px; }
+    .hero-ctas { flex-direction: column; align-items: flex-start; }
+    .btn-hero-solid,
+    .btn-hero-outline { width: 100%; justify-content: center; }
+    .cifras-magdalena .cif-card { margin-bottom: 16px; }
+}
+
+@media (max-width: 575px) {
+    .oot-mod-card { padding: 19.2px 16px; }
+    .oot-section h2.oot-title { font-size: 24px; }
+}
+
+/* ── Badge de conexión API (OOT addition) ── */
+.oot-api-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.oot-api-verificando { background: #e9ecef; color: #495057; }
+.oot-api-conectado   { background: #d4edda; color: #155724; }
+.oot-api-desconectado{ background: #f8d7da; color: #721c24; }
+
+/* ═══════════════════════════════════════════════════════════
+   NAVBAR DARK GLOBAL — aplica a toda la plataforma (rediseño)
+   ═══════════════════════════════════════════════════════════ */
+.oot-dark-nav {
+  font-family: var(--font-body);
+  position: relative;
+  z-index: 1000;
+}
+
+/* ── Tier 1: barra GOV.CO ── */
+.oot-dark-gov {
+  background: var(--color-gov-blue);
+  padding: 0 24px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+}
+.oot-dark-gov img { height: 15px; width: auto; }
+
+/* ── Tier 2: banda institucional (logos blancos sobre fondo oscuro) ── */
+.oot-inst-band {
+  background: var(--color-bg-panel);
+  padding: 7px 24px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.oot-inst-band img { height: 30px; width: auto; }
+
+/* ── Tier 3: barra de navegación principal ── */
+.oot-dark-bar {
+  background: var(--color-bg-deep);
+  border-bottom: 1px solid rgba(74,144,217,0.2);
+  padding: 0 24px;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+}
+.oot-dark-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.oot-dark-brand > img { height: 30px; width: auto; max-width: min(360px, 52vw); object-fit: contain; }
+.oot-dark-brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+.oot-dark-brand-title {
+  font-family: var(--font-heading);
+  font-size: 14.7px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+}
+.oot-dark-brand-sub {
+  font-family: var(--font-body);
+  font-size: 9.9px;
+  color: #7a9cc0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+#badge-conexion { margin-left: auto; flex-shrink: 0; }
+
+/* ── Links + dropdowns ── */
+.oot-dark-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+}
+.oot-dark-links > a,
+.oot-nav-dd-toggle {
+  color: #cdddee;
+  text-decoration: none;
+  font-family: var(--font-body);
+  font-size: 13.6px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 7px;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.oot-dark-links > a:hover,
+.oot-nav-dd-toggle:hover { background: rgba(74,144,217,0.14); color: #fff; }
+.oot-dark-links a.active {
+  background: rgba(74,144,217,0.20);
+  color: #6db1f2;
+  font-weight: 600;
+}
+.oot-nav-dd-toggle i { font-size: 9.9px; transition: transform 0.2s; }
+
+.oot-nav-dd { position: relative; }
+.oot-nav-dd-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 224px;
+  background: var(--color-bg-panel);
+  border: 1px solid rgba(74,144,217,0.25);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 16px 44px rgba(0,0,0,0.4);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+  z-index: 1200;
+}
+.oot-nav-dd:hover .oot-nav-dd-menu,
+.oot-nav-dd.open .oot-nav-dd-menu {
+  opacity: 1; visibility: visible; transform: translateY(0);
+}
+.oot-nav-dd:hover .oot-nav-dd-toggle i { transform: rotate(180deg); }
+.oot-nav-dd-menu a {
+  display: block;
+  color: #cdddee;
+  text-decoration: none;
+  font-size: 13.4px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+.oot-nav-dd-menu a:hover { background: rgba(74,144,217,0.16); color: #fff; }
+.oot-nav-dd-menu a.active { background: rgba(74,144,217,0.20); color: #6db1f2; }
+
+/* ── Botón hamburguesa (móvil) ── */
+.oot-nav-toggle {
+  display: none;
+  margin-left: auto;
+  background: none;
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 16.8px;
+  padding: 6px 11px;
+  cursor: pointer;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .oot-dark-links > a, .oot-nav-dd-toggle { font-size: 12.5px; padding: 7px 9px; }
+  .oot-dark-brand > img { height: 26px; }
+}
+@media (max-width: 768px) {
+  .oot-nav-toggle { display: inline-flex; align-items: center; }
+  #badge-conexion { display: none; }
+  .oot-dark-links {
+    display: none;
+    position: absolute;
+    top: 100%; left: 0; right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    background: var(--color-bg-deep);
+    border-bottom: 1px solid rgba(74,144,217,0.25);
+    padding: 8px 12px 14px;
+    margin-left: 0;
+    gap: 2px;
+    z-index: 1100;
+  }
+  .oot-dark-links.open { display: flex; }
+  .oot-nav-dd { width: 100%; }
+  .oot-nav-dd-toggle { width: 100%; justify-content: space-between; }
+  .oot-nav-dd-menu {
+    position: static;
+    opacity: 1; visibility: visible; transform: none;
+    box-shadow: none; border: none;
+    background: rgba(255,255,255,0.04);
+    display: none;
+    margin: 4px 0 4px 12px;
+  }
+  .oot-nav-dd.open .oot-nav-dd-menu { display: block; }
+  .oot-inst-band { padding: 6px 14px; }
+  .oot-inst-band img { height: 24px; }
+  .oot-dark-bar { padding: 0 14px; }
+  .oot-dark-brand > img { height: 22px; max-width: 60vw; }
+}
+
+/* ── Carrusel de módulos ───────────────────────────────── */
+.oot-carousel { position: relative; padding: 0 50px; }
+/* sin padding horizontal en el swiper -> los slides llenan exacto, no asoma card cortado */
+.oot-modulos-swiper { padding: 8px 0 48px !important; }
+.oot-modulos-swiper .swiper-slide { height: auto; display: flex; }
+.oot-modulos-swiper .oot-mod-card { width: 100%; }
+/* flechas: blancas, más pequeñas y en el gutter (fuera de los cards) */
+.oot-carousel .swiper-button-prev,
+.oot-carousel .swiper-button-next {
+    color: #fff;
+    --swiper-navigation-size: 26px;
+    --swiper-navigation-top-offset: 43%;
+}
+.oot-carousel .swiper-button-prev { left: 8px; }
+.oot-carousel .swiper-button-next { right: 8px; }
+.oot-modulos-swiper .swiper-pagination-bullet-active { background: #fff; }
+@media (max-width: 600px) {
+    .oot-carousel { padding: 0 34px; }
+    .oot-carousel .swiper-button-prev { left: 0; }
+    .oot-carousel .swiper-button-next { right: 0; }
+}
+
+/* ── Carrusel de noticias ─────────────────────────────── */
+.oot-noticias-section { background: transparent; }
+.oot-section-label {
+  font-size: 11.5px; font-weight: 700; letter-spacing: 0.1em;
+  color: #4a90d9; text-transform: uppercase;
+  border: 1px solid rgba(74,144,217,0.4);
+  padding: 3px 10px; border-radius: 20px;
+}
+
+/* ── Fix texto gris ilegible sobre fondos azules/dark ──── */
+.page-banner .text-muted,
+.page-banner .breadcrumb-item,
+.page-banner .breadcrumb-item a,
+.page-banner .breadcrumb-item.active,
+.page-banner p {
+  color: rgba(255,255,255,0.75) !important;
+}
+.page-banner .breadcrumb-item + .breadcrumb-item::before {
+  color: rgba(255,255,255,0.5) !important;
+}
+.font-weight-bold.small.text-uppercase.text-muted {
+  color: #a8c0d8 !important;
+}
+#estado-carga .text-muted,
+#estado-recursos .text-muted {
+  color: #a8c0d8 !important;
+}
+
+/* ── Stat cards del landing ───────────────────────────── */
+.oot-stat-card {
+  background: rgba(15,35,64,0.6);
+  border: 1px solid rgba(74,144,217,0.15);
+  border-radius: 16px;
+  padding: 32px 24px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.oot-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(74,144,217,0.15);
+}
+.oot-stat-icon {
+  width: 56px; height: 56px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22.4px;
+  margin: 0 auto 16px;
+}
+.oot-stat-num {
+  font-size: 38.4px; font-weight: 700;
+  color: #e0e8f2; line-height: 1;
+  margin-bottom: 8px;
+}
+.oot-stat-label {
+  font-size: 13.6px; color: #7a9cc0;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+/* ── Cards de datos (sobre fondo claro accesos-section) ─────── */
+.oot-data-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px 24px;
+  text-align: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  transition: transform 0.2s, box-shadow 0.2s;
+  height: 100%;
+}
+.oot-data-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.10);
+}
+.oot-data-card .data-icon {
+  width: 56px; height: 56px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22.4px;
+  margin: 0 auto 16px;
+}
+.oot-data-card .data-num {
+  font-size: 38.4px; font-weight: 700;
+  color: var(--azul-igac-dark); line-height: 1;
+  margin-bottom: 8px;
+}
+.oot-data-card .data-label {
+  font-size: 13.6px; color: #58595b;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+/* ── Botones CTA sobre fondo claro ──────────────────────────── */
+.btn-cta-solid {
+  display: inline-flex; align-items: center; gap: 6.4px;
+  background: var(--azul-igac); color: #fff;
+  border: none; border-radius: 30px;
+  padding: 10.4px 22.4px;
+  font-size: 14.4px; font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.2s;
+}
+.btn-cta-solid:hover {
+  background: #002a52; color: #fff;
+  text-decoration: none; transform: translateY(-2px);
+}
+.btn-cta-outline {
+  display: inline-flex; align-items: center; gap: 6.4px;
+  background: transparent; color: var(--azul-igac);
+  border: 1.5px solid var(--azul-igac); border-radius: 30px;
+  padding: 10.4px 22.4px;
+  font-size: 14.4px; font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+.btn-cta-outline:hover {
+  background: var(--azul-igac); color: #fff;
+  text-decoration: none; transform: translateY(-2px);
+}
+
+/* Tarjetas de noticias + botón cerrar del modal — hover migrado de onmouseover inline a CSS (H-04). */
+.oot-noticia-card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(74,144,217,0.12); }
+.oot-noticia-card:hover img { transform: scale(1.05); }
+.oot-modal-close:hover { color: #fff !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE — Landing (tablet / teléfono)
+   La grilla ya se adaptaba (módulos 3→2→1, stats 4→2), pero las tipografías de
+   sección estaban fijas (40px) y desbordaban en pantallas angostas.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .oot-sec-title {
+        font-size: 28px;
+    }
+    .oot-sec-sub {
+        font-size: 15.5px;
+        margin-bottom: 28px;
+    }
+    .herocontent .text-white {
+        padding: 32px 0;
+    }
+    .herobanner .subtitle {
+        font-size: 16px;
+    }
+    .oot-stats-grid {
+        gap: 14px;
+    }
+    .oot-statcard {
+        padding: 20px 12px 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .oot-sec-title {
+        font-size: 23px;
+    }
+    .oot-sec-sub {
+        font-size: 14.5px;
+        margin-bottom: 22px;
+    }
+    /* Los 3 CTA del hero envuelven a 3 líneas irregulares; a ancho completo
+       quedan alineados y con un objetivo táctil cómodo. */
+    .hero-ctas {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .btn-hero-solid,
+    .btn-hero-outline {
+        justify-content: center;
+        min-height: 46px;
+    }
+    .herobanner p {
+        font-size: 14px;
+    }
+    /* El modal de noticias usaba padding 24px: en teléfono deja la tarjeta sin aire. */
+    #modal-noticia {
+        padding: 12px !important;
+    }
+}
+
+/* El fondo fijo (background-attachment: fixed) es costoso y provoca saltos de
+   repintado al hacer scroll en iOS/Android. */
+@media (max-width: 900px) {
+    .oot-home {
+        background-attachment: scroll;
+    }
+}
+
+/* ==========================================================================
+   UNIFICACIÓN DE TIPOGRAFÍA CON EL OBSERVATORIO (OUTFIT)
+   Aplica a los módulos legacy adaptados para coherencia visual global.
+   ========================================================================== */
+body, 
+button, 
+input, 
+select, 
+textarea, 
+.calcite, 
+.calcite-map, 
+#mainDiv,
+.panel,
+.panel-body,
+.panel-resultados-titulo2,
+.panel-resultados-descripcion2,
+.footer-titulo,
+nav,
+nav a,
+.oot-dark-nav,
+.oot-dark-links,
+.oot-dark-links a,
+.oot-dark-brand-title,
+.oot-dark-brand-sub,
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', 'Montserrat', sans-serif !important;
+}
+
+
+

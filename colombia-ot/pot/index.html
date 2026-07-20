@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es-ES">
+<head>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <meta name="description" content="Ordenamiento territorial de Colombia | Colombia OT: Una plataforma del IGAC para la construcción colectiva de país." />
+    <meta name="title" property="og:title" content="Colombia OT">
+    <meta property="og:type" content="website">
+    <meta name="image" property="og:image" content="../../images/home/bg-home-hero.png">
+    <meta name="keywords" content="Ordenamiento territorial, Plan de ordenamiento territorial, Pot colombia, Pot, Componente rural, Componente urbano, Dimensiones del diagnóstico, Igac, Colombia OT 2.0, Datos del pot, Planificación territorial, Federación colombiana de municipios, La ruta del pot" />
+    <meta name="author" content="Instituto Geográfico Agustín Codazzi - IGAC" />
+    <meta http-equiv="content-language" content="es" />
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous">
+    <link rel="shortcut icon" href="../../images/favicon.ico" />
+    <title>Colombia OT - Los POT del país</title>
+
+    <link type="text/css" async rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.5.0/firebase-ui-auth.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.css" />
+    <link rel="stylesheet" href="../../js/lib/dist/css/calcite-maps-bootstrap.min-v0.10.css">
+    <link rel="stylesheet" href="../../js/lib/dist/css/calcite-maps-arcgis-3.x.min-v0.10.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.12/css/select2.min.css" />
+
+    <link rel="stylesheet" href="../../css/maestra.css">
+    <link rel="stylesheet" href="../../css/navbar-footer.css">
+    <link rel="stylesheet" href="../../css/oot-complementario.css">
+    <link rel="stylesheet" href="../../css/pot.css">
+    <link rel="stylesheet" href="css/custom.css">
+  <link rel="stylesheet" href="css/inline-extracted.css">
+  <link rel="stylesheet" href="css-js-potindex.css">
+    <link rel="stylesheet" href="../../mobile-warning.css">
+  <script defer src="../../mobile-warning.js"></script>
+</head>
+<body class="calcite calcite-nav-top">
+    <div id="oot-navbar-placeholder"></div>
+    <section class="portada-igac portadaSub origen mt-4">
+        <div class="container block-igac">
+            <div class="d-flex contenido-portada">
+                <div class="texto-portada">
+                    <h1>Los POT del país</h1>
+                    <p>
+                        Bienvenidos al buscador de los Planes de Ordenamiento Territorial de Colombia – POT. Aquí podrás buscar, explorar y descargar toda la entrega documental y cartográfica que realizan los municipios del país en sus procesos de elaboración del POT. Podrás descubrir esta información, abierta y disponible para todos, a través de: filtros temáticos, las diferentes etapas del POT, y otros filtros avanzados a medida que se profundiza en la búsqueda.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="bloqBusqueda">
+        <div class="container">
+            <div id="ie-potindex-1" class="title">
+                Busca en los POT del país
+            </div>
+            <div class="row containerForm">
+                <div class="col-md-8 m-auto">
+                    <div class="formInputs">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <select class="form-control" id="searchEntidadTerritorial">
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <select class="form-control" id="searchEtapa-idx">
+                                </select>
+                            </div>
+                        </div>
+                        <a class="btnBusqueda" href="#"><img id="btnBusqueda" src="../../images/iconos/btnBusqueda.png" width="33px" height="auto" alt=""></a>
+                    </div>
+                    <a class="btnVerTodos" href="#"><i>Ver todo</i></a>
+                </div>
+            </div>
+        </div>
+    </section>
+    <div id="ie-potindex-2" class="recursos-destacados">
+        <div class="container" id="containerDestacados">
+            <div class="row">
+                <div id="ie-potindex-3" class="resourses-title title-box">
+                    <h2 class="title">Los POT más consultados:</h2>
+                </div>
+                <div id="carouselRecursos" class="carousel slide" data-ride="carousel" data-interval="false">
+                    <ol id="carouselRecursosIndicators" class="carousel-indicators">
+                    </ol>
+
+                    <div id="carouselRecursosItems" class="carousel-inner" role="listbox">
+
+                    </div>
+
+                    <a class="left carousel-control" href="#carouselRecursos" role="button" data-slide="prev">
+                        <span class="glyphicon glyphicon-left" aria-hidden="true"></span>
+                        <span class="sr-only">Previous</span>
+                    </a>
+                    <a class="right carousel-control" href="#carouselRecursos" role="button" data-slide="next">
+                        <span class="glyphicon glyphicon-right" aria-hidden="true"></span>
+                        <span class="sr-only">Next</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grandes-cifras">
+        <div class="container">
+            <div class="row row-cifras">
+                <div class="col-md-6 cifras">
+                    <div class="title">
+                        <h2>Indicadores POT</h2>
+                    </div>
+                    <div class="resume">
+                        <p>Visita los indicadores principales que evidencian el estado actual del OT del país. Mantente al día con el avance de la construcción del territorio, entérate de esta historia y utiliza este insumo como base de análisis.</p>
+                    </div>
+                </div>
+                <div class="rightside-container">
+                    <div class="statements-circle">
+                    </div>
+                    <div>
+                        <div class="col-md-6 statements-content">
+                            <div class="col-md-6 statements">
+                                <div class="icon">
+                                    <img src="../../images/recursos/update-logo.svg" alt="">
+                                </div>
+                                <div class="content">
+                                    <h2>192</h2>
+                                    <p>Municipios con POT actualizado</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6 statements">
+                                <div class="icon">
+                                    <img src="../../images/recursos/location-logo.svg" alt="">
+                                </div>
+                                <div class="content">
+                                    <h2>134</h2>
+                                    <p>Municipios con caracterización municipal</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6 statements">
+                                <div class="icon">
+                                    <img src="../../images/recursos/file-logo.svg" alt="">
+                                </div>
+                                <div class="content">
+                                    <h2>742</h2>
+                                    <p>Municipios con actos administrativos</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6 statements">
+                                <div class="icon">
+                                    <img src="../../images/recursos/base-logo.svg" alt="">
+                                </div>
+                                <div class="content">
+                                    <h2>432</h2>
+                                    <p>Municipios con cartografía</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="leter">
+                        <img src="../../images/recursos/indicadores-ilustracion.svg" alt="">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="oot-footer-placeholder"></div>
+
+    <div id="modalLogin" class="modal fade" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div id="ie-potindex-4" class="modal-header">
+                    <a href="#" class="close close-login-btn" aria-label="Cerrar"><span aria-hidden="true">&times;</span></a>
+                    <h4 class="modal-title">Iniciar sesi&oacute;n</h4>
+                </div>
+                <div id="ie-potindex-5" class="modal-body">
+                    <div id="loginContainer">
+                        <div id="authContainer">
+                        </div>
+                    </div>
+                    <div id="logoutContainer">
+                        <img id="userPhoto2" src="../../images/icono_ingreso.png" alt="Imagen Usuario" />
+                        <h5><span id="userName2"></span></h5>
+                        <button id="logoutBtn" type="button" class="btn btn-default btn-danger">
+                            Cerrar sesi&oacute;n
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  
+    <script type="text/javascript" src="https://www.gstatic.com/firebasejs/7.4.0/firebase-app.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/firebasejs/7.4.0/firebase-auth.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/firebasejs/ui/4.5.0/firebase-ui-auth__es.js"></script>
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js"></script>
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.12/js/select2.full.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.12/js/i18n/es.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.12/js/i18n/es.js"></script>
+
+    <script type="text/javascript" src="../../config.js"></script>
+    <script type="text/javascript" src="../../oot.js"></script>
+    <script type="text/javascript" src="../../js/navbar.js"></script>
+    <script type="text/javascript" src="../../js/maestra.js"></script>
+    <script type="text/javascript" src="js/index.js"></script>
+
+</body>
+</html>

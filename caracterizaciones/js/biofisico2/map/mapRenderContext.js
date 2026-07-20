@@ -17,6 +17,9 @@ export function createMapRenderContext(deps) {
 
     return {
         FeatureLayer: deps.FeatureLayer,
+        ImageryLayer: deps.ImageryLayer,
+        Extent: deps.Extent,
+        esriRequest: deps.esriRequest,
         map: deps.map,
         view: deps.view,
         getActiveLayerConfig: deps.getActiveLayerConfig,
@@ -32,8 +35,10 @@ export function createMapRenderContext(deps) {
         getLayersGlobal: deps.getLayersGlobal,
         getChartLayerGlobal: deps.getChartLayerGlobal,
         setLayerGlobal: deps.setLayerGlobal,
+        setChartLayerGlobal: deps.setChartLayerGlobal,
         setLayerViewGlobal: deps.setLayerViewGlobal,
         setLayersGlobal: deps.setLayersGlobal,
+        setStationsLayer: deps.setStationsLayer,
         replaceScaleHandle,
         buildDefinitionExpression: deps.buildDefinitionExpression,
         pickLayerByScale: deps.pickLayerByScale,

@@ -5,7 +5,7 @@ import {
     ensureChartScrollContainer,
     prepareVisibleChartCanvas,
     setChartTitle
-} from "../ui/chartPanel.js?v=local-chart-title-20260529";
+} from "../ui/chartPanel.js?v=economic-no-scroll-20260707";
 import { setChartStatus } from "../ui/chartStatus.js";
 
 function formatPercent(value) {
@@ -42,42 +42,126 @@ function fadeColor(color, alpha = 0.35) {
 }
 
 const ACTIVE_BAR_BORDER_WIDTH = 1.4;
-const ECONOMIC_BAR_THICKNESS = 18;
+const ECONOMIC_BAR_THICKNESS = 14;
+const ECONOMIC_VIEWPORT_MIN_HEIGHT = 260;
 
-function configureEconomicActivitiesViewport(canvas, rowCount) {
-    const contentHeight = 350 + Math.max(0, rowCount - 7) * 22;
+function maxWrappedLineCount(wrappedLabels = []) {
+    return Math.max(1, ...wrappedLabels.map(label => Array.isArray(label) ? label.length : 1));
+}
+
+function economicLabelFontSize(rowCount, wrappedLabels = []) {
+    const maxLines = maxWrappedLineCount(wrappedLabels);
+    if (rowCount > 14 || maxLines > 2) return 8;
+    if (rowCount > 8) return 8;
+    return 9;
+}
+
+function economicLabelLineHeight(fontSize) {
+    return Math.ceil(fontSize * 1.22);
+}
+
+function economicBarThickness(rowCount) {
+    if (rowCount > 18) return 10;
+    if (rowCount > 12) return 11;
+    if (rowCount > 6) return 12;
+    return ECONOMIC_BAR_THICKNESS;
+}
+
+function economicRowHeightForIndex(rowCount, wrappedLabels = [], rowIndex = 0) {
+    const wrapped = wrappedLabels[rowIndex] || [""];
+    const lineCount = Array.isArray(wrapped) ? wrapped.length : 1;
+    const fontSize = economicLabelFontSize(rowCount, wrappedLabels);
+    const lineHeight = economicLabelLineHeight(fontSize);
+    const dense = rowCount > 10;
+    const labelBlock = lineCount * lineHeight + (dense ? 4 : 8);
+    const barBlock = economicBarThickness(rowCount) + (dense ? 6 : 8);
+    const rowGap = rowCount > 14 ? 6 : rowCount > 10 ? 7 : rowCount > 6 ? 8 : 10;
+    return Math.max(dense ? 26 : 30, labelBlock, barBlock) + rowGap;
+}
+
+function computeEconomicChartHeights(rowCount, wrappedLabels = []) {
+    const safeRows = Math.max(rowCount, 1);
+    const rowHeights = Array.from({ length: safeRows }, (_, index) =>
+        economicRowHeightForIndex(rowCount, wrappedLabels, index)
+    );
+    const viewportPadding = rowCount > 14 ? 58 : rowCount > 10 ? 64 : 72;
+    const contentHeight = Math.max(
+        ECONOMIC_VIEWPORT_MIN_HEIGHT,
+        viewportPadding + rowHeights.reduce((sum, height) => sum + height, 0)
+    );
+    return { contentHeight };
+}
+
+function economicYAxisWidth(wrappedLabels = [], fontSize = 9) {
+    const charWidth = fontSize * 0.52;
+    const maxLineChars = Math.max(
+        8,
+        ...wrappedLabels.flatMap(label =>
+            (Array.isArray(label) ? label : [String(label || "")]).map(line => line.length)
+        )
+    );
+    return Math.min(162, Math.max(102, Math.ceil(maxLineChars * charWidth) + 6));
+}
+
+function applyEconomicYAxisLayout(chart, rowCount, wrappedLabels = []) {
+    if (!chart?.options?.scales?.y) return;
+    chart.$economicWrappedLabels = wrappedLabels;
+    chart.$economicRowCount = rowCount;
+    const fontSize = economicLabelFontSize(rowCount, wrappedLabels);
+    chart.options.scales.y.ticks.font.size = fontSize;
+    chart.options.scales.y.ticks.padding = 5;
+    chart.options.scales.y.afterFit = axis => {
+        const labels = axis.chart?.$economicWrappedLabels || wrappedLabels;
+        const count = axis.chart?.$economicRowCount || labels.length || rowCount;
+        const size = economicLabelFontSize(count, labels);
+        axis.width = economicYAxisWidth(labels, size);
+    };
+}
+
+function economicBarSpacing(rowCount) {
+    if (rowCount > 16) return { barPercentage: 0.84, categoryPercentage: 0.9 };
+    if (rowCount > 10) return { barPercentage: 0.8, categoryPercentage: 0.86 };
+    if (rowCount > 6) return { barPercentage: 0.74, categoryPercentage: 0.78 };
+    return { barPercentage: 0.66, categoryPercentage: 0.7 };
+}
+
+function applyEconomicBarSpacing(dataset, rowCount) {
+    if (!dataset) return;
+    const spacing = economicBarSpacing(rowCount);
+    dataset.barPercentage = spacing.barPercentage;
+    dataset.categoryPercentage = spacing.categoryPercentage;
+}
+
+function configureEconomicActivitiesViewport(canvas, rowCount, wrappedLabels = []) {
+    const { contentHeight } = computeEconomicChartHeights(rowCount, wrappedLabels);
     const container = ensureChartScrollContainer(canvas);
     const chartCard = canvas.closest(".chart-card");
 
     canvas.classList.add("economic-activities-chart-active");
+    canvas.style.setProperty("width", "100%", "important");
+    canvas.style.setProperty("min-width", "0px", "important");
     canvas.style.setProperty("height", `${contentHeight}px`, "important");
     canvas.style.setProperty("min-height", `${contentHeight}px`, "important");
     canvas.style.setProperty("max-height", "none", "important");
-    canvas.style.setProperty("width", "100%", "important");
-    canvas.style.setProperty("min-width", "0px", "important");
     canvas.height = Math.round(contentHeight);
 
     if (container) {
         container.classList.add("economic-activities-chart-active");
+        container.classList.remove("is-scrollable");
+        container.scrollTop = 0;
+        container.scrollLeft = 0;
         container.style.height = `${contentHeight}px`;
         container.style.minHeight = `${contentHeight}px`;
         container.style.maxHeight = "none";
-        container.style.overflow = "hidden";
+        container.style.overflowY = "hidden";
+        container.style.overflowX = "hidden";
         container.style.cursor = "default";
-        container.scrollTop = 0;
-        container.scrollLeft = 0;
-        container.classList.remove("is-scrollable");
     }
     if (chartCard) {
         chartCard.classList.add("economic-activities-chart-active");
-        chartCard.style.minHeight = `${contentHeight + 100}px`;
+        chartCard.style.minHeight = `${contentHeight + 88}px`;
+        chartCard.style.overflowY = "visible";
     }
-}
-
-function economicBarThickness(rowCount) {
-    if (rowCount > 12) return 12;
-    if (rowCount > 7) return 15;
-    return ECONOMIC_BAR_THICKNESS;
 }
 
 function isCategoryScaleZoomed(scale, totalRows) {
@@ -295,10 +379,21 @@ function findRowByLabelOrCode(rows, value) {
     ) || null;
 }
 
-function wrapEconomicLabelLines(value, maxLineLength = 18, maxLines = 3) {
+function splitLongEconomicWord(word, chunkSize) {
+    if (word.length <= chunkSize) return [word];
+    const chunks = [];
+    for (let index = 0; index < word.length; index += chunkSize) {
+        chunks.push(word.slice(index, index + chunkSize));
+    }
+    return chunks;
+}
+
+function wrapEconomicLabelLines(value, maxLineLength = 26) {
     const text = String(value || "").trim();
     if (!text) return [""];
-    const words = text.split(/\s+/);
+    const words = text
+        .split(/\s+/)
+        .flatMap(word => splitLongEconomicWord(word, Math.max(8, maxLineLength)));
     const lines = [];
     let current = "";
     words.forEach(word => {
@@ -311,20 +406,13 @@ function wrapEconomicLabelLines(value, maxLineLength = 18, maxLines = 3) {
         current = word;
     });
     if (current) lines.push(current);
-    if (lines.length <= maxLines) return lines;
-    const limited = lines.slice(0, maxLines);
-    limited[maxLines - 1] = `${limited[maxLines - 1].slice(0, Math.max(0, maxLineLength - 1)).trim()}…`;
-    return limited;
+    return lines.length ? lines : [""];
 }
 
 function wrapEconomicLabelsForRows(labels = []) {
-    const dense = labels.length > 12;
-    const medium = labels.length > 7;
-    return labels.map(label => wrapEconomicLabelLines(
-        label,
-        dense ? 24 : medium ? 22 : 18,
-        dense ? 1 : medium ? 2 : 3
-    ));
+    const count = labels.length;
+    const maxLineLength = count > 16 ? 22 : count > 10 ? 24 : count > 7 ? 26 : 30;
+    return labels.map(label => wrapEconomicLabelLines(label, maxLineLength));
 }
 
 function getCanvasPointer(chart, event) {
@@ -540,8 +628,9 @@ export function createEconomicActivitiesBarChartController({
             const nextRows = Array.isArray(filteredRows) ? filteredRows : [];
             chart.__economicActiveRows = nextRows;
             const nextLabels = nextRows.map(row => row.label);
+            const nextWrappedLabels = wrapEconomicLabelsForRows(nextLabels);
             chart.data.rawLabels = nextLabels;
-            chart.data.labels = wrapEconomicLabelsForRows(nextLabels);
+            chart.data.labels = nextWrappedLabels;
             dataset.data = nextRows.map(row => row.value);
             dataset.backgroundColor = nextRows.map(row =>
                 activeLabel && row.label !== activeLabel
@@ -554,6 +643,14 @@ export function createEconomicActivitiesBarChartController({
             dataset.borderWidth = nextRows.map(row =>
                 activeLabel && row.label === activeLabel ? ACTIVE_BAR_BORDER_WIDTH : 1
             );
+            configureEconomicActivitiesViewport(chart.canvas, nextRows.length, nextWrappedLabels);
+            applyEconomicBarSpacing(dataset, nextRows.length);
+            dataset.barThickness = economicBarThickness(nextRows.length);
+            dataset.maxBarThickness = economicBarThickness(nextRows.length);
+            if (chart.options?.scales?.y?.ticks?.font) {
+                applyEconomicYAxisLayout(chart, nextRows.length, nextWrappedLabels);
+            }
+            chart.resize();
             chart.update();
         };
 
@@ -742,8 +839,9 @@ export function createEconomicActivitiesBarChartController({
             setChartStatus(canvas, "");
             chartCore.destroyChart();
             chartCore.setRows(rows);
-            prepareVisibleChartCanvas(canvas);
-            configureEconomicActivitiesViewport(canvas, rows.length);
+            const labels = rows.map(row => row.label);
+            const wrappedLabels = wrapEconomicLabelsForRows(labels);
+            configureEconomicActivitiesViewport(canvas, rows.length, wrappedLabels);
 
             if (typeof window.actualizarLeyenda === "function") {
                 window.actualizarLeyenda(
@@ -760,9 +858,8 @@ export function createEconomicActivitiesBarChartController({
             }
 
             destroyCanvasChart(canvas);
-            const labels = rows.map(row => row.label);
-            const wrappedLabels = wrapEconomicLabelsForRows(labels);
             const barThickness = economicBarThickness(rows.length);
+            const barSpacing = economicBarSpacing(rows.length);
             const chart = new Chart(canvas, {
                 type: "bar",
                 data: {
@@ -777,8 +874,8 @@ export function createEconomicActivitiesBarChartController({
                         borderRadius: 4,
                         barThickness,
                         maxBarThickness: barThickness,
-                        barPercentage: 0.52,
-                        categoryPercentage: 0.58
+                        barPercentage: barSpacing.barPercentage,
+                        categoryPercentage: barSpacing.categoryPercentage
                     }]
                 },
                 options: {
@@ -786,6 +883,14 @@ export function createEconomicActivitiesBarChartController({
                     responsive: true,
                     maintainAspectRatio: false,
                     interaction: { mode: "nearest", intersect: true },
+                    layout: {
+                        padding: {
+                            left: 4,
+                            right: 36,
+                            top: 8,
+                            bottom: 8
+                        }
+                    },
                     plugins: {
                         legend: { display: false },
                         zoom: {
@@ -857,6 +962,7 @@ export function createEconomicActivitiesBarChartController({
                             }
                         },
                         y: {
+                            offset: true,
                             title: {
                                 display: true,
                                 text: chartConfig.yAxis?.label || "Actividad económica"
@@ -865,9 +971,16 @@ export function createEconomicActivitiesBarChartController({
                             ticks: {
                                 autoSkip: false,
                                 color: "#334155",
+                                padding: 5,
                                 font: {
-                                    size: rows.length > 12 ? 8 : rows.length > 7 ? 9 : 10,
-                                    weight: "600"
+                                    size: economicLabelFontSize(rows.length, wrappedLabels),
+                                    weight: "500",
+                                    lineHeight: 1.2
+                                },
+                                callback(value) {
+                                    const labelIndex = Number(value);
+                                    const currentLabels = this?.chart?.data?.labels || wrappedLabels;
+                                    return currentLabels[labelIndex] || this?.getLabelForValue?.(value) || "";
                                 }
                             }
                         }
@@ -880,6 +993,7 @@ export function createEconomicActivitiesBarChartController({
                 plugins: [createValueLabelsPlugin()]
             });
 
+            applyEconomicYAxisLayout(chart, rows.length, wrappedLabels);
             chartCore.setInstance(chart);
             chart.$economicPanXLimit = Math.max(0, ...rows.map(row => Number(row.value) || 0));
             bindEconomicPointerPan(chart);

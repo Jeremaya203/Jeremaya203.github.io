@@ -1,0 +1,122 @@
+/* Shared layout tokens for Caracterizaciones Territoriales. */
+:root {
+  --ct-blue: #004a69;
+  --ct-cream: #fbf6ec;
+  --ct-panel: #fffaf0;
+  --ct-border: rgba(0, 74, 105, 0.16);
+  --ct-shadow: 0 16px 34px rgba(0, 0, 0, 0.12);
+  --ct-radius: 16px;
+  --ct-theme: #0b7f78;
+  --ct-theme-dark: #00546f;
+  --ct-theme-soft: rgba(11, 127, 120, 0.12);
+  --ct-mobile-safe-gap: 12px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 0;
+}
+
+body {
+  min-width: 0;
+  overflow-x: hidden;
+  background-color: var(--ct-cream);
+}
+
+img,
+svg,
+canvas {
+  max-width: 100%;
+}
+
+button,
+select,
+input {
+  font: inherit;
+}
+
+.main-header-nav {
+  width: 100%;
+}
+
+.navbarigac {
+  position: relative;
+  width: 100%;
+}
+
+.navbarigac .logos {
+  min-width: 0;
+}
+
+.titulo-app {
+  min-width: 0;
+}
+
+#link-list {
+  list-style: none;
+}
+
+#link-list a {
+  text-decoration: none;
+}
+
+.navbarnavigac {
+  display: none;
+}
+
+.modulos-scroll,
+.modulos-container,
+.dropdown-menu-custom,
+.dropdown-submenu {
+  min-width: 0;
+}
+
+.dropdown-menu-custom,
+.dropdown-submenu {
+  z-index: 120;
+}
+
+.chart-card,
+.chart-card-wrap,
+.chart-container,
+.grafica-container,
+.grafico-container,
+.right-panel,
+.panel-derecho,
+.info-panel,
+.legend-panel,
+.map-legend,
+.leyenda,
+#chartDiv,
+#mapDiv,
+#legendDiv {
+  min-width: 0;
+}
+
+#chart,
+#tcChart {
+  min-width: 0;
+}
+
+.esri-view,
+.esri-view-root,
+.esri-ui {
+  max-width: 100%;
+}
+
+.ct-visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}

@@ -2,7 +2,7 @@ export function initModuleDropdown(dropdownId, triggerId, menuSelector, onItemCl
     const dropdown = document.getElementById(dropdownId);
     const trigger = document.getElementById(triggerId);
     const menu = dropdown?.querySelector(menuSelector);
-    const items = dropdown?.querySelectorAll(".dropdown-item");
+    const items = dropdown?.querySelectorAll(".dropdown-item, .dropdown-subitem");
 
     if (!dropdown || !trigger || !menu || !items?.length) return;
 
@@ -46,7 +46,6 @@ export function initModuleDropdown(dropdownId, triggerId, menuSelector, onItemCl
             if (typeof onItemClick === "function") {
                 onItemClick(target, item);
             } else {
-                console.log("Seleccionado:", target);
             }
 
             setOpen(false);
@@ -61,18 +60,22 @@ export function initDropdownDescargables() {
     const items = document.querySelectorAll(".descargables-menu .descargables-item");
 
     if (!dropdown || !trigger || !panel) {
-        console.log("Dropdown descargables no encontrado");
         return;
+    }
+
+    function setDownloadsOpen(isOpen) {
+        dropdown.classList.toggle("open", isOpen);
+        trigger.setAttribute("aria-expanded", String(isOpen));
     }
 
     trigger.onclick = function (e) {
         e.stopPropagation();
-        dropdown.classList.toggle("open");
+        setDownloadsOpen(!dropdown.classList.contains("open"));
     };
 
     document.addEventListener("click", function (e) {
         if (!dropdown.contains(e.target)) {
-            setOpen(false);
+            setDownloadsOpen(false);
         }
     });
 
@@ -85,10 +88,9 @@ export function initDropdownDescargables() {
             if (target === "memoria") {
                 document.getElementById("btnDescargarPDF")?.click();
             } else if (target === "bd") {
-                console.log("Descargar base de datos espacial");
             }
 
-            setOpen(false);
+            setDownloadsOpen(false);
         };
     });
 }

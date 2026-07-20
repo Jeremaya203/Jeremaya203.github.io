@@ -4,7 +4,7 @@
  * una linea de tiempo tipo chevron inspirada en la referencia de ocupacion.
  */
 
-const TIMELINE_URL = "https://mapas2.igac.gov.co/server/rest/services/ordenamiento/componentelineaslimitrofes/FeatureServer/3";
+const TIMELINE_URL = "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componentelineaslimitrofes/MapServer/3";
 const LINEAS_URL = "https://mapas2.igac.gov.co/server/rest/services/limites/limites/MapServer/0";
 
 const TIMELINE_FIELDS = [
@@ -622,7 +622,7 @@ export function renderTimeline(groupedByYear, municipioNombre, onSelectEvent) {
                     <h3 class="timeline-title">L\u00ednea del tiempo</h3>
                     <p class="timeline-subtitle">${esc(municipioNombre)}</p>
                 </div>
-                <p style="text-align:center; color:#888; padding:28px 16px;">No se encontraron oficios o documentos para este municipio.</p>
+                <p class="oot-js-limites-timeline-1">No se encontraron oficios o documentos para este municipio.</p>
             </div>
         `;
         renderLineDescriptions(groupedByYear);
@@ -639,7 +639,7 @@ export function renderTimeline(groupedByYear, municipioNombre, onSelectEvent) {
 
         return `
             <div class="timeline-year-group">
-                <button class="timeline-year" type="button" data-year="${escAttr(year)}" style="background:${yearColor(index, years.length)}">
+                <button class="timeline-year" type="button" data-year="${escAttr(year)}" data-year-color="${yearColor(index, years.length)}">
                     <span class="timeline-year-label">${esc(year)}</span>
                 </button>
                 <div class="timeline-eventos-container" id="eventos-${escAttr(year)}">
@@ -667,6 +667,10 @@ export function renderTimeline(groupedByYear, municipioNombre, onSelectEvent) {
         </div>
     `;
     renderLineDescriptions(groupedByYear);
+
+    timelineDiv.querySelectorAll(".timeline-year[data-year-color]").forEach(node => {
+        node.style.background = node.dataset.yearColor;
+    });
 
     let activeYear = null;
 

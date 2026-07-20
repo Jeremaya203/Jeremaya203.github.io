@@ -22,6 +22,7 @@ const comfortBarSlotWidth = 28;
 const maxInitialOverflowFactor = 1.35;
 const chartMetadataCache = new Map();
 const pibDepartmentBarThickness = 5;
+const pibDepartmentDragThresholdPx = 6;
 
 export function renderHorizontalStackedBarChart({
     canvas,
@@ -114,6 +115,7 @@ function resetPibDepartmentCanvas(canvas, chartConfig = null) {
         canvas.removeEventListener("click", canvas.__barChartClickHandler);
         canvas.__barChartClickHandler = null;
     }
+    cleanupPibDepartmentPanGuard(canvas);
 
     if (chartScroll) {
         chartScroll.scrollLeft = 0;
@@ -144,12 +146,132 @@ function resetPibDepartmentCanvas(canvas, chartConfig = null) {
     canvas.height = height;
 }
 
+function cleanupPibDepartmentPanGuard(canvas) {
+    const guard = canvas?.__pibDepartmentPanGuard;
+    if (!guard) return;
+
+    canvas.removeEventListener("pointerdown", guard.onPointerDown);
+    canvas.removeEventListener("pointermove", guard.onPointerMove);
+    canvas.removeEventListener("pointerup", guard.onPointerUp);
+    canvas.removeEventListener("pointercancel", guard.onPointerCancel);
+    guard.scrollContainer?.removeEventListener("scroll", guard.onScroll);
+    canvas.__pibDepartmentPanGuard = null;
+}
+
+function installPibDepartmentPanGuard(canvas) {
+    if (!canvas) return null;
+
+    cleanupPibDepartmentPanGuard(canvas);
+
+    const scrollContainer = ensureChartScrollContainer(canvas);
+    const state = {
+        active: false,
+        dragged: false,
+        startX: 0,
+        startY: 0,
+        startScrollLeft: 0,
+        startScrollTop: 0,
+        ignoreNextClick: false
+    };
+
+    function markDragged() {
+        state.dragged = true;
+        state.ignoreNextClick = true;
+    }
+
+    function onPointerDown(event) {
+        state.active = true;
+        state.dragged = false;
+        state.ignoreNextClick = false;
+        state.startX = event.clientX;
+        state.startY = event.clientY;
+        state.startScrollLeft = scrollContainer?.scrollLeft || 0;
+        state.startScrollTop = scrollContainer?.scrollTop || 0;
+    }
+
+    function onPointerMove(event) {
+        if (!state.active) return;
+
+        const dx = Math.abs(event.clientX - state.startX);
+        const dy = Math.abs(event.clientY - state.startY);
+        if (dx > pibDepartmentDragThresholdPx || dy > pibDepartmentDragThresholdPx) {
+            markDragged();
+        }
+    }
+
+    function onPointerUp() {
+        state.active = false;
+    }
+
+    function onPointerCancel() {
+        state.active = false;
+        if (state.dragged) state.ignoreNextClick = true;
+    }
+
+    function onScroll() {
+        if (!state.active || !scrollContainer) return;
+
+        const dx = Math.abs(scrollContainer.scrollLeft - state.startScrollLeft);
+        const dy = Math.abs(scrollContainer.scrollTop - state.startScrollTop);
+        if (dx > 0 || dy > 0) markDragged();
+    }
+
+    const guard = {
+        state,
+        scrollContainer,
+        onPointerDown,
+        onPointerMove,
+        onPointerUp,
+        onPointerCancel,
+        onScroll
+    };
+
+    canvas.addEventListener("pointerdown", onPointerDown);
+    canvas.addEventListener("pointermove", onPointerMove);
+    canvas.addEventListener("pointerup", onPointerUp);
+    canvas.addEventListener("pointercancel", onPointerCancel);
+    scrollContainer?.addEventListener("scroll", onScroll, { passive: true });
+    canvas.__pibDepartmentPanGuard = guard;
+
+    return guard;
+}
+
+function shouldIgnorePibDepartmentClick(canvas, chartConfig = null) {
+    if (chartConfig?.id !== "pib-departamental") return false;
+
+    const guardState = canvas?.__pibDepartmentPanGuard?.state;
+    if (!guardState?.ignoreNextClick) return false;
+
+    guardState.ignoreNextClick = false;
+    return true;
+}
+
 function applyPibDepartmentDatasetSizing(dataset, chartConfig = null) {
     if (!dataset || chartConfig?.id !== "pib-departamental") return dataset;
     dataset.barThickness = pibDepartmentBarThickness;
     dataset.maxBarThickness = pibDepartmentBarThickness;
     dataset.categoryPercentage = 1;
     dataset.barPercentage = 1;
+    return dataset;
+}
+
+function applyConfiguredBarDatasetSizing(dataset, chartConfig = null) {
+    const sizing = chartConfig?.barSizing;
+    if (!dataset || !sizing) return dataset;
+
+    [
+        "barPercentage",
+        "categoryPercentage",
+        "barThickness",
+        "maxBarThickness",
+        "minBarLength"
+    ].forEach(property => {
+        const value = Number(sizing[property]);
+        if (Number.isFinite(value) && value >= 0) {
+            dataset[property] = value;
+        }
+    });
+
     return dataset;
 }
 
@@ -499,6 +621,10 @@ export function createBarChartRenderer({
                 color: "#22c55e"
             }))
             : rows;
+        if (canvas.__barChartResizeTimer) {
+            window.clearTimeout(canvas.__barChartResizeTimer);
+            canvas.__barChartResizeTimer = null;
+        }
         chartCore.destroyChart();
         resetPibDepartmentCanvas(canvas, chartConfig);
         prepareVisibleChartCanvas(canvas, chartConfig);
@@ -612,12 +738,12 @@ export function createBarChartRenderer({
             data: {
                 labels,
                 datasets: [(() => {
-                    const dataset = applyPibDepartmentDatasetSizing(createDefaultBarDataset({
+                    const dataset = applyPibDepartmentDatasetSizing(applyConfiguredBarDatasetSizing(createDefaultBarDataset({
                         label: chartConfig.title || "PIB por departamento",
                         data: values,
                         rows,
                         colors: datasetColors
-                    }), chartConfig);
+                    }), chartConfig), chartConfig);
                     return dataset;
                 })()]
             },
@@ -629,7 +755,14 @@ export function createBarChartRenderer({
         if (canvas.__barChartClickHandler) {
             canvas.removeEventListener("click", canvas.__barChartClickHandler);
         }
+        if (chartConfig?.id === "pib-departamental") {
+            installPibDepartmentPanGuard(canvas);
+        } else {
+            cleanupPibDepartmentPanGuard(canvas);
+        }
         canvas.__barChartClickHandler = async event => {
+            if (shouldIgnorePibDepartmentClick(canvas, chartConfig)) return;
+
             const points = chartInstance.getElementsAtEventForMode?.(
                 event,
                 "nearest",
@@ -656,9 +789,15 @@ export function createBarChartRenderer({
             if (layer) await chartInteractions.highlightMapByChartValue(layer, chartConfig, label);
         };
         canvas.addEventListener("click", canvas.__barChartClickHandler);
-        setTimeout(() => {
+        canvas.__barChartResizeTimer = window.setTimeout(() => {
+            canvas.__barChartResizeTimer = null;
+            if (chartCore.getInstance() !== chartInstance || Chart.getChart?.(canvas) !== chartInstance) return;
+
             applyScrollableChartSize(canvas, rows, chartConfig);
-            chartCore.getInstance()?.update("none");
+            const width = Math.max(320, Math.floor(canvas.getBoundingClientRect().width || canvas.width || 320));
+            const height = Number.isFinite(chartConfig?.canvasHeight) ? chartConfig.canvasHeight : 345;
+            chartInstance.resize(width, height);
+            chartInstance.update("none");
         }, 100);
 
         const selectedDepartment = getCurrentDepartmentChartLabel(

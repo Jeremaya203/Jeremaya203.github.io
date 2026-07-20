@@ -1,6 +1,6 @@
 import { AppState } from "../app/state.js";
 
-export function clearLayers() {
+export function clearLayers({ preserveStationsLayer = false } = {}) {
     const map = AppState.map;
 
     if (!map) return;
@@ -28,6 +28,10 @@ export function clearLayers() {
         AppState.layersGlobal = [];
     }
 
+    if (AppState.chartLayerGlobal && AppState.chartLayerGlobal !== AppState.layerGlobal) {
+        try { AppState.chartLayerGlobal?.destroy?.(); } catch(e){}
+    }
+
     if (AppState.layerGlobal) {
         try { map.remove(AppState.layerGlobal); } catch (e) {}
         try { AppState.layerGlobal?.destroy?.(); } catch(e){}
@@ -38,7 +42,7 @@ export function clearLayers() {
     AppState.layerViewGlobal = null;
     window.activeFeatureLayer = null;
 
-    if (AppState.stationsLayer) {
+    if (AppState.stationsLayer && !preserveStationsLayer) {
         try { map.remove(AppState.stationsLayer); } catch (e) {}
         try { AppState.stationsLayer?.destroy?.(); } catch(e){}
         AppState.stationsLayer = null;

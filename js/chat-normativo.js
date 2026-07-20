@@ -58,7 +58,7 @@ function agregarMensajeUsuario(texto) {
   div.className = 'message user';
   div.innerHTML = `
     <div class="message-avatar">
-      <span class="material-symbols-outlined" style="color:#fff;font-size:18px">person</span>
+      <span class="material-symbols-outlined oot-js-chatnorm-1">person</span>
     </div>
     <div class="message-content">
       <div class="message-label">Tú</div>
@@ -91,7 +91,7 @@ function agregarMensajeBot(texto) {
   div.className = 'message bot';
   div.innerHTML = `
     <div class="message-avatar">
-      <span class="material-symbols-outlined" style="color:#fff;font-size:18px">menu_book</span>
+      <span class="material-symbols-outlined oot-js-chatnorm-1">menu_book</span>
     </div>
     <div class="message-content">
       <div class="message-label">IA OOT Assistant</div>
@@ -109,10 +109,10 @@ function _crearBurbujaBotStream() {
   div.className = 'message bot';
   const contenido = document.createElement('div');
   contenido.className = 'message-bubble';
-  contenido.innerHTML = '<span style="opacity:0.5;font-style:italic">Escribiendo...</span>';
+  contenido.innerHTML = '<span class="oot-js-chatnorm-6">Escribiendo...</span>';
   div.innerHTML = `
     <div class="message-avatar">
-      <span class="material-symbols-outlined" style="color:#fff;font-size:18px">menu_book</span>
+      <span class="material-symbols-outlined oot-js-chatnorm-1">menu_book</span>
     </div>
     <div class="message-content">
       <div class="message-label">IA OOT Assistant</div>
@@ -130,14 +130,13 @@ function _agregarBotonDescargaNormas(mensajeDiv, textoRespuesta, pregunta) {
   var content = mensajeDiv.querySelector('.message-content');
   if (!content || content.querySelector('.btn-descarga-normas')) return;
   var btn = document.createElement('button');
-  btn.className = 'btn-descarga-normas';
-  btn.style.cssText = 'margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;background:var(--oot-s3);color:var(--oot-ochre);border:0.5px solid var(--oot-b2);cursor:pointer';
-  btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:13px">download</span>Descargar fuentes (PDF)';
+  btn.className = 'btn-descarga-normas oot-js-chatnorm-9';
+  btn.innerHTML = '<span class="material-symbols-outlined oot-js-chatnorm-2">download</span>Descargar fuentes (PDF)';
   btn.onclick = async function() {
     if (!pregunta) { window.OOT.notify('No se puede identificar la consulta de esta respuesta.', 'warn'); return; }
     var orig = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:13px">hourglass_top</span>Preparando ZIP...';
+    btn.innerHTML = '<span class="material-symbols-outlined oot-js-chatnorm-2">hourglass_top</span>Preparando ZIP...';
     try {
       var r = await fetch(API_BASE + '/api/consulta/fuentes-zip', {
         method: 'POST',
@@ -169,13 +168,13 @@ function agregarMensajeError(msg) {
   const div = document.createElement('div');
   div.className = 'message bot';
   div.innerHTML = `
-    <div class="message-avatar" style="background:var(--oot-red)">
-      <span class="material-symbols-outlined" style="color:#fff;font-size:18px">error</span>
+    <div class="message-avatar oot-js-chatnorm-3">
+      <span class="material-symbols-outlined oot-js-chatnorm-1">error</span>
     </div>
     <div class="message-content">
-      <div class="message-bubble" style="background:rgba(208,64,64,0.1);border-color:rgba(208,64,64,0.3);color:var(--oot-red-l)">
+      <div class="message-bubble oot-js-chatnorm-4">
         <strong>Error:</strong> ${escapeHtml(msg)}<br>
-        <span style="font-size:11px">El servicio de consulta no está disponible en este momento. Intente nuevamente en unos minutos.</span>
+        <span class="oot-js-chatnorm-7">El servicio de consulta no está disponible en este momento. Intente nuevamente en unos minutos.</span>
       </div>
     </div>`;
   container.appendChild(div);
@@ -230,7 +229,7 @@ function renderHistorial() {
   if (!convs.length) { cont.innerHTML = '<div class="hist-empty">Sin conversaciones a&uacute;n</div>'; return; }
   cont.innerHTML = convs.map(c =>
     '<div class="hist-item' + (c.id === convActualId ? ' active' : '') + '" data-id="' + c.id + '">' +
-      '<span class="material-symbols-outlined" style="font-size:16px">chat_bubble</span>' +
+      '<span class="material-symbols-outlined oot-js-chatnorm-5">chat_bubble</span>' +
       '<span class="hist-title">' + escapeHtml(c.titulo) + '</span>' +
       '<button class="hist-del" data-del="' + c.id + '" title="Eliminar">&times;</button>' +
     '</div>'
@@ -319,7 +318,7 @@ async function enviarPregunta() {
         }
       }
       if (!respuestaTexto) {
-        contenido.innerHTML = '<span style="opacity:0.7;font-size:13px">Sin respuesta del servidor. Intente de nuevo.</span>';
+        contenido.innerHTML = '<span class="oot-js-chatnorm-8">Sin respuesta del servidor. Intente de nuevo.</span>';
       } else {
         _agregarBotonDescargaNormas(burbuja, respuestaTexto, pregunta);
       }
@@ -362,7 +361,7 @@ function nuevaConsulta() {
   container.innerHTML = `
     <div class="message bot">
       <div class="message-avatar">
-        <span class="material-symbols-outlined" style="color:#fff;font-size:18px">menu_book</span>
+        <span class="material-symbols-outlined oot-js-chatnorm-1">menu_book</span>
       </div>
       <div class="message-content">
         <div class="message-label">IA OOT Assistant</div>

@@ -1,0 +1,97 @@
+/* Extraido de style="" attrs inline — CSP compliance (sin !important:
+   selector por id, para no romper toggles JS via element.style.x) */
+
+/* -- index.html -- */
+#ie-1 { padding: 0px; }
+#ie-2 { display: inline-block; }
+#ie-3 { border: 1px solid gray; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px; }
+#menuDocumentos { display: none; }
+#menuPot { display: none; }
+#menuRecursos { display: none; }
+#listDocumentosPasos { display: none; }
+#mapViewDiv { background: white; }
+#alertList { display: none; }
+#alertHeader { background-color:white; }
+#ie-4 { background: white; }
+#ie-5 { width: 20px; height: 20px; }
+#alertContent { width: 250px; }
+#ie-6 { color: gray; }
+#documentosDiv { display: none; }
+#ie-7 { width: 100%; }
+#ie-8 { margin-bottom: 20px; }
+#tableDocumentos { width:100% }
+#ie-9 { width: 100%; }
+#ie-10 { font-size: 14px; }
+#filterUnidadIGAC { width: 100%;font-size: 14px; }
+#ie-11 { width: 100%; }
+#ie-12 { font-size: 14px; }
+#filterEtapaIGAC { width: 100%;font-size: 14px; }
+#ie-13 { width: 100%; }
+#ie-14 { font-size: 14px; }
+#filterYearIGAC { width: 100%;font-size: 14px; }
+#tableDocumentosIGAC { width:100% }
+#documentosDetail { display: none; }
+#ie-15 { margin-bottom: 20px; }
+#documentosIdFieldDiv { display: none; }
+#ie-16 { color: red; }
+#documentosET_Error { color: red; display: none; }
+#ie-17 { color: red; }
+#documentosForma_Error { color: red; display: none; }
+#ie-18 { color: red; }
+#documentosEtapa_Error { color: red; display: none; }
+#documentosComponenteDiv { display: none; }
+#documentosComponente_Error { color: red; display: none; }
+#documentosDimensionDiv { display: none; }
+#documentosDimension_Error { color: red; display: none; }
+#ie-19 { color: red; }
+#documentosDimension_Error { color: red; display: none; }
+#documentosDescripcionDiv { display: none; }
+#documentosPaso2 { display: none; }
+#ie-20 { color: red; }
+#documentosFormato_Error { color: red; display: none; }
+#ie-21 { color: red; }
+#documentosFormato_Error { color: red; display: none; }
+#ie-22 { color: red; }
+#documentosDate_Error { color: red; display: none; }
+#ie-23 { color: red; }
+#documentosCategoria_Error { color: red; display: none; }
+#ie-24 { color: red; }
+#documentosKeywords_Error { color: red; display: none; }
+#documentosPaso3 { display: none; }
+#ie-25 { color: red; }
+#documentosResponsable_Error { color: red; display: none; }
+#ie-26 { color: red; }
+#documentosURLResponsable_Error { color: red; display: none; }
+#ie-27 { color: red; }
+#documentosFile_Error { color: red; display: none; }
+#documentosURLFieldDiv { display: none; }
+#documentosPaso4 { display: none; }
+#ie-28 { margin-top: 45px; }
+#ie-29 { margin-top: 45px; }
+#btnDocumentosPasoPrev { display: none; margin-right: 10px; }
+#recursosDiv { display: none; }
+#recursosList { margin-right: 20px; }
+#ie-30 { margin-bottom: 20px; }
+#btnNewRecursos { font-size: small; }
+#tableRecursos { width:100% }
+#recursosDetail { display: none; }
+#ie-31 { margin-bottom: 20px; }
+#potDiv { display: none; }
+#potList { margin-right: 20px; }
+#ie-32 { margin-bottom: 20px; }
+#btnNewPot { font-size: small; }
+#tablePot { width:100% }
+#potDetail { display: none; }
+#potFileValidateResult { padding: 10px; }
+#instruccionesDiv { display: none; }
+#ie-33 { border: none; padding-bottom: 0px; }
+#ie-34 { padding-top: 0px; }
+#logoutContainer { text-align: center;padding: 10px; }
+#userPhoto2 { width: 64px; height: 64px;border-radius: 50%; }
+#ie-35 { border: none; padding-bottom: 0px; }
+#modalTutorialDiv { text-align: center;padding-top: 0px; }
+#ie-36 { text-align: center;padding-top: 10px;line-height: 2.5em; }
+#ie-37 { background-color: #6445E1;float: right; }
+
+/* -- index.html (comillas simples, fix posterior) -- */
+#ie-cargue-bienvenida { color: #6445E1;font-size: 22px; }

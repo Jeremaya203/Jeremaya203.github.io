@@ -33,7 +33,11 @@
     <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script> -->
     <!-- Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-78PPLF47WW"></script>
-  </head>
+    <link rel="stylesheet" href="css/inline-extracted.css">
+    <link rel="stylesheet" href="../../mobile-warning.css">
+  <script defer src="../../mobile-warning.js"></script>
+  <script defer src="../../js/shared-auth.js"></script>
+</head>
   <body>
     <div id="oot-navbar-placeholder"></div>
     <div class="mobile-image" id="mobile-image">
@@ -105,42 +109,6 @@
             </div>
           </div>
           <p class="encuenta">*Tenga en cuenta que los pasos marcados con un asterisco son etapas normativas del POT.</p>
-          <div class="descargas-seccion mt-4">
-            <h2 class="titulonotas" style="font-size: 14px; margin-left: 20px; text-transform: uppercase; color: #000; letter-spacing: 0.5px;">
-              <i class="fas fa-download me-2"></i> Origen Nacional
-            </h2>
-            <div class="lineanotas" style="margin-left: 20px; width: 85%;"></div>
-            <div class="recursos-descarga px-3">
-              <a href="docs/Presentacion_IGAC_Origen_Nacional.pdf" target="_blank" class="recurso-item d-flex align-items-center p-2 mb-2 rounded bg-white border text-decoration-none text-dark">
-                <i class="far fa-file-pdf text-danger fs-4 me-3"></i>
-                <div>
-                  <div class="fw-bold" style="font-size: 12px; line-height: 1.2;">Presentación Origen Nacional</div>
-                  <span class="text-muted" style="font-size: 10px;">PDF (3.2 MB)</span>
-                </div>
-              </a>
-              <a href="docs/ABC_Nueva_Proyeccion_Cartografica_Colombia.pdf" target="_blank" class="recurso-item d-flex align-items-center p-2 mb-2 rounded bg-white border text-decoration-none text-dark">
-                <i class="far fa-file-pdf text-danger fs-4 me-3"></i>
-                <div>
-                  <div class="fw-bold" style="font-size: 12px; line-height: 1.2;">ABC Nueva Proyección</div>
-                  <span class="text-muted" style="font-size: 10px;">PDF (14.5 MB)</span>
-                </div>
-              </a>
-              <a href="docs/FAQOrigenCartografico.pdf" target="_blank" class="recurso-item d-flex align-items-center p-2 mb-2 rounded bg-white border text-decoration-none text-dark">
-                <i class="far fa-file-pdf text-danger fs-4 me-3"></i>
-                <div>
-                  <div class="fw-bold" style="font-size: 12px; line-height: 1.2;">Preguntas Frecuentes (FAQ)</div>
-                  <span class="text-muted" style="font-size: 10px;">PDF (9.5 MB)</span>
-                </div>
-              </a>
-              <a href="docs/Manual_Instalacion_MAGNAPRO.pdf" target="_blank" class="recurso-item d-flex align-items-center p-2 rounded bg-white border text-decoration-none text-dark">
-                <i class="far fa-file-pdf text-danger fs-4 me-3"></i>
-                <div>
-                  <div class="fw-bold" style="font-size: 12px; line-height: 1.2;">Manual Instalación MAGNA-PRO</div>
-                  <span class="text-muted" style="font-size: 10px;">PDF (184 KB)</span>
-                </div>
-              </a>
-            </div>
-          </div>
           <div class="cooperantes">
             <h1>COOPERANTES</h1>
             <img src="images/Municipios_paz.png" class="muni-paz-img" alt="">
@@ -222,21 +190,21 @@
     <div id="modalLogin" class="modal fade" role="dialog">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
-          <div class="modal-header" style="border: none; padding-bottom: 0px;">
-            <a href="#" class="close" onclick="closeLogin(); return false;" aria-label="Cerrar"><span
+          <div id="ie-1" class="modal-header">
+            <a href="#" class="close close-login-btn" aria-label="Cerrar"><span
               aria-hidden="true">&times;</span></a>
             <h4 class="modal-title">Iniciar sesi&oacute;n</h4>
           </div>
-          <div class="modal-body" style="padding-top: 0px;">
+          <div id="ie-2" class="modal-body">
             <div id="loginContainer">
               <div id="authContainer">
               </div>
             </div>
-            <div id="logoutContainer" style="text-align: center;padding: 10px;">
-              <img id="userPhoto2" src="../../images/icono_ingreso.png" style="width: 64px; height: 64px;border-radius: 50%;"
+            <div id="logoutContainer">
+              <img id="userPhoto2" src="../../images/icono_ingreso.png"
                 alt="Imagen Usuario" />
               <h5><span id="userName2"></span></h5>
-              <button id="logoutBtn" type="button" onclick="signOut();" class="btn btn-default btn-danger">
+              <button id="logoutBtn" type="button" class="btn btn-default btn-danger">
               Cerrar sesi&oacute;n
               </button>
             </div>
@@ -251,38 +219,9 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js"
       integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>
-    <script type="text/javascript" src="js/jquery.imagemapster.js"></script>
-    <script>
-      $(document).ready(function () {
-        if ($.fn.mapster) {
-          try {
-            $('#imagehome').mapster({
-              staticState: false,
-              fillColor: "",
-              stroke: true,
-              strokeColor: "",
-              strokeOpacity: 1.0,
-              strokeWidth: 2,
-              render_highlight: {
-                fillOpacity: 0,
-                fillColor: "FFeedd",
-                stroke: true,
-                strokeOpacity: 1.0,
-                strokeColor: "EC6654",
-                strokeWidth: 2
-              }
-            });
-          } catch (e) {
-            console.error("Error al inicializar ImageMapster:", e);
-          }
-        }
-      });
-    </script>
     <script type="text/javascript" src="../../config.js"></script>
     <script type="text/javascript" src="../../oot.js"></script>
-    <script>
-      window.OOT.loadShell();
-    </script>
+    <script type="text/javascript" src="js/jquery.imagemapster.js"></script>
     <script type="text/javascript" src="js/jquery.connections.js"></script>
     <script type="text/javascript" src="js/index.js"></script>
   </body>

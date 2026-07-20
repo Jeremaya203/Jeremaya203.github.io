@@ -1,3 +1,5 @@
+import { escapeHtml } from "../../../shared/security/security-utils.js";
+
 export function createStationsController({
     FeatureLayer,
     map,
@@ -28,7 +30,7 @@ export function createStationsController({
             { key: "DIC", t: "temdic", p: "precdic" }
         ];
 
-        const esc = value => (value == null ? "-" : String(value));
+        const esc = value => escapeHtml(value == null ? "-" : value);
         const toNumber = value => {
             if (value == null) return null;
             const normalized = String(value).trim();
@@ -42,9 +44,9 @@ export function createStationsController({
         };
         const fila = mes => `
             <tr>
-                <td style="padding:4px 6px; border-bottom:1px solid #eee;">${mes.key}</td>
-                <td style="padding:4px 6px; border-bottom:1px solid #eee; text-align:right;">${fmt(attrs[mes.t])}</td>
-                <td style="padding:4px 6px; border-bottom:1px solid #eee; text-align:right;">${fmt(attrs[mes.p])}</td>
+                <td class="oot-js-socio-stations-1">${mes.key}</td>
+                <td class="oot-js-socio-stations-2">${fmt(attrs[mes.t])}</td>
+                <td class="oot-js-socio-stations-2">${fmt(attrs[mes.p])}</td>
             </tr>
         `;
 
@@ -60,27 +62,27 @@ export function createStationsController({
             : dpNombreRaw;
 
         return `
-            <div style="font-size:12px; line-height:1.3;">
+            <div class="oot-js-socio-stations-3">
                 <div><b>Estacion:</b> ${esc(attrs.nombest)} (${esc(attrs.codest)})</div>
                 <div><b>Municipio:</b> ${esc(mpNombreFinal)} (${esc(mpCode)})</div>
                 <div><b>Departamento:</b> ${esc(dpNombreFinal)} (${esc(dpCode)})</div>
                 <div><b>Fuente:</b> ${esc(attrs.fuente)}</div>
-                <hr style="margin:8px 0;">
-                <div style="font-weight:600; margin-bottom:6px;">Promedios mensuales</div>
-                <table style="width:100%; border-collapse:collapse;">
+                <hr class="oot-js-socio-stations-4">
+                <div class="oot-js-socio-stations-5">Promedios mensuales</div>
+                <table class="oot-js-socio-stations-6">
                     <thead>
                         <tr>
-                            <th style="text-align:left; padding:4px 6px; border-bottom:1px solid #ddd;">Mes</th>
-                            <th style="text-align:right; padding:4px 6px; border-bottom:1px solid #ddd;">Temp (C)</th>
-                            <th style="text-align:right; padding:4px 6px; border-bottom:1px solid #ddd;">Precip (mm)</th>
+                            <th class="oot-js-socio-stations-7">Mes</th>
+                            <th class="oot-js-socio-stations-8">Temp (C)</th>
+                            <th class="oot-js-socio-stations-8">Precip (mm)</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${meses.map(fila).join("")}
                         <tr>
-                            <td style="padding:4px 6px; border-top:1px solid #ddd;"><b>ANUAL</b></td>
-                            <td style="padding:4px 6px; border-top:1px solid #ddd; text-align:right;"><b>${fmt(attrs.temanual)}</b></td>
-                            <td style="padding:4px 6px; border-top:1px solid #ddd; text-align:right;"><b>${fmt(attrs.precanual)}</b></td>
+                            <td class="oot-js-socio-stations-9"><b>ANUAL</b></td>
+                            <td class="oot-js-socio-stations-10"><b>${fmt(attrs.temanual)}</b></td>
+                            <td class="oot-js-socio-stations-10"><b>${fmt(attrs.precanual)}</b></td>
                         </tr>
                     </tbody>
                 </table>

@@ -239,9 +239,9 @@ export function actualizarLeyendaLimitesMunicipales() {
     if (!content) return;
 
     content.innerHTML = `
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-            <span style="display:inline-block; width:14px; height:4px; background:#d73027;"></span>
-            <span style="color:black;">Líneas del municipio filtrado</span>
+        <div class="oot-js-ordenamiento-legend-1">
+            <span class="oot-js-ordenamiento-legend-2"></span>
+            <span class="oot-js-ordenamiento-legend-3">Líneas del municipio filtrado</span>
         </div>
     `;
 }

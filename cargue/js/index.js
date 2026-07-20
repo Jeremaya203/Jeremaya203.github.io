@@ -18,11 +18,8 @@ var tablePot;
 var cacheUnidades;
 var cacheUnidadesFiltro;
 
-var web_service = "https://serviciosgeovisor.igac.gov.co:8080/Geovisor";
-var web_service_proxy = "https://serviciosgeovisor.igac.gov.co:8080/Geovisor";
-
-// Solo pruebas locales: fuerza permisos de interfaz (el Geovisor revalida en servidor).
-var DEBUG_FORZAR_PERMISOS = false;
+var web_service = window.OOT_COT_API_BASE || "https://serviciosgeovisor.igac.gov.co:8080/Geovisor";
+var web_service_proxy = window.OOT_COT_API_BASE || "https://serviciosgeovisor.igac.gov.co:8080/Geovisor";
 
 var spanishDataTable = {
     "sProcessing": "Procesando...",
@@ -67,10 +64,10 @@ $(document).ready(function () {
                 if (user.photoURL != "") {
                     $("#userPhoto,#userPhoto2").attr("src", user.photoURL);
                 } else {
-                    $("#userPhoto,#userPhoto2").attr("src", "images/iconos/User.png");
+                    $("#userPhoto,#userPhoto2").attr("src", "/images/iconos/User.png");
                 }
             } else {
-                $("#userPhoto,#userPhoto2").attr("src", "images/iconos/User.png");
+                $("#userPhoto,#userPhoto2").attr("src", "/images/iconos/User.png");
             }
             currentUser.getIdToken().then(function (accessToken) {
                 currentAccessToken = accessToken;
@@ -79,12 +76,6 @@ $(document).ready(function () {
                     type: 'GET',
                     dataType: 'json',
                     success: function (data) {
-                        // ⚠️ SOLO PRUEBAS (DEBUG_FORZAR_PERMISOS): simula permisos de cargue
-                        // para revisar la interfaz. Revertir poniendo DEBUG_FORZAR_PERMISOS=false.
-                        // No habilita cargas reales (el Geovisor revalida en el servidor).
-                        if (typeof DEBUG_FORZAR_PERMISOS !== 'undefined' && DEBUG_FORZAR_PERMISOS) {
-                            data = { status: true, permisos: ["CARGUE_DOCUMENTOS", "CARGUE_RECURSOS", "CARGUE_POT"] };
-                        }
                         if (data.status) {
                             var first = "";
                             if (data.permisos.indexOf("CARGUE_DOCUMENTOS") != -1) {
@@ -160,7 +151,7 @@ $(document).ready(function () {
             $("#logoutContainer").hide();
             $("#loginContainer").show();
             $("#userName,#userName2").html("Iniciar sesion");
-            $("#userPhoto,#userPhoto2").attr("src", "images/iconos/User.png");
+            $("#userPhoto,#userPhoto2").attr("src", "/images/iconos/User.png");
             gotoLogin();
         }
     }, function (error) {
@@ -173,7 +164,7 @@ $(document).ready(function () {
 });
 
 function defaultUserPhoto() {
-    $("#userPhoto,#userPhoto2").attr("src", "images/iconos/User.png");
+    $("#userPhoto,#userPhoto2").attr("src", "/images/iconos/User.png");
 }
 
 function signIn() {
@@ -253,7 +244,7 @@ function toggleMenu(param) {
             $("#mainDiv").addClass("main-large");
             $("#mapViewDiv").removeClass("main-small-map");
             $("#mapViewDiv").addClass("main-large-map");
-            $("#headingSearch img").attr("src", "images/iconos/Back_02.png");
+            $("#headingSearch img").attr("src", "/images/iconos/Back_02.png");
             $(".item-heading").removeClass("small-heading");
             $(".item-heading").addClass("large-heading");
             $("#menuItem").removeClass("small-heading");
@@ -265,7 +256,7 @@ function toggleMenu(param) {
         $("#mainDiv").addClass("main-small");
         $("#mapViewDiv").removeClass("main-large-map");
         $("#mapViewDiv").addClass("main-small-map");
-        $("#headingSearch img").attr("src", "images/iconos/Forward_02.png");
+        $("#headingSearch img").attr("src", "/images/iconos/Forward_02.png");
         $(".item-heading").removeClass("large-heading");
         $(".item-heading").addClass("small-heading");
         $("#menuItem").removeClass("large-heading");
@@ -276,7 +267,7 @@ function toggleMenu(param) {
         $("#mainDiv").addClass("main-small");
         $("#mapViewDiv").removeClass("main-large-map");
         $("#mapViewDiv").addClass("main-small-map");
-        $("#headingSearch img").attr("src", "images/iconos/Forward_02.png");
+        $("#headingSearch img").attr("src", "/images/iconos/Forward_02.png");
         $(".item-heading").removeClass("large-heading");
         $(".item-heading").addClass("small-heading");
         $("#menuItem").removeClass("large-heading");
@@ -295,11 +286,11 @@ function toggleFiltros(param) {
         }
     }
     if (param == "small") {
-        $("#panelSearchToggle").html("<img src='images/iconos/Open_01.png' alt='Minimizar' style='width: 10px; height: 10px;' />");
+        $("#panelSearchToggle").html("<img src='/images/iconos/Open_01.png' alt='Minimizar' class='oot-js-cargue-1' />");
         $("#searchBody").hide();
     }
     if (param == "large") {
-        $("#panelSearchToggle").html("<img src='images/iconos/Close_01.png' alt='Minimizar' style='width: 10px; height: 2px;' />");
+        $("#panelSearchToggle").html("<img src='/images/iconos/Close_01.png' alt='Minimizar' class='oot-js-cargue-2' />");
         $("#searchBody").show();
     }
 }
@@ -334,13 +325,13 @@ function showLoading(text, imagen, color, autohide) {
         $("#alertContentLeft").hide();
     } else {
         if (imagen == "loading") {
-            $("#alertContentLeft img").attr("src", "images/iconos/clock-face-three-oclock_1f552.png");
+            $("#alertContentLeft img").attr("src", "/images/iconos/clock-face-three-oclock_1f552.png");
         }
         if (imagen == "ok") {
-            $("#alertContentLeft img").attr("src", "images/iconos/thumbs-up-sign_1f44d.png");
+            $("#alertContentLeft img").attr("src", "/images/iconos/thumbs-up-sign_1f44d.png");
         }
         if (imagen == "error") {
-            $("#alertContentLeft img").attr("src", "images/iconos/smiling-face-with-smiling-eyes-and-hand-covering-mouth_1f92d.png");
+            $("#alertContentLeft img").attr("src", "/images/iconos/smiling-face-with-smiling-eyes-and-hand-covering-mouth_1f92d.png");
         }
         $("#alertContentLeft").show();
     }
@@ -413,6 +404,12 @@ function initData(data) {
     cacheUnidades = data.UNIDAD;
     cacheUnidadesFiltro = data.UNIDAD;
     /* Documentos */
+    cacheUnidadesFiltro = cacheUnidadesFiltro.map(function (item) {
+        if (item.type === 'DEPTO' || item.type === 'PAIS') {
+            return Object.assign({}, item, { disabled: true });
+        }
+        return item;
+    });
     $("#documentosETField").select2({
         data: cacheUnidadesFiltro,
         multiple: false,
@@ -566,7 +563,7 @@ function initData(data) {
         language: "es",
         todayHighlight: true,
         autoclose: true,
-        format: "mm/dd/yyyy"
+        format: "dd/mm/yyyy"
     });
     $("#documentosCategoriaField").select2({
         minimumResultsForSearch: Infinity,
@@ -793,13 +790,13 @@ function initData(data) {
                     var strHTML = "";
                     strHTML = strHTML + "";
                     if (row.ESTADO == "PENDIENTE") {
-                        strHTML = strHTML + "<img src='images/Dot_Yellow.png' style='width: 15px; height: 15px;' />";
+                        strHTML = strHTML + "<img src='images/Dot_Yellow.png' class='oot-js-cargue-3' />";
                     }
                     if (row.ESTADO == "APROBADO") {
-                        strHTML = strHTML + "<img src='images/Dot_Green.png' style='width: 15px; height: 15px;' />";
+                        strHTML = strHTML + "<img src='images/Dot_Green.png' class='oot-js-cargue-3' />";
                     }
                     if (row.ESTADO == "RECHAZADO") {
-                        strHTML = strHTML + "<img src='images/Dot_Red.png' style='width: 15px; height: 15px;' />";
+                        strHTML = strHTML + "<img src='images/Dot_Red.png' class='oot-js-cargue-3' />";
                     }
                     strHTML = strHTML + "&nbsp;<a href='#' onclick='detailRecursos(" + data + ")'><span class='glyphicon glyphicon-edit' aria-hidden='true'></span></a>";
                     return strHTML;
@@ -890,6 +887,8 @@ function initData(data) {
 
     updateDocs();
     updateDocsIGAC();
+
+    gotoDocumentos();
 }
 
 function hideAll() {
@@ -1006,6 +1005,7 @@ function updateDocs(){
                 { data: "NOMBRE" },
                 { data: "UNIDAD" },
                 { data: "ETAPA" },
+                /*
                 {
                     data: "ESTADO",
                     render: function (data, type, row, meta) {
@@ -1021,7 +1021,7 @@ function updateDocs(){
                         }
                         return strHTML;
                     }
-                },
+                },*/
                 {
                     data: "FECHA_PUBLICACION",
                     render: function (data, type, row, meta) {
@@ -1470,7 +1470,7 @@ function salvarDocumentos() {
     }
 
     if (($("#documentosDateField").val() != null) && ($("#documentosDateField").val() != "")) {
-        params = params + "&FECHA_PUBLICACION=" + moment($("#documentosDateField").val()).format("YYYY-MM-DD");
+        params = params + "&FECHA_PUBLICACION=" + moment($("#documentosDateField").val(), "DD/MM/YYYY").format("YYYY-DD-MM");
     }
     if (($("#documentosDescripcionField").summernote("code") != null) && ($("#documentosDescripcionField").summernote("code") != "")) {
         params = params + "&RESUMEN=" + b64EncodeUnicode($("#documentosDescripcionField").summernote("code").replaceAll("</p><p>", "<br/>").replaceAll("<br></p>", "").replaceAll("<p>", ""));
@@ -1639,7 +1639,7 @@ function validarDocumento(){
     pasoIr = validarDocumentoPaso(pasoIr, pasoTemp); */
 
     // PALABRAS CLAVE
-    pasoTemp = validarDocumentoSelect("documentosKeywordsField", "documentosKeywords_Error", pasoActual)
+    //pasoTemp = validarDocumentoSelect("documentosKeywordsField", "documentosKeywords_Error", pasoActual)
     pasoIr = validarDocumentoPaso(pasoIr, pasoTemp);
 
     pasoActual = 3;
@@ -2292,15 +2292,15 @@ function validarPot() {
         success: function (data) {
             var strHTML = "";
             if (data.valido) {
-                strHTML = strHTML + "<div class='alert alert-success' role='alert' style='margin: 5px;'>Validaci&oacute;n exitosa</div>";
+                strHTML = strHTML + "<div class='alert alert-success oot-js-cargue-4' role='alert'>Validaci&oacute;n exitosa</div>";
             } else {
-                strHTML = strHTML + "<div class='alert alert-info' role='alert' style='margin: 5px;'>Archivo con errores</div>";
+                strHTML = strHTML + "<div class='alert alert-info oot-js-cargue-4' role='alert'>Archivo con errores</div>";
             }
             for (var i = 0; i < data.errores.length; i++) {
-                strHTML = strHTML + "<div class='alert alert-danger' role='alert' style='margin: 5px;'>Error: " + data.errores[i].mensaje + ((data.errores[i].linea == "") || (data.errores[i].linea == null) ? "" : " en linea " + data.errores[i].linea) + "</div>";
+                strHTML = strHTML + "<div class='alert alert-danger oot-js-cargue-4' role='alert'>Error: " + data.errores[i].mensaje + ((data.errores[i].linea == "") || (data.errores[i].linea == null) ? "" : " en linea " + data.errores[i].linea) + "</div>";
             }
             for (var i = 0; i < data.advertencias.length; i++) {
-                strHTML = strHTML + "<div class='alert alert-warning' role='alert' style='margin: 5px;'>Advertencia: " + data.advertencias[i].mensaje + ((data.advertencias[i].linea == "") || (data.errores[i].linea == null) ? "" : " en linea " + data.advertencias[i].linea) + "</div>";
+                strHTML = strHTML + "<div class='alert alert-warning oot-js-cargue-4' role='alert'>Advertencia: " + data.advertencias[i].mensaje + ((data.advertencias[i].linea == "") || (data.errores[i].linea == null) ? "" : " en linea " + data.advertencias[i].linea) + "</div>";
             }
             $("#potFileValidateResult").html(strHTML);
         },

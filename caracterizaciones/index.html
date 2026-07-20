@@ -4,10 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Caracterizaciones Territoriales – IGAC</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=index-ui-20260717-2" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/shared/auth-navbar.css" />
+    <link rel="stylesheet" href="../mobile-warning.css">
+  <script defer src="../mobile-warning.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-auth-compat.js"></script>
+  <script src="js/shared/auth/firebaseConfig.js"></script>
+  <script src="js/shared/auth/authSession.js"></script>
+  <script src="js/shared/auth/authNavbar.js"></script>
 </head>
 <body>
 
@@ -35,7 +43,13 @@
           <li><a rel="noopener" href="../index.html">Inicio</a></li>
           <li><a rel="noopener" href="#tematicas">Temáticas</a></li>
           <li><a rel="noopener" href="#publico-objetivo">Público Objetivo</a></li>
-          <li><a rel="noopener" href="#estadisticas">Estadísticas</a></li> 
+          <li><a rel="noopener" href="#estadisticas">Estadísticas</a></li>
+          <li class="auth-nav-item">
+            <a id="loginBtn" href="#" role="button" aria-label="Validando sesión">
+              <span id="userName"></span>
+            </a>
+            <button type="button" id="logoutBtn" class="auth-logout-btn" hidden aria-label="Cerrar sesión">Cerrar sesión</button>
+          </li>
         </ul>
         <button class="nav-bar-toggle-igac" aria-label="Abrir menú" aria-expanded="false">
           <div class="icon-bar"></div>
@@ -207,20 +221,20 @@
         <p><strong>Correo de notificaciones judiciales:</strong><br />
           <a href="mailto:judiciales@igac.gov.co">judiciales@igac.gov.co</a></p>
         <p class="footer__nit">NIT: 8999990049</p>
-        <p class="footer__copy">©Copyright 2026 – Todos los derechos reservados Gobierno de Colombia</p>
+        <p class="footer__copy">©Copyright 2021 – Todos los derechos reservados Gobierno de Colombia</p>
       </div>
 
       <div class="footer__social">
         <div class="footer__section-label">Contáctenos en nuestras redes sociales</div>
-        <a href="#" class="footer__social-link footer__social-link--fb">
+        <a href="https://www.facebook.com/IgacColombia" target="_blank" rel="noopener" class="footer__social-link footer__social-link--fb">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
           Facebook IGAC
         </a>
-        <a href="#" class="footer__social-link footer__social-link--tw">
+        <a href="https://twitter.com/igacColombia" target="_blank" rel="noopener" class="footer__social-link footer__social-link--tw">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
           Twitter IGAC
         </a>
-        <a href="#" class="footer__social-link footer__social-link--ig">
+        <a href="https://www.instagram.com/accounts/login/?next=/igacColombia/" target="_blank" rel="noopener" class="footer__social-link footer__social-link--ig">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
           Instagram IGAC
         </a>
@@ -235,7 +249,7 @@
     </div>
   </footer>
 
-  <script src="images.js"></script>
-  <script src="main.js"></script>
+  <script src="images.js?v=index-ui-20260717-2"></script>
+  <script src="main.js?v=index-ui-20260717-2"></script>
 </body>
 </html>

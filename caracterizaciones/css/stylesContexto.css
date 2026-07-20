@@ -207,6 +207,87 @@ body {
     display: block;
 }
 
+.chart-canvas-wrap {
+    width: 100%;
+    max-height: min(68vh, 760px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-bottom: 15px;
+}
+
+.chart-html-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    padding: 2px 0 4px;
+    box-sizing: border-box;
+}
+
+.chart-html-bar-row {
+    display: grid;
+    grid-template-columns: minmax(145px, 52%) minmax(105px, 1fr);
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 32px;
+    border: 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    background: transparent;
+    padding: 4px 0;
+    cursor: pointer;
+    text-align: left;
+    font-family: "Outfit", sans-serif;
+}
+
+.chart-html-bar-row:hover {
+    background: rgba(0, 0, 0, 0.035);
+}
+
+.chart-html-bar-label {
+    color: #333;
+    font-size: 10px;
+    font-weight: 400;
+    line-height: 1.22;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.chart-html-bar-track {
+    position: relative;
+    display: block;
+    height: 16px;
+    min-width: 0;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.chart-html-bar-fill {
+    display: block;
+    height: 100%;
+    min-width: 2px;
+    border-radius: 5px;
+}
+
+.chart-html-bar-value {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    color: #222;
+    font-size: 9px;
+    font-weight: 500;
+    line-height: 1;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9);
+}
+
+#chart.chart-canvas--dynamic {
+    height: var(--chart-height, 320px) !important;
+    max-height: none !important;
+    min-height: var(--chart-height, 320px);
+}
+
 #summaryDiv {
     margin-top: 14px;
 
@@ -249,6 +330,12 @@ body {
     width: 100% !important;
     height: 280px !important;
     max-height: 280px;
+}
+
+#chart.chart-canvas--dynamic {
+    height: var(--chart-height, 320px) !important;
+    max-height: none !important;
+    min-height: var(--chart-height, 320px);
 }
 
 /* cuando sea bubble, le damos más alto */
@@ -350,6 +437,80 @@ body {
 .subtab-btn.active {
     background: #006c43;
     color: #fff;
+}
+
+.subtabs-controls--grouped {
+    align-items: flex-end;
+    border-bottom: 1px solid #d9d3c8;
+    min-width: max-content;
+}
+
+.patrimonial-main-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 12px;
+    min-width: max-content;
+    padding-bottom: 0;
+}
+
+.patrimonial-main-tabs .subtab-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.patrimonial-geometry-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    width: 100%;
+    margin: 10px 0 18px;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.chart-card--patrimonial-submenu {
+    padding-top: 18px;
+}
+
+.chart-card-wrap:has(.chart-card--patrimonial-submenu) {
+    padding-top: 36px;
+}
+
+.chart-card-wrap:has(.chart-card--patrimonial-without-geometry-tabs) {
+    padding-top: 36px;
+}
+
+.patrimonial-geometry-btn {
+    min-height: 30px;
+    padding: 6px 12px;
+    border: 1px solid #e7bcbc;
+    border-radius: 999px;
+    background: #fff5f5;
+    color: #b42318;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.1;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(180, 35, 24, 0.08);
+    transition: background 0.18s ease,
+                color 0.18s ease,
+                border-color 0.18s ease,
+                box-shadow 0.18s ease;
+}
+
+.patrimonial-geometry-btn:hover {
+    background: #ffe8e8;
+    border-color: #d92d20;
+    color: #8f1d18;
+    box-shadow: 0 2px 6px rgba(217, 45, 32, 0.15);
+}
+
+.patrimonial-geometry-btn.active {
+    background: #CD3129;
+    border-color: #b42318;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(180, 35, 24, 0.25);
 }
 
 canvas {
@@ -605,7 +766,7 @@ canvas {
 
 
 .legend-item.off .legend-label {
-    text-decoration: line-through;
+    /* text-decoration: line-through; */
 }
 
 /* boton minimizar map peq */
@@ -826,29 +987,37 @@ canvas {
 ========================= */
 @media (max-width: 768px) {
     .navbarigac {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 12px 16px;
+        height: 55px;
+        min-height: 55px;
+        max-height: 55px;
+        flex-direction: row;
+        align-items: center;
+        padding: 0;
+        overflow: visible;
     }
 
     .logos {
-        width: 100%;
-        flex-wrap: wrap;
+        width: auto;
+        min-width: 0;
+        flex-wrap: nowrap;
     }
 
     .titulo-app {
-        padding-left: 0;
-        white-space: normal;
-        font-size: 1rem;
+        padding-left: 4px;
+        white-space: nowrap;
+        font-size: 0.86rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     #link-list {
-        width: 100%;
+        width: auto;
         justify-content: flex-start;
-        flex-wrap: wrap;
-        gap: 12px;
+        flex-wrap: nowrap;
+        gap: 8px;
     }
 
+    /* La visibilidad del botón hamburguesa la controla css/responsive.css */
     .nav-bar-toggle-igac {
         display: none;
     }
@@ -985,7 +1154,7 @@ canvas {
     box-sizing: border-box;
     z-index: 12000;
     display: none;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .modulo-dropdown.open>.dropdown-menu-custom {
@@ -1016,6 +1185,78 @@ canvas {
 
 .dropdown-item.active {
     font-weight: 700;
+}
+
+.dropdown-menu-custom .dropdown-item.active,
+.dropdown-menu-custom .dropdown-subitem.active {
+    position: relative;
+    text-decoration: none !important;
+}
+
+.dropdown-menu-custom .dropdown-item.active::after,
+.dropdown-menu-custom .dropdown-subitem.active::after {
+    content: "";
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    bottom: 6px;
+    height: 2px;
+    background: currentColor;
+    pointer-events: none;
+}
+
+/* =========================
+   SUBMENÚ DROPDOWN (nivel 2)
+========================= */
+.dropdown-item-with-sub {
+    position: relative;
+}
+
+.dropdown-item-with-sub > .dropdown-item {
+    width: 100%;
+}
+
+.dropdown-submenu {
+    position: absolute;
+    top: 0;
+    left: calc(100% + 1px);
+    width: max-content;
+    min-width: 340px;
+    max-width: min(420px, calc(100vw - 280px));
+    background: #FFFAF0;
+    border-radius: 0 12px 12px 12px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+    padding: 6px 0;
+    display: none;
+    z-index: 13000;
+}
+
+.dropdown-item-with-sub:hover > .dropdown-submenu {
+    display: block;
+}
+
+.dropdown-item-with-sub:focus-within > .dropdown-submenu {
+    display: block;
+}
+
+.dropdown-subitem {
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 10px 20px;
+    font-size: 14px;
+    line-height: 1.2;
+    color: #b13a2f;
+    cursor: pointer;
+    font-weight: 500;
+    font-family: "Outfit", sans-serif;
+    box-sizing: border-box;
+    white-space: normal;
+}
+
+.dropdown-subitem:hover {
+    background: rgba(0, 0, 0, 0.04);
 }
 
 /* =========================
@@ -1052,7 +1293,7 @@ canvas {
 }
 
 .limites .dropdown-item.active {
-    text-decoration: underline;
+    text-decoration: none;
     text-decoration-color: #9a5a23;
     text-underline-offset: 10px;
     text-decoration-thickness: 2px;
@@ -1063,7 +1304,7 @@ canvas {
 }
 
 .ordenamiento .dropdown-item.active {
-    text-decoration: underline;
+    text-decoration: none;
     text-decoration-color: #6b4693;
     text-underline-offset: 10px;
     text-decoration-thickness: 2px;
@@ -1074,7 +1315,7 @@ canvas {
 }
 
 .legal .dropdown-item.active {
-    text-decoration: underline;
+    text-decoration: none;
     text-decoration-color: #b13a2f;
     text-underline-offset: 10px;
     text-decoration-thickness: 2px;
@@ -1096,7 +1337,7 @@ canvas {
 }
 
 .ocupacion .dropdown-item.active {
-    text-decoration: underline;
+    text-decoration: none;
     text-decoration-color: #1e78c8;
     text-underline-offset: 3px;
     text-decoration-thickness: 2px;
@@ -1107,7 +1348,7 @@ canvas {
 }
 
 .socioeconomico .dropdown-item.active {
-    text-decoration: underline;
+    text-decoration: none;
     text-decoration-color: #a66a11;
     text-underline-offset: 10px;
     text-decoration-thickness: 2px;
@@ -1481,6 +1722,7 @@ canvas {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.18);
     transform: translateX(-50%);
     transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    
 }
 
 .btn-reiniciar-consulta img {
@@ -1800,7 +2042,7 @@ canvas {
     margin: 0 auto 14px auto;
     padding: 1px 5px;
     /* background: #2f6f5f; */
-    color: #634515;
+    color: #D1322A ;
     /* border-radius: 18px; */
     font-size: 14px;
     font-weight: 600;
@@ -2450,13 +2692,13 @@ canvas {
         padding-right: 10px;
     }
 
-    #chart {
+    #chart:not(.chart-canvas--dynamic) {
         min-width: 720px;
     }
 }
 
 @media (max-width: 600px) {
-    #chart {
+    #chart:not(.chart-canvas--dynamic) {
         min-width: 760px;
     }
 }

@@ -1,17 +1,29 @@
-﻿import { createChart, getChartInstance } from "../chart.core.js";
+import { createChart, getChartInstance } from "../chart.core.js";
 import { defaultBarOptions, buildDataset } from "../chart.helpers.js";
+import { convertAreaToKm2, normalizeDepartamentoDisplayName } from "../../utils.js?v=depto-area-km2-20260716";
 
 const DEPTO_BAR_COLOR = "#4C0073";
 const DEPTO_BAR_DIM_COLOR = "rgba(76, 0, 115, 0.35)";
 
 function formatAreaKm2(value) {
     const number = Number(value);
-    if (!Number.isFinite(number)) return `0,00 km\u00b2`;
+    if (!Number.isFinite(number)) return "0,00 km\u00b2";
 
     return `${new Intl.NumberFormat("es-CO", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     }).format(number)} km\u00b2`;
+}
+
+function resolveCodedFieldLabel(layer, fieldName, value) {
+    const codedValues = layer?.fields
+        ?.find(field => String(field.name).toLowerCase() === String(fieldName).toLowerCase())
+        ?.domain
+        ?.codedValues;
+    if (!codedValues?.length) return value;
+
+    const match = codedValues.find(item => String(item.code) === String(value));
+    return match?.name || value;
 }
 
 export function highlightDeptoChartBar(selectedIndex) {
@@ -26,6 +38,13 @@ export function highlightDeptoChartBar(selectedIndex) {
         index === selectedIndex ? DEPTO_BAR_COLOR : DEPTO_BAR_DIM_COLOR
     );
     chart.update("none");
+}
+
+export function highlightDeptoChartByCode(deCodigo) {
+    const chart = getChartInstance();
+    const codes = chart?.$limitesDepartamentos?.deCodigos || [];
+    const index = codes.findIndex(code => String(code) === String(deCodigo));
+    if (index >= 0) highlightDeptoChartBar(index);
 }
 
 export function clearDeptoChartHighlight() {
@@ -47,14 +66,17 @@ export async function renderChart(layer, config, whereClause, options = {}) {
     if (!canvas) return;
 
     const titleEl = document.getElementById("chartTitle");
-    if (titleEl) titleEl.textContent = options.title || config.title || "Distribución departamental";
+    if (titleEl) titleEl.textContent = options.title || config.title || "Distribuci\u00f3n departamental";
 
     try {
+        const labelField = config.labelField || config.nameField || "dpnombre";
+        const valueField = config.valueField || config.areaField || "dparea";
+        const codeField = config.filterField || "dpcodigo";
         const res = await layer.queryFeatures({
             where: whereClause,
             outFields: config.outFields || ["*"],
             returnGeometry: false,
-            orderByFields: [config.labelField || "DeNombre"]
+            orderByFields: [labelField]
         });
 
         const features = res.features || [];
@@ -64,15 +86,17 @@ export async function renderChart(layer, config, whereClause, options = {}) {
         const colors = [];
         const deCodigos = [];
 
-        features.forEach(f => {
-            const att = f.attributes;
-            labels.push(String(att[config.labelField || config.nameField || "DeNombre"] || "Sin nombre"));
-            values.push(Number(att[config.valueField || config.areaField || "DeArea"] || 0));
+        features.forEach(feature => {
+            const att = feature.attributes || {};
+            const code = String(att[codeField] || "");
+            const rawLabel = att[labelField];
+            const label = resolveCodedFieldLabel(layer, labelField, rawLabel) || rawLabel || "Sin nombre";
+            labels.push(String(normalizeDepartamentoDisplayName(label, code)));
+            values.push(convertAreaToKm2(att[valueField], config.areaUnit) ?? 0);
             colors.push(config.color || DEPTO_BAR_COLOR);
-            deCodigos.push(String(att[config.filterField || "DeCodigo"] || ""));
+            deCodigos.push(code);
         });
 
-        // â”€â”€ MultilÃ­nea para nombres largos de departamentos â”€â”€
         function wrapDepartmentLabel(name) {
             if (!name) return [""];
             const maxLen = 22;
@@ -96,28 +120,12 @@ export async function renderChart(layer, config, whereClause, options = {}) {
         }
 
         const wrappedLabels = labels.map(wrapDepartmentLabel);
-
-        // â”€â”€ Altura dinÃ¡mica del grÃ¡fico segÃºn cantidad de barras visibles â”€â”€
-        const numBarras = numDeptos;
-        const esUnaBarra = numBarras === 1;
-        const pocosDeptos = numBarras <= 5;
-
-        // ParÃ¡metros de altura
-        const ALTURA_BASE = 100;                 // espacio para ejes, tÃ­tulos y padding
-        const ALTURA_POR_BARRA_MUCHOS = 18;      // px por barra cuando hay >5 deptos
-        const ALTURA_POR_BARRA_POCOS = 28;       // px por barra cuando hay 2-5 deptos
-        const ALTURA_UNA_BARRA = 300;            // altura ideal para 1 sola barra con textos legibles
-        const ALTURA_MAXIMA_NACIONAL = 520;      // altura para la vista nacional (~33 deptos)
-
-        let canvasHeight;
-        if (esUnaBarra) {
-            canvasHeight = ALTURA_UNA_BARRA;
-        } else {
-            const alturaPorBarra = pocosDeptos ? ALTURA_POR_BARRA_POCOS : ALTURA_POR_BARRA_MUCHOS;
-            canvasHeight = Math.min(ALTURA_MAXIMA_NACIONAL, ALTURA_BASE + numBarras * alturaPorBarra);
-        }
-
-        // â”€â”€ TamaÃ±os de fuente y mÃ¡rgenes segÃºn cantidad de barras â”€â”€
+        const esUnaBarra = numDeptos === 1;
+        const pocosDeptos = numDeptos <= 5;
+        const alturaPorBarra = pocosDeptos ? 28 : 18;
+        const canvasHeight = esUnaBarra
+            ? 300
+            : Math.min(520, 100 + numDeptos * alturaPorBarra);
         const fontSizeY = esUnaBarra ? 10 : (pocosDeptos ? 10 : 8);
         const fontSizeX = esUnaBarra ? 9 : (pocosDeptos ? 11 : 10);
         const tickPaddingY = esUnaBarra ? 8 : (pocosDeptos ? 6 : 3);
@@ -128,10 +136,9 @@ export async function renderChart(layer, config, whereClause, options = {}) {
         const barPercentage = esUnaBarra ? 0.55 : (pocosDeptos ? 0.70 : 0.82);
         const categoryPercentage = esUnaBarra ? 0.65 : (pocosDeptos ? 0.70 : 0.75);
 
-        // â”€â”€ Ajustar dinÃ¡micamente el summaryDiv para que no genere espacio vacÃ­o â”€â”€
         const summaryDiv = document.getElementById("summaryDiv");
         if (summaryDiv) {
-            if (numBarras <= 3) {
+            if (numDeptos <= 3) {
                 summaryDiv.style.minHeight = "80px";
                 summaryDiv.style.maxHeight = "200px";
             } else {
@@ -140,29 +147,21 @@ export async function renderChart(layer, config, whereClause, options = {}) {
             }
         }
 
-        // â”€â”€ Establecer altura directamente en el canvas â”€â”€
-        // Limpiar cualquier estilo residual antes de asignar nueva altura
         canvas.removeAttribute("height");
         canvas.style.height = canvasHeight + "px";
         canvas.style.maxHeight = canvasHeight + "px";
         canvas.style.minHeight = canvasHeight + "px";
         canvas.style.width = "100%";
 
-        // â”€â”€ Restaurar estilos del chartDiv para vista nacional â”€â”€
         const chartDiv = document.getElementById("chartDiv");
         if (chartDiv) {
-            // Quitar TODOS los estilos inline para que el CSS original tome el control
             chartDiv.removeAttribute("style");
-            // Luego aplicar solo lo necesario
-            chartDiv.style.overflowY = numBarras > 15 ? "auto" : "hidden";
-            // Compactar solo cuando hay pocas barras
-            if (numBarras <= 3) {
+            chartDiv.style.overflowY = numDeptos > 15 ? "auto" : "hidden";
+            if (numDeptos <= 3) {
                 chartDiv.style.display = "flex";
                 chartDiv.style.flexDirection = "column";
                 chartDiv.style.justifyContent = "flex-start";
             }
-            // Para vista nacional (>3 barras) no se aplica nada adicional,
-            // el CSS original (#chartDiv) define el layout correcto
         }
 
         const chart = createChart(canvas, {
@@ -174,12 +173,9 @@ export async function renderChart(layer, config, whereClause, options = {}) {
             options: defaultBarOptions({
                 xTitle: "\u00c1rea (km\u00b2)",
                 overrides: {
-                    // responsive: false para evitar que Chart.js observe el contenedor
-                    // y genere ciclos de redimensionamiento
                     responsive: false,
                     maintainAspectRatio: false,
                     devicePixelRatio: 2,
-
                     onClick: function(event, elements) {
                         if (!elements || !elements.length) return;
                         const index = elements[0].index;
@@ -187,60 +183,39 @@ export async function renderChart(layer, config, whereClause, options = {}) {
                         if (!deCodigo) return;
 
                         document.dispatchEvent(new CustomEvent("limites:depto-chart-select", {
-                            detail: {
-                                deCodigo: deCodigo,
-                                index: index,
-                                source: "chart"
-                            }
+                            detail: { deCodigo, index, source: "chart" }
                         }));
                     },
-
                     onHover: function(event, elements) {
                         if (event?.native?.target) {
                             event.native.target.style.cursor = elements?.length ? "pointer" : "default";
                         }
                     },
-
-                    layout: {
-                        padding: layoutPadding
-                    },
-
+                    layout: { padding: layoutPadding },
                     scales: {
                         y: {
                             stacked: false,
                             ticks: {
                                 autoSkip: false,
                                 maxRotation: 0,
-                                font: {
-                                    size: fontSizeY,
-                                    family: "Outfit, sans-serif",
-                                    weight: "500"
-                                },
+                                font: { size: fontSizeY, family: "Outfit, sans-serif", weight: "500" },
                                 padding: tickPaddingY
                             }
                         },
                         x: {
                             ticks: {
-                                font: {
-                                    size: fontSizeX,
-                                    family: "Outfit, sans-serif",
-                                    weight: "500"
-                                }
+                                font: { size: fontSizeX, family: "Outfit, sans-serif", weight: "500" }
                             }
                         }
                     },
-
-                    ...(barThickness ? {
-                        barThickness: barThickness
-                    } : {}),
+                    ...(barThickness ? { barThickness } : {}),
                     datasets: {
                         bar: {
-                            categoryPercentage: categoryPercentage,
-                            barPercentage: barPercentage,
+                            categoryPercentage,
+                            barPercentage,
                             borderWidth: 0.3
                         }
                     },
-
                     plugins: {
                         tooltip: {
                             callbacks: {
@@ -250,36 +225,25 @@ export async function renderChart(layer, config, whereClause, options = {}) {
                             }
                         },
                         zoom: {
-                            pan: {
-                                enabled: true,
-                                mode: "y",
-                                threshold: 5
-                            },
+                            pan: { enabled: true, mode: "y", threshold: 5 },
                             zoom: {
-                                wheel: {
-                                    enabled: true,
-                                    speed: 0.06,
-                                    modifierKey: null
-                                },
-                                pinch: {
-                                    enabled: true
-                                },
-                                drag: {
-                                    enabled: false
-                                },
+                                wheel: { enabled: true, speed: 0.06, modifierKey: null },
+                                pinch: { enabled: true },
+                                drag: { enabled: false },
                                 mode: "y"
                             },
                             limits: {
-                                y: {
-                                    min: 0,
-                                    max: Math.max(5, numDeptos + 2)
-                                }
+                                y: { min: 0, max: Math.max(5, numDeptos + 2) }
                             }
                         }
                     }
                 }
             })
         });
+
+        chart.$limitesDepartamentos = {
+            deCodigos: deCodigos.slice()
+        };
 
         canvas.ondblclick = function(event) {
             const hits = chart.getElementsAtEventForMode(
@@ -294,8 +258,7 @@ export async function renderChart(layer, config, whereClause, options = {}) {
                 detail: { source: "chart" }
             }));
         };
-
-    } catch (e) {
-        console.warn("Error renderizando grÃ¡fica lÃ­mites departamentales:", e);
+    } catch (error) {
+        console.warn("Error renderizando grafica limites departamentales:", error);
     }
 }

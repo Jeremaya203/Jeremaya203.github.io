@@ -14,7 +14,7 @@
   </a>
     <div id="primeranuncio" class="anuncio">
       <h2>¿Ya conoce nuestro DocuVisor?</h2>
-      <span class="boton" onclick="cerraranuncio('primeranuncio')">X</span>
+      <span class="boton btn-close-anuncio">X</span>
       <p>
         Consulte los documentos de los POT Municipales del país 
         visitando nuestra central documental – DocuVisor.
@@ -174,7 +174,7 @@
           
           <h2>Normatividad relacionada:</h2>
           <ul>
-            <li><span> <a href="http://www.secretariasenado.gov.co/senado/basedoc/ley_0388_1997.html" target="blank">Ley 388 artículo 112</a></span></li>
+            <li><span> <a href="https://suin-juriscol.gov.co/viewDocument.asp?ruta=Leyes/1659295" target="blank">Ley 388 artículo 112</a></span></li>
           </ul>
           <h2>Notas relacionadas:</h2>
           <div class="circlenotarel"><p class="circlenotarelp">7</p> </div>
@@ -248,7 +248,7 @@
           
           <h2>Normatividad relacionada:</h2>
           <ul>
-            <li><span> <a href="http://www.secretariasenado.gov.co/senado/basedoc/ley_0388_1997.html" target="blank">Guia técnica expediente municipal</a></span></li>
+            <li><span> <a href="https://suin-juriscol.gov.co/viewDocument.asp?ruta=Leyes/1659295" target="blank">Guia técnica expediente municipal</a></span></li>
           </ul>
           
         </div>
@@ -423,7 +423,7 @@
       </div>  
 
         <div class="line-content">
-        <a id="linkrecurso" href="http://www.faoswalim.org/resources/Land/Land_resource_Mgt/pdfdocs/guia_sim.pdf" target="blank">
+        <a id="linkrecurso" href="https://www.faoswalim.org/resources/Land/Land_resource_Mgt/pdfdocs/guia_sim.pdf" target="blank">
           <div class="recurso">
             <img src="images/image_cadena.png" alt="">
             <h3 class="identificador">No. 27</h3>
@@ -435,7 +435,7 @@
         </div>  
 
         <div class="line-content">
-        <a id="linkrecurso" href="http://paisajeculturalcafetero.org.co/static/files/guia-pot.pdf" target="blank">
+        <a id="linkrecurso" href="https://paisajeculturalcafetero.org.co/static/files/guia-pot.pdf" target="blank">
           <div class="recurso">
             <img src="images/image_clip_2.png" alt="">
             <h3 class="identificador">No. 30</h3>
@@ -459,7 +459,7 @@
       </div>  
 
         <div class="line-content">
-        <a id="linkrecurso" href="http://observatorio.epacartagena.gov.co/wp-content/uploads/2017/05/Gu%C2%A1a-Formulaci%C2%A6n-Planes-Ordenamiento.pdf" target="blank">
+        <a id="linkrecurso" href="https://observatorio.epacartagena.gov.co/wp-content/uploads/2017/05/Gu%C2%A1a-Formulaci%C2%A6n-Planes-Ordenamiento.pdf" target="blank">
           <div class="recurso">
             <img src="images/image_cadena.png" alt="">
             <h3 class="identificador">No. 32</h3>
@@ -507,7 +507,7 @@
         </div>  
 
           <div class="line-content">
-          <a id="linkrecurso" href="http://bibliotecadigital.agronet.gov.co/handle/11438/8758" target="blank">
+          <a id="linkrecurso" href="https://bibliotecadigital.agronet.gov.co/handle/11438/8758" target="blank">
             <div class="recurso">
               <img src="images/image_cadena.png" alt="">
               <h3 class="identificador">No. 46</h3>
@@ -529,125 +529,4 @@
 
   
 
-  <script type="text/javascript">
-  //Pagination
-  pageSize = 7;
-  incremSlide = 5;
-  startPage = 0;
-  numberPage = 0;
-  
-  
-  var pageCount =  $(".line-content").length / pageSize;
-  var totalSlidepPage = Math.floor(pageCount / incremSlide);
-      
-  for(var i = 0 ; i<pageCount;i++){
-      $("#pagin").append('<li><a href="#ancla-recurso">'+(i+1)+'</a></li> ');
-      if(i>pageSize){
-         $("#pagin li").eq(i).hide();
-      }
-  }
-  
-  var prev = $("<li/>").addClass("prev").attr('id', 'prev').html("Anterior").click(function(){
-
-    var actual = document.getElementsByClassName('current');   
-    for (var i = 0; i < actual.length; i++) {
-            var currency = actual[i].innerText;
-            console.log("currency: " + currency);
-            i = parseInt(currency) - 1;
-            console.log(i + 'esta es la pagina a cargar de anterior ');
-            $("#pagin li a").eq(i).removeClass("current");
-            $("#pagin li a").eq(i).css({"color": '#000000'});
-            showPage(i);
-            $("#pagin li a").eq(i-1).css({"color": 'var(--azul-igac)'});
-            $("#pagin li a").eq(i-1).addClass("current");
-
-            /*if (i < ($('.line-content').length)/7) {
-              showPage(++i);
-            }*/
-          }
-
- 
-  });
-  
-  prev.show();
-  
-  var next = $("<li/>").addClass("next").html("Siguiente").click(function(){
-    var actual = document.getElementsByClassName('current');   
-    for (var i = 0; i < actual.length; i++) {
-            var currency = actual[i].innerText;
-            console.log("currency: " + currency);
-            i = parseInt(currency) + 1;
-            console.log(i + 'esta es la pagina a cargar');
-            $("#pagin li a").eq(i-2).removeClass("current");
-            $("#pagin li a").eq(i-2).css({"color": '#000000'});
-            showPage(i);
-            $("#pagin li a").eq(i-1).css({"color": 'var(--azul-igac)'});
-            $("#pagin li a").eq(i-1).addClass("current");
-
-            /*if (i < ($('.line-content').length)/7) {
-              showPage(++i);
-            }*/
-          }
-
-  });
-  
-  
-  
-  $("#pagin").prepend(prev).append(next);
-  
-  $("#pagin li").first().find("a").addClass("current");
-  
-  slide = function(sens){
-     $("#pagin li").hide();
-     
-     for(t=startPage;t<incremSlide;t++){
-       $("#pagin li").eq(t+1).show();
-     }
-     if(startPage == 0){
-       next.show();
-       prev.show();
-     }else if(numberPage == totalSlidepPage ){
-       next.hide();
-       prev.show();
-     }else{
-       next.show();
-       prev.show();
-     }           
-  }
-  
-  i = 1;
-  showPage = function(page) {
-      $(".line-content").hide();
-      $(".line-content").each(function(n) {
-          if (n >= pageSize * (page - 1) && n < pageSize * page)
-              $(this).show();
-      });        
-  }
-      
-  showPage(i);
-
-  $("#pagin li a").eq(0).css({"color": 'var(--azul-igac)'});
-  $("#pagin li a").eq(0).addClass("current");
-  
-  $("#pagin li a").click(function() {
-    $("#pagin li a").css({"color": '#000000'});
-    $(this).css({"color": 'var(--azul-igac)'});
-
-    $(this).siblings("#pagin li a").css({"color": 'red'});
-    $("#pagin li a").removeClass("current");
-    $(this).addClass("current");
-        showPage(parseInt($(this).text()));
-  });
-  
-var cerraranuncio = anuncio => {
-document.getElementById(anuncio).style.display = "none";
-}
-
-$('#boton-cerrar').click(function(){
-  document.getElementById('primeranuncio').style.display = "none";
-  //console.log("puedo cerrar el anuncio");
-  //alert("hola");
-  
-});
-  
-  </script>
+  <script src="js/paso4.js" type="text/javascript"></script>
