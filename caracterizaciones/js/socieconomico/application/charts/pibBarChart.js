@@ -1,8 +1,8 @@
 import { createChartCore } from "./core/chartCore.js";
-import { createChartInteractions } from "./chartInteractions.js?v=pib-stable-bar-width-20260523";
+import { createChartInteractions } from "./chartInteractions.js?v=travel-municipality-scope-20260721";
 import { createBarChartRenderer } from "./renderers/barChartRenderer.js?v=connectivity-tab-resize-20260716";
-import { createTravelTimePieChartController } from "./infrastructure/travelTimePieChart.js?v=department-map-municipality-selection-20260717b";
-import { createEducationBarChartController } from "./infrastructure/educationBarChart.js?v=tourism-legend-on-empty-chart-20260604";
+import { createTravelTimePieChartController } from "./infrastructure/travelTimePieChart.js?v=travel-outside-category-reset-20260721";
+import { createEducationBarChartController } from "./infrastructure/educationBarChart.js?v=department-legend-stable-20260721";
 import { createEquipamientosChartController } from "./infrastructure/equipamientosChart.js?v=equipamientos-bar-values-20260707b";
 import { getRendererLegendItems, getRendererVisualForValue } from "./core/chartSymbolUtils.js?v=connectivity-line-style-legend-20260602";
 import { createPublicServicesRadarChartController } from "./conditions/publicServicesRadarChart.js?v=department-map-municipality-selection-20260717";
@@ -52,7 +52,10 @@ export function createPibBarChartController({
         getHighlightHandle,
         setHighlightHandle,
         applyWhereToActiveLayers,
-        getDiccionarioDepartamentos
+        getDiccionarioDepartamentos,
+        getWhereBase,
+        getFiltroNivel,
+        getMunicipioActual
     });
 
     const barRenderer = createBarChartRenderer({
@@ -780,7 +783,7 @@ export function createPibBarChartController({
                 chartInteractions.installDefaultLegendHooks?.();
                 const educationLayer = resolveChartLayer(config, config.chartConfig);
                 if (!educationLayer) return;
-                await educationBarController.actualizarGrafica(educationLayer, config);
+                await educationBarController.actualizarGrafica(educationLayer, config, renderOptions);
                 return;
             }
             if (povertyBarController.isPovertyGroupedChart?.(config.chartConfig)) {

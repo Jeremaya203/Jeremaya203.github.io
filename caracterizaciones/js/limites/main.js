@@ -14,12 +14,13 @@ import { actualizarLeyendaDepartamentosLimites, toggleLegend } from "./ui/legend
 import { actualizarResumen } from "./ui/summary.js";
 import { cargarDiccionarioDesdeApi } from "./data/territorial.js";
 import { renderChart as renderChartMunicipios } from "./chart/municipios/chart.js?v=municipal-axis-labels-20260716d";
-import { renderStatusDoughnut, destroyStatusDoughnut, resolveStatusLabel, resolveStatusCode, getLlidsForStatusLabel, getLlidsForStatusCode, getStatusCodeForLabel, filterFeaturesByStatusLabel, filterFeaturesByStatusCode } from "./chart/municipios/status-doughnut.js?v=municipal-status-chart-scale-300-20260706";
+import { renderStatusDoughnut, destroyStatusDoughnut, resolveStatusLabel, resolveStatusCode, getLlidsForStatusLabel, getLlidsForStatusCode, getStatusCodeForLabel, filterFeaturesByStatusLabel, filterFeaturesByStatusCode } from "./chart/municipios/status-doughnut.js?v=other-status-20260722";
 import { renderChart as renderChartDepartamentos, highlightDeptoChartBar, highlightDeptoChartByCode, clearDeptoChartHighlight } from "./chart/departamentales/chart.js?v=depto-area-km2-20260716";
 import { destroyChart, resetChartLayout } from "./chart/chart.core.js";
 import { getColorForLinea } from "./colors.js";
 import { fetchTimelineData, renderTimeline } from "./data/timeline.js?v=municipal-performance-20260618";
-import { setupMunicipalSync, clearMunicipalSync } from "./interactions/municipal-sync.js";
+import { setupMunicipalSync, clearMunicipalSync } from "./interactions/municipal-sync.js?v=border-legend-unified-20260722";
+import { initializeInternationalBorder, showInternationalBorder, clearInternationalBorder } from "./map/international-border.js?v=border-legend-unified-20260722";
 
 // ── Estado de tab ──
 var currentLimitesTab = "DEPARTAMENTOS";
@@ -73,6 +74,7 @@ function getLimitesServiceRoot(layerUrl) {
 
 var coastalWhereCache = {};
 var LA_GUAJIRA_DEPARTMENT_CODE = "44";
+var BOGOTA_DEPARTMENT_CODE = "11";
 var URIBIA_MUNICIPALITY_CODE = "44847";
 var COASTAL_CARTOGRAPHIC_WHERE = "(LLIdentif = '1111111111' OR LLJerarqui = 5)";
 
@@ -410,8 +412,26 @@ async function buildMunicipalCoastalWhere(FeatureLayerCtor, config, baseWhere, d
 }
 
 async function buildEnhancedMunicipalWhere(FeatureLayerCtor, config, baseWhere, deptoCode, municipioCode) {
-    var coastalWhere = await buildMunicipalCoastalWhere(FeatureLayerCtor, config, baseWhere, deptoCode, municipioCode);
-    return coastalWhere ? "((" + (baseWhere || "1=1") + ") OR (" + coastalWhere + "))" : (baseWhere || "1=1");
+    var territorialWhere = baseWhere || "1=1";
+    var departmentCode = getDepartmentCodeForMunicipalContext(deptoCode, municipioCode);
+
+    // El identificador cartográfico de costa (1111111111) comienza por 11.
+    // Sin esta exclusión, el filtro departamental de Bogotá lo interpreta
+    // erróneamente como una línea perteneciente al departamento.
+    if (!municipioCode && departmentCode === BOGOTA_DEPARTMENT_CODE) {
+        territorialWhere = "((" + territorialWhere + ") AND NOT " + COASTAL_CARTOGRAPHIC_WHERE + ")";
+    }
+
+    var coastalWhere = await buildMunicipalCoastalWhere(
+        FeatureLayerCtor,
+        config,
+        territorialWhere,
+        deptoCode,
+        municipioCode
+    );
+    return coastalWhere
+        ? "((" + territorialWhere + ") OR (" + coastalWhere + "))"
+        : territorialWhere;
 }
 
 function clearAuxiliaryTerritoryLayer() {
@@ -481,6 +501,7 @@ function limpiarVistaLimites(options) {
 
     hideAllLimitesLayers();
     clearAuxiliaryTerritoryLayer();
+    clearInternationalBorder();
     if (window._departamentosLayerGlobal) window._departamentosLayerGlobal.visible = false;
     if (layerGlobal) layerGlobal.visible = false;
 
@@ -644,7 +665,7 @@ function getBaseMunicipalWhere() {
 function setLegendActiveCodes(codes) {
     var activeSet = {};
     (codes || []).forEach(function(code) { activeSet[String(code)] = true; });
-    var items = document.querySelectorAll("#legendContent .limites-legend-item");
+    var items = document.querySelectorAll("#legendContent .limites-legend-item[data-llid]");
     items.forEach(function(item) {
         var code = item.getAttribute("data-llid");
         var active = !!activeSet[String(code || "")];
@@ -1031,6 +1052,7 @@ window.require([
     var mainMap = createMainMap({ EsriMap: EsriMap, MapView: MapView, Basemap: Basemap, TileLayer: TileLayer, VectorTileLayer: VectorTileLayer });
     map = mainMap.map;
     view = mainMap.view;
+    initializeInternationalBorder({ map: map, GraphicsLayer: GraphicsLayer, Graphic: Graphic });
 
     function handleLimitesTabChange(target) {
         var ds = document.getElementById("departamentos");
@@ -1195,6 +1217,7 @@ window.require([
         destroyStatusDoughnut();
         resetChartLayout();
         clearAuxiliaryTerritoryLayer();
+        clearInternationalBorder();
         var td = document.getElementById("timelineDiv");
         if (td) { td.style.display = "none"; td.innerHTML = ""; }
         var lt = document.getElementById("legendTitle");
@@ -1234,12 +1257,20 @@ window.require([
             var cod = this.value;
             if (cod === "0") return;
             if (cod === "COL") {
-                deptoActual = ""; filtroNivel = ""; municipioActual = ""; whereBase = "";
+                var colombiaWhere = LIMITES_CONFIG.DEPARTAMENTOS.fixedWhere || "1=1";
+                nextRenderCycle();
+                deptoActual = ""; filtroNivel = ""; municipioActual = ""; whereBase = colombiaWhere;
                 selectedStatusLabel = "";
+                var colombiaLayer = deptoLayerRef || layerGlobal || window._departamentosLayerGlobal;
+                if (colombiaLayer) {
+                    colombiaLayer.definitionExpression = colombiaWhere;
+                    colombiaLayer.visible = true;
+                }
                 destroyChart();
                 destroyStatusDoughnut();
                 resetChartLayout();
                 clearAuxiliaryTerritoryLayer();
+                clearInternationalBorder();
                 var td2 = document.getElementById("timelineDiv"); if (td2) { td2.style.display = "none"; td2.innerHTML = ""; }
                 var ld2 = document.getElementById("lineDescriptionsDiv"); if (ld2) { ld2.style.display = "none"; ld2.innerHTML = ""; }
                 var ms2 = document.getElementById("municipios"); if (ms2) { ms2.innerHTML = '<option value="">Seleccione un municipio</option>'; renderizarMunicipios(); ms2.value = ""; }
@@ -1250,7 +1281,7 @@ window.require([
                 if (view && view.popup) view.popup.close();
                 if (extentInicial) view.goTo(extentInicial, { duration: 400, easing: "ease-in-out" });
                 else view.goTo({ center: [-74.3, 4.6], zoom: 6 }, { duration: 400, easing: "ease-in-out" });
-                setTimeout(function() { ds.value = "0"; }, 300);
+                ds.value = "COL";
                 setTimeout(function() { cargarLimitesActivos(); }, 350);
                 return;
             }
@@ -1320,10 +1351,11 @@ window.require([
     }
 
     async function cargarLimitesMunicipales() {
-        var cycleId = renderCycleId;
+        var cycleId = nextRenderCycle();
 
         hideAllLimitesLayers();
         clearAuxiliaryTerritoryLayer();
+        clearInternationalBorder();
         if (window._departamentosLayerGlobal) window._departamentosLayerGlobal.visible = false;
         if (layerGlobal) layerGlobal.visible = false;
         setMunicipalServiceMessage(false);
@@ -1409,6 +1441,14 @@ window.require([
 
                 layer.visible = true;
                 actualizarLeyendaLimitesMunicipales(features);
+                await showInternationalBorder({
+                    municipalityCode: municipioActual,
+                    departmentCode: deptoActual
+                });
+                if (!isRenderCycleCurrent(cycleId)) {
+                    clearInternationalBorder();
+                    return;
+                }
 
                 savedChartLayer = layer;
                 savedChartConfig = config;
@@ -1476,13 +1516,16 @@ window.require([
     }
 
     async function cargarLimitesDepartamentos() {
-        var cycleId = renderCycleId;
+        // Cada carga invalida callbacks anteriores para que una selección vieja
+        // no vuelva a filtrar el mapa después de regresar a Colombia.
+        var cycleId = nextRenderCycle();
         var selectedDepto = (deptoActual && deptoActual !== "0" && deptoActual !== "COL")
             ? String(deptoActual)
             : "";
 
         hideAllLimitesLayers();
         clearAuxiliaryTerritoryLayer();
+        clearInternationalBorder();
         destroyStatusDoughnut();
         setMunicipalServiceMessage(false);
         if (layerGlobal) layerGlobal.visible = false;

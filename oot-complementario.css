@@ -1193,6 +1193,24 @@
   .oot-dark-brand > img { height: 22px; max-width: 60vw; }
 }
 
+@media (max-width: 600px) {
+  .oot-dark-gov,
+  .oot-inst-band { padding-left: 12px; padding-right: 12px; }
+  .oot-inst-band img { max-width: 100%; height: auto; }
+
+  .oot-dark-bar {
+    padding: 0 12px;
+    gap: 8px;
+    min-height: 56px;
+  }
+  .oot-dark-brand { flex-shrink: 1; min-width: 0; }
+  .oot-dark-brand > img { max-width: 34vw; }
+  .oot-dark-brand-title { font-size: 12px; letter-spacing: 0.02em; }
+  .oot-dark-brand-sub { display: none; }
+
+  .oot-auth-btn { padding: 6px 10px; font-size: 11px; }
+}
+
 /* ── Carrusel de módulos ───────────────────────────────── */
 .oot-carousel { position: relative; padding: 0 50px; }
 /* sin padding horizontal en el swiper -> los slides llenan exacto, no asoma card cortado */

@@ -4,7 +4,7 @@ import {
     INSTITUCIONES_EDUCACION_BAR_CHART_CONFIG,
     SALUD_BAR_CHART_CONFIG,
     EQUIPAMIENTOS_DUAL_CHART_CONFIG
-} from "./charts/configs/infraestructuraChartsConfig.js?v=connectivity-tab-resize-20260716";
+} from "./charts/configs/infraestructuraChartsConfig.js?v=travel-municipality-scope-20260721";
 import {
     POVERTY_IPM_NBI_GROUPED_CONFIG,
     PUBLIC_SERVICES_RADAR_CHART_CONFIG
@@ -128,7 +128,26 @@ export const LAYERS_CONFIG = {
             keepDepartmentMapOnMunicipality: true,
             filterField: "mpcodigo",
             type: "feature-layer",
-            chartConfig: SALUD_BAR_CHART_CONFIG,
+            chartConfig: {
+                ...SALUD_BAR_CHART_CONFIG,
+                useServiceRendererLegend: true
+            },
+            mapLayerUrl: socioeconomicoLayerUrl(31),
+            mapLayerLegendHeading: "Naturaleza del servicio de salud",
+            mapLayerLegendOrder: 2,
+            mapLayerDrawOrder: 1,
+            supplementaryMapLayers: [
+                {
+                    url: socioeconomicoLayerUrl(32),
+                    title: "Prestadores de servicios de salud",
+                    legendHeading: "Prestadores de servicios de salud",
+                    legendOrder: 1,
+                    drawOrder: 2
+                }
+            ],
+            forceRendererLegend: true,
+            onlyActiveRendererLegendItems: true,
+            useMultilayerLegendSections: true,
             textSource: {
                 url: socioeconomicoLayerUrl(44),
                 field: "analisissld",

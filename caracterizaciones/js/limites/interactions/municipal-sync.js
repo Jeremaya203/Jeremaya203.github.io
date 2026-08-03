@@ -60,7 +60,7 @@ function colorWithOpacity(color, opacity) {
 }
 
 function syncLegend() {
-    document.querySelectorAll("#legendContent .limites-legend-item").forEach(item => {
+    document.querySelectorAll("#legendContent .limites-legend-item[data-llid]").forEach(item => {
         const id = item.dataset.llid || "";
         const manuallyVisible = state.visibleIds.has(id);
         const selected = state.selectedId === id;
@@ -211,7 +211,7 @@ function bindLegend() {
 
     content.__limitesMunicipalSyncHandler = event => {
         const item = event.target.closest(".limites-legend-item");
-        if (!item) return;
+        if (!item || !item.dataset.llid) return;
         event.preventDefault();
         event.stopPropagation();
         toggleLine(item.dataset.llid || "");

@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!expanded) {
         mobileNav.style.display = 'block';
         mobileNav.innerHTML = '';
-        linkList.querySelectorAll('a').forEach(a => {
+        linkList.querySelectorAll('a:not(#loginBtn)').forEach(a => {
           const clone = a.cloneNode(true);
           clone.style.display = 'block';
           clone.style.padding = '12px 24px';
@@ -141,6 +141,36 @@ document.addEventListener('DOMContentLoaded', () => {
   const cardCta    = panel && panel.querySelector('.tematicas__card-cta');
   const cardAccent = panel && panel.querySelector('.tematicas__card-accent');
   const cardClose  = panel && panel.querySelector('.tematicas__card-close');
+
+  function openAuthenticationModal() {
+    const firebaseAuth = window.firebase && window.firebase.auth
+      ? window.firebase.auth()
+      : null;
+
+    if (!firebaseAuth || !window.OOTAuthModal) {
+      console.error('[Caracterizaciones] El modal de autenticación no está disponible.');
+      return;
+    }
+
+    window.OOTAuthModal.open(firebaseAuth);
+  }
+
+  if (cardCta) {
+    cardCta.addEventListener('click', event => {
+      const authSession = window.CaracterizacionesAuth;
+      const firebaseUser = window.firebase && window.firebase.auth
+        ? window.firebase.auth().currentUser
+        : null;
+      const currentUser = (authSession && authSession.getCurrentUser
+        ? authSession.getCurrentUser()
+        : null) || firebaseUser;
+
+      if (currentUser) return;
+
+      event.preventDefault();
+      openAuthenticationModal();
+    });
+  }
 
   const accentMap = {
     limites:        '#8c5a2c',

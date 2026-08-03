@@ -8,11 +8,15 @@ export function createChartInteractions({
     getHighlightHandle,
     setHighlightHandle,
     applyWhereToActiveLayers,
-    getDiccionarioDepartamentos
+    getDiccionarioDepartamentos,
+    getWhereBase,
+    getFiltroNivel,
+    getMunicipioActual
 }) {
     const chartSelectionColor = "#166534";
     const chartDefaultColor = "#16a34a";
     const chartBorderColor = "#15803d";
+    const municipalityScopedLayerFilters = new Map();
 
     function transparentize(color, alpha = 0.35) {
         const rgba = String(color || "").match(/rgba?\(([^)]+)\)/i);
@@ -192,6 +196,7 @@ export function createChartInteractions({
     }
 
     async function clearCategorySelection() {
+        await restoreMunicipalityScopedFilters();
         const currentHighlight = getHighlightHandle?.();
         if (currentHighlight) {
             currentHighlight.remove();
@@ -202,9 +207,85 @@ export function createChartInteractions({
         await window.__setLegendVisibleCodes?.(null);
     }
 
+    async function restoreMunicipalityScopedFilters() {
+        const entries = [...municipalityScopedLayerFilters.entries()];
+        municipalityScopedLayerFilters.clear();
+        await Promise.all(entries.map(async ([targetLayer, baseFilter]) => {
+            if (!targetLayer || targetLayer.destroyed || !getView?.()) return;
+            try {
+                const layerView = await getView().whenLayerView(targetLayer);
+                layerView.filter = baseFilter && baseFilter !== "1=1" ? { where: baseFilter } : null;
+            } catch (_) {}
+        }));
+    }
+
+    async function toggleMunicipalityScopedMapSelection(layer, chartConfig, selectedValue) {
+        const view = getView?.();
+        const municipalityCode = String(getMunicipioActual?.() || "").trim();
+        const municipalityWhere = String(getWhereBase?.() || "").trim();
+        const field = chartConfig?.mapInteractionField || chartConfig?.xAxis?.field;
+        if (!view || !layer || !field || !municipalityCode || !municipalityWhere) return null;
+
+        const matched = findMatchingLabel(selectedValue);
+        const selectedRow = chartCore.getRowsByLabel().get(String(matched ?? "").trim());
+        const mapValue = selectedRow?.rawLabel ?? selectedValue;
+        const currentLabel = chartCore.getSelectedLabel();
+        const isSameSelection = normalizeChartLabel(currentLabel) === normalizeChartLabel(matched)
+            || normalizeChartLabel(currentLabel) === normalizeChartLabel(mapValue);
+
+        if (isSameSelection) {
+            const currentHighlight = getHighlightHandle?.();
+            currentHighlight?.remove?.();
+            setHighlightHandle?.(null);
+            updateChartSelection(null, { exclusiveCategory: false });
+            await restoreMunicipalityScopedFilters();
+            return null;
+        }
+
+        const layerView = await view.whenLayerView(layer);
+        if (!municipalityScopedLayerFilters.has(layer)) {
+            municipalityScopedLayerFilters.set(
+                layer,
+                String(layerView.filter?.where || layer.definitionExpression || "1=1").trim() || "1=1"
+            );
+        }
+
+        const baseFilter = municipalityScopedLayerFilters.get(layer) || "1=1";
+        const categoryWhere = `${field} = '${getSqlValue(mapValue)}'`;
+        const contextWhere = `((${baseFilter}) AND NOT (${municipalityWhere}))`;
+        const selectedMunicipalityWhere = `((${municipalityWhere}) AND (${categoryWhere}))`;
+        layerView.filter = { where: `${contextWhere} OR ${selectedMunicipalityWhere}` };
+
+        const currentHighlight = getHighlightHandle?.();
+        currentHighlight?.remove?.();
+        setHighlightHandle?.(null);
+
+        try {
+            const query = layer.createQuery();
+            query.where = selectedMunicipalityWhere;
+            query.outFields = [layer.objectIdField || "OBJECTID"];
+            query.returnGeometry = false;
+            const result = await layer.queryFeatures(query);
+            const objectIdField = layer.objectIdField || "OBJECTID";
+            const objectIds = (result?.features || [])
+                .map(feature => feature.attributes?.[objectIdField])
+                .filter(value => value != null);
+            if (objectIds.length) setHighlightHandle?.(layerView.highlight(objectIds));
+        } catch (_) {}
+
+        updateChartSelection(matched, { exclusiveCategory: false });
+        return matched;
+    }
+
     async function toggleChartMapSelection(layer, chartConfig, selectedValue) {
         if (chartConfig?.id === "pib-departamental") {
             return navigatePibDepartmentFromChart(selectedValue);
+        }
+
+        if (chartConfig?.municipalityScopedMapInteraction === true
+            && getFiltroNivel?.() === "MUNI"
+            && String(getMunicipioActual?.() || "").trim()) {
+            return toggleMunicipalityScopedMapSelection(layer, chartConfig, selectedValue);
         }
 
         const matched = findMatchingLabel(selectedValue);

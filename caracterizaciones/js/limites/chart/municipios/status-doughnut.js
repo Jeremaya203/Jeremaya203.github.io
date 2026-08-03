@@ -5,6 +5,10 @@ var currentSelectedStatusCode = "";
 var currentDisplayCodes = [];
 var fullStatusSnapshot = null;
 
+var OTHER_STATUS_CODE = "other-status";
+var OTHER_STATUS_LABEL = "Otro Estado";
+var OTHER_STATUS_SOURCE_CODES = ["2", "3"];
+
 var STATUS_COLORS = [
     "#5E2A84",
     "#D66F36",
@@ -98,6 +102,9 @@ function getStatusCodeFromValue(value) {
 
     var raw = String(value).trim();
     if (!raw) return null;
+    if (raw === OTHER_STATUS_CODE || normalizeStatusKey(raw) === normalizeStatusKey(OTHER_STATUS_LABEL)) {
+        return OTHER_STATUS_CODE;
+    }
     if (STATUS_DOMAIN[raw]) return raw;
 
     if (/^\d+(?:\.0+)?$/.test(raw)) {
@@ -114,9 +121,26 @@ function getStatusCodeForLabel(label) {
     return getStatusCodeFromValue(label) || resolveStatusCode(label);
 }
 
+function getGroupedStatusCode(code) {
+    var normalizedCode = String(code || "").trim();
+    return OTHER_STATUS_SOURCE_CODES.indexOf(normalizedCode) !== -1
+        ? OTHER_STATUS_CODE
+        : normalizedCode;
+}
+
+function isOtherStatusCode(code) {
+    return String(code || "").trim() === OTHER_STATUS_CODE;
+}
+
 function resolveStatusCode(labelOrCode) {
     var raw = String(labelOrCode || "").trim();
     if (!raw) return "";
+
+    if (raw === OTHER_STATUS_CODE) return OTHER_STATUS_CODE;
+
+    if (normalizeStatusKey(raw) === normalizeStatusKey(OTHER_STATUS_LABEL)) {
+        return OTHER_STATUS_CODE;
+    }
 
     if (STATUS_DOMAIN[raw]) return raw;
 
@@ -140,6 +164,7 @@ function resolveStatusCode(labelOrCode) {
 
 function resolveStatusLabel(labelOrCode) {
     var code = resolveStatusCode(labelOrCode);
+    if (isOtherStatusCode(code)) return OTHER_STATUS_LABEL;
     if (code && STATUS_DOMAIN[code]) return STATUS_DOMAIN[code];
 
     var trimmed = String(labelOrCode || "").trim();
@@ -159,7 +184,11 @@ function getSnapshotFeatures() {
 
 function featureMatchesStatusCode(feature, code) {
     if (!code) return false;
-    return String(getStatusCodeFromValue(feature?.attributes?.LLEstado) || "") === String(code);
+    var featureCode = String(getStatusCodeFromValue(feature?.attributes?.LLEstado) || "");
+    if (isOtherStatusCode(code)) {
+        return OTHER_STATUS_SOURCE_CODES.indexOf(featureCode) !== -1;
+    }
+    return featureCode === String(code);
 }
 
 function featureMatchesStatusLabel(feature, label) {
@@ -231,7 +260,9 @@ function dispatchStatusFilter(label, code) {
     var resolvedCode = String(code || resolveStatusCode(label) || "").trim();
     if (!resolvedCode) return;
 
-    var resolvedLabel = STATUS_DOMAIN[resolvedCode] || resolveStatusLabel(label);
+    var resolvedLabel = isOtherStatusCode(resolvedCode)
+        ? OTHER_STATUS_LABEL
+        : (STATUS_DOMAIN[resolvedCode] || resolveStatusLabel(label));
     var nextCode = currentSelectedStatusCode === resolvedCode ? "" : resolvedCode;
     var llids = getLlidsForStatusCode(resolvedCode);
 
@@ -414,6 +445,11 @@ function buildStatusSnapshot(features) {
         var label = normalizeStatus(att.LLEstado);
         if (!code) {
             code = "label:" + normalizeStatusKey(label);
+        } else {
+            code = getGroupedStatusCode(code);
+        }
+        if (isOtherStatusCode(code)) {
+            label = OTHER_STATUS_LABEL;
         }
 
         if (!groups.has(code)) {
@@ -578,7 +614,7 @@ function renderStatusDoughnut(features, options) {
         return;
     }
 
-    section.style.display = "";
+    section.style.display = "block";
     section.setAttribute("data-status-labels", activeSnapshot.labels.join("|"));
     var titleEl = section.querySelector("h3");
     if (titleEl) titleEl.textContent = options.title || "Estado de las líneas limítrofes";

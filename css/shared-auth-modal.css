@@ -1,0 +1,210 @@
+.oot-auth-modal[hidden] {
+  display: none;
+}
+
+.oot-auth-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  font-family: "Tajawal-Regular", "Public Sans", Arial, sans-serif;
+}
+
+.oot-auth-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(4, 28, 43, 0.62);
+  cursor: default;
+}
+
+.oot-auth-modal__dialog {
+  position: relative;
+  width: min(100%, 480px);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border: 1px solid rgba(0, 82, 110, 0.12);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 24px 64px rgba(0, 36, 51, 0.3);
+}
+
+.oot-auth-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px 8px;
+}
+
+.oot-auth-modal__title {
+  margin: 0;
+  color: #00526e;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.oot-auth-modal__close {
+  display: inline-grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #f1f6f8;
+  color: #00526e;
+  font: inherit;
+  font-size: 1.65rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.oot-auth-modal__close:hover,
+.oot-auth-modal__close:focus-visible {
+  background: #e2eef2;
+  outline: 3px solid rgba(0, 132, 173, 0.2);
+}
+
+.oot-auth-modal__body {
+  padding: 4px 24px 26px;
+}
+
+.oot-auth-modal__intro {
+  margin: 0 0 18px;
+  color: #526873;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.oot-auth-modal .firebaseui-container {
+  max-width: none;
+  margin: 0;
+}
+
+.oot-auth-modal .firebaseui-card-content {
+  padding: 0;
+}
+
+.oot-auth-modal .firebaseui-idp-list {
+  margin: 0;
+}
+
+.oot-auth-modal .firebaseui-idp-button,
+.oot-auth-modal .firebaseui-tenant-button {
+  max-width: none;
+  min-height: 48px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 44, 61, 0.14);
+}
+
+.oot-auth-modal .firebaseui-idp-text {
+  font-size: 0.95rem;
+}
+
+.oot-auth-modal__session {
+  text-align: center;
+}
+
+.oot-auth-modal__avatar {
+  width: 72px;
+  height: 72px;
+  margin: 8px auto 12px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e8f1f4;
+}
+
+.oot-auth-modal__name {
+  margin: 0;
+  color: #173843;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.oot-auth-modal__email {
+  margin: 4px 0 18px;
+  color: #5b7079;
+  overflow-wrap: anywhere;
+}
+
+.oot-auth-modal__logout {
+  min-height: 44px;
+  padding: 10px 20px;
+  border: 1px solid #00526e;
+  border-radius: 8px;
+  background: #00526e;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.oot-auth-modal__logout:hover,
+.oot-auth-modal__logout:focus-visible {
+  background: #003f55;
+  outline: 3px solid rgba(0, 132, 173, 0.2);
+}
+
+.oot-auth-modal__logout:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+body.oot-auth-modal-open {
+  overflow: hidden;
+}
+
+@media (max-width: 520px) {
+  .oot-auth-modal {
+    padding: 10px;
+  }
+
+  .oot-auth-modal__dialog {
+    width: min(100%, 360px);
+    max-height: calc(100vh - 20px);
+    border-radius: 12px;
+  }
+
+  .oot-auth-modal__header {
+    gap: 10px;
+    padding: 13px 16px 4px;
+  }
+
+  .oot-auth-modal__title {
+    font-size: 1.12rem;
+  }
+
+  .oot-auth-modal__close {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+    font-size: 1.35rem;
+  }
+
+  .oot-auth-modal__body {
+    padding: 2px 16px 14px;
+  }
+
+  .oot-auth-modal__intro {
+    margin-bottom: 10px;
+    font-size: 0.82rem;
+    line-height: 1.35;
+  }
+
+  .oot-auth-modal .firebaseui-list-item {
+    margin-bottom: 8px;
+  }
+
+  .oot-auth-modal .firebaseui-idp-button,
+  .oot-auth-modal .firebaseui-tenant-button {
+    min-height: 40px;
+  }
+
+  .oot-auth-modal .firebaseui-idp-text {
+    font-size: 0.82rem;
+  }
+}

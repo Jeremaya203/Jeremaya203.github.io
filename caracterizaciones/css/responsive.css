@@ -1,20 +1,794 @@
 /* Responsive consolidation layer. Desktop keeps the component styles. */
-@media (max-width: 1280px) {
+.dropdown-item-with-sub.ct-submenu-open > .dropdown-submenu {
+  display: block;
+}
+
+/* --------------------------------------------------------------------------
+   Encabezado moderno compartido
+   Mantiene los seis módulos compactos y reserva una composición propia para
+   tablet, donde el encabezado anterior perdía alineación y legibilidad.
+   -------------------------------------------------------------------------- */
+
+.modulo-dropdown.limites {
+  --ct-module-color: #a9602c;
+  --ct-module-soft: #f8eee7;
+}
+
+.modulo-dropdown.ordenamiento {
+  --ct-module-color: #68418b;
+  --ct-module-soft: #f1ecf6;
+}
+
+.modulo-dropdown.legal {
+  --ct-module-color: #c43d32;
+  --ct-module-soft: #faecea;
+}
+
+.modulo-dropdown.biofisico {
+  --ct-module-color: #147862;
+  --ct-module-soft: #e9f4f1;
+}
+
+.modulo-dropdown.ocupacion {
+  --ct-module-color: #1679be;
+  --ct-module-soft: #eaf3fa;
+}
+
+.modulo-dropdown.socioeconomico {
+  --ct-module-color: #ae711b;
+  --ct-module-soft: #faf1e2;
+}
+
+@media (min-width: 769px) and (max-width: 1280px) {
+  .barra_gov {
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 clamp(16px, 2.2vw, 30px) !important;
+    background: linear-gradient(100deg, #285cc3 0%, #3671dc 100%) !important;
+    box-shadow: inset 0 -1px rgba(255, 255, 255, 0.18);
+  }
+
+  .barra_gov img,
+  .logo-gov img {
+    width: auto !important;
+    max-height: 25px !important;
+  }
+
+  .main-header-nav {
+    position: relative;
+    z-index: 5000 !important;
+  }
+
+  .navbarigac {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center !important;
+    width: 100%;
+    height: auto !important;
+    min-height: 76px !important;
+    max-height: none !important;
+    padding: 9px clamp(14px, 2vw, 26px) !important;
+    gap: clamp(12px, 2vw, 28px) !important;
+    overflow: visible !important;
+    background: linear-gradient(105deg, #003e57 0%, #005a75 58%, #006982 100%) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 45, 62, 0.18);
+  }
+
+  .navbarigac .logos {
+    display: grid !important;
+    grid-template-columns: auto 38px minmax(170px, auto);
+    align-items: center;
+    gap: 10px !important;
+    min-width: 0;
+    margin: 0 !important;
+  }
+
+  .navbarigac .navbar-brand-igac {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 56px !important;
+    min-width: 0;
+    padding: 7px 11px !important;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 13px;
+    background: #fff !important;
+    box-shadow: 0 5px 16px rgba(0, 32, 45, 0.17);
+  }
+
+  .navbarigac .navbar-brand-igac img {
+    width: auto !important;
+    height: auto !important;
+    max-width: min(190px, 20vw) !important;
+    max-height: 39px !important;
+  }
+
+  .icono-territorial {
+    width: 38px !important;
+    height: 38px !important;
+    max-width: 38px !important;
+    max-height: 38px !important;
+    margin: 0 !important;
+    filter: drop-shadow(0 4px 8px rgba(0, 24, 34, 0.22));
+  }
+
+  .titulo-app {
+    min-width: 0;
+    max-width: 270px;
+    padding: 0 !important;
+    color: #fff;
+    font-size: clamp(0.85rem, 1.3vw, 1.06rem) !important;
+    font-weight: 700 !important;
+    line-height: 1.06 !important;
+    letter-spacing: -0.015em;
+    white-space: normal !important;
+  }
+
+  .main-header-nav #link-list {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    min-width: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .main-header-nav #link-list li,
+  .main-header-nav #link-list a {
+    min-width: 0;
+  }
+
+  .main-header-nav #link-list a {
+    min-height: 40px;
+    padding: 9px 11px;
+    border-radius: 11px;
+    color: #fff !important;
+    font-weight: 600;
+    line-height: 1.15;
+    transition: background-color 160ms ease, transform 160ms ease;
+  }
+
+  .main-header-nav #link-list a:hover,
+  .main-header-nav #link-list a:focus-visible {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px);
+  }
+
+  .auth-nav-item {
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+  }
+
+  #loginBtn .auth-user-email,
+  #userName {
+    max-width: 205px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .auth-logout-btn {
+    min-height: 38px;
+    margin: 0 !important;
+    padding: 8px 11px !important;
+    border: 1px solid rgba(255, 255, 255, 0.38) !important;
+    border-radius: 11px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    font-size: 0.76rem !important;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background-color 160ms ease, border-color 160ms ease;
+  }
+
+  .auth-logout-btn:hover,
+  .auth-logout-btn:focus-visible {
+    border-color: rgba(255, 255, 255, 0.7) !important;
+    background: rgba(255, 255, 255, 0.16) !important;
+  }
+
   .modulos-scroll {
-    overflow-x: auto;
-    overflow-y: visible;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
+    width: 100% !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    overflow: visible !important;
+    background: #f7f9f9 !important;
   }
 
   .modulos-container {
-    width: max-content;
-    min-width: 100%;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    padding: 11px clamp(14px, 2vw, 26px) 13px !important;
+    border-bottom: 1px solid rgba(0, 74, 105, 0.1);
+    background: linear-gradient(180deg, #fff 0%, #f7f9f9 100%) !important;
   }
 
-  .dropdown-menu-custom,
+  .modulo-dropdown {
+    width: 118px !important;
+    min-width: 118px !important;
+    flex: 0 0 118px !important;
+  }
+
+  .modulo-card,
+  .modulo-card-trigger {
+    width: 118px !important;
+    min-width: 118px !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    padding: 8px 9px !important;
+    gap: 7px !important;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(0, 74, 105, 0.12) !important;
+    border-radius: 13px !important;
+    background: #fff !important;
+    box-shadow: 0 5px 14px rgba(0, 45, 62, 0.09);
+    transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+  }
+
+  .modulo-card:hover,
+  .modulo-card-trigger:hover,
+  .modulo-card-trigger:focus-visible {
+    border-color: color-mix(in srgb, var(--ct-module-color) 42%, white) !important;
+    filter: none;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0, 45, 62, 0.2);
+  }
+
+  .modulo-dropdown.ct-current-module > .modulo-card-trigger {
+    border-color: color-mix(in srgb, var(--ct-module-color) 58%, white) !important;
+    box-shadow: inset 0 -3px var(--ct-module-color), 0 7px 18px rgba(0, 45, 62, 0.13) !important;
+  }
+
+  .modulo-card::after,
+  .modulo-card-trigger::after {
+    position: absolute;
+    right: 10px;
+    bottom: 0;
+    left: 10px;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: var(--ct-module-color);
+    content: "";
+    opacity: 0.82;
+  }
+
+  .modulo-card img,
+  .modulo-card-trigger img {
+    width: 27px !important;
+    height: 27px !important;
+    padding: 4px;
+    border-radius: 9px;
+    background: var(--ct-module-color);
+    box-shadow: 0 3px 8px color-mix(in srgb, var(--ct-module-color) 24%, transparent);
+  }
+
+  .modulo-card span,
+  .modulo-card-trigger span {
+    color: #24424d !important;
+    font-size: 0.58rem !important;
+    font-weight: 700 !important;
+    line-height: 1.04 !important;
+    letter-spacing: 0.015em !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+  }
+
+  .dropdown-menu-custom {
+    top: calc(100% + 8px) !important;
+    width: 220px !important;
+    padding: 7px 0 !important;
+    border: 1px solid rgba(0, 74, 105, 0.12);
+    border-radius: 14px !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    box-shadow: 0 16px 38px rgba(0, 42, 59, 0.2) !important;
+    backdrop-filter: blur(12px);
+  }
+
+  .dropdown-menu-custom::before {
+    content: "";
+    position: absolute;
+    top: -5px;
+    left: 24px;
+    width: 10px;
+    height: 10px;
+    border-top: 1px solid rgba(0, 74, 105, 0.12);
+    border-left: 1px solid rgba(0, 74, 105, 0.12);
+    background: #fff;
+    transform: rotate(45deg);
+  }
+
+  .dropdown-item {
+    width: calc(100% - 12px) !important;
+    min-height: 40px;
+    margin: 2px 6px;
+    padding: 10px 12px !important;
+    border-radius: 9px;
+    font-size: 0.86rem !important;
+    transition: background-color 140ms ease, padding-left 140ms ease;
+  }
+
+  .dropdown-item:hover,
+  .dropdown-item:focus-visible {
+    padding-left: 15px !important;
+    background: color-mix(in srgb, currentColor 9%, white) !important;
+  }
+
   .dropdown-submenu {
+    top: -7px !important;
+    left: calc(100% + 8px) !important;
+    width: max-content !important;
+    min-width: 330px !important;
+    max-width: min(420px, calc(100vw - 270px)) !important;
+    padding: 7px !important;
+    border: 1px solid rgba(0, 74, 105, 0.12);
+    border-radius: 14px !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    box-shadow: 0 16px 38px rgba(0, 42, 59, 0.18) !important;
+    backdrop-filter: blur(12px);
+  }
+
+  .dropdown-subitem {
+    min-height: 40px;
+    padding: 10px 12px !important;
+    border-radius: 9px;
+    font-size: 0.82rem !important;
+    transition: background-color 140ms ease, padding-left 140ms ease;
+  }
+
+  .dropdown-subitem:hover,
+  .dropdown-subitem:focus-visible {
+    padding-left: 15px !important;
+    background: color-mix(in srgb, currentColor 9%, white) !important;
+  }
+}
+
+/* Acceso rápido móvil: navegación y sesión en una tarjeta legible. */
+@media (max-width: 768px) {
+  .ct-mobile-drawer #link-list,
+  body.ct-mobile-nav-open .ct-mobile-drawer #link-list {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    padding: 8px !important;
+    border: 1px solid rgba(0, 74, 105, 0.09) !important;
+    border-radius: 17px !important;
+    background: rgba(255, 255, 255, 0.56) !important;
+    box-shadow: 0 10px 26px rgba(0, 48, 67, 0.07) !important;
+  }
+
+  .ct-mobile-drawer #link-list > li:first-child > a {
+    min-height: 46px !important;
+    padding: 11px 34px 11px 13px !important;
+    border: 0 !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+    box-shadow: 0 3px 10px rgba(0, 48, 67, 0.06) !important;
+    font-size: 0.79rem !important;
+  }
+
+  .ct-mobile-drawer #link-list .auth-nav-item {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 112px !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 7px !important;
+    border: 1px solid rgba(0, 74, 105, 0.1) !important;
+    border-radius: 14px !important;
+    background: #fff !important;
+    box-shadow: 0 4px 13px rgba(0, 48, 67, 0.06) !important;
+  }
+
+  .ct-mobile-drawer #link-list .auth-nav-item:has(.auth-logout-btn[hidden]) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .ct-mobile-drawer .auth-nav-item #loginBtn {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 46px !important;
+    padding: 8px 10px !important;
+    overflow: hidden !important;
+    border: 0 !important;
+    border-radius: 10px !important;
+    background: #edf5f6 !important;
+    box-shadow: none !important;
+  }
+
+  .ct-mobile-drawer .auth-nav-item #loginBtn::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  .ct-mobile-drawer .auth-nav-item #userName,
+  .ct-mobile-drawer .auth-nav-item #userEmail,
+  .ct-mobile-drawer .auth-nav-item .auth-user-email {
+    display: block !important;
+    width: 100%;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    color: #174553 !important;
+    text-overflow: ellipsis;
+    white-space: nowrap !important;
+  }
+
+  .ct-mobile-drawer .auth-nav-item #userName {
+    font-size: 0.76rem !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+  }
+
+  .ct-mobile-drawer .auth-nav-item #userEmail,
+  .ct-mobile-drawer .auth-nav-item .auth-user-email {
+    margin-top: 3px;
+    color: #627d86 !important;
+    font-size: 0.65rem !important;
+    font-style: normal !important;
+    font-weight: 500 !important;
+    line-height: 1.15 !important;
+  }
+
+  .ct-mobile-drawer .auth-nav-item .auth-logout-btn {
+    position: static !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 112px !important;
+    min-width: 112px !important;
+    min-height: 42px !important;
+    margin: 0 !important;
+    padding: 8px 10px !important;
+    border: 0 !important;
+    border-radius: 11px !important;
+    background: #d1322a !important;
+    color: #fff !important;
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    box-shadow: 0 5px 12px rgba(209, 50, 42, 0.2) !important;
+  }
+
+  .ct-mobile-drawer .auth-nav-item .auth-logout-btn[hidden] {
+    display: none !important;
+  }
+
+  .ct-mobile-drawer .auth-nav-item .auth-logout-btn:hover,
+  .ct-mobile-drawer .auth-nav-item .auth-logout-btn:focus-visible {
+    background: #b92c26 !important;
+  }
+
+  .ct-mobile-controls .toolbar-refresh,
+  .ct-mobile-controls .toolbar-refresh:hover,
+  .ct-mobile-controls .toolbar-refresh:focus-visible {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1280px) {
+  .territorial-toolbar {
+    order: 20 !important;
+    flex: 1 1 640px !important;
+    width: auto !important;
+    min-width: 560px !important;
+    margin: 3px 0 0 !important;
+    padding: 0 !important;
+  }
+
+  .territorial-toolbar-right {
+    display: grid !important;
+    grid-template-columns: auto minmax(180px, 1fr) minmax(165px, 0.85fr) 42px;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100%;
+    min-height: 60px;
+    padding: 8px 10px !important;
+    border: 1px solid rgba(0, 74, 105, 0.12);
+    border-radius: 14px;
+    background: #eef4f5;
+    box-shadow: 0 6px 18px rgba(0, 45, 62, 0.07);
+  }
+
+  .toolbar-label {
+    color: #31515c !important;
+    font-size: 0.78rem !important;
+    letter-spacing: 0.01em;
+  }
+
+  .toolbar-select,
+  #departamentos.toolbar-select,
+  #municipios.toolbar-select {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 42px !important;
+    padding: 0 34px 0 11px !important;
+    border: 1px solid rgba(0, 74, 105, 0.28) !important;
+    border-radius: 10px !important;
+    background-color: #fff !important;
+    color: #193f4e !important;
+    font-size: 0.77rem !important;
+    box-shadow: inset 0 1px 2px rgba(0, 45, 62, 0.04);
+  }
+
+  .toolbar-select:hover,
+  .toolbar-select:focus {
+    border-color: #006987 !important;
+    box-shadow: 0 0 0 3px rgba(0, 105, 135, 0.1);
+  }
+
+  .toolbar-refresh {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 11px !important;
+    background: #dcebed !important;
+    transition: background-color 150ms ease, transform 150ms ease;
+  }
+
+  .toolbar-refresh:hover,
+  .toolbar-refresh:focus-visible {
+    background: #cce1e5 !important;
+    transform: rotate(-18deg);
+  }
+
+  .toolbar-refresh img {
+    width: 31px !important;
+    height: 31px !important;
+  }
+
+  .ordenamiento-side-actions {
+    position: static !important;
+    order: 20 !important;
+    display: flex !important;
+    align-items: center !important;
+    align-self: auto !important;
+    justify-content: center !important;
+    gap: 8px;
+    width: auto !important;
+    height: 60px !important;
+    margin: 3px 0 0 !important;
+    padding: 8px 9px !important;
+    border: 1px solid rgba(0, 74, 105, 0.12);
+    border-radius: 14px;
+    background: #eef4f5;
+    box-shadow: 0 6px 18px rgba(0, 45, 62, 0.07);
+  }
+
+  .ordenamiento-side-actions .descargables-dropdown {
+    margin: 0 !important;
+  }
+
+  .btn-descargables {
+    width: auto !important;
+    min-width: 132px !important;
+    height: 42px !important;
+    padding: 0 12px !important;
+    border-radius: 11px !important;
+    background: #d93832 !important;
+    box-shadow: 0 5px 12px rgba(196, 46, 41, 0.2) !important;
+  }
+
+  .btn-descargables-texto {
+    font-size: 0.8rem !important;
+    font-weight: 650 !important;
+  }
+
+  .btn-descargables-icon {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .btn-reiniciar-consulta {
+    position: static !important;
+    inset: auto !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    margin: 0 !important;
+    transform: none !important;
+    box-shadow: 0 5px 12px rgba(196, 46, 41, 0.18);
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .navbarigac {
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 82px !important;
+    padding-inline: 13px !important;
+    gap: 10px !important;
+  }
+
+  .navbarigac .logos {
+    grid-template-columns: minmax(132px, 178px) 34px minmax(125px, 1fr);
+    gap: 7px !important;
+  }
+
+  .navbarigac .navbar-brand-igac {
+    height: 54px !important;
+    padding-inline: 8px !important;
+  }
+
+  .navbarigac .navbar-brand-igac img {
+    max-width: 100% !important;
+    max-height: 37px !important;
+  }
+
+  .icono-territorial {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .titulo-app {
+    max-width: 185px;
+    font-size: clamp(0.76rem, 1.7vw, 0.92rem) !important;
+  }
+
+  .main-header-nav #link-list {
+    gap: 3px !important;
+  }
+
+  .main-header-nav #link-list a {
+    padding-inline: 8px !important;
+    font-size: 0.82rem !important;
+  }
+
+  #loginBtn .auth-user-email,
+  #userName {
+    max-width: 128px;
+    font-size: 0.7rem !important;
+  }
+
+  .auth-logout-btn {
+    padding-inline: 9px !important;
+    font-size: 0.7rem !important;
+  }
+
+  .modulos-container {
+    gap: 7px !important;
+    padding-inline: 13px !important;
+  }
+
+  .legal .dropdown-submenu {
+    width: min(400px, calc(100vw - 492px)) !important;
+    min-width: min(330px, calc(100vw - 492px)) !important;
+    max-width: min(400px, calc(100vw - 492px)) !important;
+  }
+}
+
+@media (min-width: 1180px) and (max-width: 1280px) {
+  .titulo-app {
+    max-width: none;
+    white-space: nowrap !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .barra_gov {
+    background: linear-gradient(100deg, #285cc3 0%, #3671dc 100%) !important;
+  }
+
+  .navbarigac {
+    background: linear-gradient(105deg, #003e57 0%, #00637d 100%) !important;
+  }
+
+  .navbarigac .navbar-brand-igac {
+    border-radius: 9px !important;
+    box-shadow: 0 3px 10px rgba(0, 30, 43, 0.15);
+  }
+
+  .modulo-card,
+  .modulo-card-trigger {
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 5px 14px rgba(0, 45, 62, 0.16) !important;
+  }
+
+  .ct-mobile-drawer,
+  .ct-mobile-controls {
+    border: 1px solid rgba(0, 74, 105, 0.12) !important;
+    box-shadow: 0 18px 44px rgba(0, 42, 59, 0.2) !important;
+  }
+}
+
+.modulo-dropdown.ct-third-level-open > .dropdown-menu-custom {
+  display: block !important;
+}
+
+/* En equipos con cursor, los niveles se despliegan al pasar el puntero.
+   El clic queda disponible para ejecutar la carga de datos del componente. */
+@media (hover: hover) and (pointer: fine) {
+  .modulo-dropdown:hover > .dropdown-menu-custom,
+  .modulo-dropdown:focus-within > .dropdown-menu-custom {
+    display: block !important;
+  }
+
+  .dropdown-item-with-sub:hover > .dropdown-submenu,
+  .dropdown-item-with-sub:focus-within > .dropdown-submenu {
+    display: block !important;
+  }
+}
+
+@media (max-width: 1280px) {
+  .modulos-scroll {
+    overflow-x: visible;
+    overflow-y: visible;
+  }
+
+  .modulos-container {
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    column-gap: 6px;
+    row-gap: 5px;
+  }
+
+  .modulo-dropdown {
+    width: 118px;
+    min-width: 118px;
+    flex: 0 0 118px;
+  }
+
+  .modulo-card,
+  .modulo-card-trigger {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 7px;
+    gap: 4px;
+    font-size: 11px;
+    flex-basis: auto;
+  }
+
+  .modulo-card img,
+  .modulo-card-trigger img {
+    width: 17px;
+    height: 17px;
+  }
+
+  .territorial-toolbar {
+    flex: 1 1 auto;
+    order: 2;
+    margin: 2px 0 0 auto;
+  }
+
+  .territorial-toolbar-right {
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+  }
+
+  .ordenamiento-side-actions {
+    flex: 0 0 auto;
+    order: 2;
+    margin-top: 2px;
+  }
+
+  .dropdown-menu-custom {
     max-width: min(92vw, 680px);
+  }
+
+  .dropdown-submenu {
+    max-width: min(420px, calc(100vw - 24px));
+  }
+
+  .modulo-dropdown > .dropdown-menu-custom {
+    z-index: 12000;
+  }
+
+  .dropdown-menu-custom .dropdown-submenu {
+    z-index: 13000;
   }
 }
 
@@ -1807,5 +2581,1217 @@
   #tcChart {
     height: clamp(310px, 45svh, 350px) !important;
     max-height: 350px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Ajuste final: identidad cromática original y acciones realmente centradas.
+   En escritorio grande (>1280px) no se aplica ninguna de estas reglas.
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 769px) and (max-width: 1280px) {
+  .barra_gov {
+    background: #3366cc !important;
+  }
+
+  .navbarigac {
+    background: #004a69 !important;
+  }
+
+  .modulo-card,
+  .modulo-card-trigger {
+    border-color: rgba(255, 255, 255, 0.28) !important;
+    box-shadow: 0 6px 15px rgba(0, 45, 62, 0.14) !important;
+  }
+
+  .limites .modulo-card,
+  .limites .modulo-card-trigger {
+    background: linear-gradient(to right, #5e381d, #d67036) !important;
+  }
+
+  .ordenamiento .modulo-card,
+  .ordenamiento .modulo-card-trigger {
+    background: linear-gradient(to right, #3d2779, #7a4897) !important;
+  }
+
+  .legal .modulo-card,
+  .legal .modulo-card-trigger {
+    background: linear-gradient(to right, #782800, #d1322a) !important;
+  }
+
+  .biofisico .modulo-card,
+  .biofisico .modulo-card-trigger {
+    background: linear-gradient(to right, #005439, #74aaaa) !important;
+  }
+
+  .ocupacion .modulo-card,
+  .ocupacion .modulo-card-trigger {
+    background: linear-gradient(to right, #1c2766, #0992e6) !important;
+  }
+
+  .socioeconomico .modulo-card,
+  .socioeconomico .modulo-card-trigger {
+    background: linear-gradient(to right, #7a430c, #fbb03b) !important;
+  }
+
+  .modulo-card span,
+  .modulo-card-trigger span {
+    color: #fff !important;
+  }
+
+  .modulo-card img,
+  .modulo-card-trigger img {
+    width: 21px !important;
+    height: 21px !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .modulo-card::after,
+  .modulo-card-trigger::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  .modulo-card:hover,
+  .modulo-card-trigger:hover,
+  .modulo-card-trigger:focus-visible {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    filter: brightness(1.055) !important;
+  }
+
+  .modulo-dropdown.ct-current-module > .modulo-card-trigger {
+    border-color: rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 0 0 2px #fff,
+      0 0 0 4px color-mix(in srgb, var(--ct-module-color) 72%, transparent),
+      0 8px 19px rgba(0, 45, 62, 0.2) !important;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1280px) {
+  .territorial-toolbar {
+    flex: 1 1 640px !important;
+    width: auto !important;
+    min-width: 560px !important;
+    margin-top: 3px !important;
+  }
+
+  .territorial-toolbar-right {
+    width: 100% !important;
+    margin-inline: 0 !important;
+    background: #fffaf0 !important;
+  }
+
+  .ordenamiento-side-actions {
+    order: 20 !important;
+    flex: 0 0 auto !important;
+    justify-content: center !important;
+    width: auto !important;
+    height: 60px !important;
+    min-height: 60px;
+    margin: 3px 0 0 !important;
+    padding: 8px 9px !important;
+    border: 1px solid rgba(0, 74, 105, 0.12) !important;
+    background: #fffaf0 !important;
+    box-shadow: 0 6px 18px rgba(0, 45, 62, 0.07) !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .ct-mobile-controls {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: end !important;
+    padding: 13px 14px 11px !important;
+    background: #fffaf0 !important;
+  }
+
+  .ct-mobile-controls .territorial-toolbar {
+    grid-column: 1 !important;
+  }
+
+  .ct-mobile-controls .ordenamiento-side-actions {
+    grid-column: 2 !important;
+    align-items: center !important;
+    align-self: end !important;
+    justify-self: end !important;
+    justify-content: center !important;
+    width: auto !important;
+    min-width: 218px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .ct-mobile-controls .btn-descargables {
+    min-width: 154px !important;
+    height: 44px !important;
+    border-radius: 11px !important;
+  }
+
+  .ct-mobile-controls .btn-reiniciar-consulta {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+  }
+}
+
+/* Consulta territorial más próxima a la navegación y sin cubrir el título. */
+@media (min-width: 769px) and (max-width: 1280px) {
+  .modulos-container {
+    row-gap: 5px !important;
+    padding-bottom: 9px !important;
+  }
+
+  .territorial-toolbar {
+    margin-top: 0 !important;
+  }
+
+  .territorial-toolbar-right {
+    min-height: 48px !important;
+    padding: 4px 7px !important;
+    border-radius: 12px !important;
+    background: #f7f9f7 !important;
+    box-shadow: 0 4px 12px rgba(0, 45, 62, 0.055) !important;
+  }
+
+  .toolbar-label {
+    font-size: 0.72rem !important;
+  }
+
+  .toolbar-select,
+  #departamentos.toolbar-select,
+  #municipios.toolbar-select {
+    height: 38px !important;
+    border-width: 1px !important;
+    border-radius: 9px !important;
+    font-size: 0.73rem !important;
+  }
+
+  .toolbar-refresh {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 10px !important;
+  }
+
+  .map-view-badge {
+    top: 8px !important;
+    right: 8px !important;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1079px) {
+  .territorial-toolbar-right {
+    grid-template-columns: auto minmax(170px, 1fr) minmax(160px, 0.86fr) 38px !important;
+    gap: 7px !important;
+  }
+
+  .ordenamiento-side-actions {
+    align-self: center !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    margin: 0 !important;
+    padding: 4px 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .ordenamiento-side-actions .btn-descargables,
+  .ordenamiento-side-actions .btn-reiniciar-consulta {
+    height: 40px !important;
+  }
+
+  .ordenamiento-side-actions .btn-reiniciar-consulta {
+    width: 40px !important;
+    min-width: 40px !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .modulos-scroll {
+    padding-bottom: 4px !important;
+  }
+
+  .ct-mobile-controls {
+    min-height: 52px !important;
+    margin-top: 2px !important;
+    margin-bottom: 8px !important;
+    padding-block: 5px !important;
+  }
+
+  .ct-mobile-controls .territorial-toolbar-right {
+    grid-template-columns: auto minmax(135px, 1fr) minmax(135px, 0.86fr) 38px !important;
+    min-height: 42px !important;
+    padding: 2px 4px !important;
+  }
+
+  .ct-mobile-controls .ordenamiento-side-actions {
+    height: 38px !important;
+    min-height: 38px !important;
+  }
+
+  .ct-mobile-controls .btn-descargables,
+  .ct-mobile-controls .btn-reiniciar-consulta {
+    height: 38px !important;
+  }
+
+  .ct-mobile-controls .btn-reiniciar-consulta {
+    width: 38px !important;
+    min-width: 38px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .ct-mobile-controls .ordenamiento-side-actions {
+    justify-content: center !important;
+    gap: 10px !important;
+  }
+}
+
+/* Navegación de módulos: misma paleta, acabado más limpio y texto completo. */
+@media (min-width: 769px) and (max-width: 1280px) {
+  .modulo-card,
+  .modulo-card-trigger {
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 7px 8px !important;
+    gap: 6px !important;
+    overflow: hidden !important;
+    border: 0 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 5px 8px -6px rgba(0, 45, 62, 0.18) !important;
+  }
+
+  .modulo-card img,
+  .modulo-card-trigger img {
+    width: 24px !important;
+    height: 24px !important;
+    padding: 3px !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.13) !important;
+  }
+
+  .modulo-card span,
+  .modulo-card-trigger span {
+    min-width: 0;
+    overflow: visible !important;
+    color: #fff !important;
+    font-size: 0.52rem !important;
+    font-weight: 700 !important;
+    line-height: 1.05 !important;
+    letter-spacing: 0 !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+  }
+
+  .modulo-dropdown.ct-current-module > .modulo-card-trigger {
+    border-color: rgba(255, 255, 255, 0.9) !important;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.72) !important;
+    transform: translateY(-1px);
+  }
+
+  .modulo-card:hover,
+  .modulo-card-trigger:hover,
+  .modulo-card-trigger:focus-visible {
+    filter: brightness(1.04) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 10px -6px rgba(0, 45, 62, 0.22) !important;
+  }
+}
+
+@media (min-width: 850px) and (max-width: 1280px) {
+  .modulo-dropdown,
+  .modulo-card,
+  .modulo-card-trigger {
+    width: 128px !important;
+    min-width: 128px !important;
+    flex-basis: 128px !important;
+  }
+
+  .modulo-card span,
+  .modulo-card-trigger span {
+    font-size: 0.54rem !important;
+  }
+
+  .modulo-dropdown.socioeconomico,
+  .socioeconomico .modulo-card,
+  .socioeconomico .modulo-card-trigger {
+    width: 134px !important;
+    min-width: 134px !important;
+    flex-basis: 134px !important;
+  }
+}
+
+@media (min-width: 801px) and (max-width: 849px) {
+  .modulo-dropdown.socioeconomico,
+  .socioeconomico .modulo-card,
+  .socioeconomico .modulo-card-trigger {
+    width: 128px !important;
+    min-width: 128px !important;
+    flex-basis: 128px !important;
+  }
+
+  .socioeconomico .modulo-card span,
+  .socioeconomico .modulo-card-trigger span {
+    font-size: 0.5rem !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 800px) {
+  .modulos-container {
+    gap: 5px !important;
+    padding-inline: 10px !important;
+  }
+
+  .modulo-card,
+  .modulo-card-trigger {
+    gap: 4px !important;
+    padding-inline: 6px !important;
+  }
+
+  .modulo-card img,
+  .modulo-card-trigger img {
+    width: 21px !important;
+    height: 21px !important;
+  }
+
+  .modulo-card span,
+  .modulo-card-trigger span {
+    font-size: 0.5rem !important;
+  }
+}
+
+/* En portátiles con espacio suficiente, las acciones ocupan el extremo derecho
+   de la fila de módulos; la consulta territorial queda completa debajo. */
+@media (min-width: 1080px) and (max-width: 1280px) {
+  .territorial-toolbar {
+    order: 20 !important;
+    flex: 1 0 100% !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-top: 3px !important;
+  }
+
+  .territorial-toolbar-right {
+    width: min(100%, 860px) !important;
+    margin-inline: auto !important;
+  }
+
+  .ordenamiento-side-actions {
+    order: 1 !important;
+    flex: 0 0 auto !important;
+    align-self: center !important;
+    justify-content: flex-end !important;
+    width: auto !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    margin: 0 0 0 auto !important;
+    padding: 2px 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .ordenamiento-side-actions .btn-descargables,
+  .ordenamiento-side-actions .btn-reiniciar-consulta {
+    height: 44px !important;
+  }
+
+  .ordenamiento-side-actions .btn-reiniciar-consulta {
+    width: 44px !important;
+    min-width: 44px !important;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1079px) {
+  .territorial-toolbar-right {
+    width: min(100%, 860px) !important;
+    margin-inline: auto !important;
+  }
+}
+
+/* Panel territorial compacto para tablet horizontal y ventanas pequeñas. */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .ct-mobile-controls {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    width: min(calc(100% - 24px), 920px) !important;
+    min-height: 58px;
+    margin: 10px auto 12px !important;
+    padding: 8px 10px !important;
+    gap: 8px !important;
+    border-radius: 14px !important;
+  }
+
+  .ct-mobile-controls .territorial-toolbar-right {
+    grid-template-columns: auto minmax(135px, 1fr) minmax(135px, 0.86fr) 40px !important;
+    align-items: center !important;
+    gap: 7px !important;
+  }
+
+  .ct-mobile-controls .toolbar-label {
+    grid-column: auto !important;
+    margin: 0 !important;
+    font-size: 0.73rem !important;
+  }
+
+  .ct-mobile-controls .toolbar-select,
+  .ct-mobile-controls #departamentos.toolbar-select,
+  .ct-mobile-controls #municipios.toolbar-select {
+    height: 40px !important;
+    padding-left: 10px !important;
+    font-size: 0.74rem !important;
+  }
+
+  .ct-mobile-controls .toolbar-refresh {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .ct-mobile-controls .ordenamiento-side-actions {
+    width: auto !important;
+    min-width: 194px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    gap: 7px !important;
+  }
+
+  .ct-mobile-controls .btn-descargables {
+    min-width: 145px !important;
+    height: 40px !important;
+    padding-inline: 11px !important;
+  }
+
+  .ct-mobile-controls .btn-reiniciar-consulta {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+  }
+}
+
+/* Ajuste final del espacio señalado: navegación y consulta quedan contiguas. */
+@media (min-width: 769px) and (max-width: 1280px) {
+  .modulos-container {
+    row-gap: 8px !important;
+    padding-bottom: 5px !important;
+  }
+
+  .territorial-toolbar {
+    margin-top: 0 !important;
+  }
+
+  .map-view-badge {
+    top: -30.5px !important;
+    right: -2px !important;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1280px) {
+  .territorial-toolbar-right {
+    width: min(100%, 780px) !important;
+    min-height: 44px !important;
+    margin-right: auto !important;
+    margin-left: 0 !important;
+    padding: 3px 6px !important;
+  }
+
+  .toolbar-select,
+  #departamentos.toolbar-select,
+  #municipios.toolbar-select {
+    height: 36px !important;
+  }
+
+  .toolbar-refresh {
+    width: 36px !important;
+    height: 36px !important;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1079px) {
+  .modulo-dropdown,
+  .modulo-card,
+  .modulo-card-trigger {
+    width: 122px !important;
+    min-width: 122px !important;
+    flex-basis: 122px !important;
+  }
+
+  .modulo-dropdown.socioeconomico,
+  .socioeconomico .modulo-card,
+  .socioeconomico .modulo-card-trigger {
+    width: 128px !important;
+    min-width: 128px !important;
+    flex-basis: 128px !important;
+  }
+
+  .modulo-card span,
+  .modulo-card-trigger span {
+    font-size: 0.5rem !important;
+  }
+
+  .territorial-toolbar {
+    order: 20 !important;
+    flex: 1 0 100% !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .ordenamiento-side-actions {
+    order: 1 !important;
+    flex: 0 0 auto !important;
+    align-self: center !important;
+    justify-content: flex-end !important;
+    width: auto !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    margin: 0 0 0 auto !important;
+    padding: 2px 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .ordenamiento-side-actions .btn-descargables {
+    min-width: 128px !important;
+    height: 40px !important;
+    padding-inline: 10px !important;
+  }
+
+  .ordenamiento-side-actions .btn-reiniciar-consulta {
+    width: 40px !important;
+    min-width: 40px !important;
+    height: 40px !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .modulos-scroll {
+    padding-bottom: 0 !important;
+  }
+
+  .ct-mobile-controls {
+    margin-top: 8px !important;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1024px) {
+  .ct-mobile-controls {
+    width: calc(100% - 180px) !important;
+    max-width: 820px !important;
+    margin-right: auto !important;
+    margin-left: 12px !important;
+  }
+
+  .ct-mobile-controls .ordenamiento-side-actions {
+    min-width: 184px !important;
+  }
+
+  .ct-mobile-controls .btn-descargables {
+    min-width: 136px !important;
+  }
+}
+
+/* En tablet angosta se omite la etiqueta para reservar el área del título. */
+@media (min-width: 769px) and (max-width: 899px) {
+  .ct-mobile-controls {
+    width: calc(100% - 160px) !important;
+    max-width: none !important;
+    margin-right: auto !important;
+    margin-left: 12px !important;
+  }
+
+  .ct-mobile-controls .toolbar-label {
+    display: none !important;
+  }
+
+  .ct-mobile-controls .territorial-toolbar-right {
+    grid-template-columns: minmax(115px, 1fr) minmax(115px, 0.86fr) 38px !important;
+  }
+
+  .ct-mobile-controls .ordenamiento-side-actions {
+    min-width: 190px !important;
+  }
+
+  .ct-mobile-controls .btn-descargables {
+    min-width: 145px !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1280px) {
+  .territorial-toolbar .toolbar-refresh,
+  .territorial-toolbar .toolbar-refresh:hover,
+  .territorial-toolbar .toolbar-refresh:focus-visible,
+  .ct-mobile-controls .toolbar-refresh,
+  .ct-mobile-controls .toolbar-refresh:hover,
+  .ct-mobile-controls .toolbar-refresh:focus-visible {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+}
+
+/* El refresco móvil conserva únicamente el icono circular. */
+@media (max-width: 768px) {
+  .ct-mobile-controls .toolbar-refresh,
+  .ct-mobile-controls .toolbar-refresh:hover,
+  .ct-mobile-controls .toolbar-refresh:focus-visible {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+}
+
+/* En móvil el encabezado y la consulta pueden plegarse para priorizar el mapa. */
+.ct-mobile-controls-toggle {
+  display: none;
+}
+
+.ct-mobile-controls-content {
+  display: contents;
+}
+
+@media (max-width: 768px) {
+  .ct-mobile-controls {
+    position: relative;
+    margin-top: 14px !important;
+    padding: 8px !important;
+    transition: width 180ms ease, margin 180ms ease, padding 180ms ease,
+      border-radius 180ms ease, box-shadow 180ms ease;
+  }
+
+  .ct-mobile-controls-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+    min-width: 0;
+  }
+
+  .ct-mobile-controls-toggle {
+    position: absolute;
+    top: -15px;
+    right: 9px;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 32px;
+    padding: 6px 11px;
+    border: 1px solid rgba(0, 74, 105, 0.16);
+    border-radius: 999px;
+    background: #fff;
+    color: #00516d;
+    font: 700 0.72rem/1 "Outfit", sans-serif;
+    box-shadow: 0 6px 18px rgba(0, 48, 67, 0.16);
+    cursor: pointer;
+  }
+
+  .ct-mobile-controls-toggle__icon {
+    position: relative;
+    width: 16px;
+    height: 14px;
+  }
+
+  .ct-mobile-controls-toggle__icon::before {
+    position: absolute;
+    top: 0;
+    left: 1px;
+    width: 14px;
+    height: 9px;
+    clip-path: polygon(0 0, 100% 0, 62% 100%, 38% 100%);
+    background: currentColor;
+    content: "";
+  }
+
+  .ct-mobile-controls-toggle__icon::after {
+    position: absolute;
+    right: 6px;
+    bottom: 0;
+    width: 4px;
+    height: 6px;
+    border-radius: 0 0 2px 2px;
+    background: currentColor;
+    content: "";
+  }
+
+  .ct-mobile-controls .territorial-toolbar-right {
+    gap: 6px !important;
+  }
+
+  .ct-mobile-controls .toolbar-select,
+  .ct-mobile-controls #departamentos.toolbar-select,
+  .ct-mobile-controls #municipios.toolbar-select {
+    height: 38px !important;
+    font-size: 0.74rem !important;
+  }
+
+  .ct-mobile-controls .toolbar-refresh,
+  .ct-mobile-controls .btn-reiniciar-consulta {
+    width: 38px !important;
+    min-width: 38px !important;
+    height: 38px !important;
+  }
+
+  .ct-mobile-controls .btn-descargables {
+    min-height: 38px !important;
+  }
+
+  .ct-mobile-controls .ordenamiento-side-actions {
+    justify-content: flex-end !important;
+    gap: 5px !important;
+  }
+
+  .ct-mobile-controls .descargables-dropdown,
+  .ct-mobile-controls .btn-descargables {
+    flex: 0 0 auto !important;
+  }
+
+  .ct-mobile-controls .btn-descargables {
+    width: auto !important;
+    min-width: 105px !important;
+    min-height: 30px !important;
+    height: 30px !important;
+    padding: 0 8px !important;
+    gap: 5px !important;
+    border-radius: 9px !important;
+  }
+
+  .ct-mobile-controls .btn-descargables-texto {
+    font-size: 0.66rem !important;
+    line-height: 1 !important;
+  }
+
+  .ct-mobile-controls .btn-descargables-icon {
+    width: 17px !important;
+    height: 17px !important;
+  }
+
+  .ct-mobile-controls .btn-reiniciar-consulta {
+    width: 30px !important;
+    min-width: 30px !important;
+    height: 30px !important;
+  }
+
+  .ct-mobile-controls .btn-reiniciar-consulta img {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .ct-mobile-actions-toggle {
+    display: none;
+  }
+
+  .ct-mobile-actions-enhanced {
+    position: relative !important;
+    justify-content: flex-start !important;
+    width: auto !important;
+  }
+
+  .ct-mobile-actions-enhanced > :not(.ct-mobile-actions-toggle) {
+    display: none !important;
+  }
+
+  .ct-mobile-actions-enhanced.ct-mobile-actions-open > :not(.ct-mobile-actions-toggle) {
+    display: flex !important;
+  }
+
+  .ct-mobile-actions-enhanced .toolbar-refresh,
+  .ct-mobile-actions-enhanced .toolbar-refresh:hover,
+  .ct-mobile-actions-enhanced .toolbar-refresh:focus-visible {
+    width: 30px !important;
+    min-width: 30px !important;
+    height: 30px !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .ct-mobile-actions-enhanced .toolbar-refresh img {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .ct-mobile-actions-enhanced .ct-mobile-actions-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid rgba(0, 74, 105, 0.14);
+    border-radius: 999px;
+    background: #fff;
+    color: #00516d;
+    font: 700 0.68rem/1 "Outfit", sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 48, 67, 0.13);
+    cursor: pointer;
+  }
+
+  .ct-mobile-actions-toggle__icon {
+    position: relative;
+    width: 14px;
+    height: 14px;
+  }
+
+  .ct-mobile-actions-toggle__icon::before,
+  .ct-mobile-actions-toggle__icon::after {
+    position: absolute;
+    left: 1px;
+    width: 12px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    content: "";
+  }
+
+  .ct-mobile-actions-toggle__icon::before {
+    top: 3px;
+  }
+
+  .ct-mobile-actions-toggle__icon::after {
+    bottom: 3px;
+  }
+
+  .ct-mobile-controls--collapsed {
+    display: flex !important;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ct-mobile-controls--collapsed .ct-mobile-controls-content {
+    display: block !important;
+    order: -1;
+  }
+
+  .ct-mobile-controls--collapsed .territorial-toolbar {
+    display: none !important;
+  }
+
+  .ct-mobile-controls--collapsed .ct-mobile-actions-enhanced {
+    display: flex !important;
+  }
+
+  .ct-mobile-controls.ct-mobile-controls--collapsed {
+    position: sticky;
+    top: 8px;
+    z-index: 5100;
+    display: block;
+    width: max-content !important;
+    margin: 8px 8px 8px auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .ct-mobile-controls--collapsed .ct-mobile-controls-content {
+    display: none !important;
+  }
+
+  .ct-mobile-controls--collapsed .ct-mobile-controls-toggle {
+    position: static;
+    min-height: 40px;
+    padding: 8px 14px;
+    border-color: rgba(255, 255, 255, 0.34);
+    background: #005b76;
+    color: #fff;
+    box-shadow: 0 8px 22px rgba(0, 48, 67, 0.26);
+  }
+
+  .ct-mobile-controls--collapsed .ct-mobile-controls-toggle__icon {
+    height: 14px;
+  }
+
+  .map-tools.ct-map-tools-enhanced {
+    bottom: 12px !important;
+    left: 10px !important;
+    align-items: center;
+    gap: 4px;
+    padding: 3px;
+    border: 1px solid rgba(0, 74, 105, 0.14);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 8px 22px rgba(0, 42, 59, 0.2);
+    backdrop-filter: blur(10px);
+  }
+
+  #mapDiv .esri-ui-bottom-left {
+    left: 58px !important;
+  }
+
+  .map-tools.ct-map-tools-enhanced > :not(.ct-map-tools-toggle) {
+    display: none !important;
+  }
+
+  .map-tools.ct-map-tools-enhanced.ct-map-tools-open > :not(.ct-map-tools-toggle) {
+    display: flex !important;
+  }
+
+  .map-tools.ct-map-tools-enhanced.ct-map-tools-open > .tool-dropdown-wrap {
+    position: relative;
+  }
+
+  .map-tools.ct-map-tools-enhanced .tool-btn,
+  .map-tools.ct-map-tools-enhanced #btnZoomIn,
+  .map-tools.ct-map-tools-enhanced #btnZoomOut {
+    width: 28px !important;
+    min-width: 28px !important;
+    height: 28px !important;
+    border-radius: 6px !important;
+    font-size: 1.15rem !important;
+  }
+
+  .map-tools.ct-map-tools-enhanced .tool-btn img,
+  .map-tools.ct-map-tools-enhanced #btnResetZoom img {
+    width: 17px !important;
+    height: 17px !important;
+  }
+
+  .map-tools.ct-map-tools-enhanced #btnResetZoom {
+    margin-bottom: 4px !important;
+  }
+
+  .ct-map-tools-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: #005b76;
+    color: #fff;
+    font: 500 1.2rem/1 "Outfit", sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 54, 75, 0.25);
+    cursor: pointer;
+  }
+
+  .ct-map-tools-toggle:focus-visible {
+    outline-color: #fff;
+  }
+
+  .map-legend.ct-mobile-legend-collapsed,
+  #mapLegend.ct-mobile-legend-collapsed {
+    right: 10px !important;
+    bottom: 12px !important;
+    width: min(52vw, 210px) !important;
+    min-width: 0 !important;
+    max-width: 210px !important;
+    max-height: none !important;
+    border-radius: 11px !important;
+    box-shadow: 0 7px 20px rgba(0, 42, 59, 0.18) !important;
+  }
+
+  .map-legend.ct-mobile-legend-collapsed .legend-header {
+    height: 40px;
+    min-height: 40px;
+    padding: 6px 8px !important;
+    border-radius: 9px !important;
+  }
+
+  .map-legend.ct-mobile-legend-collapsed #legendTitle {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.76rem !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .map-legend.ct-mobile-legend-collapsed .legend-content {
+    display: none !important;
+  }
+
+  .map-legend.ct-mobile-legend-collapsed .legend-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    min-width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.14);
+    font-size: 1.1rem !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .ct-map-tools-toggle,
+  .ct-mobile-actions-toggle {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-biofisico #mapDiv #zoomSliderContainer.time-mode {
+    display: flex !important;
+    flex-direction: column;
+    align-items: stretch;
+    width: min(42vw, 160px) !important;
+    max-width: 160px !important;
+    padding: 6px 8px !important;
+  }
+
+  .page-biofisico #zoomSliderContainer .map-slider-label {
+    margin-bottom: 5px !important;
+    padding: 5px 9px !important;
+    font-size: 0.6rem !important;
+  }
+
+  .page-biofisico #zoomSliderContainer #zoomSlider {
+    width: 100% !important;
+    max-width: 144px !important;
+  }
+
+  #zoomSliderContainer,
+  #periodoSliderContainer.periodo-slider-container {
+    top: 12px !important;
+    left: 12px !important;
+    width: min(46vw, 180px) !important;
+    padding: 7px 9px !important;
+    border: 1px solid rgba(0, 74, 105, 0.1) !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 6px 18px rgba(0, 42, 59, 0.14) !important;
+    backdrop-filter: blur(8px);
+  }
+
+  #zoomSliderContainer .map-slider-label,
+  #periodoSliderContainer.periodo-slider-container label {
+    align-self: flex-start;
+    margin: 0 0 6px !important;
+    padding: 5px 10px !important;
+    border-radius: 999px !important;
+    background: #005b84 !important;
+    color: #fff !important;
+    font-size: 0.64rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+  }
+
+  #zoomSliderContainer #zoomSlider,
+  #periodoSliderContainer #periodoSlider {
+    width: 100% !important;
+    height: 8px !important;
+    margin: 0 !important;
+  }
+
+  #zoomSliderContainer input[type="range"]::-webkit-slider-runnable-track,
+  #periodoSliderContainer input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px !important;
+    border-width: 1px !important;
+  }
+
+  #zoomSliderContainer input[type="range"]::-moz-range-track,
+  #periodoSliderContainer input[type="range"]::-moz-range-track {
+    height: 6px !important;
+    border-width: 1px !important;
+  }
+
+  .subtabs-shell,
+  #chartDiv .subtabs-shell {
+    margin-bottom: 7px !important;
+    padding: 5px 4px 6px !important;
+    overflow-x: auto !important;
+    border: 1px solid rgba(0, 74, 105, 0.09);
+    border-radius: 13px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 5px 16px rgba(0, 48, 67, 0.08);
+    scrollbar-width: none;
+  }
+
+  .subtabs-shell::-webkit-scrollbar,
+  #chartDiv .subtabs-shell::-webkit-scrollbar,
+  .subtabs-controls::-webkit-scrollbar {
+    display: none;
+  }
+
+  .subtabs-controls,
+  #chartDiv .subtabs-controls {
+    gap: 6px !important;
+    min-width: max-content !important;
+    padding: 0 !important;
+  }
+
+  .subtab-btn,
+  #chartDiv .subtab-btn {
+    min-width: 96px !important;
+    min-height: 34px !important;
+    height: 34px !important;
+    padding: 6px 10px !important;
+    border: 1px solid rgba(0, 74, 105, 0.1) !important;
+    border-radius: 10px !important;
+    font-size: 0.66rem !important;
+    font-weight: 650 !important;
+    line-height: 1.05 !important;
+    white-space: nowrap !important;
+    box-shadow: 0 3px 9px rgba(0, 45, 62, 0.08);
+  }
+
+  #mapDiv {
+    height: min(58svh, 500px) !important;
+    min-height: 370px !important;
+  }
+
+  .ct-mobile-controls .territorial-toolbar-right {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .ct-mobile-controls #departamentos.toolbar-select,
+  .ct-mobile-controls #municipios.toolbar-select {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+  }
+
+  .ct-mobile-controls:not(.ct-mobile-controls--collapsed) .ct-mobile-actions-enhanced {
+    display: none !important;
+  }
+
+  .ct-mobile-controls.ct-mobile-controls--collapsed {
+    position: relative !important;
+    top: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    width: calc(100% - 16px) !important;
+    margin: 8px !important;
+  }
+
+  .ct-mobile-controls--collapsed .ct-mobile-controls-content {
+    display: block !important;
+    order: -1;
+    width: auto !important;
+  }
+
+  .ct-mobile-controls--collapsed .territorial-toolbar {
+    display: none !important;
+  }
+
+  .ct-mobile-controls--collapsed .ct-mobile-actions-enhanced {
+    display: flex !important;
+    justify-content: flex-start !important;
+  }
+
+  .ct-mobile-controls--collapsed .ct-mobile-actions-toggle {
+    min-height: 40px;
+    padding: 8px 13px;
+    border-color: rgba(255, 255, 255, 0.34);
+    background: #005b76;
+    color: #fff;
+    box-shadow: 0 8px 22px rgba(0, 48, 67, 0.22);
+  }
+
+  .ct-mobile-controls--collapsed .ct-mobile-controls-toggle {
+    margin-left: auto;
   }
 }

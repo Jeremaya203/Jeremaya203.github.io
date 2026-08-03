@@ -15,6 +15,28 @@ export function createTravelTimePieChartController({
     getLayersGlobal,
     applyWhereToActiveLayers
 }) {
+    if (!document.documentElement.dataset.travelTimeOutsideResetBound) {
+        document.documentElement.dataset.travelTimeOutsideResetBound = "true";
+        document.addEventListener("dblclick", async (event) => {
+            if (window.__activeSocioChartConfig?.id !== "tiempos-desplazamiento") return;
+            const canvas = document.getElementById("chart");
+            if (!canvas) return;
+
+            if (event.target === canvas || canvas.contains(event.target)) {
+                const chartInstance = chartCore.getInstance();
+                const clickedCategories = chartInstance?.getElementsAtEventForMode?.(
+                    event,
+                    "nearest",
+                    { intersect: true },
+                    false
+                ) || [];
+                if (clickedCategories.length > 0) return;
+            }
+
+            await chartInteractions.clearCategorySelection();
+        });
+    }
+
     function applyPieChartLayout(canvas) {
         const chartScroll = document.getElementById("pibChartScroll");
         const chartCard = canvas?.closest(".chart-card");
@@ -266,7 +288,9 @@ export function createTravelTimePieChartController({
         const colors = rows.map(row => row.color);
         const total = values.reduce((sum, value) => sum + value, 0);
 
-        if (typeof window.actualizarLeyenda === "function") {
+        // En selección municipal el mapa y la leyenda conservan el contexto
+        // completo del departamento; el gráfico sí continúa siendo municipal.
+        if (!options.skipSyncMap && typeof window.actualizarLeyenda === "function") {
             window.actualizarLeyenda(labels, colors, rows.map(row => row.rawLabel), {
                 field: chartConfig.mapInteractionField || chartConfig.xAxis?.field,
                 baseWhere: where,

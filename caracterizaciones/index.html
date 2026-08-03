@@ -4,18 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Caracterizaciones Territoriales – IGAC</title>
-  <link rel="stylesheet" href="styles.css?v=index-ui-20260717-2" />
+  <link rel="stylesheet" href="styles.css?v=mobile-login-button-20260722" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/shared/auth-navbar.css" />
+  <link rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.1.0/firebase-ui-auth.css" />
+  <link rel="stylesheet" href="../css/shared-auth-modal.css?v=mobile-compact-20260722" />
     <link rel="stylesheet" href="../mobile-warning.css">
   <script defer src="../mobile-warning.js"></script>
   <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/ui/6.1.0/firebase-ui-auth__es.js"></script>
+  <script src="../js/shared-auth-modal.js?v=close-button-fix-20260722"></script>
   <script src="js/shared/auth/firebaseConfig.js"></script>
   <script src="js/shared/auth/authSession.js"></script>
-  <script src="js/shared/auth/authNavbar.js"></script>
+  <script src="js/shared/auth/authNavbar.js?v=mobile-login-button-20260722"></script>
+  <link rel="stylesheet" href="css/shared/characterizations-footer.css?v=ott-live-footer-20260721" />
+  <script defer src="js/shared/characterizationsFooter.js?v=ott-live-footer-20260721"></script>
 </head>
 <body>
 
@@ -51,6 +57,10 @@
             <button type="button" id="logoutBtn" class="auth-logout-btn" hidden aria-label="Cerrar sesión">Cerrar sesión</button>
           </li>
         </ul>
+        <button type="button" id="mobileLoginBtn" class="mobile-auth-login-btn" hidden aria-label="Iniciar sesión">
+          <span class="mobile-auth-login-icon" aria-hidden="true"></span>
+          <span>Iniciar sesión</span>
+        </button>
         <button class="nav-bar-toggle-igac" aria-label="Abrir menú" aria-expanded="false">
           <div class="icon-bar"></div>
           <div class="icon-bar"></div>
@@ -250,6 +260,6 @@
   </footer>
 
   <script src="images.js?v=index-ui-20260717-2"></script>
-  <script src="main.js?v=index-ui-20260717-2"></script>
+  <script src="main.js?v=mobile-login-button-20260722"></script>
 </body>
 </html>

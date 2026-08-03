@@ -246,6 +246,10 @@ footer {
     padding-top: 1px;
     background: #e6effd;
     color: #000;
+    position: relative;
+    z-index: 1;
+    font-family: 'Gill Sans Std' !important;
+    font-size: 14px;
 }
 
 footer>.containerf,
@@ -285,8 +289,9 @@ footer .rowf>.col-md-6f {
 
 footer .footer-titulo {
     padding-top: 16px;
-    font-family: 'Tajawal-Bold';
-    font-size: 20.8px;
+    font-family: 'Gill Sans Std';
+    font-size: 20px;
+    font-weight: 500;
     padding-top: 16px !important;
 }
 
@@ -321,7 +326,8 @@ footer .redes-sociales a {
 }
 
 footer .footer-enlaces a {
-    font-family: 'Tajawal-Bold';
+    font-family: 'Gill Sans Std';
+    font-weight: 400;
     text-decoration: none !important;
     text-transform: none;
     padding-right: 8px;
@@ -331,6 +337,20 @@ footer .icono-redes {
     width: 28px;
     height: 28px;
     margin-right: 10px;
+}
+footer a.btn {
+    display: inline-block;
+    margin: 0;
+    padding: 6px 12px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    font-family: 'Gill Sans Std';
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 24px;
+    text-align: center;
+    vertical-align: middle;
 }
 
 .gov-co-footer-auto {
@@ -508,59 +528,5 @@ footer .oot-version-bar #oot-version-badge {
 
     footer .logos-footer {
         display: none;
-    }
-}
-
-/* ── Footer responsive ───────────────────────────────────────────────────────
-   Las dos columnas del footer estaban fijas en 50/50 y solo se apilaban a
-   ≤576px: entre 577px y 768px (tablet vertical) quedaban ilegibles. */
-@media (max-width: 768px) {
-
-    footer .rowf>.col-md-6f {
-        flex: 0 0 100%;
-        max-width: 100%;
-    }
-
-    footer .logos-footer {
-        display: none;
-    }
-
-    .footer-container {
-        padding: 20px 16px;
-        margin-bottom: 24px !important;
-    }
-
-    /* El pie gov.co (2 logos + enlace) se sale de pantalla en anchos angostos. */
-    .gov-co-footer-auto {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 8px;
-        text-align: center;
-    }
-
-    footer .gov-co-logo-pie-blanco {
-        border-right: none;
-        padding-right: 0;
-    }
-}
-
-/* Teléfono: los enlaces del pie deben ser tocables (mín. 44px de alto). */
-@media (max-width: 576px) {
-
-    footer .footer-enlaces {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    footer .footer-enlaces a,
-    footer .redes-sociales a {
-        display: flex;
-        align-items: center;
-        min-height: 44px;
-    }
-
-    footer p {
-        margin-bottom: 16px !important;
     }
 }

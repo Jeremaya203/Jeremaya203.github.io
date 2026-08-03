@@ -806,3 +806,117 @@ footer .oot-version-bar #oot-version-badge {
         margin-bottom: 16px !important;
     }
 }
+
+/* Footer institucional del Observatorio de la Tierra y el Territorio. */
+@font-face {
+    font-family: 'Gill Sans Std';
+    src: url('/fonts/GillSansStd.woff2') format('woff2'),
+         url('/fonts/GillSansStd.woff') format('woff');
+    font-weight: 400;
+    font-style: normal;
+}
+
+footer {
+    position: relative;
+    z-index: 1;
+    padding: 1px 0 0;
+    background: #e6effd;
+    color: #000;
+    font-family: 'Gill Sans Std' !important;
+    font-size: 14px;
+}
+
+footer .footer-container {
+    padding: 32px;
+    margin-bottom: 50px !important;
+    background: #fff;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.175) !important;
+}
+
+footer .rowf>.col-md-6f {
+    flex: 0 0 50%;
+    max-width: 50%;
+}
+
+footer .footer-titulo {
+    padding-top: 16px !important;
+    font-family: 'Gill Sans Std';
+    font-size: 20px;
+    font-weight: 500;
+}
+
+footer h2 {
+    font-family: 'Gill Sans Std';
+    font-size: 19.2px;
+    font-weight: 500;
+}
+
+footer h3 {
+    font-family: 'Gill Sans Std';
+    font-size: 16px;
+    font-weight: 500;
+}
+
+footer p {
+    margin-bottom: 24px !important;
+    color: #000;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+footer a.btn {
+    display: inline-block;
+    min-height: 0;
+    margin: 0;
+    padding: 6px 12px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    font-family: 'Gill Sans Std';
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 24px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+footer .footer-enlaces {
+    display: block;
+}
+
+footer .footer-enlaces a {
+    display: inline-block;
+    min-height: 0;
+    padding: 6px 8px 6px 12px;
+    font-family: 'Gill Sans Std';
+    font-weight: 400;
+}
+
+footer .gov-co-footer-auto {
+    flex-wrap: nowrap;
+    justify-content: normal;
+    gap: normal;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    text-align: left;
+}
+
+footer .gov-co-logo-pie-blanco {
+    padding-right: 15px;
+    border-right: 1px solid #fff;
+}
+
+@media (max-width: 576px) {
+    footer .rowf>.col-md-6f {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    footer .logos-footer {
+        display: none;
+    }
+
+    footer .gov-co-footer-auto a {
+        font-size: 12px;
+    }
+}

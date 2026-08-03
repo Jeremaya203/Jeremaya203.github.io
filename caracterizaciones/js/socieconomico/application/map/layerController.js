@@ -1233,7 +1233,7 @@ export function createLayerController({ state, deps }) {
     }
 
     async function updateLegend(layer, config) {
-        if (isDepartmentInfrastructureConfig(config) && layer) {
+        if (isDepartmentInfrastructureConfig(config) && layer && !config?.useMultilayerLegendSections) {
             const legendRenderer = layer.renderer || await rendererFromLayerMetadata(layer);
             const chartConfig = config?.chartConfig || {};
             const legendField = rendererFieldName(
@@ -1388,14 +1388,18 @@ export function createLayerController({ state, deps }) {
         }
 
         const chartConfig = config?.chartConfig;
-        if (Array.isArray(chartConfig?.categoryFields) && chartConfig.categoryFields.length) {
+        const preserveDepartmentLegend = useDepartmentMapContextForMunicipality(config);
+        const legendChartConfig = preserveDepartmentLegend
+            ? { ...(chartConfig || {}), useGlobalLegendOrder: false }
+            : chartConfig;
+        if (Array.isArray(chartConfig?.categoryFields) && chartConfig.categoryFields.length && !preserveDepartmentLegend) {
             return;
         }
         const legendField = (
             config?.type === "table-layer" && config?.mapFallback?.url
                 ? chartConfig?.legendField
                 : null
-        ) || chartConfig?.mapInteractionField || chartConfig?.xAxis?.field || config?.legendField;
+        ) || chartConfig?.mapInteractionField || chartConfig?.legendField || chartConfig?.xAxis?.field || config?.legendField;
         const candidateLayers = chartConfig?.mapInteraction?.allLayers || chartConfig?.sourcesFromVariants
             ? (state.layersGlobal?.length ? state.layersGlobal : [layer].filter(Boolean))
             : [layer].filter(Boolean);
@@ -1403,12 +1407,16 @@ export function createLayerController({ state, deps }) {
         const visibleLegendLayers = legendCandidates.filter(currentLayer => currentLayer && !currentLayer.destroyed && currentLayer.visible);
         const legendLayers = visibleLegendLayers.length ? visibleLegendLayers : legendCandidates.filter(Boolean);
         const legendBaseWhere = String(
-            legendLayers[0]?.__legendBaseWhere ||
-            layer?.__legendBaseWhere ||
-            legendLayers[0]?.definitionExpression ||
-            layer?.definitionExpression ||
-            state.whereBase ||
-            "1=1"
+            preserveDepartmentLegend
+                ? getDepartmentContextWhere(config)
+                : (
+                    legendLayers[0]?.__legendBaseWhere ||
+                    layer?.__legendBaseWhere ||
+                    legendLayers[0]?.definitionExpression ||
+                    layer?.definitionExpression ||
+                    state.whereBase ||
+                    "1=1"
+                )
         ).trim() || "1=1";
 
         if (typeof buildFilteredLegendFromLayers === "function" && legendField) {
@@ -1416,7 +1424,7 @@ export function createLayerController({ state, deps }) {
                 layers: legendLayers,
                 field: legendField,
                 where: legendBaseWhere,
-                chartConfig
+                chartConfig: legendChartConfig
             });
 
             if (legendData) {
@@ -1426,13 +1434,18 @@ export function createLayerController({ state, deps }) {
                     layers: legendLayers,
                     symbols: legendData.symbols,
                     codeGroups: legendData.codeGroups,
-                    preserveOrder: true
+                    preserveOrder: true,
+                    customApply: preserveDepartmentLegend
+                        ? async (legendState) => {
+                            await applyRendererLegendSelection(legendState, legendLayers, legendField, legendBaseWhere);
+                        }
+                        : null
                 });
                 return;
             }
         }
 
-        const legendData = buildLegendFromRenderer(layer.renderer, { chartConfig });
+        const legendData = buildLegendFromRenderer(layer.renderer, { chartConfig: legendChartConfig });
         if (legendData?.labels?.length) {
             actualizarLeyenda(legendData.labels, legendData.colors, legendData.codes, {
                 field: legendField,
@@ -1440,7 +1453,12 @@ export function createLayerController({ state, deps }) {
                 layers: legendLayers,
                 symbols: legendData.symbols,
                 codeGroups: legendData.codeGroups,
-                preserveOrder: true
+                preserveOrder: true,
+                customApply: preserveDepartmentLegend
+                    ? async (legendState) => {
+                        await applyRendererLegendSelection(legendState, legendLayers, legendField, legendBaseWhere);
+                    }
+                    : null
             });
         }
     }

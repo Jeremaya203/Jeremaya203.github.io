@@ -1,1 +1,1 @@
-import "./application/app/socieconomicoApp.js?v=department-map-municipality-selection-20260717b";
+import "./application/app/socieconomicoApp.js?v=health-legend-providers-first-20260721";

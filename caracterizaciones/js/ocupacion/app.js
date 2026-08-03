@@ -9446,6 +9446,7 @@ require([
                 }]
             },
             options: {
+                indexAxis: "y",
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: {
@@ -9458,10 +9459,10 @@ require([
                 },
                 layout: {
                     padding: {
-                        top: 26,
-                        right: isSmallScreen ? 12 : 20,
-                        bottom: isSmallScreen ? 92 : 82,
-                        left: isSmallScreen ? 8 : 14
+                        top: 18,
+                        right: isSmallScreen ? 18 : 28,
+                        bottom: isSmallScreen ? 18 : 24,
+                        left: isSmallScreen ? 4 : 10
                     }
                 },
                 plugins: {
@@ -9489,40 +9490,18 @@ require([
                 },
                 scales: {
                     x: {
-                        title: {
-                            display: true,
-                            text: "Flujo migratorio entre zonas",
-                            color: axisTextColor,
-                            font: axisTitleFont,
-                            padding: { top: 12 }
-                        },
-                        ticks: {
-                            autoSkip: false,
-                            maxRotation: 0,
-                            minRotation: 0,
-                            color: axisTextColor,
-                            padding: 8,
-                            font: xAxisTickFont,
-                            callback: function (value) {
-                                return wrapLabel(this.getLabelForValue(value), isSmallScreen ? 6 : 8);
-                            }
-                        },
-                        grid: { display: false },
-                        border: { display: false }
-                    },
-                    y: {
                         beginAtZero: true,
                         title: {
                             display: true,
                             text: "Número de personas",
                             color: axisTextColor,
                             font: axisTitleFont,
-                            padding: { bottom: 4 }
+                            padding: { top: 12 }
                         },
                         ticks: {
                             color: axisTextColor,
                             padding: 8,
-                            font: axisTickFont,
+                            font: xAxisTickFont,
                             callback: (value) => Number(value).toLocaleString("es-CO")
                         },
                         grid: {
@@ -9531,6 +9510,26 @@ require([
                         },
                         border: { display: false },
                         grace: "12%"
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: "Flujo migratorio entre zonas",
+                            color: axisTextColor,
+                            font: axisTitleFont,
+                            padding: { bottom: 8 }
+                        },
+                        ticks: {
+                            autoSkip: false,
+                            color: axisTextColor,
+                            padding: 10,
+                            font: axisTickFont,
+                            callback: function (value) {
+                                return wrapLabel(this.getLabelForValue(value), isSmallScreen ? 18 : 26);
+                            }
+                        },
+                        grid: { display: false },
+                        border: { display: false }
                     }
                 }
             },
@@ -9550,24 +9549,19 @@ require([
                         if (rawValue === null || rawValue === undefined || !Number.isFinite(value)) return;
                         const text = formatPersons(value);
                         const props = bar.getProps(["x", "y", "base"], true);
-                        const barTop = Math.min(props.y, props.base);
-                        const barBottom = Math.max(props.y, props.base);
-                        const barHeight = Math.abs(barBottom - barTop);
+                        const barLeft = Math.min(props.x, props.base);
+                        const barRight = Math.max(props.x, props.base);
+                        const barWidth = Math.abs(barRight - barLeft);
                         const textWidth = ctx.measureText(text).width;
                         const boxPaddingX = 6;
                         const boxWidth = textWidth + boxPaddingX * 2;
                         const boxHeight = 18;
-                        const fitsInside = value !== 0 && barHeight >= boxHeight + 12;
-                        const labelX = props.x;
-                        const labelY = value === 0
-                            ? Math.max(chartArea.top + 10, Math.min(chartArea.bottom - 10, props.base - 10))
-                            : fitsInside
-                            ? barTop + (barHeight / 2)
-                            : barTop - 10;
-
-                        if (value !== 0 && !fitsInside && labelY < chartArea.top + 9) {
-                            return;
-                        }
+                        const fitsInside = value !== 0 && barWidth >= boxWidth + 14;
+                        const outsideCenterX = barRight + 8 + (boxWidth / 2);
+                        const labelX = fitsInside
+                            ? barLeft + (barWidth / 2)
+                            : Math.min(outsideCenterX, chartArea.right - (boxWidth / 2) - 2);
+                        const labelY = props.y;
 
                         const minBoxX = (chartArea.left || 0) + 2;
                         const maxBoxX = (chartArea.right || minBoxX + boxWidth) - boxWidth - 2;

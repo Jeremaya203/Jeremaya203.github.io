@@ -16,6 +16,17 @@ class AuthSession {
         this.currentUser = user;
         this.ready = true;
 
+        // En Caracterizaciones el acceso también es obligatorio. El modal compartido
+        // permanece abierto hasta que Firebase confirme una sesión válida.
+        if (this.window.OOTAuthModal) {
+            this.window.OOTAuthModal.setRequired(true);
+            if (user) {
+                this.window.OOTAuthModal.setCurrentUser(user);
+            } else if (this.window.firebase && this.window.firebase.auth) {
+                this.window.OOTAuthModal.open(this.window.firebase.auth());
+            }
+        }
+
         // Verificación de herencia de sesión: si llegas a esta página YA logueado sin haber
         // hecho clic aquí en "Iniciar sesión", la sesión se heredó desde el portal principal.
         console.log("[CaracterizacionesAuth] Estado de sesión en", this.window.location.pathname, "→",

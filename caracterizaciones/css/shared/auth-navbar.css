@@ -48,3 +48,29 @@
   opacity: 0.6;
   cursor: wait;
 }
+
+/* Único ajuste de escritorio: botón de cierre de sesión. */
+@media (min-width: 1281px) {
+  .main-header-nav .auth-nav-item .auth-logout-btn {
+    min-height: 36px;
+    margin: 0 12px 0 0;
+    padding: 8px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 8px;
+    background: rgba(0, 44, 61, 0.48);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 3px 8px rgba(0, 25, 36, 0.14);
+    transition: background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  }
+
+  .main-header-nav .auth-nav-item .auth-logout-btn:hover,
+  .main-header-nav .auth-nav-item .auth-logout-btn:focus-visible {
+    border-color: rgba(255, 255, 255, 0.55);
+    background: rgba(0, 35, 50, 0.68);
+    box-shadow: 0 5px 11px rgba(0, 25, 36, 0.2);
+    transform: translateY(-1px);
+  }
+}

@@ -1,6 +1,6 @@
 import {
     LAYERS_CONFIG,
-} from "../config.js?v=department-map-municipality-selection-20260717b";
+} from "../config.js?v=health-legend-providers-first-20260721";
 import { INFRAESTRUCTURA_COMPLEMENTARIA_BAR_CHART_CONFIG } from "../charts/configs/infraestructuraChartsConfig.js?v=connectivity-tab-resize-20260716";
 import { PUBLIC_SERVICES_RADAR_CHART_CONFIG } from "../charts/configs/condicionesChartsConfig.js?v=telecom-diccionario-url-20260707";
 
@@ -41,8 +41,8 @@ import { actualizarFuente } from "../map/mapHelpers.js?v=error-cleanup-20260509"
 import { createSubtabsController } from "../ui/subtabs.js?v=poverty-initial-filter-sync-20260604";
 import { toggleLegend } from "../ui/legend/legend.js";
 import { createSelectsController } from "../ui/selects.js?v=department-map-municipality-selection-20260717";
-import { createLayerController } from "../map/layerController.js?v=department-map-municipality-selection-20260717";
-import { createPibBarChartController } from "../charts/pibBarChart.js?v=department-map-municipality-selection-20260717b";
+import { createLayerController } from "../map/layerController.js?v=health-points-layer-20260721";
+import { createPibBarChartController } from "../charts/pibBarChart.js?v=travel-outside-category-reset-20260721";
 import { createPibSectorPieChartController } from "../charts/pibSectorPieChart.js?v=global-municipality-required-state-20260604";
 import { createPibEmpresasStackedBarChartController } from "../charts/pibEmpresasStackedBarChart.js?v=pib-sector-visible-bar-border-20260604";
 import { createCensoPecuarioDoughnutController } from "../charts/dynamics/censoPecuarioDoughnutChart.js?v=global-municipality-required-state-20260604";

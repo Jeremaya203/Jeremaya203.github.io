@@ -8,10 +8,8 @@
  * automáticamente por caracterizaciones/ (su propio onAuthStateChanged la detecta sin
  * cambios adicionales).
  *
- * Simplificación deliberada frente al flujo legacy de js/maestra.js: solo proveedor Google
- * (primer/principal proveedor en el popup del sitio en vivo), sin FirebaseUI ni jQuery ni
- * modal de Bootstrap — implementado con firebase.auth().signInWithPopup() directo para no
- * añadir esas dependencias a las páginas modernas del portal.
+ * El acceso reutiliza el modal FirebaseUI y todos los proveedores del proyecto de
+ * referencia, sin duplicar la gestión de sesión ni de permisos.
  */
 (function () {
     'use strict';
@@ -45,11 +43,11 @@
 
     function signIn() {
         if (!ensureInit()) return;
-        var provider = new firebase.auth.GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: 'select_account' });
-        firebase.auth().signInWithPopup(provider).catch(function (error) {
-            console.error('[OOT.auth] Error en signInWithPopup:', error);
-        });
+        if (!window.OOTAuthModal) {
+            console.error('[OOT.auth] El modal de autenticacion no esta disponible.');
+            return;
+        }
+        window.OOTAuthModal.open(firebase.auth());
     }
 
     function signOut() {
@@ -82,6 +80,7 @@
 
     function onAuthChange(user) {
         currentUser = user || null;
+        if (window.OOTAuthModal) window.OOTAuthModal.setCurrentUser(currentUser);
 
         // Log deliberado para verificar herencia de sesión entre páginas: si al entrar a
         // esta página YA aparece un usuario aquí sin haber hecho clic en "Iniciar sesión",

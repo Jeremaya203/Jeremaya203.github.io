@@ -364,6 +364,7 @@ export const TIEMPOS_DESPLAZAMIENTO_PIE_CHART_CONFIG = {
     labelsFromDomain: true,
     colorsFromRenderer: true,
     mapInteractionField: "tdcabecera",
+    municipalityScopedMapInteraction: true,
     titleFields: ["mpcategor", "mpnombre", "dpnombre", "mpcodigo", "dpcodigo", "tdcabecera"],
     filter: {
         departmentField: "dpcodigo",

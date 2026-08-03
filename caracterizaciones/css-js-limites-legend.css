@@ -2,3 +2,19 @@
 
 /* -- legend.js -- */
 .oot-js-limites-legend-1 { margin:0; color:#666; }
+
+.limites-border-legend-swatch {
+    background: #000;
+}
+
+#legendContent .limites-border-legend-toggle {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+#legendContent .limites-border-legend-toggle:hover,
+#legendContent .limites-border-legend-toggle.selected {
+    background: rgba(214, 112, 54, 0.12);
+    border-color: rgba(214, 112, 54, 0.45);
+}

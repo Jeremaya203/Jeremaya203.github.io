@@ -82,6 +82,10 @@ class AuthNavbar {
         if (elements.logoutBtn) {
             elements.logoutBtn.hidden = false;
         }
+
+        if (elements.mobileLoginBtn) {
+            elements.mobileLoginBtn.hidden = true;
+        }
     }
 
     renderAnonymous(elements) {
@@ -101,6 +105,10 @@ class AuthNavbar {
 
         if (elements.logoutBtn) {
             elements.logoutBtn.hidden = true;
+        }
+
+        if (elements.mobileLoginBtn) {
+            elements.mobileLoginBtn.hidden = false;
         }
     }
 
@@ -126,16 +134,16 @@ class AuthNavbar {
             loginBtn,
             userName,
             userEmail: this.ensureEmailElement(loginBtn),
-            logoutBtn: this.ensureLogoutButton(loginBtn)
+            logoutBtn: this.ensureLogoutButton(loginBtn),
+            mobileLoginBtn: this.document.getElementById("mobileLoginBtn")
         };
 
         this.setText(userName, this.textValidating);
         loginBtn.setAttribute("aria-label", this.textValidating);
         loginBtn.classList.add("auth-validating");
 
-        // Mismo proyecto Firebase (geovisor-igac) que el portal principal — popup directo
-        // con Google, sin FirebaseUI/jQuery (no cargados aquí).
-        loginBtn.addEventListener("click", (event) => {
+        // Mismo proyecto Firebase y mismo modal FirebaseUI que el portal principal.
+        const openLogin = (event) => {
             event.preventDefault();
             if (auth.getCurrentUser()) {
                 return;
@@ -147,12 +155,17 @@ class AuthNavbar {
                 return;
             }
 
-            const provider = new firebase.auth.GoogleAuthProvider();
-            provider.setCustomParameters({ prompt: "select_account" });
-            firebase.auth().signInWithPopup(provider).catch((error) => {
-                console.error("[authNavbar] Error en signInWithPopup:", error);
-            });
-        });
+            if (!this.window.OOTAuthModal) {
+                console.error("[authNavbar] El modal de autenticacion no esta disponible.");
+                return;
+            }
+            this.window.OOTAuthModal.open(firebase.auth());
+        };
+
+        loginBtn.addEventListener("click", openLogin);
+        if (elements.mobileLoginBtn) {
+            elements.mobileLoginBtn.addEventListener("click", openLogin);
+        }
 
         if (elements.logoutBtn) {
             elements.logoutBtn.addEventListener("click", () => {
@@ -169,6 +182,9 @@ class AuthNavbar {
 
         auth.init();
         auth.onAuthStateChanged((user) => {
+            if (this.window.OOTAuthModal) {
+                this.window.OOTAuthModal.setCurrentUser(user);
+            }
             loginBtn.classList.remove("auth-validating");
             if (user) {
                 this.renderAuthenticated(user, elements);

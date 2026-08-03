@@ -346,7 +346,8 @@ select option { background: var(--oot-s2); color: var(--oot-tx); }
   display: none;
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  height: 52px;
+  height: calc(52px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background: #060d19;
   border-top: 1px solid rgba(74,144,217,0.2);
   z-index: 200;
@@ -394,7 +395,7 @@ select option { background: var(--oot-s2); color: var(--oot-tx); }
   }
   /* Fondo oscuro semitransparente detrás del drawer */
   .mob-backdrop {
-    display: block !important;
+    display: block;
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.45);
@@ -402,9 +403,14 @@ select option { background: var(--oot-s2); color: var(--oot-tx); }
     cursor: pointer;
   }
   #module-wrap {
-    height: calc(100vh - var(--oot-navbar-h, 140px) - 52px) !important;
-    height: calc(100dvh - var(--oot-navbar-h, 140px) - 52px) !important;
-  }
+      position: fixed;
+      top: var(--oot-navbar-h, 140px);
+      bottom: calc(52px + env(safe-area-inset-bottom, 0px));
+      left: 0;
+      right: 0;
+      height: auto !important;
+    }
+    body { padding-bottom: 0; }
 }
 
 @media (min-width: 901px) and (max-width: 1200px) {

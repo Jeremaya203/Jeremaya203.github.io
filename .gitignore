@@ -14,3 +14,4 @@ Thumbs.db
 .idea/
 *.suo
 *.user
+.agents/

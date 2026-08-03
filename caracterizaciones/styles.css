@@ -232,6 +232,14 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   border: none;
   cursor: pointer;
 }
+
+.mobile-auth-login-btn {
+  display: none;
+}
+
+.mobile-auth-login-btn[hidden] {
+  display: none !important;
+}
 .icon-bar {
   width: 22px;
   height: 2px;
@@ -265,11 +273,158 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   #link-list { display: none; }
   .nav-bar-toggle-igac { display: flex; }
   .navbar__brand-text { display: none; }
+
+  .navbarigac {
+    gap: 8px;
+  }
+
+  .navbarigac .logos {
+    min-width: 0;
+    gap: 8px;
+  }
+
+  .navbar-brand-igac img {
+    width: min(220px, 48vw);
+  }
+
+  .mobile-auth-login-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    min-height: 32px;
+    padding: 6px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    border-radius: 18px;
+    background: transparent;
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .mobile-auth-login-btn:hover,
+  .mobile-auth-login-btn:focus-visible {
+    background: rgba(255, 255, 255, 0.12);
+    outline: none;
+  }
+
+  .mobile-auth-login-icon {
+    position: relative;
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
+    border: 1.4px solid currentColor;
+    border-radius: 50%;
+  }
+
+  .mobile-auth-login-icon::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 50%;
+    width: 4px;
+    height: 4px;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    transform: translateX(-50%);
+  }
+
+  .mobile-auth-login-icon::after {
+    content: "";
+    position: absolute;
+    right: 3px;
+    bottom: 2px;
+    left: 3px;
+    height: 4px;
+    border: 1px solid currentColor;
+    border-bottom: 0;
+    border-radius: 6px 6px 0 0;
+  }
 }
 
 @media (max-width: 600px) {
   .navbarigac { padding: 0 16px; }
   .barra_gov { padding: 0 16px; }
+}
+
+/* Encabezado estable en portátiles y ventanas de ancho intermedio. */
+@media (min-width: 901px) and (max-width: 1180px) {
+  .navbarigac {
+    padding-inline: 14px;
+    gap: 12px;
+  }
+
+  .navbarigac .logos {
+    flex: 0 1 205px;
+    min-width: 150px;
+    gap: 7px;
+  }
+
+  .navbar-brand-igac img {
+    width: clamp(135px, 17vw, 170px);
+  }
+
+  .navbar__brand-text {
+    display: none;
+  }
+
+  #link-list {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    gap: clamp(7px, 1vw, 12px);
+    min-width: 0;
+  }
+
+  #link-list > li,
+  #link-list .auth-nav-item {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+
+  #link-list a {
+    font-size: clamp(11px, 1.15vw, 13px);
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  #link-list #loginBtn.auth-logged-in {
+    display: block;
+  }
+
+  #link-list #loginBtn .auth-user-email {
+    max-width: 150px;
+    overflow: hidden;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Botón de sesión exclusivo de la portada. */
+#navbar .navbarigac #link-list .auth-logout-btn {
+  min-height: 38px;
+  margin: 0 12px 0 0;
+  padding: 8px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+#navbar .navbarigac #link-list .auth-logout-btn:hover,
+#navbar .navbarigac #link-list .auth-logout-btn:focus-visible {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: none;
 }
 
 /* Remove old navbar pieces if any residual selectors exist in cache */
@@ -853,7 +1008,21 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 @media (max-width: 900px) {
   .hero__content { padding-bottom: 48px; }
   .que-son__grid { grid-template-columns: 1fr; }
-  .que-son__image-wrap { min-height: 260px; }
+  .que-son__text {
+    position: relative;
+    z-index: 1;
+    padding: 56px clamp(24px, 7vw, 56px) 30px;
+  }
+  .que-son__image-wrap {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    min-height: 260px;
+    max-height: 340px;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 18%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 18%);
+  }
+  .que-son__image { object-position: center center; }
   .tematicas__diagram { width: 600px; height: 600px; }
   .tematicas__center  { width: 180px; height: 180px; font-size: 28px; }
   .tematicas__bubble  { width: 150px; height: 200px; }
@@ -883,6 +1052,21 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 @media (max-width: 600px) {
   .navbar__brand-text { display: none; }
   .hero__title { font-size: clamp(22px, 6vw, 32px); }
+  .que-son__text { padding: 36px 20px 24px; }
+  .que-son .section-title { margin-bottom: 20px; }
+  .que-son__body {
+    font-size: 13px;
+    line-height: 1.65;
+    text-align: justify;
+    text-align-last: left;
+    text-justify: inter-word;
+    hyphens: auto;
+    margin-bottom: 18px;
+  }
+  .que-son__image-wrap {
+    min-height: 220px;
+    max-height: 260px;
+  }
   .tematicas__diagram { width: 390px; height: 390px; }
   .tematicas__center  { width: 91px; height: 91px; font-size: 18px; }
   .tematicas__bubble  { width: 98px; height: 130px; font-size: 10px; }
@@ -943,4 +1127,56 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   .bubble--slot-3 { top: 145px; left:  53px; }
   .bubble--slot-4 { top: 145px; left: 186px; }
   .bubble--slot-5 { top: 181px; left: 120px; }
+}
+
+/* Diagrama temático móvil: gotas más grandes y distribución fluida. */
+@media (max-width: 600px) {
+  .publico-objetivo__tit {
+    font-size: 34px;
+  }
+
+  .tematicas__card-desc {
+    font-size: 13px;
+  }
+
+  .tematicas__diagram {
+    width: calc(100% + 20px);
+    max-width: 450px;
+    height: auto;
+    aspect-ratio: 1 / 1;
+  }
+
+  .tematicas__center {
+    width: 25%;
+    height: 25%;
+    font-size: clamp(18px, 4.8vw, 22px);
+  }
+
+  .tematicas__bubble {
+    width: 27%;
+    height: 36%;
+  }
+
+  .bubble__inner {
+    gap: 5px;
+    padding-inline: 5px;
+  }
+
+  .bubble__icon {
+    width: clamp(36px, 10vw, 44px);
+    height: clamp(36px, 10vw, 44px);
+  }
+
+  .bubble__label {
+    width: 96%;
+    font-size: clamp(10px, 2.7vw, 12px);
+    line-height: 1.12;
+  }
+
+  .bubble--slot-0 { top:  5.5%; left: 36.5%; }
+  .bubble--slot-1 { top: 19%;   left: 10%; }
+  .bubble--slot-2 { top: 19%;   left: 63%; }
+  .bubble--slot-3 { top: 44%;   left: 10%; }
+  .bubble--slot-4 { top: 44%;   left: 63%; }
+  .bubble--slot-5 { top: 57.5%; left: 36.5%; }
 }

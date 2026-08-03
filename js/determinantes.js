@@ -200,6 +200,10 @@ function iniciarMapa() {
       }
     });
 
+  if (window.ResizeObserver) {
+    new ResizeObserver(() => mapa.resize())
+      .observe(document.getElementById('mapa-container'));
+  }  
     window.OOT.log('[DETERMINANTES] Mapa creado');
   } catch(e) {
     console.error('[DETERMINANTES] Error creando mapa:', e);
@@ -216,9 +220,9 @@ function iniciarDibujo() {
   }
   
   // Verificar que el mapa esté listo
-  if (!mapa.loaded()) {
+  if (!mapa.isStyleLoaded()) {
     window.OOT.log('[DETERMINANTES] Mapa aún no está listo, esperando...');
-    mapa.once('load', function() {
+    mapa.once('idle', function() {
       iniciarDibujo();
     });
     return;

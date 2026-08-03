@@ -1,0 +1,213 @@
+@font-face {
+    font-family: "Gill Sans Std";
+    src: url(/fonts/GillSansStd.woff2) format("woff2"),
+         url(/fonts/GillSansStd.woff) format("woff");
+    font-weight: 400;
+    font-style: normal;
+}
+
+.characterizations-footer,
+.characterizations-footer *,
+.characterizations-footer *::before,
+.characterizations-footer *::after {
+    box-sizing: border-box;
+}
+
+.characterizations-footer {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    margin: 0;
+    padding: 1px 0 0;
+    background: #e6effd;
+    color: #000000;
+    font-family: "Gill Sans Std", sans-serif !important;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.characterizations-footer > .containerf,
+.characterizations-footer .gov-co-footer-pie > .containerf {
+    width: 100%;
+    max-width: 1140px;
+    margin-right: auto;
+    margin-left: auto;
+    padding-right: 15px;
+    padding-left: 15px;
+}
+
+.characterizations-footer .footer-container {
+    margin-bottom: 50px !important;
+    padding: 32px;
+    background: #ffffff;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.175) !important;
+}
+
+.characterizations-footer .footer-container > .rowf {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    margin-right: -15px;
+    margin-left: -15px;
+}
+
+.characterizations-footer .rowf > .col-md-6f {
+    position: relative;
+    width: 100%;
+    max-width: 50%;
+    flex: 0 0 50%;
+    padding-right: 15px;
+    padding-left: 15px;
+}
+
+.characterizations-footer h2,
+.characterizations-footer h3,
+.characterizations-footer p {
+    margin-top: 0;
+}
+
+.characterizations-footer h2 {
+    margin-bottom: 8px;
+    font-family: "Gill Sans Std", sans-serif;
+    font-size: 19.2px;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.characterizations-footer .footer-titulo {
+    padding-top: 16px !important;
+    font-size: 20px;
+}
+
+.characterizations-footer .logos-footer {
+    margin-top: 8px;
+    margin-bottom: 16px;
+}
+
+.characterizations-footer h3 {
+    margin-bottom: 8px;
+    font-family: "Gill Sans Std", sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.characterizations-footer p {
+    margin-bottom: 24px !important;
+    color: #000000;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.characterizations-footer a {
+    color: #3366cc !important;
+    text-decoration: underline !important;
+}
+
+.characterizations-footer a.btn {
+    display: inline-block;
+    margin: 0;
+    padding: 6px 12px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    font-family: "Gill Sans Std", sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 24px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.characterizations-footer .redes-sociales a {
+    display: flex;
+    align-items: center;
+}
+
+.characterizations-footer .footer-enlaces a {
+    padding-right: 8px;
+    text-decoration: none !important;
+    text-transform: none;
+}
+
+.characterizations-footer .icono-redes {
+    width: 28px;
+    height: 28px;
+    max-width: none;
+    margin-right: 10px;
+}
+
+.characterizations-footer .gov-co-footer-pie {
+    width: 100%;
+    margin: 0;
+    padding: 5px;
+    background-color: #3366cc !important;
+}
+
+.characterizations-footer .gov-co-footer-auto {
+    display: flex;
+    align-items: center;
+    margin-right: auto;
+    margin-left: auto;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.characterizations-footer .gov-co-logo-pie-blanco {
+    width: auto;
+    height: 50px;
+    max-width: none;
+    padding-right: 15px;
+    border-right: 1px solid #ffffff;
+}
+
+.characterizations-footer .gov-co-logo-pie-mesa {
+    width: auto;
+    height: 50px;
+    max-width: none;
+    padding-right: 15px;
+    padding-left: 15px;
+}
+
+.characterizations-footer .gov-co-footer-auto a {
+    color: #ffffff !important;
+}
+
+@media (max-width: 992px) {
+    .characterizations-footer > .containerf,
+    .characterizations-footer .gov-co-footer-pie > .containerf {
+        max-width: 960px;
+    }
+}
+
+@media (max-width: 768px) {
+    .characterizations-footer > .containerf,
+    .characterizations-footer .gov-co-footer-pie > .containerf {
+        max-width: 720px;
+    }
+}
+
+@media (max-width: 576px) {
+    .characterizations-footer > .containerf,
+    .characterizations-footer .gov-co-footer-pie > .containerf {
+        max-width: 540px;
+    }
+
+    .characterizations-footer .gov-co-logo-pie-blanco,
+    .characterizations-footer .gov-co-logo-pie-mesa {
+        height: 40px;
+    }
+
+    .characterizations-footer .gov-co-footer-auto a {
+        font-size: 12px;
+    }
+
+    .characterizations-footer .rowf > .col-md-6f {
+        max-width: 100%;
+        flex: 0 0 100%;
+    }
+
+    .characterizations-footer .logos-footer {
+        display: none;
+    }
+}

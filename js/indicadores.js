@@ -394,6 +394,7 @@ function renderizarChoroplethNacional(geo, statsData) {
 }
 
 async function seleccionarIndicador(id, municipio) {
+  if (typeof municipio !== 'string') municipio = undefined;
   if (window.OOT && OOT.track) OOT.track('indicador_seleccionado', { indicador: id, escala: escalaActiva });
   if (escalaActiva === 'nacional') return seleccionarNacional(id);
 
@@ -432,8 +433,13 @@ async function seleccionarIndicador(id, municipio) {
     clearTimeout(timer);
     if (myToken !== _fetchToken) { window.OOT.log('[INDICADORES] Respuesta obsoleta descartada'); return; }
     if (!r.ok) {
-      const err = await r.json();
-      throw new Error(err.detail || 'Error desconocido');
+      const err = await r.json().catch (() => ({}));
+      const d = err.detail;
+      throw new Error(
+        typeof d === 'string' ? d 
+        : Array.isArray(d) ? d.map(x => `${(x.loc || []).slice(1).join('.')}: ${x.msg}`).join('; ')
+        : 'Error desconocido'
+      );
     }
     const data = await r.json();
     if (myToken !== _fetchToken) return;
@@ -599,6 +605,11 @@ function inicializarMapa() {
     });
     // En escala nacional no dibujamos borde de dept (el default abre en nacional)
     if (escalaActiva !== 'nacional') actualizarBordeDept(deptActivo);
+
+    if (window.ResizeObserver) {
+      new ResizeObserver(() => mapa.resize())
+        .observe(document.getElementById('mapa-container'));
+    }
   });
 }
 
@@ -1255,7 +1266,7 @@ async function actualizarListaMunicipios() {
   const valorActual = select.value;
   select.innerHTML = '<option value="">Todos los municipios</option>' +
     municipios.map(m => `<option value="${m.codigo}"${m.codigo === valorActual ? ' selected' : ''}>${m.nombre}</option>`).join('');
-  section.style.display = '';
+  section.style.display = 'block';
 }
 
 async function filtrarPorMunicipio(codigoMunicipio) {

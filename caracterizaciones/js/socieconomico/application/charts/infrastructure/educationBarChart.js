@@ -975,7 +975,7 @@ export function createEducationBarChartController({
         });
     }
 
-    async function actualizarGrafica(layer, config) {
+    async function actualizarGrafica(layer, config, options = {}) {
         const chartConfig = config?.chartConfig;
         if (!chartConfig || !ATTRIBUTE_CATEGORY_CHART_IDS.has(chartConfig.id)) return false;
 
@@ -1071,7 +1071,9 @@ export function createEducationBarChartController({
             color: row.color
         }));
 
-        if (typeof window.actualizarLeyenda === "function" && chartConfig.id !== TURISMO_CHART_ID) {
+        // Educación y Salud consultan el municipio para el gráfico, pero su
+        // leyenda cartográfica debe permanecer construida con el departamento.
+        if (!options.skipSyncMap && typeof window.actualizarLeyenda === "function" && chartConfig.id !== TURISMO_CHART_ID) {
             if (isHealthChart(chartConfig)) {
                 const healthLegendItem = resolveHealthLegendItem(attrs, chartConfig);
                 window.actualizarLeyenda(
