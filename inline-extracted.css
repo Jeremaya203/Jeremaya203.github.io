@@ -61,6 +61,9 @@
 #ie-determinantes-7 { font-size:10px;color:rgba(255,255,255,0.6);margin-top:2px; }
 #ie-determinantes-8 { color:var(--oot-tx3);display:block;margin-bottom:8px; }
 #area-minima { width:100px; }
+#area-minima-hint { color:var(--oot-tx3);margin-top:4px; }
+/* B.1.4 — oculta por defecto: el modo inicial es consulta de área, donde no aplica. */
+#area-minima-section { display:none; }
 #params-npn { display:none; }
 #ie-determinantes-9 { color:var(--oot-tx3);display:block;margin-bottom:8px; }
 #inp-npn { width:100%; }
@@ -89,7 +92,8 @@
 #ie-determinantes-24 { color:var(--oot-tx3);display:block;margin-bottom:8px; }
 #uso-pretendido { width:100%;padding:8px;background:var(--oot-s2);color:var(--oot-tx);border:1px solid var(--oot-b2);border-radius:6px;font-size:12px; }
 #ie-determinantes-25 { color:var(--oot-tx3);margin-top:4px; }
-#ie-determinantes-26 { background:var(--oot-s2); }
+/* B.1.8 — leyenda de veredictos: oculta por defecto (solo aplica a viabilidad). */
+#ie-determinantes-26 { background:var(--oot-s2);display:none; }
 #ie-determinantes-27 { color:var(--oot-tx3);display:block;margin-bottom:8px; }
 #ie-determinantes-28 { color:var(--oot-tx2);margin-bottom:4px; }
 #ie-determinantes-29 { color:var(--oot-green); }

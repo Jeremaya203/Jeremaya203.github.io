@@ -865,6 +865,9 @@ function cargarCapasEnMapa(data) {
 
     const targetLayer = esPunto ? layerId : layerId + '-fill';
     if (mapa.getLayer(targetLayer)) {
+      // A.4.1 / A.4.2 — Sin alias, el popup muestra el nombre crudo del campo
+      // ('area_ha' → "area ha"): abreviado, sin tilde e incomprensible. Todo campo
+      // que llegue al usuario debe tener aquí su etiqueta en español y con unidad.
       const ALIAS_CAMPOS = {
         'NOMBRE_GEOGRAFICO': 'Municipio',
         'CATAME': 'Categoría amenaza',
@@ -876,7 +879,21 @@ function cargarCapasEnMapa(data) {
         'ap_categor': 'Categoría RUNAP',
         'CODIGO_NOMBRE': 'Tipo área',
         'nomdet': 'Determinante',
-        'tdeterm': 'Categoría',
+        'tdeterm': 'Nivel',
+        'area_ha': 'Área (ha)',
+        'area_m2': 'Área (m²)',
+        'porcentaje': 'Porcentaje (%)',
+        'cobertura_zona_pct': 'Cobertura en la zona (%)',
+        'deforestacion_ha': 'Deforestación (ha)',
+        'personas': 'Personas',
+        'hogares': 'Hogares',
+        'viviendas': 'Viviendas',
+        'T_Conflicto': 'Tipo de conflicto',
+        'MpNombre': 'Municipio',
+        'MpCodigo': 'Código del municipio',
+        'codigo_municipio': 'Código del municipio',
+        'clase_suelo': 'Clase de suelo',
+        'acto_administrativo': 'Acto administrativo',
       };
       const onClick = (e) => {
         const props = e.features[0].properties;
@@ -1160,7 +1177,8 @@ function renderizarTorta(stats, id, leyenda) {
         plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => {
           const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
           const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
-          const unidad = (id === 'amenaza_masa' || id === 'amenaza_inundacion') ? 'personas' : 'Ha';
+          // A.4.1 — El símbolo de hectárea es 'ha' en minúscula (SI), no 'Ha'.
+          const unidad = (id === 'amenaza_masa' || id === 'amenaza_inundacion') ? 'personas' : 'ha';
           return ' ' + ctx.label + ': ' + ctx.parsed.toLocaleString('es-CO') + ' ' + unidad + ' (' + pct + '%)';
         }}} }
       }
@@ -1233,7 +1251,7 @@ function volarAParque(nombre) {
     const centro = bounds.getCenter();
     new maplibregl.Popup({ closeButton: true, maxWidth: '220px' })
       .setLngLat(centro)
-      .setHTML('<div class="oot-js-indicadores-15">' + escapeHtml(feature.properties.ap_nombre || '') + '</div><div class="oot-js-indicadores-18"><span class="oot-js-indicadores-17">Deforestación:</span> ' + ha.toLocaleString('es-CO') + ' Ha</div>')
+      .setHTML('<div class="oot-js-indicadores-15">' + escapeHtml(feature.properties.ap_nombre || '') + '</div><div class="oot-js-indicadores-18"><span class="oot-js-indicadores-17">Deforestación:</span> ' + ha.toLocaleString('es-CO') + ' ha</div>')
       .addTo(mapa);
   }
   setTimeout(_limpiarHighlight, 6000);

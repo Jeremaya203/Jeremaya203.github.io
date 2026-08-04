@@ -55,18 +55,9 @@
          municipio real de la geometría de la zona (gestor._resolver_municipio) y la
          consulta de área es dirigida por la zona. El dropdown no influía en el cálculo. -->
 
-    <!-- Área mínima -->
-    <div class="mb-4">
-      <label id="ie-determinantes-8" class="text-xs font-bold uppercase">Área mínima (ha)</label>
-      <input type="number" id="area-minima" value="6" min="0.1" max="100" step="0.5">
-    </div>
-
-    <!-- NPN filter for consulta_predio -->
-    <div class="mb-4" id="params-npn">
-      <label id="ie-determinantes-9" class="text-xs font-bold uppercase">Filtrar por NPN (opcional)</label>
-      <input type="text" id="inp-npn" placeholder="47001...">
-      <div id="ie-determinantes-10" class="text-[10px]">Prefijo del número predial</div>
-    </div>
+    <!-- B.1.5 — Orden del panel: (1) tipo de análisis, (2) cómo funciona, (3) reglas /
+         parámetros del modo, (4) dibujar o cargar la zona. La leyenda de veredictos va al
+         final porque describe el resultado, no un paso del flujo. -->
 
     <!-- Modo tabs -->
     <div id="ie-determinantes-11">
@@ -79,29 +70,14 @@
         Viabilidad
       </button>
     </div>
-    <div id="upload-titulo" class="text-xs font-bold uppercase mb-3">Zona de Consulta</div>
 
-    <!-- Zona de consulta -->
-    <div class="mb-4">
-      <div id="drop-zone" class="drop-zone" data-oot-click="_ootTriggerFile" data-oot-arg="file-input">
-        <span id="ie-determinantes-15" class="material-symbols-outlined">upload_file</span>
-        <div id="ie-determinantes-16">Arrastra tu archivo</div>
-        <div id="ie-determinantes-17">.geojson, .shp, .kmz</div>
-      </div>
-      <input type="file" id="file-input" accept=".geojson,.json,.zip,.kmz,.kml" data-oot-change="handleFileSelect">
-      
-      <button class="btn btn-secondary btn-block mt-2" data-oot-click="iniciarDibujo">
-        <span id="ie-determinantes-18" class="material-symbols-outlined">edit_location</span>
-        Dibujar zona en el mapa
-      </button>
-      
-      <div id="file-info" class="hidden p-3 rounded-lg mt-2">
-        <span id="file-name"></span>
-        <button id="ie-determinantes-19" data-oot-click="limpiarArchivo">✕</button>
-        <!-- H-19: la vista previa en mapa solo está disponible para GeoJSON. Para KMZ/KML/SHP
-             el análisis SÍ funciona; se avisa que la zona se dibuja al ejecutar (no antes). -->
-        <div id="preview-aviso"></div>
-      </div>
+    <!-- Ayuda -->
+    <div id="ie-determinantes-36" class="p-3 rounded-xl mb-4">
+      <div id="ie-determinantes-37" class="font-bold mb-2">¿Cómo funciona?</div>
+      <div>1. Elija el tipo de análisis</div>
+      <div class="mt-1">2. Active las reglas o defina el uso</div>
+      <div class="mt-1">3. Suba o dibuje la zona</div>
+      <div class="mt-1">4. Ejecute el análisis</div>
     </div>
 
     <!-- Reglas -->
@@ -153,22 +129,54 @@
       <div id="ie-determinantes-25" class="text-[10px]">Uso que se pretende dar al suelo de la zona</div>
     </div>
 
-    <!-- Leyenda -->
+    <!-- Área mínima — B.1.4: solo aplica a viabilidad (filtra predios); en consulta de área
+         el backend lo ignora, por eso se oculta fuera de ese modo (ver cambiarFuncion). -->
+    <div class="mb-4" id="area-minima-section">
+      <label id="ie-determinantes-8" class="text-xs font-bold uppercase">Área mínima (ha)</label>
+      <input type="number" id="area-minima" value="6" min="0.1" max="100" step="0.5">
+      <div id="area-minima-hint" class="text-[10px]">Descarta del análisis los predios menores a este tamaño</div>
+    </div>
+
+    <!-- NPN filter for consulta_predio -->
+    <div class="mb-4" id="params-npn">
+      <label id="ie-determinantes-9" class="text-xs font-bold uppercase">Filtrar por NPN (opcional)</label>
+      <input type="text" id="inp-npn" placeholder="47001...">
+      <div id="ie-determinantes-10" class="text-[10px]">Prefijo del número predial</div>
+    </div>
+
+    <div id="upload-titulo" class="text-xs font-bold uppercase mb-3">Zona de Consulta</div>
+
+    <!-- Zona de consulta -->
+    <div class="mb-4">
+      <div id="drop-zone" class="drop-zone" data-oot-click="_ootTriggerFile" data-oot-arg="file-input">
+        <span id="ie-determinantes-15" class="material-symbols-outlined">upload_file</span>
+        <div id="ie-determinantes-16">Arrastra tu archivo</div>
+        <div id="ie-determinantes-17">.geojson, .shp, .kmz</div>
+      </div>
+      <input type="file" id="file-input" accept=".geojson,.json,.zip,.kmz,.kml" data-oot-change="handleFileSelect">
+
+      <button class="btn btn-secondary btn-block mt-2" data-oot-click="iniciarDibujo">
+        <span id="ie-determinantes-18" class="material-symbols-outlined">edit_location</span>
+        Dibujar zona en el mapa
+      </button>
+
+      <div id="file-info" class="hidden p-3 rounded-lg mt-2">
+        <span id="file-name"></span>
+        <button id="ie-determinantes-19" data-oot-click="limpiarArchivo">✕</button>
+        <!-- H-19: la vista previa en mapa solo está disponible para GeoJSON. Para KMZ/KML/SHP
+             el análisis SÍ funciona; se avisa que la zona se dibuja al ejecutar (no antes). -->
+        <div id="preview-aviso"></div>
+      </div>
+    </div>
+
+    <!-- Leyenda — B.1.8: son los veredictos del análisis de viabilidad; en consulta de área
+         no se emiten, por eso se oculta en ese modo (ver cambiarFuncion). -->
     <div id="ie-determinantes-26" class="mb-4 p-3 rounded-xl">
       <label id="ie-determinantes-27" class="text-xs font-bold uppercase">Leyenda</label>
       <div id="ie-determinantes-28" class="flex items-center gap-2 text-xs"><span id="ie-determinantes-29">●</span> Compatible</div>
       <div id="ie-determinantes-30" class="flex items-center gap-2 text-xs"><span id="ie-determinantes-31">●</span> Condicionado</div>
       <div id="ie-determinantes-32" class="flex items-center gap-2 text-xs"><span id="ie-determinantes-33">●</span> No viable</div>
       <div id="ie-determinantes-34" class="flex items-center gap-2 text-xs"><span id="ie-determinantes-35">●</span> Sin información</div>
-    </div>
-
-    <!-- Ayuda -->
-    <div id="ie-determinantes-36" class="p-3 rounded-xl">
-      <div id="ie-determinantes-37" class="font-bold mb-2">¿Cómo funciona?</div>
-      <div>1. Seleccione municipio</div>
-      <div class="mt-1">2. Suba o dibuje la zona</div>
-      <div class="mt-1">3. Active las reglas</div>
-      <div class="mt-1">4. Ejecute el análisis</div>
     </div>
   </div>
 
@@ -309,7 +317,7 @@
       </div>
       <!-- Leyenda de tipos de determinante -->
       <div id="ie-determinantes-69">
-        <div id="ie-determinantes-70" class="font-bold text-xs mb-3">Categoría de Determinante</div>
+        <div id="ie-determinantes-70" class="font-bold text-xs mb-3">Nivel de la determinante</div>
         <div id="ie-determinantes-71">
           <div id="ie-determinantes-72">
             <span id="ie-determinantes-73"></span>

@@ -751,6 +751,16 @@ function cambiarFuncion(modo) {
   var usoSection = document.getElementById('uso-pretendido-section');
   if (usoSection) usoSection.style.display = esViab ? 'block' : 'none';
 
+  // B.1.4 — El área mínima filtra predios y solo la usa viabilidad; consulta_area la recibe
+  // pero la ignora, así que mostrarla en ese modo confundía (parecía un control sin efecto).
+  var areaMinSection = document.getElementById('area-minima-section');
+  if (areaMinSection) areaMinSection.style.display = esViab ? 'block' : 'none';
+
+  // B.1.8 — La leyenda describe los veredictos (Compatible/Condicionado/No viable), que solo
+  // se emiten en viabilidad. En consulta de área no hay veredictos que leer.
+  var leyendaSection = document.getElementById('ie-determinantes-26');
+  if (leyendaSection) leyendaSection.style.display = esViab ? 'block' : 'none';
+
   if (rutaZona || zonaGeoJSON) reiniciar();
   else mostrarStep('upload');
 }
@@ -924,7 +934,7 @@ function mostrarResultados(data) {
               '<span class="oot-js-determinantes-17">' + vi + '</span>' +
               '<span class="oot-js-determinantes-18">' + esc(v.determinante || '—') + '</span>' +
             '</div>' +
-            (v.categoria ? '<div class="oot-js-determinantes-19">Categoría: ' + esc(v.categoria) + '</div>' : '') +
+            (v.categoria ? '<div class="oot-js-determinantes-19">Nivel: ' + esc(v.categoria) + '</div>' : '') +
             '<div class="oot-js-determinantes-20">' + esc(fund) + (fund.length === 250 ? '…' : '') + '</div>';
           body.appendChild(detDiv);
         });
