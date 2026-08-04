@@ -55,7 +55,7 @@ window.OOT_ENV_API = window.OOT_ENV_API || {
 // Override explícito SOLO para desarrollo (p.ej. exponer un backend local por túnel):
 // defina  window.OOT_API_REMOTE = 'https://xxxx.trycloudflare.com'  ANTES de este script.
 // NUNCA debe ser el default de producción → por eso ya no se hardcodea ninguna URL aquí.
-window.OOT_API_REMOTE = window.OOT_API_REMOTE || 'https://really-ordinary-pond-jersey.trycloudflare.com;
+window.OOT_API_REMOTE = window.OOT_API_REMOTE || 'https://really-ordinary-pond-jersey.trycloudflare.com';
 // Priorizar el override remoto (túnel de desarrollo) si está definido.
 // Si no, resolver según el mapa de ambientes.
 window.OOT_API_BASE = window.OOT_API_REMOTE || (
