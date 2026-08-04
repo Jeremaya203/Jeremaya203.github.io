@@ -1070,15 +1070,29 @@ function mostrarResultados(data) {
     
     Object.entries(porCategoria).forEach(([cat, items]) => {
       const catHeader = document.createElement('div');
-      catHeader.className = 'oot-js-determinantes-47';
+      catHeader.className = 'oot-js-determinantes-47 det-grupo-header';
       // cat proviene de la API (vocabulario controlado, pero se escapa por consistencia/H-12).
       catHeader.innerHTML = `
         <span class="material-symbols-outlined oot-js-determinantes-7">${iconosCat[cat] || 'category'}</span>
         <span class="oot-js-determinantes-22">${window.OOT.escapeHtml(String(cat))}</span>
         <span class="oot-js-determinantes-23">${items.length}</span>
+        <span class="material-symbols-outlined det-grupo-chevron">expand_more</span>
       `;
       listEl.appendChild(catHeader);
-      
+
+      // A.3.5 — Los ítems van dentro de su propio contenedor para poder plegar el grupo
+      // entero. Antes se añadían a `listEl` como hermanos del encabezado, así que la
+      // lista era una tira plana: con decenas de determinantes no había forma de navegar
+      // entre niveles sin hacer scroll a ciegas.
+      const grupo = document.createElement('div');
+      grupo.className = 'det-grupo';
+      listEl.appendChild(grupo);
+
+      catHeader.addEventListener('click', () => {
+        const plegado = grupo.classList.toggle('plegado');
+        catHeader.classList.toggle('plegado', plegado);
+      });
+
       items.forEach((det, idx) => {
         const item = document.createElement('div');
         item.className = 'determinante-item';
@@ -1119,7 +1133,7 @@ function mostrarResultados(data) {
             }
           }
         };
-        listEl.appendChild(item);
+        grupo.appendChild(item);   // A.3.5: dentro del grupo plegable, no suelto en la lista
       });
     });
   }

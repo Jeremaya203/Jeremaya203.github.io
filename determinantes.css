@@ -264,6 +264,18 @@ select option { background: var(--oot-s2); color: var(--oot-tx); }
 .result-card-value { font-size: 22px; font-weight: 800; color: var(--oot-ochre); }
 .result-card-label { font-size: 10px; color: var(--oot-tx3); text-transform: uppercase; letter-spacing: 0.05em; }
 
+/* A.3.5 — Grupos plegables por nivel de determinante. El encabezado alterna la clase
+   `plegado` sobre sí mismo y sobre su contenedor de ítems (ver js/determinantes.js). */
+.det-grupo-header { cursor: pointer; user-select: none; }
+.det-grupo-header:hover .oot-js-determinantes-22 { color: var(--oot-tx); }
+.det-grupo-chevron {
+  font-size: 18px;
+  color: var(--oot-tx3);
+  transition: transform 0.18s ease;
+}
+.det-grupo-header.plegado .det-grupo-chevron { transform: rotate(-90deg); }
+.det-grupo.plegado { display: none; }
+
 .determinante-item {
   background: var(--oot-s2);
   border-radius: 10px;

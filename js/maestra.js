@@ -6,8 +6,14 @@ var firstExpand = true;
 var firstParameters = true;
 var cacheUnidadesFiltro;
 
-var web_service = window.OOT_COT_API_BASE || "https://serviciosgeovisor.igac.gov.co:8080/Geovisor";
-var web_service_proxy = window.OOT_COT_API_BASE || "https://serviciosgeovisor.igac.gov.co:8080/Geovisor";
+// A.6 — Por defecto se sale por el PROXY del backend (/api/igac/*), no directo al
+// Geovisor: llamar a serviciosgeovisor.igac.gov.co:8080 desde el navegador solo funciona
+// dentro de la red del IGAC (dominio ajeno → CORS, y puerto 8080 no expuesto), y fuera de
+// ella el buscador POT cargaba con todos los filtros vacíos. Las rutas coinciden 1:1
+// (web_service + "/documentos?cmd=..." → /api/igac/documentos?cmd=...).
+// OOT_COT_API_BASE se conserva como override para volver a apuntar directo si hiciera falta.
+var web_service = window.OOT_COT_API_BASE || ((window.OOT_API_BASE || '') + '/api/igac');
+var web_service_proxy = web_service;
 
 var spanishDataTable = {
     "sProcessing": "Procesando...",

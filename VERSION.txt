@@ -2,4 +2,4 @@
 mensaje : fix(movil): mover el backdrop dentro del contenedor del modulo
 arbol   : CON CAMBIOS SIN COMMITEAR
 origen  : D:\OOT\Repos_Gitlab\observatorio_ot_frontend
-sync    : 2026-08-03 23:36:24
+sync    : 2026-08-04 15:46:32
