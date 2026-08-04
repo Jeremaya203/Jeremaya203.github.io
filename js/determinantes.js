@@ -1496,45 +1496,35 @@ function mostrarResultadosMapa(data) {
       if (mapa.getSource(sid)) mapa.removeSource(sid);
     });
     
-    // Mapeo de colores por categoría IGAC (campo determ: 1-6)
+    // B.1.6 — Paleta de NIVELES de determinante (campo determ: 1-6).
+    // Deliberadamente SIN verde, ámbar ni rojo: esos tres están reservados a los
+    // VEREDICTOS de viabilidad (Compatible / Condicionado / No viable, ver _colorVeredicto).
+    // Antes ambas escalas compartían #27ae60 y #c0392b, así que un polígono verde podía
+    // leerse como "Ambientales" o como "Compatible" según el modo, y uno rojo como
+    // "Áreas Metropolitanas" o como "No viable". Si se cambia esta paleta, mantenerla
+    // fuera del semáforo o vuelve la ambigüedad.
+    // Debe coincidir con las dos leyendas de Modulo_Determinantes.html (inline-extracted.css).
+    const COLORES_NIVEL = ['#14857a', '#8a6d3b', '#8e44ad', '#2980b9', '#566573', '#c2529b'];
+    const NOMBRES_NIVEL = ['Ambientales', 'Soberanía Alimentaria', 'Patrimoniales',
+                           'Infraestructura', 'Áreas Metropolitanas', 'Proyectos Turísticos'];
+    const COLOR_NIVEL_DEFAULT = '#7a62d0';
+
     let colorExpresion;
     if (tipoCampo === 'determ' && tieneCampoDeterm) {
-      colorExpresion = [
-        'match', ['get', 'determ'],
-        1, '#27ae60',   // Ambientales
-        2, '#e67e22',   // Soberanía Alimentaria
-        3, '#8e44ad',   // Patrimoniales
-        4, '#2980b9',   // Infraestructura
-        5, '#c0392b',   // Áreas Metropolitanas
-        6, '#16a085',   // Proyectos Turísticos
-        '#7a62d0'       // default
-      ];
+      // El campo `determ` es numérico (1-6)
+      colorExpresion = ['match', ['get', 'determ']];
+      COLORES_NIVEL.forEach((color, i) => colorExpresion.push(i + 1, color));
+      colorExpresion.push(COLOR_NIVEL_DEFAULT);
       window.OOT.log('[DETERMINANTES] Usando colores por campo determ');
-    } else if (tipoCampo === 'tipo') {
-      colorExpresion = [
-        'match', ['get', 'tipo'],
-        'Ambientales', '#27ae60',
-        'Soberanía Alimentaria', '#e67e22',
-        'Patrimoniales', '#8e44ad',
-        'Infraestructura', '#2980b9',
-        'Áreas Metropolitanas', '#c0392b',
-        'Proyectos Turísticos', '#16a085',
-        '#7a62d0'
-      ];
-    } else if (tipoCampo === 'nivel') {
-      colorExpresion = [
-        'match', ['get', 'nivel'],
-        'Ambientales', '#27ae60',
-        'Soberanía Alimentaria', '#e67e22',
-        'Patrimoniales', '#8e44ad',
-        'Infraestructura', '#2980b9',
-        'Áreas Metropolitanas', '#c0392b',
-        'Proyectos Turísticos', '#16a085',
-        '#7a62d0'
-      ];
+    } else if (tipoCampo === 'tipo' || tipoCampo === 'nivel') {
+      // `tipo` y `nivel` traen el nombre del nivel, no el número. Antes eran dos bloques
+      // idénticos duplicados; se unifican para que no puedan desincronizarse.
+      colorExpresion = ['match', ['get', tipoCampo]];
+      NOMBRES_NIVEL.forEach((nombre, i) => colorExpresion.push(nombre, COLORES_NIVEL[i]));
+      colorExpresion.push(COLOR_NIVEL_DEFAULT);
     } else {
-      // Si no hay campo de tipo, usar morado por defecto
-      colorExpresion = '#7a62d0';
+      // Si no hay campo de nivel, usar morado por defecto
+      colorExpresion = COLOR_NIVEL_DEFAULT;
     }
     
     // Separar por tipo de geometría
