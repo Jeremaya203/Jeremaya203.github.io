@@ -267,6 +267,31 @@ select option { background: var(--oot-s2); color: var(--oot-tx); }
 /* A.3.5 — Grupos plegables por nivel de determinante. El encabezado alterna la clase
    `plegado` sobre sí mismo y sobre su contenedor de ítems (ver js/determinantes.js). */
 .det-grupo-header { cursor: pointer; user-select: none; }
+
+/* B.1.6 — Color del título por NIVEL. Cada nivel define dos tonos:
+     --n      color pleno, para el icono (área pequeña y sólida: no necesita contraste de texto)
+     --n-txt  versión aclarada del MISMO tono, para el texto
+   Los tonos plenos se quedan entre 2.7:1 y 4.4:1 sobre el fondo del panel (#0f2340), por
+   debajo del mínimo legible. Las variantes -txt están calculadas para superar 4.5:1 (AA)
+   conservando el matiz, así que el nivel se sigue reconociendo por color sin sacrificar
+   legibilidad. Si se cambia un color pleno, hay que recalcular su -txt. */
+.det-grupo-header[data-nivel="1"] { --n: #14857a; --n-txt: #149c8f; }  /* Conservación ambiental */
+.det-grupo-header[data-nivel="2"] { --n: #8a6d3b; --n-txt: #a98445; }  /* Producción de alimentos */
+.det-grupo-header[data-nivel="3"] { --n: #8e44ad; --n-txt: #b072cb; }  /* Patrimonio cultural */
+.det-grupo-header[data-nivel="4"] { --n: #2980b9; --n-txt: #2a91d4; }  /* Infraestructura */
+/* Nivel 5: rosa pálido. Es el único tono que queda a distancia perceptual segura (ΔE2000 ≥ 25)
+   de los otros cinco niveles Y de los cuatro veredictos a la vez. Un fucsia más saturado se
+   confundía con el morado de Patrimonio (ΔE 21); el lima chocaba con "Compatible" y el
+   amarillo con "Condicionado". Al ser claro ya alcanza 8.1:1 sobre el panel, así que el
+   texto usa el mismo tono sin necesidad de aclararlo. */
+.det-grupo-header[data-nivel="5"] { --n: #f2a3c7; --n-txt: #f2a3c7; }  /* Componentes metropolitanos */
+.det-grupo-header[data-nivel="6"] { --n: #C9421B; --n-txt: #e95c34; }  /* Proyectos turísticos */
+
+.det-grupo-header .oot-js-determinantes-22 { color: var(--n-txt, var(--oot-tx3)); }
+.det-grupo-header .oot-js-determinantes-7  { color: var(--n, var(--oot-tx3)); }
+/* La línea inferior toma un velo del color del nivel: refuerza la pertenencia del grupo
+   sin competir con el texto. color-mix degrada solo al borde neutro si no hay soporte. */
+.det-grupo-header[data-nivel] { border-bottom-color: color-mix(in srgb, var(--n) 45%, transparent); }
 .det-grupo-header:hover .oot-js-determinantes-22 { color: var(--oot-tx); }
 .det-grupo-chevron {
   font-size: 18px;

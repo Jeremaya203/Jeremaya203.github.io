@@ -1058,22 +1058,32 @@ function mostrarResultados(data) {
       porCategoria[cat].push(det);
     });
     
-    const iconosCat = {
-      'Ambientales': 'forest',
-      'Soberanía Alimentaria': 'grass',
-      'Patrimoniales': 'account_balance',
-      'Infraestructura': 'settings_input_component',
-      'Áreas Metropolitanas': 'location_city',
-      'Proyectos Turísticos Especiales': 'beach_access',
-      'Otros': 'category'
+    // Iconos por CÓDIGO de nivel (1-6), no por nombre: el backend envía el nombre largo
+    // ("Conservación Ambiental y Gestión del Riesgo", ver CATEGORIAS_DTS en consultor_area.py)
+    // y este mapa usaba los cortos ("Ambientales"), así que nunca acertaba y todos los
+    // grupos salían con el icono genérico.
+    const iconosNivel = {
+      1: 'forest',                      // Conservación Ambiental y Gestión del Riesgo
+      2: 'agriculture',                 // Áreas de Protección para la Producción de Alimentos
+      3: 'account_balance',             // Patrimonio Cultural
+      4: 'settings_input_component',    // Infraestructura Básica Nacional y Regional
+      5: 'location_city',               // Componentes Metropolitanos
+      6: 'beach_access'                 // Proyectos Turísticos Especiales
     };
     
     Object.entries(porCategoria).forEach(([cat, items]) => {
       const catHeader = document.createElement('div');
       catHeader.className = 'oot-js-determinantes-47 det-grupo-header';
+      // B.1.6 — El título del grupo se pinta con el color de SU nivel. Se toma del campo
+      // `codigo` (1-6) que envía el backend, no del nombre: el nombre es texto largo y
+      // variable, el código es el dominio LADM estable. El CSS traduce ese número a un par
+      // de colores (pleno para el icono, aclarado para el texto: sobre el fondo oscuro del
+      // panel los tonos plenos no llegan a contraste AA).
+      const nivelCod = parseInt(items[0] && items[0].codigo, 10);
+      if (nivelCod >= 1 && nivelCod <= 6) catHeader.dataset.nivel = String(nivelCod);
       // cat proviene de la API (vocabulario controlado, pero se escapa por consistencia/H-12).
       catHeader.innerHTML = `
-        <span class="material-symbols-outlined oot-js-determinantes-7">${iconosCat[cat] || 'category'}</span>
+        <span class="material-symbols-outlined oot-js-determinantes-7">${iconosNivel[nivelCod] || 'category'}</span>
         <span class="oot-js-determinantes-22">${window.OOT.escapeHtml(String(cat))}</span>
         <span class="oot-js-determinantes-23">${items.length}</span>
         <span class="material-symbols-outlined det-grupo-chevron">expand_more</span>
@@ -1504,7 +1514,7 @@ function mostrarResultadosMapa(data) {
     // "Áreas Metropolitanas" o como "No viable". Si se cambia esta paleta, mantenerla
     // fuera del semáforo o vuelve la ambigüedad.
     // Debe coincidir con las dos leyendas de Modulo_Determinantes.html (inline-extracted.css).
-    const COLORES_NIVEL = ['#14857a', '#8a6d3b', '#8e44ad', '#2980b9', '#566573', '#c2529b'];
+    const COLORES_NIVEL = ['#14857a', '#8a6d3b', '#8e44ad', '#2980b9', '#f2a3c7', '#C9421B'];
     const NOMBRES_NIVEL = ['Ambientales', 'Soberanía Alimentaria', 'Patrimoniales',
                            'Infraestructura', 'Áreas Metropolitanas', 'Proyectos Turísticos'];
     const COLOR_NIVEL_DEFAULT = '#7a62d0';
