@@ -44,10 +44,15 @@ window.OOT_BASE = (function () {
 //    por los dominios API reales de cada ambiente cuando estén aprovisionados. Mientras
 //    tanto, un operador puede apuntar temporalmente la entrada del ambiente a la URL
 //    activa del backend (p.ej. un túnel) SIN commitear esa URL volátil al repositorio.
+// AVISO: hoy este mapa NO se consulta. OOT_API_BASE (abajo) toma OOT_API_REMOTE, que
+// tiene un valor por defecto no vacio, asi que el operador `||` siempre corta antes de
+// llegar aqui. Se conserva porque describe la ambientacion prevista, pero mientras
+// OOT_API_REMOTE tenga default esta rama es inalcanzable.
 window.OOT_ENV_API = window.OOT_ENV_API || {
   'localhost':                      '',   // desarrollo (api.py sirve el sitio)
   '127.0.0.1':                      '',
-  'jeremaya203.github.io':          'https://accommodations-dress-offices-numeric.trycloudflare.com',   // file:// o same-origin sin host
+  '':                               '',   // file:// o same-origin sin host
+  'jeremaya203.github.io':          'https://mustang-iii-lab-boats.trycloudflare.com',   // file:// o same-origin sin host
   // --- Ambientación institucional del IGAC ---
   'pruebas-colombiaot.igac.gov.co': 'https://api-pruebas-oot.igac.gov.co', // Ambiente de pruebas
   'colombiaot.igac.gov.co':         'https://api-oot.igac.gov.co',         // Ambiente de producción
@@ -55,7 +60,7 @@ window.OOT_ENV_API = window.OOT_ENV_API || {
 // Override explícito SOLO para desarrollo (p.ej. exponer un backend local por túnel):
 // defina  window.OOT_API_REMOTE = 'https://xxxx.trycloudflare.com'  ANTES de este script.
 // NUNCA debe ser el default de producción → por eso ya no se hardcodea ninguna URL aquí.
-window.OOT_API_REMOTE = window.OOT_API_REMOTE || 'https://accommodations-dress-offices-numeric.trycloudflare.com';
+window.OOT_API_REMOTE = window.OOT_API_REMOTE || 'https://mustang-iii-lab-boats.trycloudflare.com';
 // Priorizar el override remoto (túnel de desarrollo) si está definido.
 // Si no, resolver según el mapa de ambientes.
 window.OOT_API_BASE = window.OOT_API_REMOTE || (
@@ -82,7 +87,9 @@ if (!window.OOT_DEBUG && typeof console !== 'undefined') {
   console.log = function () {};
   console.debug = function () {};
   console.info = function () {};
-  console.warn = function () {};
+  // console.warn y console.error SI se conservan: son los canales por los que el propio
+  // sitio reporta degradaciones (shell no cargado, handler inexistente, capa vacia).
+  // Anularlos dejaba esos fallos completamente invisibles en produccion.
 }
 // Favicon institucional en TODAS las páginas (sin editar cada <head>).
 (function () {
@@ -170,6 +177,158 @@ window.OOT_COT_WRAPPERS = {
 
 // ── Helpers globales ──────────────────────────────────────────────────────────
 window.OOT = window.OOT || {};
+
+// ── Acceso obligatorio al portal ─────────────────────────────────────────────────
+// Todas las páginas reales del portal cargan config.js. La barrera usa la misma sesión
+// Firebase que los navbars y módulos existentes, por lo que el usuario se autentica una
+// sola vez. Los documentos internos mostrados dentro de iframes los protege la página
+// superior; si se abren directamente, esta misma barrera sí se aplica.
+(function requirePortalAuthentication() {
+  if (window.__ootAuthGuardStarted) return;
+
+  // La barrera se saltaba en CUALQUIER iframe. Como GitHub Pages no emite
+  // X-Frame-Options y `frame-ancestors` es una de las directivas que el navegador ignora
+  // en <meta>, hoy nada impide embeber el sitio desde fuera: bastaba un
+  // <iframe src=".../Modulo_Determinantes.html"> ajeno para entrar sin pasar por el login.
+  // Se distingue el caso legitimo (iframe del MISMO origen, donde la pagina contenedora
+  // ya aplico la barrera) del embebido cross-origin, donde si se exige sesion.
+  var _enIframe = window.top !== window.self;
+  var _mismoOrigen = false;
+  if (_enIframe) {
+    try { _mismoOrigen = window.top.location.origin === window.location.origin; }
+    catch (e) { _mismoOrigen = false; }   // SecurityError = origen distinto
+  }
+  if (_enIframe && _mismoOrigen) return;
+
+  window.__ootAuthGuardStarted = true;
+
+  var FIREBASE_CONFIG = {
+    apiKey: 'AIzaSyCLSp_Qbaohj8owxrpZxvrmxUSkVw0ukig',
+    authDomain: 'geovisor-igac.firebaseapp.com',
+    projectId: 'geovisor-igac'
+  };
+  var guard = null;
+  var authUi = null;
+  var previousOverflow = '';
+  var pageBlocked = false;
+
+  function addGuardStyles() {
+    // <link> y no <style>: un bloque de estilos creado por JS lo bloquea style-src sin
+    // 'unsafe-inline'. Se resuelve contra OOT_BASE para funcionar tambien bajo subpath.
+    if (document.getElementById('oot-auth-guard-styles')) return;
+    var link = document.createElement('link');
+    link.id = 'oot-auth-guard-styles';
+    link.rel = 'stylesheet';
+    link.href = (window.OOT_BASE || '') + '/oot-auth-guard.css';
+    (document.head || document.documentElement).appendChild(link);
+  }
+
+  function ensureGuard() {
+    if (guard) return guard;
+    addGuardStyles();
+    guard = document.createElement('div');
+    guard.id = 'oot-auth-guard';
+    guard.setAttribute('role', 'dialog');
+    guard.setAttribute('aria-modal', 'true');
+    guard.setAttribute('aria-labelledby', 'oot-auth-guard-title');
+    guard.innerHTML =
+      '<section class="oot-auth-guard__card">' +
+        '<h1 id="oot-auth-guard-title" class="oot-auth-guard__title">Bienvenido a Colombia OT</h1>' +
+        '<p class="oot-auth-guard__text">Debes iniciar sesión para ingresar a la plataforma.</p>' +
+        '<div id="oot-auth-guard-container"></div>' +
+        '<p id="oot-auth-guard-status" class="oot-auth-guard__status">Validando tu sesión…</p>' +
+      '</section>';
+    (document.body || document.documentElement).appendChild(guard);
+    return guard;
+  }
+
+  function blockPage(message) {
+    var element = ensureGuard();
+    element.hidden = false;
+    if (!pageBlocked) previousOverflow = document.body ? document.body.style.overflow : '';
+    pageBlocked = true;
+    if (document.body) document.body.style.overflow = 'hidden';
+    var status = document.getElementById('oot-auth-guard-status');
+    if (status) status.textContent = message || '';
+  }
+
+  function unblockPage() {
+    if (guard) guard.hidden = true;
+    if (document.body) document.body.style.overflow = previousOverflow;
+    pageBlocked = false;
+  }
+
+  function showLoadError() {
+    blockPage('No fue posible cargar el servicio de autenticación. Revisa tu conexión e intenta nuevamente.');
+    var status = document.getElementById('oot-auth-guard-status');
+    if (status && !document.getElementById('oot-auth-guard-retry')) {
+      var retry = document.createElement('button');
+      retry.id = 'oot-auth-guard-retry';
+      retry.className = 'oot-auth-guard__retry';
+      retry.type = 'button';
+      retry.textContent = 'Reintentar';
+      retry.addEventListener('click', function () { window.location.reload(); });
+      status.parentNode.appendChild(retry);
+    }
+  }
+
+  function startLogin(auth) {
+    blockPage('Selecciona una opción para continuar.');
+    if (!window.firebaseui || !firebaseui.auth) {
+      showLoadError();
+      return;
+    }
+    try {
+      authUi = firebaseui.auth.AuthUI.getInstance() || new firebaseui.auth.AuthUI(auth);
+      authUi.start('#oot-auth-guard-container', {
+        callbacks: {
+          signInSuccess: function () { return false; },
+          signInSuccessWithAuthResult: function () { return false; }
+        },
+        signInOptions: [
+          { provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID, customParameters: { prompt: 'select_account' } },
+          firebase.auth.FacebookAuthProvider.PROVIDER_ID,
+          { provider: firebase.auth.EmailAuthProvider.PROVIDER_ID, requireDisplayName: true },
+          'apple.com', 'microsoft.com', 'yahoo.com'
+        ],
+        credentialHelper: firebaseui.auth.CredentialHelper.NONE,
+        signInFlow: 'popup'
+      });
+    } catch (error) {
+      console.error('[OOT.authGuard] No se pudo iniciar FirebaseUI:', error);
+      showLoadError();
+    }
+  }
+
+  function initialize(attempt) {
+    ensureGuard();
+    blockPage('Validando tu sesión…');
+    if (!window.firebase || !firebase.auth || !window.firebaseui) {
+      if (attempt < 100) {
+        window.setTimeout(function () { initialize(attempt + 1); }, 100);
+      } else {
+        showLoadError();
+      }
+      return;
+    }
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      firebase.auth().onAuthStateChanged(function (user) {
+        if (user) unblockPage();
+        else startLogin(firebase.auth());
+      }, function (error) {
+        console.error('[OOT.authGuard] Error al validar la sesión:', error);
+        showLoadError();
+      });
+    } catch (error) {
+      console.error('[OOT.authGuard] Error de inicialización:', error);
+      showLoadError();
+    }
+  }
+
+  if (document.body) initialize(0);
+  else document.addEventListener('DOMContentLoaded', function () { initialize(0); }, { once: true });
+})();
 
 /**
  * Genera o recupera el session_id del chat normativo.
@@ -324,7 +483,13 @@ window.OOT.loadShell = async function() {
 
     // Marcar link activo. Home: la landing es index.html (H-05), servida en '/' o
     // '/index.html' → ambos deben resolver a 'index' (pathname '/' da '' → fallback).
-    const page = (location.pathname.split('/').pop().replace('.html', '') || 'index').toLowerCase();
+    // Se compara la RUTA, no solo el ultimo segmento: pot/, ruta/, cargue/ y
+    // caracterizaciones/ son todos 'index.html', asi que por nombre de archivo todos
+    // resolvian a 'index' y el enlace activo era siempre "Inicio".
+    const _ruta = location.pathname.toLowerCase();
+    const _hoja = (_ruta.split('/').pop().replace('.html', '') || 'index');
+    const _dir  = _ruta.replace(/\/[^/]*$/, '').split('/').filter(Boolean).pop() || '';
+    const page  = (_hoja === 'index' && _dir) ? _dir : _hoja;
     document.querySelectorAll('#link-list a[data-page], .navbarnavigac a[data-page], .oot-dark-links a[data-page]').forEach(el => {
       if (el.dataset.page === page) el.classList.add('active');
     });
