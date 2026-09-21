@@ -32,7 +32,7 @@
             try {
                 const url = new URL(value, this.window.location.href);
                 return url.pathname.split("/").pop().toLowerCase();
-            } catch (_) {
+        } catch {
                 return "";
             }
         }
@@ -41,46 +41,46 @@
             return COMPONENTS[this.getPageName(value)] || "";
         }
 
-        obtenerComponenteActual() {
+        getCurrentComponent() {
             return this.getComponentFromPage(this.window.location.pathname) || "Componente desconocido";
         }
 
-        isAllowedEvent(nombreEvento, categoria, etiqueta) {
-            if (nombreEvento === "acceso_componente" && categoria === "Navegación") {
-                return etiqueta.startsWith("Acceso a ")
-                    && this.componentNames.has(etiqueta.slice("Acceso a ".length));
+        isAllowedEvent(eventName, category, label) {
+            if (eventName === "acceso_componente" && category === "Navegación") {
+                return label.startsWith("Acceso a ")
+                    && this.componentNames.has(label.slice("Acceso a ".length));
             }
 
-            if (nombreEvento === "acceso_descargables" && categoria === "Descargas") {
-                return etiqueta.startsWith("Acceso a descargables - ")
-                    && this.componentNames.has(etiqueta.slice("Acceso a descargables - ".length));
+            if (eventName === "acceso_descargables" && category === "Descargas") {
+                return label.startsWith("Acceso a descargables - ")
+                    && this.componentNames.has(label.slice("Acceso a descargables - ".length));
             }
 
             return false;
         }
 
-        registrarEvento(nombreEvento, categoria, etiqueta) {
-            if (!this.isAllowedEvent(nombreEvento, categoria, etiqueta)
+        trackEvent(eventName, category, label) {
+            if (!this.isAllowedEvent(eventName, category, label)
                 || typeof this.window.gtag !== "function") {
                 return;
             }
 
             try {
-                this.window.gtag("event", nombreEvento, {
-                    event_category: categoria,
-                    event_label: etiqueta,
+                this.window.gtag("event", eventName, {
+                    event_category: category,
+                    event_label: label,
                     value: 1
                 });
-            } catch (_) {
+            } catch {
                 // Analytics must never interfere with the application flow.
             }
         }
 
-        registrarAccesoComponente(page) {
+        trackComponentAccess(page) {
             const component = this.getComponentFromPage(page);
             const now = Date.now();
 
-            if (!component || component === this.obtenerComponenteActual()) {
+            if (!component || component === this.getCurrentComponent()) {
                 return;
             }
 
@@ -91,17 +91,17 @@
 
             this.lastNavigationComponent = component;
             this.lastNavigationAt = now;
-            this.registrarEvento("acceso_componente", "Navegación", `Acceso a ${component}`);
+            this.trackEvent("acceso_componente", "Navegación", `Acceso a ${component}`);
         }
 
-        registrarAccesoDescargables() {
-            const component = this.obtenerComponenteActual();
+        trackDownloadsAccess() {
+            const component = this.getCurrentComponent();
 
             if (!this.componentNames.has(component)) {
                 return;
             }
 
-            this.registrarEvento(
+            this.trackEvent(
                 "acceso_descargables",
                 "Descargas",
                 `Acceso a descargables - ${component}`
@@ -125,7 +125,7 @@
             try {
                 this.window.gtag("js", new Date());
                 this.window.gtag("config", MEASUREMENT_ID);
-            } catch (_) {
+            } catch {
             
             }
 
@@ -158,13 +158,13 @@
                 }
 
                 if (event.target.closest("#btnDescargables")) {
-                    this.registrarAccesoDescargables();
+                    this.trackDownloadsAccess();
                     return;
                 }
 
                 const link = event.target.closest("a[href]");
                 if (link) {
-                    this.registrarAccesoComponente(link.getAttribute("href"));
+                    this.trackComponentAccess(link.getAttribute("href"));
                 }
             }, true);
         }
@@ -177,6 +177,10 @@
     analytics.initialize();
 
     window.CharacterizationsAnalytics = analytics;
-    window.registrarEventoAnalytics = analytics.registrarEvento.bind(analytics);
-    window.registrarAccesoComponente = analytics.registrarAccesoComponente.bind(analytics);
-    window.obtenerComponenteActual = analytics.obtenerComponenteActual.bind(analytics);
+    window.trackAnalyticsEvent = analytics.trackEvent.bind(analytics);
+    window.trackComponentAccess = analytics.trackComponentAccess.bind(analytics);
+    window.getCurrentCharacterizationComponent = analytics.getCurrentComponent.bind(analytics);
+    // Deprecated global aliases retained while component callers migrate.
+    window.registrarEventoAnalytics = window.trackAnalyticsEvent;
+    window.registrarAccesoComponente = window.trackComponentAccess;
+    window.obtenerComponenteActual = window.getCurrentCharacterizationComponent;

@@ -57,8 +57,8 @@ export function clearLayers() {
     window.__geoformaSelectedPaisaje = null;
     window.__vocacionSelectedLabel = null;
 
-    const fuenteDiv = document.getElementById("mapSource");
-    if (fuenteDiv) {
-        fuenteDiv.textContent = "";
+    const sourceElement = document.getElementById("mapSource");
+    if (sourceElement) {
+        sourceElement.textContent = "";
     }
 }

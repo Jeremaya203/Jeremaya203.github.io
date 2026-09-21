@@ -64,7 +64,7 @@
               <p class="card-text small text-muted">${esc(a.descripcion)}</p>
             </div>
             <div class="card-footer bg-transparent border-top-0 pt-0">
-              <a href="${API}/api/ladm/descargar/${esc(a.nombre)}"
+              <a href="${API}/api/ladm/descargar/${encodeURIComponent(a.nombre)}"
                  class="btn btn-sm btn-primary" download>
                 <i class="fas fa-download mr-1"></i>Descargar
               </a>

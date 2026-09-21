@@ -1,4 +1,4 @@
-const GEOJSON_URL = new URL("../../../Data/frontera_internacional_municipios_web.geojson", import.meta.url);
+const GEOJSON_URL = new URL("../../../data/frontera_internacional_municipios_web.geojson", import.meta.url);
 
 const COUNTRY_BY_DEPARTMENT = Object.freeze({
     "15": "Venezuela",
@@ -79,13 +79,62 @@ function averageLongitude(coordinates) {
     return coordinates.reduce(function(sum, coordinate) { return sum + Number(coordinate[0] || 0); }, 0) / coordinates.length;
 }
 
+function averageLatitude(coordinates) {
+    if (!coordinates.length) return 0;
+    return coordinates.reduce(function(sum, coordinate) { return sum + Number(coordinate[1] || 0); }, 0) / coordinates.length;
+}
+
+function createBorderPart(country, coordinates, labelKey = country) {
+    return { country: country, coordinates: coordinates, labelKey: labelKey };
+}
+
+function splitPathByRatio(coordinates, ratio) {
+    if (coordinates.length < 3) return [coordinates];
+
+    const safeRatio = Math.max(0.1, Math.min(0.9, Number(ratio) || 0.5));
+    const splitIndex = Math.max(1, Math.min(
+        coordinates.length - 2,
+        Math.round((coordinates.length - 1) * safeRatio)
+    ));
+    return [coordinates.slice(0, splitIndex + 1), coordinates.slice(splitIndex)];
+}
+
+function classifyGuainiaBorder(code, coordinates) {
+    if (code === "94883") {
+        return [createBorderPart(averageLongitude(coordinates) < -67.25 ? "Brasil" : "Venezuela", coordinates)];
+    }
+    if (code === "94884") {
+        return [createBorderPart(averageLatitude(coordinates) < 2.25 ? "Brasil" : "Venezuela", coordinates)];
+    }
+    if (code === "94885") {
+        return splitPathByRatio(coordinates, 0.5)
+            .filter(function(path) { return path.length >= 2; })
+            .map(function(path, index) {
+                return createBorderPart(index === 0 ? "Venezuela" : "Brasil", path);
+            });
+    }
+    return null;
+}
+
+function classifyLeticiaBorder(coordinates, allowDuplicateCountryLabels) {
+    if (coordinates.length <= 2) {
+        return [createBorderPart("Perú", coordinates, allowDuplicateCountryLabels ? "peru-norte" : "Perú")];
+    }
+
+    return splitPathByRatio(coordinates, 0.52)
+        .filter(function(path) { return path.length >= 2; })
+        .map(function(path, index) {
+            if (index === 0) return createBorderPart("Brasil", path);
+            return createBorderPart("Perú", path, allowDuplicateCountryLabels ? "peru-sur" : "Perú");
+        });
+}
+
 function classifyWholeFeature(code, coordinates) {
+    if (COUNTRY_BY_MUNICIPALITY[code]) return COUNTRY_BY_MUNICIPALITY[code];
     const departmentCode = code.slice(0, 2);
     if (COUNTRY_BY_DEPARTMENT[departmentCode]) return COUNTRY_BY_DEPARTMENT[departmentCode];
-    if (COUNTRY_BY_MUNICIPALITY[code]) return COUNTRY_BY_MUNICIPALITY[code];
 
-    // Leticia y Tarapacá tienen segmentos independientes hacia Perú y Brasil.
-    if (code === "91001") return coordinates.length <= 2 ? "Perú" : "Brasil";
+    // Tarapacá tiene segmentos independientes hacia Perú y Brasil.
     if (code === "91798") return averageLongitude(coordinates) < -70 ? "Perú" : "Brasil";
     return "";
 }
@@ -115,13 +164,16 @@ function splitPuertoLeguizamo(coordinates) {
         });
 }
 
-export function classifyBorderFeature(feature) {
+export function classifyBorderFeature(feature, options = {}) {
     const code = normalizeDivipola(feature?.properties?.DIVIPOLA);
     const coordinates = feature?.geometry?.coordinates || [];
+    const guainiaParts = classifyGuainiaBorder(code, coordinates);
+    if (guainiaParts) return guainiaParts;
+    if (code === "91001") return classifyLeticiaBorder(coordinates, Boolean(options.allowDuplicateCountryLabels));
     if (code === "86573") return splitPuertoLeguizamo(coordinates);
 
     const country = classifyWholeFeature(code, coordinates);
-    return country ? [{ country: country, coordinates: coordinates }] : [];
+    return country ? [createBorderPart(country, coordinates)] : [];
 }
 
 function lineMidpoint(paths) {
@@ -239,16 +291,23 @@ export async function showInternationalBorder(options) {
 
         const countryPaths = new Map();
         selected.forEach(function(feature) {
-            classifyBorderFeature(feature).forEach(function(part) {
+            classifyBorderFeature(feature, {
+                allowDuplicateCountryLabels: Boolean(options?.municipalityCode)
+            }).forEach(function(part) {
                 if (!part.country || part.coordinates.length < 2) return;
-                if (!countryPaths.has(part.country)) countryPaths.set(part.country, []);
-                countryPaths.get(part.country).push(part.coordinates);
+                const labelKey = part.labelKey || part.country;
+                if (!countryPaths.has(labelKey)) {
+                    countryPaths.set(labelKey, { country: part.country, paths: [] });
+                }
+                countryPaths.get(labelKey).paths.push(part.coordinates);
             });
         });
 
         const lineGraphics = [];
         const labelGraphics = [];
-        countryPaths.forEach(function(paths, country) {
+        countryPaths.forEach(function(entry, labelKey) {
+            const country = entry.country;
+            const paths = entry.paths;
             paths.forEach(function(path) {
                 lineGraphics.push(new GraphicCtor({
                     geometry: { type: "polyline", paths: [path], spatialReference: { wkid: 4326 } },
@@ -269,7 +328,7 @@ export async function showInternationalBorder(options) {
                         haloSize: 1.5,
                         font: { family: "Outfit", size: 12, weight: "bold" }
                     },
-                    attributes: { type: "international-border-label", country: country }
+                    attributes: { type: "international-border-label", country: country, labelKey: labelKey }
                 }));
             }
         });

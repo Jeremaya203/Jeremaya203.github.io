@@ -38,8 +38,8 @@ export function clearLayers() {
         baseWhere: "1=1"
     };
 
-    const fuenteDiv = document.getElementById("mapSource");
-    if (fuenteDiv) {
-        fuenteDiv.textContent = "";
+    const sourceElement = document.getElementById("mapSource");
+    if (sourceElement) {
+        sourceElement.textContent = "";
     }
 }

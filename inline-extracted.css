@@ -5,6 +5,10 @@
 #ie-index-1 { background-image:url('./images/home/c_normativa.png') }
 #ie-index-2 { background-image:url('./images/home/determinantes.png') }
 #ie-index-3 { background-image:url('./images/home/indicadores.png') }
+/* Sin fotografia propia todavia (las otras son 2299x1387; bg-los-pot.png es
+   500x221 y se pixelaria). Degradado institucional navy -> teal como sustituto
+   hasta que llegue la imagen. */
+#ie-index-4 { background-image:linear-gradient(135deg,#0b2e4a 0%,#234570 52%,#0f6e56 100%) }
 #ie-index-4 { text-wrap:balance }
 #ie-index-5 { background:rgba(15,35,64,0.6);border:1px solid rgba(74,144,217,0.15);border-radius:16px;overflow:hidden;height:100%;display:flex;flex-direction:column;transition:transform 0.2s,box-shadow 0.2s; }
 #ie-index-6 { height:160px;overflow:hidden;position:relative; }
@@ -334,3 +338,45 @@
 #ie-especif-2 { color:rgba(255,255,255,0.75); }
 #ie-especif-3 { color:#fff; }
 #grid-archivos { display:none }
+
+/* ===========================================================================
+   CORRECIONES COLOMBIA OT 2.0 — documento recibido 2026-08-31.
+   Tamano y color por elemento tal como los especifica el documento. Van al
+   final del archivo a proposito: sobrescriben la regla original sin tocarla,
+   asi el cambio es trazable y reversible de un vistazo.
+   =========================================================================== */
+
+/* -- Determinantes -- */
+#ie-determinantes-6  { font-size: 16px; color: #fff; }        /* Analisis de Determinantes */
+#ie-determinantes-20 { font-size: 12px; color: #c1dfff; }     /* Reglas a Evaluar          */
+#upload-titulo       { font-size: 12px; color: #c1dfff; }     /* Zona de Consulta          */
+#ie-determinantes-17 { font-size: 10px; color: #7a9cc0; }     /* Zona dibujada (drop-zone) */
+#ie-determinantes-49 { font-size: 15px; color: #fff; }        /* Resultados del Analisis   */
+#ie-determinantes-68 { font-size: 10px; color: #7a9cc0; }     /* Municipio                 */
+#ie-determinantes-70 { font-size: 12px; color: #e0e8f2; }     /* Nivel de la determinante  */
+
+/* -- Indicadores -- */
+#ie-indicadores-8  { font-size: 16px; color: #fff; }          /* Indicadores Territoriales */
+#ie-indicadores-17 { font-size: 12px; color: #7a9cc0; }       /* Departamento              */
+#ie-indicadores-22 { font-size: 12px; color: #27a880; }       /* Como funciona?            */
+#ie-indicadores-23 { font-size: 11px; color: #7a9cc0; }       /* Seleccione un indicador   */
+#vp-nombre         { font-size: 14px; color: #e0e8f2; }       /* Nombre del indicador      */
+
+/* Documento p.5 — "Indicadores: 12px, #e0e8f2". Selector de escala
+   Nacional / Departamento / Municipio. El estado activo lo pinta cambiarEscala()
+   por estilo inline (js/indicadores/escala.js:10-13) y sigue siendo #fff sobre azul. */
+#ie-indicadores-14,
+#ie-indicadores-15,
+#ie-indicadores-16 { font-size: 12px; color: #e0e8f2; }
+
+/* Documento p.7 — "Subtitulos Resultados: 12px, #7a9cc0". Son los cuatro rotulos
+   del panel derecho: Leyenda, ¿Que mide?, ¿Para que sirve? y Estadisticas. */
+#ie-indicadores-57,
+#ie-indicadores-59,
+#ie-indicadores-60,
+#ie-indicadores-65 { font-size: 12px; color: #7a9cc0; }
+
+/* Documento p.6 — "Asentamientos Humanos: 11px, #7a9cc0". El documento señala
+   #vp-asunto (el asunto del indicador abierto en el panel derecho); la regla
+   original esta en 9.5px. */
+#vp-asunto { font-size: 11px; color: #7a9cc0; }

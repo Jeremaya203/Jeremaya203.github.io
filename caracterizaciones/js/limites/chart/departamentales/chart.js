@@ -1,11 +1,11 @@
-import { createChart, getChartInstance } from "../chart.core.js";
-import { defaultBarOptions, buildDataset } from "../chart.helpers.js";
-import { convertAreaToKm2, normalizeDepartamentoDisplayName } from "../../utils.js?v=depto-area-km2-20260716";
+import { createChart, getChartInstance } from "../chart-core.js";
+import { defaultBarOptions, buildDataset } from "../chart-helpers.js";
+import { convertAreaToSquareKilometers, normalizeDepartmentDisplayName } from "../../utils.js?v=code-quality-20260727";
 
-const DEPTO_BAR_COLOR = "#4C0073";
-const DEPTO_BAR_DIM_COLOR = "rgba(76, 0, 115, 0.35)";
+const DEPARTMENT_BAR_COLOR = "#4C0073";
+const DEPARTMENT_BAR_DIM_COLOR = "rgba(76, 0, 115, 0.35)";
 
-function formatAreaKm2(value) {
+function formatAreaSquareKilometers(value) {
     const number = Number(value);
     if (!Number.isFinite(number)) return "0,00 km\u00b2";
 
@@ -26,7 +26,7 @@ function resolveCodedFieldLabel(layer, fieldName, value) {
     return match?.name || value;
 }
 
-export function highlightDeptoChartBar(selectedIndex) {
+export function highlightDepartmentChartBar(selectedIndex) {
     const chart = getChartInstance();
     if (!chart || selectedIndex < 0) return;
 
@@ -35,19 +35,19 @@ export function highlightDeptoChartBar(selectedIndex) {
     if (!count) return;
 
     dataset.backgroundColor = Array.from({ length: count }, (_, index) =>
-        index === selectedIndex ? DEPTO_BAR_COLOR : DEPTO_BAR_DIM_COLOR
+        index === selectedIndex ? DEPARTMENT_BAR_COLOR : DEPARTMENT_BAR_DIM_COLOR
     );
     chart.update("none");
 }
 
-export function highlightDeptoChartByCode(deCodigo) {
+export function highlightDepartmentChartByCode(departmentCode) {
     const chart = getChartInstance();
-    const codes = chart?.$limitesDepartamentos?.deCodigos || [];
-    const index = codes.findIndex(code => String(code) === String(deCodigo));
-    if (index >= 0) highlightDeptoChartBar(index);
+    const codes = chart?.$limitesDepartamentos?.departmentCodes || [];
+    const index = codes.findIndex(code => String(code) === String(departmentCode));
+    if (index >= 0) highlightDepartmentChartBar(index);
 }
 
-export function clearDeptoChartHighlight() {
+export function clearDepartmentChartHighlight() {
     const chart = getChartInstance();
     if (!chart) return;
 
@@ -55,7 +55,7 @@ export function clearDeptoChartHighlight() {
     const count = dataset?.data?.length || 0;
     if (!count) return;
 
-    dataset.backgroundColor = Array(count).fill(DEPTO_BAR_COLOR);
+    dataset.backgroundColor = Array(count).fill(DEPARTMENT_BAR_COLOR);
     chart.update("none");
 }
 
@@ -80,21 +80,21 @@ export async function renderChart(layer, config, whereClause, options = {}) {
         });
 
         const features = res.features || [];
-        const numDeptos = features.length;
+        const departmentCount = features.length;
         const labels = [];
         const values = [];
         const colors = [];
-        const deCodigos = [];
+        const departmentCodes = [];
 
         features.forEach(feature => {
             const att = feature.attributes || {};
             const code = String(att[codeField] || "");
             const rawLabel = att[labelField];
             const label = resolveCodedFieldLabel(layer, labelField, rawLabel) || rawLabel || "Sin nombre";
-            labels.push(String(normalizeDepartamentoDisplayName(label, code)));
-            values.push(convertAreaToKm2(att[valueField], config.areaUnit) ?? 0);
-            colors.push(config.color || DEPTO_BAR_COLOR);
-            deCodigos.push(code);
+            labels.push(String(normalizeDepartmentDisplayName(label, code)));
+            values.push(convertAreaToSquareKilometers(att[valueField], config.areaUnit) ?? 0);
+            colors.push(config.color || DEPARTMENT_BAR_COLOR);
+            departmentCodes.push(code);
         });
 
         function wrapDepartmentLabel(name) {
@@ -120,25 +120,25 @@ export async function renderChart(layer, config, whereClause, options = {}) {
         }
 
         const wrappedLabels = labels.map(wrapDepartmentLabel);
-        const esUnaBarra = numDeptos === 1;
-        const pocosDeptos = numDeptos <= 5;
-        const alturaPorBarra = pocosDeptos ? 28 : 18;
+        const esUnaBarra = departmentCount === 1;
+        const hasFewDepartments = departmentCount <= 5;
+        const alturaPorBarra = hasFewDepartments ? 28 : 18;
         const canvasHeight = esUnaBarra
             ? 300
-            : Math.min(520, 100 + numDeptos * alturaPorBarra);
-        const fontSizeY = esUnaBarra ? 10 : (pocosDeptos ? 10 : 8);
-        const fontSizeX = esUnaBarra ? 9 : (pocosDeptos ? 11 : 10);
-        const tickPaddingY = esUnaBarra ? 8 : (pocosDeptos ? 6 : 3);
+            : Math.min(520, 100 + departmentCount * alturaPorBarra);
+        const fontSizeY = esUnaBarra ? 10 : (hasFewDepartments ? 10 : 8);
+        const fontSizeX = esUnaBarra ? 9 : (hasFewDepartments ? 11 : 10);
+        const tickPaddingY = esUnaBarra ? 8 : (hasFewDepartments ? 6 : 3);
         const layoutPadding = esUnaBarra
             ? { top: 18, bottom: 14, left: 10, right: 18 }
             : { top: 8, bottom: 8, left: 0, right: 12 };
-        const barThickness = esUnaBarra ? 28 : (pocosDeptos ? 16 : undefined);
-        const barPercentage = esUnaBarra ? 0.55 : (pocosDeptos ? 0.70 : 0.82);
-        const categoryPercentage = esUnaBarra ? 0.65 : (pocosDeptos ? 0.70 : 0.75);
+        const barThickness = esUnaBarra ? 28 : (hasFewDepartments ? 16 : undefined);
+        const barPercentage = esUnaBarra ? 0.55 : (hasFewDepartments ? 0.70 : 0.82);
+        const categoryPercentage = esUnaBarra ? 0.65 : (hasFewDepartments ? 0.70 : 0.75);
 
         const summaryDiv = document.getElementById("summaryDiv");
         if (summaryDiv) {
-            if (numDeptos <= 3) {
+            if (departmentCount <= 3) {
                 summaryDiv.style.minHeight = "80px";
                 summaryDiv.style.maxHeight = "200px";
             } else {
@@ -156,8 +156,8 @@ export async function renderChart(layer, config, whereClause, options = {}) {
         const chartDiv = document.getElementById("chartDiv");
         if (chartDiv) {
             chartDiv.removeAttribute("style");
-            chartDiv.style.overflowY = numDeptos > 15 ? "auto" : "hidden";
-            if (numDeptos <= 3) {
+            chartDiv.style.overflowY = departmentCount > 15 ? "auto" : "hidden";
+            if (departmentCount <= 3) {
                 chartDiv.style.display = "flex";
                 chartDiv.style.flexDirection = "column";
                 chartDiv.style.justifyContent = "flex-start";
@@ -179,11 +179,11 @@ export async function renderChart(layer, config, whereClause, options = {}) {
                     onClick: function(event, elements) {
                         if (!elements || !elements.length) return;
                         const index = elements[0].index;
-                        const deCodigo = deCodigos[index];
-                        if (!deCodigo) return;
+                        const departmentCode = departmentCodes[index];
+                        if (!departmentCode) return;
 
                         document.dispatchEvent(new CustomEvent("limites:depto-chart-select", {
-                            detail: { deCodigo, index, source: "chart" }
+                            detail: { departmentCode, index, source: "chart" }
                         }));
                     },
                     onHover: function(event, elements) {
@@ -220,7 +220,7 @@ export async function renderChart(layer, config, whereClause, options = {}) {
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return formatAreaKm2(context.raw);
+                                    return formatAreaSquareKilometers(context.raw);
                                 }
                             }
                         },
@@ -233,7 +233,7 @@ export async function renderChart(layer, config, whereClause, options = {}) {
                                 mode: "y"
                             },
                             limits: {
-                                y: { min: 0, max: Math.max(5, numDeptos + 2) }
+                                y: { min: 0, max: Math.max(5, departmentCount + 2) }
                             }
                         }
                     }
@@ -242,7 +242,7 @@ export async function renderChart(layer, config, whereClause, options = {}) {
         });
 
         chart.$limitesDepartamentos = {
-            deCodigos: deCodigos.slice()
+            departmentCodes: departmentCodes.slice()
         };
 
         canvas.ondblclick = function(event) {

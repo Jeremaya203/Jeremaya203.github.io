@@ -1,59 +1,35 @@
-    async function cargarResumenIndicadores() {
-      try {
-        const base = window.OOT_API_BASE || '';
-        const ctrl = new AbortController();
-        setTimeout(() => ctrl.abort(), 8000);
-        const r = await fetch(base + '/api/indicadores/resumen', { signal: ctrl.signal });
-        if (!r.ok) throw new Error('no-ok');
-        const data = await r.json();
-
-        const cobveg = data.cobveg;
-        if (cobveg && cobveg.pct_natural != null) {
-          document.getElementById('cif-cobveg').textContent = cobveg.pct_natural.toFixed(1) + '%';
-        }
-
-        const amenaza = data.amenaza_masa;
-        if (amenaza && amenaza.personas_amenazadas != null) {
-          const n = amenaza.personas_amenazadas;
-          document.getElementById('cif-amenaza').textContent =
-            n >= 1000 ? (n / 1000).toFixed(1) + 'K' : n.toLocaleString('es-CO');
-        }
-
-        const brecha = data.brecha_expansion;
-        if (brecha && brecha.d_fuera_pct != null) {
-          document.getElementById('cif-brecha').textContent = brecha.d_fuera_pct.toFixed(1) + '%';
-        }
-
-        const deforest = data.deforestacion_pnn;
-        if (deforest && deforest.area_deforestada_pnn_ha != null) {
-          const ha = deforest.area_deforestada_pnn_ha;
-          document.getElementById('cif-deforest').textContent =
-            ha >= 1000 ? (ha / 1000).toFixed(1) + 'K ha' : Math.round(ha).toLocaleString('es-CO') + ' ha';
-        }
-      } catch(e) {
-        document.getElementById('cifras-indicadores').style.display = 'none';
-      }
-    }
+    // NOTA: aqui vivia cargarResumenIndicadores(), que pintaba el bloque "Colombia OT en
+    // datos" desde GET /api/indicadores/resumen. Se retiro porque nadie la llamaba y
+    // ninguno de los cinco id que usaba (cif-cobveg, cif-amenaza, cif-brecha,
+    // cif-deforest, cifras-indicadores) existe en index.html. El endpoint sigue vivo: para
+    // recuperar la funcion basta anadir ese bloque a la portada y volver a llamarla desde
+    // el DOMContentLoaded de abajo (el codigo esta en el historial de git).
 
     function abrirModalNoticia(src) {
       const modal = document.getElementById('modal-noticia');
       const img = document.getElementById('modal-noticia-img');
+      if (!modal || !img) return;
       img.src = src;
       modal.style.display = 'flex';
       requestAnimationFrame(() => {
         modal.style.opacity = '1';
-        modal.querySelector('div[onclick]').style.transform = 'scale(1)';
+        const panel = modal.querySelector('.oot-modal-panel');
+        if (panel) panel.style.transform = 'scale(1)';
       });
       document.body.style.overflow = 'hidden';
     }
 
     function cerrarModalNoticia() {
       const modal = document.getElementById('modal-noticia');
+      if (!modal) return;
       modal.style.opacity = '0';
-      modal.querySelector('div[onclick]').style.transform = 'scale(0.92)';
+      const panel = modal.querySelector('.oot-modal-panel');
+      if (panel) panel.style.transform = 'scale(0.92)';
+      // El restablecimiento va SIEMPRE, no puede depender de nada de arriba.
       setTimeout(() => {
         modal.style.display = 'none';
-        document.getElementById('modal-noticia-img').src = '';
+        const img = document.getElementById('modal-noticia-img');
+        if (img) img.src = '';
         document.body.style.overflow = '';
       }, 300);
     }
@@ -106,3 +82,22 @@
         }
       });
     });
+
+/* ── Registro de manejadores (ver oot.js) ─────────────────────────────────────
+   Los data-oot-click del HTML se resuelven contra este registro. Mientras exista el
+   respaldo por `window` esto es redundante, pero es lo que permite que estas funciones
+   dejen de ser globales sin que los botones se queden mudos. */
+(function registrarHandlers() {
+  const mapa = {
+    abrirModalNoticia,
+    cerrarModalNoticia,
+  };
+  const registrar = () => {
+    if (!(window.OOT && window.OOT.registrarTodos)) return false;
+    window.OOT.registrarTodos(mapa);
+    return true;
+  };
+  // oot.js se carga antes que este archivo en todas las paginas; el listener es la red
+  // por si alguna pagina futura invierte el orden.
+  if (!registrar()) document.addEventListener('DOMContentLoaded', registrar);
+})();

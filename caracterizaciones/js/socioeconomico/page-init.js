@@ -23,9 +23,9 @@
     });
 
 
-function inicializarBotonRefrescarBusqueda() {
+function initializeSearchRefreshButton() {
 
-    const btnRefresh = document.getElementById("btnRefreshBusqueda");
+    const btnRefresh = document.getElementById("refreshSearchButton");
 
     if (!btnRefresh) return;
 
@@ -36,32 +36,32 @@ function inicializarBotonRefrescarBusqueda() {
             return;
         }
 
-        const selectDepartamentos = document.getElementById("departamentos");
-        const selectMunicipios = document.getElementById("municipios");
+        const departmentSelect = document.getElementById("departamentos");
+        const municipalitySelect = document.getElementById("municipios");
 
         // Reiniciar departamentos
-        if (selectDepartamentos) {
+        if (departmentSelect) {
 
-            selectDepartamentos.innerHTML = `
+            departmentSelect.innerHTML = `
                 <option value="">Seleccionar departamento</option>
             `;
 
-            selectDepartamentos.value = "";
+            departmentSelect.value = "";
         }
 
         // Reiniciar municipios
-        if (selectMunicipios) {
+        if (municipalitySelect) {
 
-            selectMunicipios.innerHTML = `
+            municipalitySelect.innerHTML = `
                 <option value="">Seleccionar municipio</option>
             `;
 
-            selectMunicipios.value = "";
+            municipalitySelect.value = "";
         }
 
         // Recargar nuevamente los departamentos
-        if (typeof cargarDepartamentos === "function") {
-            cargarDepartamentos();
+        if (typeof loadDepartments === "function") {
+            loadDepartments();
         }
 
         console.log("Filtros reiniciados");

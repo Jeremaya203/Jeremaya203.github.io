@@ -1,8 +1,11 @@
 .DS_Store
 .env
+reporte-arquitectura.json
 agenda.md
 .pruebas/
 .node_modules/
 .agents
 pruebas/
 observatorio-tierra-y-territorio/
+reports/
+scripts/

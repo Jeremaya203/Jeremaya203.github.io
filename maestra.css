@@ -1,4 +1,12 @@
-﻿/*fonts - rutas locales */
+/* AVISO — HOJA DUPLICADA Y DIVERGENTE
+   Existe otra copia de este archivo en `css/maestra.css`, con contenido DISTINTO.
+   Esta la cargan los modulos del OOT (index, Modulo_*).
+   Un arreglo hecho aqui NO llega a la otra: revisa siempre las dos.
+   No se han fusionado porque la divergencia es bidireccional (cada una tiene
+   reglas que la otra no) y unificarlas sin comparar ambas familias de paginas
+   en el navegador romperia una de las dos. */
+
+/*fonts - rutas locales */
 @font-face {
 font-family: 'Geometria Bold';
 src: url('/fonts/Geometria-Bold.ttf') format('truetype');

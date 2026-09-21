@@ -1,19 +1,19 @@
-/**
- * Colombia OT 2.0 — Configuración global
+﻿/**
+ * Colombia OT 2.0 â€” ConfiguraciÃ³n global
  *
- * ┌─ CONFIGURACIÓN PARA QUIEN MONTA EL FRONTEND ────────────────────────────────┐
- * │ Este sitio es 100% estático. El backend (API) corre en otra máquina y se    │
- * │ alcanza por una URL pública (túnel Cloudflare / dominio). Solo hay que      │
- * │ editar OOT_API_BASE (y opcionalmente OOT_TILES_BASE) abajo. No hay secretos │
- * │ en este archivo ni en el sitio.                                             │
- * └─────────────────────────────────────────────────────────────────────────────┘
+ * â”Œâ”€ CONFIGURACIÃ“N PARA QUIEN MONTA EL FRONTEND â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+ * â”‚ Este sitio es 100% estÃ¡tico. El backend (API) corre en otra mÃ¡quina y se    â”‚
+ * â”‚ alcanza por una URL pÃºblica (tÃºnel Cloudflare / dominio). Solo hay que      â”‚
+ * â”‚ editar OOT_API_BASE (y opcionalmente OOT_TILES_BASE) abajo. No hay secretos â”‚
+ * â”‚ en este archivo ni en el sitio.                                             â”‚
+ * â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
  */
 
-// ── Base del frontend (H-05 / H-10 — portabilidad de rutas) ───────────────────
-// OOT_BASE se deriva de la ubicación de ESTE script (config.js vive en la raíz del
-// frontend). Permite publicar el sitio en la RAÍZ ('') o bajo un SUBPATH (p.ej.
+// â”€â”€ Base del frontend (H-05 / H-10 â€” portabilidad de rutas) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// OOT_BASE se deriva de la ubicaciÃ³n de ESTE script (config.js vive en la raÃ­z del
+// frontend). Permite publicar el sitio en la RAÃZ ('') o bajo un SUBPATH (p.ej.
 // '/observatorio') sin editar rutas: el shell (navbar/footer) usa el token %BASE% que
-// loadShell reemplaza por este valor. '' = raíz → las rutas quedan como '/...'.
+// loadShell reemplaza por este valor. '' = raÃ­z â†’ las rutas quedan como '/...'.
 window.OOT_BASE = (function () {
   try {
     var cur = document.currentScript;
@@ -24,26 +24,26 @@ window.OOT_BASE = (function () {
       }
     }
     if (cur && cur.src) {
-      // Directorio de config.js → base del frontend, sin barra final ('' si es la raíz).
+      // Directorio de config.js â†’ base del frontend, sin barra final ('' si es la raÃ­z).
       return new URL('.', cur.src).pathname.replace(/\/$/, '');
     }
   } catch (e) {}
   return '';
 })();
 
-// ── Backend OOT (API) — resolución por AMBIENTE (H-09 / H-15) ─────────────────
-// El backend de la API se resuelve por el HOSTNAME donde se sirve el frontend, así
-// NO hay que editar código al desplegar y NO se depende de túneles temporales en
-// producción. Dos casos:
-//   • same-origin ('')  → la API se sirve junto al sitio (dev local con api.py, o el
+// â”€â”€ Backend OOT (API) â€” resoluciÃ³n por AMBIENTE (H-09 / H-15) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// El backend de la API se resuelve por el HOSTNAME donde se sirve el frontend, asÃ­
+// NO hay que editar cÃ³digo al desplegar y NO se depende de tÃºneles temporales en
+// producciÃ³n. Dos casos:
+//   â€¢ same-origin ('')  â†’ la API se sirve junto al sitio (dev local con api.py, o el
 //     servidor institucional Fullstack que sirve frontend + backend en el mismo host).
-//   • dominio institucional → cuando el frontend está separado del backend.
+//   â€¢ dominio institucional â†’ cuando el frontend estÃ¡ separado del backend.
 // El backend debe permitir este origen en su CORS (CORS_ORIGINS).
 //
-// ⚠️ INFRAESTRUCTURA: los dominios de abajo son PLACEHOLDERS tentativos. Reemplazar
-//    por los dominios API reales de cada ambiente cuando estén aprovisionados. Mientras
+// âš ï¸ INFRAESTRUCTURA: los dominios de abajo son PLACEHOLDERS tentativos. Reemplazar
+//    por los dominios API reales de cada ambiente cuando estÃ©n aprovisionados. Mientras
 //    tanto, un operador puede apuntar temporalmente la entrada del ambiente a la URL
-//    activa del backend (p.ej. un túnel) SIN commitear esa URL volátil al repositorio.
+//    activa del backend (p.ej. un tÃºnel) SIN commitear esa URL volÃ¡til al repositorio.
 // AVISO: hoy este mapa NO se consulta. OOT_API_BASE (abajo) toma OOT_API_REMOTE, que
 // tiene un valor por defecto no vacio, asi que el operador `||` siempre corta antes de
 // llegar aqui. Se conserva porque describe la ambientacion prevista, pero mientras
@@ -52,34 +52,34 @@ window.OOT_ENV_API = window.OOT_ENV_API || {
   'localhost':                      '',   // desarrollo (api.py sirve el sitio)
   '127.0.0.1':                      '',
   '':                               '',   // file:// o same-origin sin host
-  'jeremaya203.github.io':          'https://mustang-iii-lab-boats.trycloudflare.com',   // file:// o same-origin sin host
-  // --- Ambientación institucional del IGAC ---
+  'jeremaya203.github.io':          'https://evening-bid-opt-barrel.trycloudflare.com',   // file:// o same-origin sin host
+  // --- AmbientaciÃ³n institucional del IGAC ---
   'pruebas-colombiaot.igac.gov.co': 'https://api-pruebas-oot.igac.gov.co', // Ambiente de pruebas
-  'colombiaot.igac.gov.co':         'https://api-oot.igac.gov.co',         // Ambiente de producción
+  'colombiaot.igac.gov.co':         'https://api-oot.igac.gov.co',         // Ambiente de producciÃ³n
 };
-// Override explícito SOLO para desarrollo (p.ej. exponer un backend local por túnel):
-// defina  window.OOT_API_REMOTE = 'https://xxxx.trycloudflare.com'  ANTES de este script.
-// NUNCA debe ser el default de producción → por eso ya no se hardcodea ninguna URL aquí.
-window.OOT_API_REMOTE = window.OOT_API_REMOTE || 'https://mustang-iii-lab-boats.trycloudflare.com';
-// Priorizar el override remoto (túnel de desarrollo) si está definido.
-// Si no, resolver según el mapa de ambientes.
+// Override explÃ­cito SOLO para desarrollo (p.ej. exponer un backend local por tÃºnel):
+// defina  window.OOT_API_REMOTE = 'https://evening-bid-opt-barrel.trycloudflare.com'  ANTES de este script.
+// NUNCA debe ser el default de producciÃ³n â†’ por eso ya no se hardcodea ninguna URL aquÃ­.
+window.OOT_API_REMOTE = window.OOT_API_REMOTE || 'https://evening-bid-opt-barrel.trycloudflare.com';
+// Priorizar el override remoto (tÃºnel de desarrollo) si estÃ¡ definido.
+// Si no, resolver segÃºn el mapa de ambientes.
 window.OOT_API_BASE = window.OOT_API_REMOTE || (
   (location.hostname in window.OOT_ENV_API)
     ? window.OOT_ENV_API[location.hostname]
     : ''
 );
 
-// ── Vector tiles (.pmtiles de indicadores) ────────────────────────────────────
+// â”€â”€ Vector tiles (.pmtiles de indicadores) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // '' = se sirven desde el MISMO origen que el sitio (carpeta /tiles/ junto al frontend).
-// Si los sirve el backend, pon aquí su URL base (normalmente la misma que OOT_API_BASE);
+// Si los sirve el backend, pon aquÃ­ su URL base (normalmente la misma que OOT_API_BASE);
 // en ese caso el backend debe exponer /tiles/*.pmtiles con CORS + soporte HTTP Range.
 window.OOT_TILES_BASE = window.OOT_TILES_BASE || '';
 if (!window.OOT_TILES_BASE && window.OOT_API_BASE) {
   window.OOT_TILES_BASE = window.OOT_API_BASE;
 }
 
-// ── Hardening de runtime (obs 12, 26) ─────────────────────────────────────────
-// Bandera de depuración: false en producción → silencia console.log/console.debug
+// â”€â”€ Hardening de runtime (obs 12, 26) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Bandera de depuraciÃ³n: false en producciÃ³n â†’ silencia console.log/console.debug
 // (mecanismo CONTROLADO; definir window.OOT_DEBUG = true ANTES de este script para
 // reactivar la traza durante desarrollo). console.warn/console.error se conservan.
 window.OOT_DEBUG = window.OOT_DEBUG || false;
@@ -91,7 +91,7 @@ if (!window.OOT_DEBUG && typeof console !== 'undefined') {
   // sitio reporta degradaciones (shell no cargado, handler inexistente, capa vacia).
   // Anularlos dejaba esos fallos completamente invisibles en produccion.
 }
-// Favicon institucional en TODAS las páginas (sin editar cada <head>).
+// Favicon institucional en TODAS las pÃ¡ginas (sin editar cada <head>).
 (function () {
   try {
     if (!document.querySelector('link[rel~="icon"]')) {
@@ -103,9 +103,9 @@ if (!window.OOT_DEBUG && typeof console !== 'undefined') {
   } catch (e) {}
 })();
 
-// ── Analítica GA4 (obs 3) ─────────────────────────────────────────────────────
-// Mide visitas y uso de la plataforma (page_view automático en todas las páginas).
-// ID de medición reutilizado de la plataforma institucional. Para desactivar: '' .
+// â”€â”€ AnalÃ­tica GA4 (obs 3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Mide visitas y uso de la plataforma (page_view automÃ¡tico en todas las pÃ¡ginas).
+// ID de mediciÃ³n reutilizado de la plataforma institucional. Para desactivar: '' .
 window.OOT_GA4_ID = (typeof window.OOT_GA4_ID === 'string') ? window.OOT_GA4_ID : 'G-78PPLF47WW';
 (function () {
   try {
@@ -126,13 +126,13 @@ window.OOT.track = function (evento, params) {
   try { if (window.gtag) window.gtag('event', evento, params || {}); } catch (e) {}
 };
 
-// URL del backend de Colombia OT — reservada para fase 2
+// URL del backend de Colombia OT â€” reservada para fase 2
 // Cuando se integre la API de Colombia OT, definir esta variable antes de usarla.
-// Por ahora los módulos Colombia OT funcionan via hipervínculo directo.
+// Por ahora los mÃ³dulos Colombia OT funcionan via hipervÃ­nculo directo.
 // window.OOT_COT_API_BASE = 'https://serviciosgeovisor.igac.gov.co:8080/Geovisor';
-window.OOT_COT_API_BASE = null; // null = fase 1, hipervínculo
+window.OOT_COT_API_BASE = null; // null = fase 1, hipervÃ­nculo
 
-// ── Funciones externas (Colombia OT) ─────────────────────────────────────────
+// â”€â”€ Funciones externas (Colombia OT) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Cuando Colombia OT desaparezca, actualizar estas URLs a rutas del OOT.
 // Cuando las funciones migren al OOT, cambiar a rutas relativas (e.g. './pot/').
 window.OOT_COT_BASE = 'https://www.colombiaot.gov.co';
@@ -147,12 +147,12 @@ window.OOT_COT_URLS = {
   aplicaciones: window.OOT_COT_BASE + '/aplicaciones/',
 };
 
-// ── Módulos OOT (rutas internas) ──────────────────────────────────────────────
+// â”€â”€ MÃ³dulos OOT (rutas internas) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 window.OOT_MODULOS = {
   normativa:      './Modulo_Chat_normativo.html',
   determinantes:  './Modulo_Determinantes.html',
   indicadores:    './Modulo_Indicadores.html',
-  // Obs 24: entradas inertes (páginas aún NO incluidas en el paquete). Reactivar cada
+  // Obs 24: entradas inertes (pÃ¡ginas aÃºn NO incluidas en el paquete). Reactivar cada
   // una SOLO cuando su HTML exista, para no dejar referencias muertas en la config.
   // municipios:   './Modulo_Municipios.html',
   // vigenciasOOT: './Modulo_Vigencias.html',
@@ -160,12 +160,12 @@ window.OOT_MODULOS = {
   // acerca:       './Acerca.html',
 };
 
-// Rutas prefijadas con OOT_BASE para portabilidad en subpath (a raíz = idénticas).
+// Rutas prefijadas con OOT_BASE para portabilidad en subpath (a raÃ­z = idÃ©nticas).
 window.OOT_COT_WRAPPERS = {
   pot:          (window.OOT_BASE || '') + '/colombia-ot/pot/index.html',
   ruta:         (window.OOT_BASE || '') + '/colombia-ot/ruta/index.html',
   cartillas:    (window.OOT_BASE || '') + '/colombia-ot/cartillas.html',
-  // Obs 24: wrappers inertes (aún NO presentes en colombia-ot/). Reactivar cuando exista
+  // Obs 24: wrappers inertes (aÃºn NO presentes en colombia-ot/). Reactivar cuando exista
   // cada archivo, para no dejar enlaces muertos.
   // vigencias:    '/colombia-ot/vigencias.html',
   // normatividad: '/colombia-ot/normatividad.html',
@@ -175,14 +175,14 @@ window.OOT_COT_WRAPPERS = {
   // docuvisor:    '/colombia-ot/docuvisor.html',
 };
 
-// ── Helpers globales ──────────────────────────────────────────────────────────
+// â”€â”€ Helpers globales â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 window.OOT = window.OOT || {};
 
-// ── Acceso obligatorio al portal ─────────────────────────────────────────────────
-// Todas las páginas reales del portal cargan config.js. La barrera usa la misma sesión
-// Firebase que los navbars y módulos existentes, por lo que el usuario se autentica una
-// sola vez. Los documentos internos mostrados dentro de iframes los protege la página
-// superior; si se abren directamente, esta misma barrera sí se aplica.
+// â”€â”€ Acceso obligatorio al portal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Todas las pÃ¡ginas reales del portal cargan config.js. La barrera usa la misma sesiÃ³n
+// Firebase que los navbars y mÃ³dulos existentes, por lo que el usuario se autentica una
+// sola vez. Los documentos internos mostrados dentro de iframes los protege la pÃ¡gina
+// superior; si se abren directamente, esta misma barrera sÃ­ se aplica.
 (function requirePortalAuthentication() {
   if (window.__ootAuthGuardStarted) return;
 
@@ -234,9 +234,9 @@ window.OOT = window.OOT || {};
     guard.innerHTML =
       '<section class="oot-auth-guard__card">' +
         '<h1 id="oot-auth-guard-title" class="oot-auth-guard__title">Bienvenido a Colombia OT</h1>' +
-        '<p class="oot-auth-guard__text">Debes iniciar sesión para ingresar a la plataforma.</p>' +
+        '<p class="oot-auth-guard__text">Debes iniciar sesiÃ³n para ingresar a la plataforma.</p>' +
         '<div id="oot-auth-guard-container"></div>' +
-        '<p id="oot-auth-guard-status" class="oot-auth-guard__status">Validando tu sesión…</p>' +
+        '<p id="oot-auth-guard-status" class="oot-auth-guard__status">Validando tu sesiÃ³nâ€¦</p>' +
       '</section>';
     (document.body || document.documentElement).appendChild(guard);
     return guard;
@@ -259,7 +259,7 @@ window.OOT = window.OOT || {};
   }
 
   function showLoadError() {
-    blockPage('No fue posible cargar el servicio de autenticación. Revisa tu conexión e intenta nuevamente.');
+    blockPage('No fue posible cargar el servicio de autenticaciÃ³n. Revisa tu conexiÃ³n e intenta nuevamente.');
     var status = document.getElementById('oot-auth-guard-status');
     if (status && !document.getElementById('oot-auth-guard-retry')) {
       var retry = document.createElement('button');
@@ -273,7 +273,7 @@ window.OOT = window.OOT || {};
   }
 
   function startLogin(auth) {
-    blockPage('Selecciona una opción para continuar.');
+    blockPage('Selecciona una opciÃ³n para continuar.');
     if (!window.firebaseui || !firebaseui.auth) {
       showLoadError();
       return;
@@ -302,7 +302,7 @@ window.OOT = window.OOT || {};
 
   function initialize(attempt) {
     ensureGuard();
-    blockPage('Validando tu sesión…');
+    blockPage('Validando tu sesiÃ³nâ€¦');
     if (!window.firebase || !firebase.auth || !window.firebaseui) {
       if (attempt < 100) {
         window.setTimeout(function () { initialize(attempt + 1); }, 100);
@@ -317,11 +317,11 @@ window.OOT = window.OOT || {};
         if (user) unblockPage();
         else startLogin(firebase.auth());
       }, function (error) {
-        console.error('[OOT.authGuard] Error al validar la sesión:', error);
+        console.error('[OOT.authGuard] Error al validar la sesiÃ³n:', error);
         showLoadError();
       });
     } catch (error) {
-      console.error('[OOT.authGuard] Error de inicialización:', error);
+      console.error('[OOT.authGuard] Error de inicializaciÃ³n:', error);
       showLoadError();
     }
   }
@@ -332,7 +332,7 @@ window.OOT = window.OOT || {};
 
 /**
  * Genera o recupera el session_id del chat normativo.
- * Persiste en sessionStorage (muere al cerrar la pestaña — correcto para chat).
+ * Persiste en sessionStorage (muere al cerrar la pestaÃ±a â€” correcto para chat).
  */
 window.OOT.getSessionId = function() {
   let sid = sessionStorage.getItem('oot_session_id');
@@ -351,7 +351,7 @@ window.OOT.newSession = function() {
 };
 
 /**
- * Sanitización XSS — usar SIEMPRE antes de insertar datos en el DOM.
+ * SanitizaciÃ³n XSS â€” usar SIEMPRE antes de insertar datos en el DOM.
  */
 window.OOT.escapeHtml = function(str) {
   return String(str)
@@ -363,7 +363,7 @@ window.OOT.escapeHtml = function(str) {
 };
 
 /**
- * Navbar: abre/cierra el menú móvil (hamburguesa).
+ * Navbar: abre/cierra el menÃº mÃ³vil (hamburguesa).
  */
 window.OOT.toggleNav = function(btn) {
   const links = document.getElementById('oot-nav-links');
@@ -373,8 +373,8 @@ window.OOT.toggleNav = function(btn) {
 };
 
 /**
- * Navbar: abre/cierra un dropdown (Módulos / Acerca del POT).
- * En desktop el dropdown abre por hover (CSS); esto controla el click en móvil.
+ * Navbar: abre/cierra un dropdown (MÃ³dulos / Acerca del POT).
+ * En desktop el dropdown abre por hover (CSS); esto controla el click en mÃ³vil.
  */
 window.OOT.toggleDropdown = function(btn) {
   const dd = btn.closest('.oot-nav-dd');
@@ -392,26 +392,26 @@ document.addEventListener('click', function(e) {
 
 /**
  * Carga el navbar y el footer como includes desde archivos HTML separados.
- * Llamar al inicio de cada página: OOT.loadShell()
+ * Llamar al inicio de cada pÃ¡gina: OOT.loadShell()
  */
 window.OOT.loadShell = async function() {
   const navEl  = document.getElementById('oot-navbar-placeholder');
   const footEl = document.getElementById('oot-footer-placeholder');
 
-  // navbar.html y footer.html son estáticos: se sirven SIEMPRE desde el mismo
-  // origen que la página (el host del frontend), NO desde OOT_API_BASE (backend/túnel).
-  // OOT_API_BASE se usa solo para las llamadas a /api/* (ver módulos).
-  // Se resuelven contra OOT_BASE (raíz o subpath) y su contenido lleva el token %BASE%
-  // que se reemplaza aquí, para que las rutas del shell funcionen en cualquier base.
+  // navbar.html y footer.html son estÃ¡ticos: se sirven SIEMPRE desde el mismo
+  // origen que la pÃ¡gina (el host del frontend), NO desde OOT_API_BASE (backend/tÃºnel).
+  // OOT_API_BASE se usa solo para las llamadas a /api/* (ver mÃ³dulos).
+  // Se resuelven contra OOT_BASE (raÃ­z o subpath) y su contenido lleva el token %BASE%
+  // que se reemplaza aquÃ­, para que las rutas del shell funcionen en cualquier base.
   const _base = window.OOT_BASE || '';
   const _fill = (html) => html.replace(/%BASE%/g, _base);
 
   // `cache: 'no-cache'` obliga a REVALIDAR el shell con el servidor en cada carga
-  // (no lo re-descarga: si no cambió, el servidor responde 304 por ETag).
-  // Sin esto, el navegador sirve el navbar/footer cacheados heurísticamente: tras el
-  // renombrado Pagina_Principal.html → index.html (H-05), un usuario con el navbar viejo
-  // en caché seguía pidiendo la ruta eliminada y recibía {"detail":"Not Found"}.
-  // El shell es el índice de navegación del sitio: debe quedar siempre fresco.
+  // (no lo re-descarga: si no cambiÃ³, el servidor responde 304 por ETag).
+  // Sin esto, el navegador sirve el navbar/footer cacheados heurÃ­sticamente: tras el
+  // renombrado Pagina_Principal.html â†’ index.html (H-05), un usuario con el navbar viejo
+  // en cachÃ© seguÃ­a pidiendo la ruta eliminada y recibÃ­a {"detail":"Not Found"}.
+  // El shell es el Ã­ndice de navegaciÃ³n del sitio: debe quedar siempre fresco.
   const _shellFetch = (url) => fetch(url, { cache: 'no-cache' });
 
   if (navEl) {
@@ -426,13 +426,13 @@ window.OOT.loadShell = async function() {
       if (r.ok) footEl.innerHTML = _fill(await r.text());
     } catch(e) { console.warn('OOT: no se pudo cargar footer.html', e); }
 
-    // Badge de versión: el footer se inyecta con innerHTML, así que un <script>
-    // dentro de footer.html NO se ejecutaría. Se resuelve aquí.
+    // Badge de versiÃ³n: el footer se inyecta con innerHTML, asÃ­ que un <script>
+    // dentro de footer.html NO se ejecutarÃ­a. Se resuelve aquÃ­.
     fetch((window.OOT_API_BASE || '') + '/api/health')
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         const el = document.getElementById('oot-version-badge');
-        if (el && d && d.version) el.textContent = 'Colombia OT 2.0 · v' + d.version;
+        if (el && d && d.version) el.textContent = 'Colombia OT 2.0 Â· v' + d.version;
       })
       .catch(() => {});
   }
@@ -469,7 +469,7 @@ window.OOT.loadShell = async function() {
     handleMobile(mqMobile);
     mqMobile.addEventListener('change', handleMobile);
 
-    // Colapsar los submenús desplegables del navbar
+    // Colapsar los submenÃºs desplegables del navbar
     const cb1 = document.querySelector('.collapse-button-1');
     const cm1 = document.querySelector('.collapse-menu-1');
     const cb2 = document.querySelector('.collapse-button-2');
@@ -482,7 +482,7 @@ window.OOT.loadShell = async function() {
     }
 
     // Marcar link activo. Home: la landing es index.html (H-05), servida en '/' o
-    // '/index.html' → ambos deben resolver a 'index' (pathname '/' da '' → fallback).
+    // '/index.html' â†’ ambos deben resolver a 'index' (pathname '/' da '' â†’ fallback).
     // Se compara la RUTA, no solo el ultimo segmento: pot/, ruta/, cargue/ y
     // caracterizaciones/ son todos 'index.html', asi que por nombre de archivo todos
     // resolvian a 'index' y el enlace activo era siempre "Inicio".
@@ -494,12 +494,12 @@ window.OOT.loadShell = async function() {
       if (el.dataset.page === page) el.classList.add('active');
     });
 
-    // Botones #oot-login-btn/#oot-logout-btn viven en navbar.html: recién existen aquí,
-    // tras la inyección.
-    // - Páginas heredadas de colombiaot.gov.co (cargue, colombia-ot/pot) ya traen su PROPIO
-    //   modal Firebase/FirebaseUI funcional (#modalLogin + gotoLogin()) — reusarlo evita
-    //   inicializar Firebase dos veces en la misma página.
-    // - El resto usa js/shared-auth.js (OOT.auth), más liviano (sin FirebaseUI/jQuery).
+    // Botones #oot-login-btn/#oot-logout-btn viven en navbar.html: reciÃ©n existen aquÃ­,
+    // tras la inyecciÃ³n.
+    // - PÃ¡ginas heredadas de colombiaot.gov.co (cargue, colombia-ot/pot) ya traen su PROPIO
+    //   modal Firebase/FirebaseUI funcional (#modalLogin + gotoLogin()) â€” reusarlo evita
+    //   inicializar Firebase dos veces en la misma pÃ¡gina.
+    // - El resto usa js/shared-auth.js (OOT.auth), mÃ¡s liviano (sin FirebaseUI/jQuery).
     if (window.OOT.auth) {
       window.OOT.auth.bindNavbar();
     } else if (typeof window.gotoLogin === 'function') {
@@ -514,17 +514,17 @@ window.OOT.loadShell = async function() {
   // Sincronizar el alto real del navbar (ver _ootSyncNavbarH)
   _ootSyncNavbarH();
 
-  // Verificar conexión
+  // Verificar conexiÃ³n
   setTimeout(() => verificarConexionGlobal(), 500);
 };
 
 /**
  * Publica el alto REAL del navbar en la variable CSS --oot-navbar-h.
  *
- * Los módulos full-screen (Chat, Determinantes, Indicadores) se dimensionan con
+ * Los mÃ³dulos full-screen (Chat, Determinantes, Indicadores) se dimensionan con
  * `calc(100dvh - var(--oot-navbar-h))`. Ese valor estaba clavado en 140px, que solo
- * es correcto en escritorio: al encogerse la banda institucional (≤768px) el navbar
- * real baja a ~132px y los módulos quedaban descuadrados. Medirlo evita tener que
+ * es correcto en escritorio: al encogerse la banda institucional (â‰¤768px) el navbar
+ * real baja a ~132px y los mÃ³dulos quedaban descuadrados. Medirlo evita tener que
  * mantener una constante por cada breakpoint.
  */
 function _ootSyncNavbarH() {
@@ -543,12 +543,12 @@ function _ootSyncNavbarH() {
   } else {
     window.addEventListener('resize', aplicar);
   }
-  // El menú móvil se despliega en absolute (no cambia el alto), pero al rotar el
-  // dispositivo el navbar sí puede reflowear.
+  // El menÃº mÃ³vil se despliega en absolute (no cambia el alto), pero al rotar el
+  // dispositivo el navbar sÃ­ puede reflowear.
   window.addEventListener('orientationchange', () => setTimeout(aplicar, 100));
 }
 
-// Verificación de conexión global para el navbar
+// VerificaciÃ³n de conexiÃ³n global para el navbar
 async function verificarConexionGlobal() {
   const badge = document.getElementById('badge-conexion');
   if (!badge) return;
@@ -567,6 +567,6 @@ async function verificarConexionGlobal() {
   } catch(e) {
     clearTimeout(timer);
     badge.className = 'oot-api-badge oot-api-desconectado';
-    badge.textContent = 'Sin conexión';
+    badge.textContent = 'Sin conexiÃ³n';
   }
 }

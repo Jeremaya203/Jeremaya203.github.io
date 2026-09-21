@@ -1,0 +1,10 @@
+/* Barrera de acceso al portal (config.js). Estaba embebido como <style> creado por
+   JS; una CSP con style-src sin 'unsafe-inline' lo bloquea y la barrera se renderiza
+   sin estilos. Vive aparte para cargarse como <link>, que si permite style-src 'self'. */
+#oot-auth-guard{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#071d49 0%,#173f73 55%,#0072ce 100%);font-family:Arial,sans-serif}
+#oot-auth-guard[hidden]{display:none!important}
+.oot-auth-guard__card{width:min(100%,460px);max-height:calc(100vh - 48px);overflow:auto;padding:32px 28px;border-radius:18px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.35);text-align:center}
+.oot-auth-guard__title{margin:0 0 8px;color:#071d49;font-size:28px;font-weight:700}
+.oot-auth-guard__text{margin:0 0 22px;color:#49566b;font-size:16px;line-height:1.45}
+.oot-auth-guard__status{margin:16px 0 0;color:#49566b;font-size:14px}
+.oot-auth-guard__retry{margin-top:14px;padding:10px 18px;border:0;border-radius:6px;background:#0072ce;color:#fff;font-weight:700;cursor:pointer}

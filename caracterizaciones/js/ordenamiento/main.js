@@ -1,15 +1,15 @@
 import {
-    setOrdenamientoTab
-} from "./modules/ordenamiento/ordenamiento.controller.js?v=vigencia-section-20260623";
+    setLandUsePlanningTab
+} from "./modules/ordenamiento/land-use-planning-controller.js?v=vigencia-section-20260623";
 import {
-    resetOrdenamientoUI,
+    resetLandUsePlanningUi,
     syncChartSideLayout
-} from "./modules/ordenamiento/ordenamiento.ui.js?v=vigencia-native-scroll-20260715";
+} from "./modules/ordenamiento/land-use-planning-ui.js?v=vigencia-native-scroll-20260715";
 import { initOverview } from "./map/overview.js";
 import { initScaleBar } from "./map/scale.js";
 import {
     initMapControls
-} from "./map/map.controls.js";
+} from "./map/map-controls.js";
 import {
     initModuleDropdown,
     initDropdownDescargables
@@ -17,17 +17,17 @@ import {
 import {
     updateMapViewBadge,
     setLegendLayerTitle
-} from "./ui/ui.helpers.js";
+} from "./ui/ui-helpers.js";
 import {
     AppState
 } from "./app/state.js?v=vigencia-section-20260623";
 import { clearLayers as clearMapLayers } from "./map/layers.js";
 import {
     createMainMap
-} from "./map/map.core.js";
+} from "./map/map-core.js";
 import {
-    MUNICIPIOS_SOURCE_LAYER_URL,
-    ORDENAMIENTO_CONFIG,
+    MUNICIPALITIES_SOURCE_LAYER_URL,
+    LAND_USE_PLANNING_CONFIG,
 } from "./config.js?v=rural-area-fallback-20260716";
 
 import {
@@ -35,17 +35,18 @@ import {
     wrapLabel,
     rgbaFromEsriColorArr,
     normKey,
-    getDepartamentoDisplayName,
-    getMunicipioDisplayName,
-    sortDepartamentoCodesAlphabetically
+    getDepartmentDisplayName,
+    getMunicipalityDisplayName,
+    sortDepartmentCodesAlphabetically
 } from "./utils.js?v=territory-display-names-20260622";
 import {
     arcRestQuery,
     fetchGroupedStats
 } from "./data.js";
+import { loadTerritorialCatalog } from "../shared/territorial-catalog.js";
 import {
     buildLegendFromRenderer,
-    // actualizarLeyenda,
+    // updateLegend,
     getSymbolColorRGBA,
     syncLegendToLabelSelection,
     sortLegendEntries,
@@ -97,7 +98,7 @@ function sqlEqualsNumber(field, value) {
     return sqlEquals(field, value, { type: "number" });
 }
 
-function cleanOrdenamientoChartTitle(title) {
+function cleanLandUsePlanningChartTitle(title) {
     return String(title || "Distribución")
         .replace(/\s+en\s+.+,\s*.+$/i, "")
         .replace(/\s+en\s+Colombia$/i, "")
@@ -105,27 +106,27 @@ function cleanOrdenamientoChartTitle(title) {
         .trim();
 }
 
-function getOrdenamientoTerritoryContext() {
-    if (municipioActual) {
-        const municipio = todosMunicipios.find(m => String(m.codigo) === String(municipioActual));
-        const municipioNombre = getMunicipioDisplayName(municipio || municipioActual, diccionarioMunicipios);
-        const deptoCodigo = municipio?.depto || String(municipioActual).substring(0, 2);
-        const deptoNombre = getDepartamentoDisplayName(deptoCodigo, diccionarioDepartamentos);
-        return `${municipioNombre}, ${deptoNombre}`;
+function getLandUsePlanningTerritoryContext() {
+    if (currentMunicipalityId) {
+        const municipality = municipalities.find(item => String(item.codigo) === String(currentMunicipalityId));
+        const municipalityName = getMunicipalityDisplayName(municipality || currentMunicipalityId, municipalityNames);
+        const departmentCode = municipality?.departmentId || String(currentMunicipalityId).substring(0, 2);
+        const departmentName = getDepartmentDisplayName(departmentCode, departmentNames);
+        return `${municipalityName}, ${departmentName}`;
     }
 
-    if (deptoActual && deptoActual !== "0" && deptoActual !== "COL") {
-        return diccionarioDepartamentos[deptoActual] || deptoActual;
+    if (currentDepartmentId && currentDepartmentId !== "0" && currentDepartmentId !== "COL") {
+        return departmentNames[currentDepartmentId] || currentDepartmentId;
     }
 
     return "Colombia";
 }
 
-function buildOrdenamientoChartTitle(baseTitle) {
-    return `${cleanOrdenamientoChartTitle(baseTitle)} en ${getOrdenamientoTerritoryContext()}`;
+function buildLandUsePlanningChartTitle(baseTitle) {
+    return `${cleanLandUsePlanningChartTitle(baseTitle)} en ${getLandUsePlanningTerritoryContext()}`;
 }
 
-function getOrdenamientoDeptoPrefixFields() {
+function getLandUsePlanningDepartmentPrefixFields() {
     return new Set(["mpcodigo", "mp_codigo", "mdanmcodig"]);
 }
 
@@ -191,12 +192,12 @@ function withCombiningStrikethrough(value) {
         .join("");
 }
 
-function initializeOrdenamientoModule() {
+function initializeLandUsePlanningModule() {
     currentMainModule = "ORDENAMIENTO";
-    currentOrdenamientoTab = "VIGENCIA";
+    currentLandUsePlanningTab = "VIGENCIA";
 
     AppState.currentMainModule = "ORDENAMIENTO";
-    AppState.currentOrdenamientoTab = "VIGENCIA";
+    AppState.currentLandUsePlanningTab = "VIGENCIA";
 
     updateMapViewBadge("Vigencia");
 }
@@ -204,9 +205,9 @@ function initializeOrdenamientoModule() {
 // =========================
 // Orden del suelo (MapServer/28) - dict desde renderer
 // =========================
-let coloresOrdenSuelo = null; // { "15001": {label, color}, ... }
-async function ensureOrdenSueloDict(layerUrl28) {
-    if (coloresOrdenSuelo) return coloresOrdenSuelo;
+let soilClassificationColors = null; // { "15001": {label, color}, ... }
+async function ensureSoilOrderDictionaryionary(layerUrl28) {
+    if (soilClassificationColors) return soilClassificationColors;
 
     const url = layerUrl28.replace(/\/+$/, "") + "?f=pjson";
     const res = await fetch(url);
@@ -222,13 +223,13 @@ async function ensureOrdenSueloDict(layerUrl28) {
         if (value) dict[value] = { label, color };
     });
 
-    coloresOrdenSuelo = dict;
+    soilClassificationColors = dict;
     return dict;
 }
 
 function syncStateFromGlobals() {
     AppState.currentMainModule = currentMainModule;
-    AppState.currentOrdenamientoTab = currentOrdenamientoTab;
+    AppState.currentLandUsePlanningTab = currentLandUsePlanningTab;
     AppState.currentRuralChartView = currentRuralChartView;
 
     AppState.map = map;
@@ -240,9 +241,9 @@ function syncStateFromGlobals() {
 
 
     AppState.whereBase = whereBase;
-    AppState.municipioActual = municipioActual;
-    AppState.deptoActual = deptoActual;
-    AppState.filtroNivel = filtroNivel;
+    AppState.currentMunicipalityId = currentMunicipalityId;
+    AppState.currentDepartmentId = currentDepartmentId;
+    AppState.territoryLevel = territoryLevel;
 
     AppState.currentSubLayerIndex = currentSubLayerIndex;
 
@@ -250,9 +251,9 @@ function syncStateFromGlobals() {
     AppState.geoPieChartInstance = geoPieChartInstance;
     AppState.geoDonutChartInstance = geoDonutChartInstance;
 
-    AppState.diccionarioMunicipios = diccionarioMunicipios;
-    AppState.diccionarioDepartamentos = diccionarioDepartamentos;
-    AppState.todosMunicipios = todosMunicipios;
+    AppState.municipalityNames = municipalityNames;
+    AppState.departmentNames = departmentNames;
+    AppState.municipalities = municipalities;
 
     AppState.renderCycleId = renderCycleId;
     AppState.scaleHandle = scaleHandle;
@@ -285,7 +286,7 @@ function clearLayers() {
 
 // Estado Global
 let currentMainModule = "ORDENAMIENTO"; // ORDENAMIENTO
-let currentOrdenamientoTab = "VIGENCIA";
+let currentLandUsePlanningTab = "VIGENCIA";
 let currentRuralChartView = "CATEGORIA"; // "CATEGORIA" | "USO_PRINCIPAL"
 
 
@@ -293,32 +294,32 @@ let currentSubLayerIndex = 0; // Índice dentro del array de configuration
 let layerGlobal = null;
 let layerViewGlobal = null;
 let whereBase = "";
-let municipioActual = "";
+let currentMunicipalityId = "";
 let chartInstance = null;
-let diccionarioMunicipios = {};
+let municipalityNames = {};
 let geoPieChartInstance = null;
 let geoDonutChartInstance = null;
-let geoformasRendererDict = null;
-let geoformasPaisajeDict = null;
+let landformRendererDictionaryionary = null;
+let landformLandscapeDictionaryionary = null;
 let lastAreasMapClickAt = 0;
-let areasActividadSelectionTimer = null;
-let areasActividadSelectionToken = 0;
-let areasActividadChartCodes = [];
-let areasActividadChartHighlightedCode = null;
-let areasActividadCanvasChartState = null;
-let zonificacionRuralCanvasChartState = null;
-let zonificacionRuralSelectionTimer = null;
-let zonificacionRuralRenderSeq = 0;
-let vigenciaTipoChartInstance = null;
-let vigenciaEstadoChartInstance = null;
-let vigenciaMunicipioHighlightLayer = null;
-let vigenciaMunicipioHighlightHandle = null;
-let vigenciaHighlightedMunicipio = null;
+let activityAreasSelectionTimer = null;
+let activityAreasSelectionToken = 0;
+let activityAreasChartCodes = [];
+let activityAreasChartHighlightedCode = null;
+let activityAreasCanvasChartState = null;
+let ruralZoningCanvasChartState = null;
+let ruralZoningSelectionTimer = null;
+let ruralZoningRenderSequence = 0;
+let validityTypeChartInstance = null;
+let validityStatusChartInstance = null;
+let validityMunicipalityHighlightLayer = null;
+let validityMunicipalityHighlightHandle = null;
+let validityHighlightedMunicipality = null;
 window.__geoformaSelectedPaisaje = null;
 window.__geoformaPairColorMap = {};
 window.__geoformaPaisajeColorMap = {};
-let diccionarioDepartamentos = {};
-let todosMunicipios = []; // Array de {codigo, nombre, depto}
+let departmentNames = {};
+let municipalities = []; // Array de {codigo, nombre, departmentId}
 let layersGlobal = []; // para manejar múltiples capas (cuencas)
 let chartLayerGlobal = null;
 
@@ -326,48 +327,48 @@ let map = null;
 let view = null;
 let legendWidget = null;
 let bf3LabelToCode = new Map();
-let deptoActual = "";
-let filtroNivel = ""; // "", "DEPTO", "MUNI"
+let currentDepartmentId = "";
+let territoryLevel = ""; // "", "DEPTO", "MUNI"
 let currentMode = "";
 let updateLegendByExtent = null;
-let clasificacionNormativaLayer = null;
-let clasificacionVisualLayer = null;
-let clasificacionTerritoryLayer = null;
-const clasificacionCategoryLayers = new Map();
-const clasificacionTerritoryExtentCache = new Map();
-const clasificacionStatsCache = new Map();
-const CLASIFICACION_STATS_CACHE_LIMIT = 24;
-let clasificacionBaseWhere = "1=1";
-let clasificacionVisualWhereApplied = null;
-let clasificacionVisualVisibleApplied = null;
-let clasificacionChartTimer = null;
-let clasificacionZoomRequestId = 0;
-let clasificacionLegendFilterTimer = null;
-let clasificacionLegendFilterSeq = 0;
-let clasificacionLegendLastSignature = "";
-let clasificacionCategoryModeActive = false;
-let clasificacionCategoryBaseWhereApplied = "";
-let clasificacionCategoryPrewarmTimer = null;
-let clasificacionCategoryPrewarmSeq = 0;
-let clasificacionCategoryPrewarmSignature = "";
-let clasificacionSummaryRequestId = 0;
-let clasificacionDeptWarmupTimer = null;
-let clasificacionDeptWarmupSeq = 0;
-let clasificacionAuxBackoffUntil = 0;
-const clasificacionLegendWhereCache = new Map();
-const clasificacionRecentTerritoryCache = new Map();
-const CLASIFICACION_LEGEND_TOGGLE_DELAY_MS = 16;
-const CLASIFICACION_CATEGORY_PREWARM_MUNI_DELAY_MS = 1200;
-const CLASIFICACION_CATEGORY_PREWARM_DEPTO_DELAY_MS = 2600;
-const CLASIFICACION_RECENT_TERRITORIES_LIMIT = 8;
-const CLASIFICACION_DEPT_WARMUP_LIMIT = 5;
-const CLASIFICACION_MUNI_NEIGHBOR_WARMUP_LIMIT = 4;
-const CLASIFICACION_DEPT_WARMUP_DELAY_MS = 3600;
-const CLASIFICACION_MUNI_WARMUP_DELAY_MS = 2600;
-const CLASIFICACION_DEPT_WARMUP_STEP_MS = 900;
-const CLASIFICACION_VISUAL_IDLE_TIMEOUT_MS = 2600;
-const CLASIFICACION_AUX_VISUAL_IDLE_TIMEOUT_MS = 3200;
-const CLASIFICACION_AUX_BACKOFF_MS = 12000;
+let classificationRegulationLayer = null;
+let classificationVisualLayer = null;
+let classificationTerritoryLayer = null;
+const classificationCategoryLayers = new Map();
+const classificationTerritoryExtentCache = new Map();
+const classificationStatsCache = new Map();
+const CLASSIFICATION_STATS_CACHE_LIMIT = 24;
+let classificationBaseWhere = "1=1";
+let classificationVisualWhereApplied = null;
+let classificationVisualVisibleApplied = null;
+let classificationChartTimer = null;
+let classificationZoomRequestId = 0;
+let classificationLegendFilterTimer = null;
+let classificationLegendFilterSequence = 0;
+let classificationLegendLastSignature = "";
+let classificationCategoryModeActive = false;
+let classificationCategoryBaseWhereApplied = "";
+let classificationCategoryPrewarmTimer = null;
+let classificationCategoryPrewarmSequence = 0;
+let classificationCategoryPrewarmSignature = "";
+let classificationSummaryRequestId = 0;
+let classificationDepartmentWarmupTimer = null;
+let classificationDepartmentWarmupSequence = 0;
+let classificationAuxiliaryBackoffUntil = 0;
+const classificationLegendWhereCache = new Map();
+const classificationRecentTerritoryCache = new Map();
+const CLASSIFICATION_LEGEND_TOGGLE_DELAY_MS = 16;
+const CLASSIFICATION_CATEGORY_PREWARM_MUNICIPAL_DELAY_MS = 1200;
+const CLASSIFICATION_CATEGORY_PREWARM_DEPARTMENT_DELAY_MS = 2600;
+const CLASSIFICATION_RECENT_TERRITORIES_LIMIT = 8;
+const CLASSIFICATION_DEPT_WARMUP_LIMIT = 5;
+const CLASSIFICATION_MUNICIPAL_NEIGHBOR_WARMUP_LIMIT = 4;
+const CLASSIFICATION_DEPT_WARMUP_DELAY_MS = 3600;
+const CLASSIFICATION_MUNICIPAL_WARMUP_DELAY_MS = 2600;
+const CLASSIFICATION_DEPT_WARMUP_STEP_MS = 900;
+const CLASSIFICATION_VISUAL_IDLE_TIMEOUT_MS = 2600;
+const CLASSIFICATION_AUX_VISUAL_IDLE_TIMEOUT_MS = 3200;
+const CLASSIFICATION_AUX_BACKOFF_MS = 12000;
 
 // (opcional) para no crear watchers infinitos al cambiar escala en cuencas
 let scaleHandle = null;
@@ -377,14 +378,14 @@ let lastHoverWhere = "";
 let legendFilterLabel = null; // ej: "Seminatural"
 const hoverDebounceMs = 120;
 
-const scheduleOrdenamientoRender = debounce(() => {
+const scheduleLandUsePlanningRender = debounce(() => {
     if (currentMainModule !== "ORDENAMIENTO") return;
-    if (typeof window.cargarOrdenamientoActual === "function") {
-        window.cargarOrdenamientoActual();
+    if (typeof window.loadCurrentLandUsePlanning === "function") {
+        window.loadCurrentLandUsePlanning();
     }
 }, 140);
 
-function markClasificacionPerf(stage, cycleId = renderCycleId, extra = {}) {
+function markClassificationPerformance(stage, cycleId = renderCycleId, extra = {}) {
     const now = typeof performance !== "undefined" && typeof performance.now === "function"
         ? performance.now()
         : Date.now();
@@ -408,7 +409,7 @@ function markClasificacionPerf(stage, cycleId = renderCycleId, extra = {}) {
     return entry;
 }
 
-function isExpectedClasificacionAsyncError(error) {
+function isExpectedClassificationAsyncError(error) {
     const name = String(error?.name || "");
     const message = String(error?.message || error || "").toLowerCase();
     return (
@@ -420,39 +421,39 @@ function isExpectedClasificacionAsyncError(error) {
     );
 }
 
-function recordClasificacionAsyncIssue(stage, error, cycleId = renderCycleId, extra = {}) {
-    markClasificacionPerf(stage, cycleId, {
-        expected: isExpectedClasificacionAsyncError(error),
+function recordClassificationAsyncIssue(stage, error, cycleId = renderCycleId, extra = {}) {
+    markClassificationPerformance(stage, cycleId, {
+        expected: isExpectedClassificationAsyncError(error),
         message: String(error?.message || error || ""),
         ...extra
     });
 
-    if (window.__debugClasificacionPerf && !isExpectedClasificacionAsyncError(error)) {
+    if (window.__debugClasificacionPerf && !isExpectedClassificationAsyncError(error)) {
         console.debug(`[Clasificacion suelo] ${stage}`, error);
     }
 }
 
-function rememberClasificacionStats(cacheKey, rows) {
-    clasificacionStatsCache.set(cacheKey, rows.map(row => ({ ...row })));
-    while (clasificacionStatsCache.size > CLASIFICACION_STATS_CACHE_LIMIT) {
-        clasificacionStatsCache.delete(clasificacionStatsCache.keys().next().value);
+function rememberClassificationStats(cacheKey, rows) {
+    classificationStatsCache.set(cacheKey, rows.map(row => ({ ...row })));
+    while (classificationStatsCache.size > CLASSIFICATION_STATS_CACHE_LIMIT) {
+        classificationStatsCache.delete(classificationStatsCache.keys().next().value);
     }
 }
 
-let vocacionRendererDict = null;
-let vocacionMainDict = null;
-let ruralCategoriaDict = null;
-let ruralCategoriaDefaultInfo = null;
+let landSuitabilityRendererDictionaryionary = null;
+let landSuitabilityMainDictionaryionary = null;
+let ruralCategoryDictionary = null;
+let ruralCategoryDefaultInfo = null;
 // Caché de estadísticas agrupadas de Zonificación Rural por filtro territorial.
 // La data del servicio es estática durante la sesión, así que para un mismo
 // `where` (departamento/municipio) los resultados de categorías y usos no
 // cambian; evita reconsultar al alternar entre "Categorías" y "Uso principal"
 // o al repetir un territorio. Clave: where -> { catRows, useRows }.
-const zonificacionRuralStatsCache = new Map();
-const ZONIFICACION_RURAL_STATS_CACHE_LIMIT = 60;
-const vigenciaStatsCache = new Map();
-const vigenciaStatsInFlight = new Map();
-const VIGENCIA_STATS_CACHE_LIMIT = 80;
+const ruralZoningStatsCache = new Map();
+const RURAL_ZONING_STATS_CACHE_LIMIT = 60;
+const validityStatsCache = new Map();
+const validityStatsInFlight = new Map();
+const VALIDITY_STATS_CACHE_LIMIT = 80;
 window.__ruralCategoriaColorMap = {};
 window.__vocacionSelectedLabel = null;
 window.__vocacionPairColorMap = {};
@@ -479,24 +480,24 @@ function rgbaArrayToCss(arr, fallback = "#999") {
 
 // Color de respaldo deterministico para "Categorias rurales" cuando el
 // servicio no trae un renderer compatible con Tipo_Categoria_Rural.
-const RURAL_CATEGORIA_FALLBACK_COLORS = [
+const RURAL_CATEGORY_FALLBACK_COLORS = [
     "#0079C1", "#2A9D8F", "#E9C46A", "#F4A261", "#E76F51",
     "#6A3D9A", "#1F78B4", "#33A02C", "#FB9A99", "#B15928"
 ];
 
-function ruralCategoriaFallbackColor(code) {
+function ruralCategoryFallbackColor(code) {
     const key = String(code ?? "");
     let hash = 0;
     for (let i = 0; i < key.length; i++) {
         hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
     }
-    return RURAL_CATEGORIA_FALLBACK_COLORS[hash % RURAL_CATEGORIA_FALLBACK_COLORS.length];
+    return RURAL_CATEGORY_FALLBACK_COLORS[hash % RURAL_CATEGORY_FALLBACK_COLORS.length];
 }
 
-async function ensureRuralCategoriaDict(layerUrl) {
+async function ensureRuralCategoryDictionaryionary(layerUrl) {
     // Solo reutilizar la caché si tiene categorías; un objeto vacío (truthy)
     // dejaría las "Categorías rurales" sin colores de forma permanente.
-    if (ruralCategoriaDict && Object.keys(ruralCategoriaDict).length) return ruralCategoriaDict;
+    if (ruralCategoryDictionary && Object.keys(ruralCategoryDictionary).length) return ruralCategoryDictionary;
 
     const url = String(layerUrl).replace(/\/+$/, "") + "?f=pjson";
     let json = null;
@@ -507,17 +508,17 @@ async function ensureRuralCategoriaDict(layerUrl) {
         // El servicio rural puede ser lento/inestable. No bloquear el flujo:
         // devolver lo que haya (o vacío) para reintentar en la próxima consulta.
         console.warn("No se pudo cargar el diccionario de categorías rurales:", e);
-        return ruralCategoriaDict || {};
+        return ruralCategoryDictionary || {};
     }
 
-    ruralCategoriaDict = {};
-    ruralCategoriaDefaultInfo = null;
+    ruralCategoryDictionary = {};
+    ruralCategoryDefaultInfo = null;
     window.__ruralCategoriaColorMap = {};
 
     const renderer = json?.drawingInfo?.renderer || {};
     const groups = renderer?.uniqueValueGroups || [];
     const infos = renderer?.uniqueValueInfos || [];
-    const categoryField = ORDENAMIENTO_CONFIG?.ZONIFICACION_RURAL?.categoryField || "Tipo_Categoria_Rural";
+    const categoryField = LAND_USE_PLANNING_CONFIG?.ZONIFICACION_RURAL?.categoryField || "Tipo_Categoria_Rural";
     const rendererField = String(renderer?.field1 || renderer?.field || "").trim();
     const rendererUsesCategoryField = rendererField
         ? rendererField.toLowerCase() === String(categoryField).toLowerCase()
@@ -536,10 +537,10 @@ async function ensureRuralCategoriaDict(layerUrl) {
             const code = String(domainValue?.code ?? "").trim();
             if (!code) return;
 
-            const fill = ruralCategoriaFallbackColor(code);
+            const fill = ruralCategoryFallbackColor(code);
             const label = String(domainValue?.name || code).trim();
 
-            ruralCategoriaDict[code] = {
+            ruralCategoryDictionary[code] = {
                 code,
                 label,
                 fillColor: fill,
@@ -550,21 +551,21 @@ async function ensureRuralCategoriaDict(layerUrl) {
             window.__ruralCategoriaColorMap[label] = fill;
         });
 
-        return ruralCategoriaDict;
+        return ruralCategoryDictionary;
     }
 
     const defaultSymbol = renderer?.defaultSymbol;
     if (defaultSymbol) {
         const defaultFill = rgbaArrayToCss(defaultSymbol?.color, "");
-        ruralCategoriaDefaultInfo = {
+        ruralCategoryDefaultInfo = {
             code: "__default__",
             label: String(renderer?.defaultLabel || "Otro").trim(),
             fillColor: defaultFill,
             outlineColor: rgbaArrayToCss(defaultSymbol?.outline?.color, "rgba(0,0,0,0)"),
             outlineWidth: Number(defaultSymbol?.outline?.width ?? 0)
         };
-        if (!ruralCategoriaDefaultInfo.fillColor) {
-            ruralCategoriaDefaultInfo = null;
+        if (!ruralCategoryDefaultInfo.fillColor) {
+            ruralCategoryDefaultInfo = null;
         }
     }
 
@@ -581,7 +582,7 @@ async function ensureRuralCategoriaDict(layerUrl) {
                 const width = Number(cls?.symbol?.outline?.width ?? 0);
                 const label = String(cls.label || cls.description || code).trim();
 
-                ruralCategoriaDict[code] = {
+                ruralCategoryDictionary[code] = {
                     code,
                     label,
                     fillColor: fill,
@@ -594,7 +595,7 @@ async function ensureRuralCategoriaDict(layerUrl) {
         });
     }
 
-    if (!Object.keys(ruralCategoriaDict).length && infos.length) {
+    if (!Object.keys(ruralCategoryDictionary).length && infos.length) {
         infos.forEach(info => {
             const code = String(info.value ?? "").trim();
             if (!code) return;
@@ -605,7 +606,7 @@ async function ensureRuralCategoriaDict(layerUrl) {
             const width = Number(info?.symbol?.outline?.width ?? 0);
             const label = String(info.label ?? code).trim();
 
-            ruralCategoriaDict[code] = {
+            ruralCategoryDictionary[code] = {
                 code,
                 label,
                 fillColor: fill,
@@ -619,16 +620,16 @@ async function ensureRuralCategoriaDict(layerUrl) {
 
     // No cachear un diccionario vacío: permitir reintento en la próxima consulta
     // (el servicio rural a veces responde sin renderer parseable).
-    if (!Object.keys(ruralCategoriaDict).length) {
-        const empty = ruralCategoriaDict;
-        ruralCategoriaDict = null;
+    if (!Object.keys(ruralCategoryDictionary).length) {
+        const empty = ruralCategoryDictionary;
+        ruralCategoryDictionary = null;
         return empty;
     }
 
-    return ruralCategoriaDict;
+    return ruralCategoryDictionary;
 }
 
-function toggleGeoformasCharts(show) {
+function toggleLandformCharts(show) {
     const dual = document.getElementById("geoformasCharts");
     const single = document.getElementById("chart");
 
@@ -636,7 +637,7 @@ function toggleGeoformasCharts(show) {
     if (single) single.style.display = show ? "none" : "block";
 }
 
-function destroyGeoformasCharts() {
+function destroyLandformCharts() {
     if (geoPieChartInstance) {
         geoPieChartInstance.destroy();
         geoPieChartInstance = null;
@@ -647,7 +648,7 @@ function destroyGeoformasCharts() {
     }
 }
 
-async function zoomMapaOrdenSuelo(ordenValue, fertilidadValue) {
+async function zoomSoilOrderMap(ordenValue, fertilidadValue) {
     const layer = layerGlobal;
 
     if (!layer || !view) {
@@ -707,55 +708,36 @@ async function zoomMapaOrdenSuelo(ordenValue, fertilidadValue) {
     console.warn("No se pudo hacer zoom con ningún filtro");
 }
 
-async function cargarDiccionarioMunicipios() {
+async function loadMunicipalityDictionary() {
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
-        const url = "https://serviciosgeovisor.igac.gov.co:8080/Geovisor/config?cmd=config_diccionario2";
-        const res = await fetch(url, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        const json = await res.json();
-        if (json && json.UNIDAD) {
-            json.UNIDAD
-                .filter(u => u.type === "MUNI")
-                .forEach(m => {
-                    diccionarioMunicipios[m.id] = m.text;
-                });
-
-            json.UNIDAD
-                .filter(u => u.type === "DEPTO")
-                .forEach(d => {
-                    if (d.id === "00") {
-                        diccionarioDepartamentos[d.id] = "Área en litigio";
-                    } else if (d.id === "88") {
-                        diccionarioDepartamentos[d.id] = "San Andrés, Providencia y Santa Catalina";
-                    } else {
-                        diccionarioDepartamentos[d.id] = d.text;
-                    }
-                });
+        const catalog = await loadTerritorialCatalog();
+        if (!catalog?.municipalities?.length) {
+            throw new Error("No fue posible cargar el catálogo territorial.");
         }
+        municipalityNames = { ...catalog.municipalityNames };
+        departmentNames = { ...catalog.departmentNames };
     } catch (e) {
-        console.warn("Error cargando diccionario, se usarón códigos como etiquetas:", e.message || e);
+        console.warn("Error cargando diccionario territorial:", e.message || e);
     }
 }
 
 function getActiveLayerConfig() {
     syncStateFromGlobals();
-    return ORDENAMIENTO_CONFIG[currentOrdenamientoTab] || null;
+    return LAND_USE_PLANNING_CONFIG[currentLandUsePlanningTab] || null;
 }
 
 function setLegendLayer(layer, titleText) {
     setLegendLayerTitle(titleText);
 }
 
-function removeVigenciaVisualLayers(keepLayer = null) {
+function removeValidityVisualLayers(keepLayer = null) {
     if (!map?.layers) return;
 
     // URL completa del servicio (incluye el índice de capa, p.ej. ".../MapServer/0").
-    const vigenciaFullUrl = String(ORDENAMIENTO_CONFIG.VIGENCIA?.url || "").replace(/\/+$/, "");
+    const validityFullUrl = String(LAND_USE_PLANNING_CONFIG.VIGENCIA?.url || "").replace(/\/+$/, "");
     // URL base del servicio sin el índice de capa (".../MapServer").
-    const vigenciaBaseUrl = vigenciaFullUrl.replace(/\/\d+$/, "");
-    const vigenciaTitle = String(ORDENAMIENTO_CONFIG.VIGENCIA?.title || "");
+    const validityBaseUrl = validityFullUrl.replace(/\/\d+$/, "");
+    const validityTitle = String(LAND_USE_PLANNING_CONFIG.VIGENCIA?.title || "");
 
     const layers = typeof map.layers.toArray === "function"
         ? map.layers.toArray()
@@ -763,16 +745,16 @@ function removeVigenciaVisualLayers(keepLayer = null) {
 
     layers.forEach(layer => {
         if (keepLayer && layer === keepLayer) return;
-        if (layer === vigenciaMunicipioHighlightLayer) return;
+        if (layer === validityMunicipalityHighlightLayer) return;
 
         const layerUrl = String(layer?.url || "").replace(/\/+$/, "");
         const layerTitle = String(layer?.title || "");
-        const isVigenciaLayer =
-            (vigenciaTitle && layerTitle === vigenciaTitle) ||
-            (vigenciaFullUrl && layerUrl === vigenciaFullUrl) ||
-            (vigenciaBaseUrl && layerUrl === vigenciaBaseUrl);
+        const isValidityLayer =
+            (validityTitle && layerTitle === validityTitle) ||
+            (validityFullUrl && layerUrl === validityFullUrl) ||
+            (validityBaseUrl && layerUrl === validityBaseUrl);
 
-        if (!isVigenciaLayer) return;
+        if (!isValidityLayer) return;
 
         try { map.remove(layer); } catch (_) { }
         try { layer.destroy?.(); } catch (_) { }
@@ -781,22 +763,22 @@ function removeVigenciaVisualLayers(keepLayer = null) {
     if (
         window.activeVisualLayer &&
         window.activeVisualLayer !== keepLayer &&
-        window.activeVisualLayer?.title === ORDENAMIENTO_CONFIG.VIGENCIA?.title
+        window.activeVisualLayer?.title === LAND_USE_PLANNING_CONFIG.VIGENCIA?.title
     ) {
         window.activeVisualLayer = null;
     }
     layersGlobal = layersGlobal.filter(layer =>
         layer &&
         !layer.destroyed &&
-        (layer === keepLayer || String(layer?.title || "") !== ORDENAMIENTO_CONFIG.VIGENCIA?.title)
+        (layer === keepLayer || String(layer?.title || "") !== LAND_USE_PLANNING_CONFIG.VIGENCIA?.title)
     );
     AppState.layersGlobal = layersGlobal;
 }
 
-function removeClasificacionVisualLayers() {
+function removeClassificationVisualLayers() {
     if (!map?.layers) return;
 
-    const config = ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO || {};
+    const config = LAND_USE_PLANNING_CONFIG.CLASIFICACION_SUELO || {};
     const featureUrl = String(config.url || "").replace(/\/+$/, "");
     const mapServerUrl = String(config.mapServerUrl || "").replace(/\/+$/, "");
     const title = String(config.title || "");
@@ -807,38 +789,38 @@ function removeClasificacionVisualLayers() {
     layers.forEach(layer => {
         const layerUrl = String(layer?.url || "").replace(/\/+$/, "");
         const layerTitle = String(layer?.title || "");
-        const isClasificacionLayer =
+        const isClassificationLayer =
             (featureUrl && layerUrl === featureUrl) ||
             (mapServerUrl && layerUrl === mapServerUrl) ||
             (title && (layerTitle === title || layerTitle.startsWith(`${title} -`)));
 
-        if (!isClasificacionLayer) return;
+        if (!isClassificationLayer) return;
 
         try { layer.visible = false; } catch (_) { }
         try { map.remove(layer); } catch (_) { }
         try { layer.destroy?.(); } catch (_) { }
     });
 
-    if (clasificacionVisualLayer && !clasificacionVisualLayer.destroyed) {
-        try { clasificacionVisualLayer.visible = false; } catch (_) { }
-        try { map.remove(clasificacionVisualLayer); } catch (_) { }
-        try { clasificacionVisualLayer.destroy?.(); } catch (_) { }
+    if (classificationVisualLayer && !classificationVisualLayer.destroyed) {
+        try { classificationVisualLayer.visible = false; } catch (_) { }
+        try { map.remove(classificationVisualLayer); } catch (_) { }
+        try { classificationVisualLayer.destroy?.(); } catch (_) { }
     }
 
-    for (const layer of clasificacionCategoryLayers.values()) {
+    for (const layer of classificationCategoryLayers.values()) {
         if (!layer || layer.destroyed) continue;
         try { layer.visible = false; } catch (_) { }
         try { map.remove(layer); } catch (_) { }
         try { layer.destroy?.(); } catch (_) { }
     }
 
-    clasificacionVisualLayer = null;
-    clasificacionVisualWhereApplied = null;
-    clasificacionVisualVisibleApplied = null;
-    clasificacionCategoryLayers.clear();
-    clasificacionCategoryModeActive = false;
-    clasificacionCategoryBaseWhereApplied = "";
-    clasificacionCategoryPrewarmSignature = "";
+    classificationVisualLayer = null;
+    classificationVisualWhereApplied = null;
+    classificationVisualVisibleApplied = null;
+    classificationCategoryLayers.clear();
+    classificationCategoryModeActive = false;
+    classificationCategoryBaseWhereApplied = "";
+    classificationCategoryPrewarmSignature = "";
 
     if (window.activeVisualLayer?.title === title) {
         window.activeVisualLayer = null;
@@ -851,24 +833,24 @@ function removeClasificacionVisualLayers() {
 // (substring) para detectar capas residuales sin depender de la URL exacta,
 // ya que FeatureLayer.url devuelve la URL del servicio SIN el índice de capa
 // (".../FeatureServer") mientras que config.url incluye el índice (".../0").
-const ORDENAMIENTO_DATA_SERVICE_FINGERPRINTS = [
+const LAND_USE_PLANNING_DATA_SERVICE_FINGERPRINTS = [
     "datosnacionalespot",
     "clasificacionsuelopot",
     "areasdeactividad",
     "zonificacionsuelorural"
 ];
 
-function layerBelongsToOrdenamientoDataService(layer) {
+function layerBelongsToLandUsePlanningDataService(layer) {
     const url = String(layer?.url || "").toLowerCase();
     if (!url) return false;
-    return ORDENAMIENTO_DATA_SERVICE_FINGERPRINTS.some(fp => url.includes(fp));
+    return LAND_USE_PLANNING_DATA_SERVICE_FINGERPRINTS.some(fp => url.includes(fp));
 }
 
 // Elimina cualquier capa de datos de Ordenamiento que haya quedado residual en el
 // mapa (consulta anterior, capa nacional inicial u orfandades de renders previos),
 // dejando solo la capa indicada en keepLayer. Evita que coexistan resultados de
-// departamentos/municipios anteriores con el actual.
-function removeStrayOrdenamientoDataLayers(keepLayer = null) {
+// departamentos/municipalityCodes anteriores con el actual.
+function removeStrayLandUsePlanningDataLayers(keepLayer = null) {
     if (!map?.layers) return;
 
     const layers = typeof map.layers.toArray === "function"
@@ -877,7 +859,7 @@ function removeStrayOrdenamientoDataLayers(keepLayer = null) {
 
     layers.forEach(layer => {
         if (keepLayer && layer === keepLayer) return;
-        if (layerBelongsToOrdenamientoDataService(layer)) {
+        if (layerBelongsToLandUsePlanningDataService(layer)) {
             try { map.remove(layer); } catch (_) { }
             try { layer?.destroy?.(); } catch (_) { }
         }
@@ -886,22 +868,22 @@ function removeStrayOrdenamientoDataLayers(keepLayer = null) {
     layersGlobal = layersGlobal.filter(layer =>
         layer &&
         !layer.destroyed &&
-        (layer === keepLayer || !layerBelongsToOrdenamientoDataService(layer))
+        (layer === keepLayer || !layerBelongsToLandUsePlanningDataService(layer))
     );
     AppState.layersGlobal = layersGlobal;
 }
 
 // Alias retrocompatible (la lógica es genérica para todas las capas de datos de
 // Ordenamiento, no solo Zonificación Rural).
-const removeStrayRuralLayers = removeStrayOrdenamientoDataLayers;
+const removeStrayRuralLayers = removeStrayLandUsePlanningDataLayers;
 
-function getOrdenamientoLayerOwnership(layer) {
+function getLandUsePlanningLayerOwnership(layer) {
     if (!layer) return "";
 
     const layerUrl = String(layer.url || "").replace(/\/+$/, "");
     const layerTitle = String(layer.title || "");
 
-    for (const [tabKey, config] of Object.entries(ORDENAMIENTO_CONFIG || {})) {
+    for (const [tabKey, config] of Object.entries(LAND_USE_PLANNING_CONFIG || {})) {
         const featureUrl = String(config?.url || "").replace(/\/+$/, "");
         const mapServerUrl = String(config?.mapServerUrl || "").replace(/\/+$/, "");
         const mapServerBaseUrl = featureUrl.replace(/\/\d+$/, "");
@@ -920,7 +902,7 @@ function getOrdenamientoLayerOwnership(layer) {
     return "";
 }
 
-function removeOrdenamientoResidualLayers(targetTab = currentOrdenamientoTab, options = {}) {
+function removeLandUsePlanningResidualLayers(targetTab = currentLandUsePlanningTab, options = {}) {
     if (!map?.layers) return;
 
     const keepTab = String(targetTab || "");
@@ -930,9 +912,9 @@ function removeOrdenamientoResidualLayers(targetTab = currentOrdenamientoTab, op
         : [];
 
     layers.forEach(layer => {
-        if (!layer || layer === vigenciaMunicipioHighlightLayer) return;
+        if (!layer || layer === validityMunicipalityHighlightLayer) return;
 
-        const ownerTab = getOrdenamientoLayerOwnership(layer);
+        const ownerTab = getLandUsePlanningLayerOwnership(layer);
         if (!ownerTab || (ownerTab === keepTab && !removeTarget)) return;
 
         try { layer.visible = false; } catch (_) { }
@@ -940,13 +922,13 @@ function removeOrdenamientoResidualLayers(targetTab = currentOrdenamientoTab, op
         try { layer.destroy?.(); } catch (_) { }
     });
 
-    const layerGlobalOwner = getOrdenamientoLayerOwnership(layerGlobal);
+    const layerGlobalOwner = getLandUsePlanningLayerOwnership(layerGlobal);
     if (layerGlobal && layerGlobalOwner && (layerGlobalOwner !== keepTab || removeTarget)) {
         layerGlobal = null;
         AppState.layerGlobal = null;
     }
 
-    const chartLayerOwner = getOrdenamientoLayerOwnership(chartLayerGlobal);
+    const chartLayerOwner = getLandUsePlanningLayerOwnership(chartLayerGlobal);
     if (chartLayerGlobal && chartLayerOwner && (chartLayerOwner !== keepTab || removeTarget)) {
         chartLayerGlobal = null;
         AppState.chartLayerGlobal = null;
@@ -954,45 +936,45 @@ function removeOrdenamientoResidualLayers(targetTab = currentOrdenamientoTab, op
 
     layersGlobal = layersGlobal.filter(layer => {
         if (!layer || layer.destroyed) return false;
-        const ownerTab = getOrdenamientoLayerOwnership(layer);
+        const ownerTab = getLandUsePlanningLayerOwnership(layer);
         return !ownerTab || (ownerTab === keepTab && !removeTarget);
     });
     AppState.layersGlobal = layersGlobal;
 
-    const activeFeatureOwner = getOrdenamientoLayerOwnership(window.activeFeatureLayer);
+    const activeFeatureOwner = getLandUsePlanningLayerOwnership(window.activeFeatureLayer);
     if (window.activeFeatureLayer && activeFeatureOwner && (activeFeatureOwner !== keepTab || removeTarget)) {
         window.activeFeatureLayer = null;
     }
-    const activeVisualOwner = getOrdenamientoLayerOwnership(window.activeVisualLayer);
+    const activeVisualOwner = getLandUsePlanningLayerOwnership(window.activeVisualLayer);
     if (window.activeVisualLayer && activeVisualOwner && (activeVisualOwner !== keepTab || removeTarget)) {
         window.activeVisualLayer = null;
     }
 }
 
-function resetOrdenamientoInteractionStateForTabChange(targetTab = currentOrdenamientoTab) {
-    if (areasActividadSelectionTimer) {
-        clearTimeout(areasActividadSelectionTimer);
-        areasActividadSelectionTimer = null;
+function resetLandUsePlanningInteractionStateForTabChange(targetTab = currentLandUsePlanningTab) {
+    if (activityAreasSelectionTimer) {
+        clearTimeout(activityAreasSelectionTimer);
+        activityAreasSelectionTimer = null;
     }
-    if (zonificacionRuralSelectionTimer) {
-        clearTimeout(zonificacionRuralSelectionTimer);
-        zonificacionRuralSelectionTimer = null;
+    if (ruralZoningSelectionTimer) {
+        clearTimeout(ruralZoningSelectionTimer);
+        ruralZoningSelectionTimer = null;
     }
-    if (clasificacionLegendFilterTimer) {
-        clearTimeout(clasificacionLegendFilterTimer);
-        clasificacionLegendFilterTimer = null;
+    if (classificationLegendFilterTimer) {
+        clearTimeout(classificationLegendFilterTimer);
+        classificationLegendFilterTimer = null;
     }
-    if (clasificacionChartTimer) {
-        clearTimeout(clasificacionChartTimer);
-        clasificacionChartTimer = null;
+    if (classificationChartTimer) {
+        clearTimeout(classificationChartTimer);
+        classificationChartTimer = null;
     }
 
-    areasActividadSelectionToken++;
-    zonificacionRuralRenderSeq++;
-    areasActividadChartHighlightedCode = null;
-    areasActividadChartCodes = [];
-    areasActividadCanvasChartState = null;
-    zonificacionRuralCanvasChartState = null;
+    activityAreasSelectionToken++;
+    ruralZoningRenderSequence++;
+    activityAreasChartHighlightedCode = null;
+    activityAreasChartCodes = [];
+    activityAreasCanvasChartState = null;
+    ruralZoningCanvasChartState = null;
     window.__aa_selected_code = null;
     window.__aa_active_filters = new Set();
     window.__aa_all_items = [];
@@ -1008,30 +990,30 @@ function resetOrdenamientoInteractionStateForTabChange(targetTab = currentOrdena
     };
 
     if (String(targetTab || "") !== "CLASIFICACION_SUELO") {
-        clasificacionBaseWhere = "1=1";
-        clasificacionVisualWhereApplied = null;
-        clasificacionVisualVisibleApplied = null;
+        classificationBaseWhere = "1=1";
+        classificationVisualWhereApplied = null;
+        classificationVisualVisibleApplied = null;
     }
 }
 
-function cleanupOrdenamientoVisualStateForTab(targetTab = currentOrdenamientoTab) {
+function cleanupLandUsePlanningVisualStateForTab(targetTab = currentLandUsePlanningTab) {
     renderCycleId++;
     AppState.renderCycleId = renderCycleId;
-    resetOrdenamientoInteractionStateForTabChange(targetTab);
-    removeOrdenamientoResidualLayers(targetTab, { removeTarget: true });
+    resetLandUsePlanningInteractionStateForTabChange(targetTab);
+    removeLandUsePlanningResidualLayers(targetTab, { removeTarget: true });
     if (chartInstance) {
         try { chartInstance.destroy(); } catch (_) { }
         chartInstance = null;
     }
-    if (vigenciaTipoChartInstance) {
-        try { vigenciaTipoChartInstance.destroy(); } catch (_) { }
-        vigenciaTipoChartInstance = null;
+    if (validityTypeChartInstance) {
+        try { validityTypeChartInstance.destroy(); } catch (_) { }
+        validityTypeChartInstance = null;
     }
-    if (vigenciaEstadoChartInstance) {
-        try { vigenciaEstadoChartInstance.destroy(); } catch (_) { }
-        vigenciaEstadoChartInstance = null;
+    if (validityStatusChartInstance) {
+        try { validityStatusChartInstance.destroy(); } catch (_) { }
+        validityStatusChartInstance = null;
     }
-    document.getElementById("vigenciaCharts")?.remove();
+    document.getElementById("validityCharts")?.remove();
     document.getElementById("chartHighlightOverlay")?.remove();
     const chartCanvas = document.getElementById("chart");
     if (chartCanvas) {
@@ -1057,17 +1039,17 @@ function cleanupOrdenamientoVisualStateForTab(targetTab = currentOrdenamientoTab
 
     const tab = String(targetTab || "");
     if (tab !== "CLASIFICACION_SUELO") {
-        if (typeof cancelClasificacionAuxiliaryLoad === "function") cancelClasificacionAuxiliaryLoad();
-        if (typeof cancelClasificacionCategoryPrewarm === "function") cancelClasificacionCategoryPrewarm();
-        if (typeof cancelClasificacionDepartmentWarmup === "function") cancelClasificacionDepartmentWarmup();
-        removeClasificacionVisualLayers();
+        if (typeof cancelClassificationAuxiliaryiliaryLoad === "function") cancelClassificationAuxiliaryiliaryLoad();
+        if (typeof cancelClassificationCategoryPrewarm === "function") cancelClassificationCategoryPrewarm();
+        if (typeof cancelClassificationDepartmentWarmup === "function") cancelClassificationDepartmentWarmup();
+        removeClassificationVisualLayers();
     }
 
     if (tab !== "VIGENCIA") {
-        removeVigenciaVisualLayers();
-        vigenciaHighlightedMunicipio = null;
-        if (vigenciaMunicipioHighlightLayer?.graphics) {
-            try { vigenciaMunicipioHighlightLayer.graphics.removeAll(); } catch (_) { }
+        removeValidityVisualLayers();
+        validityHighlightedMunicipality = null;
+        if (validityMunicipalityHighlightLayer?.graphics) {
+            try { validityMunicipalityHighlightLayer.graphics.removeAll(); } catch (_) { }
         }
     }
 }
@@ -1082,19 +1064,19 @@ function initAllDropdowns() {
     });
 
     initModuleDropdown("ordenamientoDropdown", "ordenamientoTrigger", ".dropdown-menu-custom", function (target) {
-        setOrdenamientoTab(target);
+        setLandUsePlanningTab(target);
 
         currentMainModule = AppState.currentMainModule;
-        currentOrdenamientoTab = AppState.currentOrdenamientoTab;
+        currentLandUsePlanningTab = AppState.currentLandUsePlanningTab;
         currentRuralChartView = AppState.currentRuralChartView;
 
         syncStateFromGlobals();
-        cleanupOrdenamientoVisualStateForTab(currentOrdenamientoTab);
+        cleanupLandUsePlanningVisualStateForTab(currentLandUsePlanningTab);
 
-        resetOrdenamientoUI({
+        resetLandUsePlanningUi({
             hideTimeSlider,
-            destroyGeoformasCharts,
-            toggleGeoformasCharts,
+            destroyLandformCharts,
+            toggleLandformCharts,
             chartInstanceRef: {
                 get current() { return chartInstance; },
                 set current(value) { chartInstance = value; }
@@ -1102,10 +1084,10 @@ function initAllDropdowns() {
             renderControls
         });
 
-        if (typeof window.cargarOrdenamientoActual === "function") {
-            window.cargarOrdenamientoActual();
+        if (typeof window.loadCurrentLandUsePlanning === "function") {
+            window.loadCurrentLandUsePlanning();
         } else {
-            console.warn("cargarOrdenamientoActual a\u00fan no est\u00e1 disponible");
+            console.warn("loadCurrentLandUsePlanning a\u00fan no est\u00e1 disponible");
         }
     });
 
@@ -1210,15 +1192,16 @@ if (typeof arcgisRequire !== "function") {
             ScaleBar
         });
 
-        window.cargarOrdenamientoActual = cargarOrdenamientoActual;
+        window.loadCurrentLandUsePlanning = loadCurrentLandUsePlanning;
+        window.cargarOrdenamientoActual = loadCurrentLandUsePlanning;
 
         view.on("click", async (event) => {
-            await manejarClickMapaVigencia(event);
-            await manejarClickMapaClasificacionSuelo(event);
-            await manejarClickMapaAreasActividad(event);
-            await manejarClickMapaZonificacionRural(event);
+            await handleValidityMapClick(event);
+            await handleSoilClassificationMapClick(event);
+            await handleActivityAreasMapClick(event);
+            await handleRuralZoningMapClick(event);
         });
-        bindAreasActividadMapClickFallback();
+        bindActivityAreasMapClickFallback();
         let extentInicial = null;
 
         view.when(() => {
@@ -1226,9 +1209,9 @@ if (typeof arcgisRequire !== "function") {
             hideTimeSlider();
 
             // MAPA PRIMERO: Cargar la capa inicial apenas el view está listo,
-            // sin esperar a que los municipios terminen de cargar
-            if (typeof window.cargarOrdenamientoActual === "function") {
-                window.cargarOrdenamientoActual();
+            // sin esperar a que los municipalityCodes terminen de cargar
+            if (typeof window.loadCurrentLandUsePlanning === "function") {
+                window.loadCurrentLandUsePlanning();
             }
         });
         const zoomSlider = document.getElementById("zoomSlider");
@@ -1278,7 +1261,7 @@ if (typeof arcgisRequire !== "function") {
             // =========================
             if (
                 currentMainModule === "ORDENAMIENTO" &&
-                currentOrdenamientoTab === "ZONIFICACION_RURAL"
+                currentLandUsePlanningTab === "ZONIFICACION_RURAL"
             ) {
                 container.style.display = "flex";
 
@@ -1296,19 +1279,19 @@ if (typeof arcgisRequire !== "function") {
                     btn.onclick = function () {
                         currentRuralChartView = tab.key;
                         renderSubTabs();
-                        clearZonificacionRuralSelection();
+                        clearRuralZoningSelection();
 
                         if (
                             currentMainModule === "ORDENAMIENTO" &&
-                            currentOrdenamientoTab === "ZONIFICACION_RURAL" &&
+                            currentLandUsePlanningTab === "ZONIFICACION_RURAL" &&
                             layerGlobal
                         ) {
-                            const config = ORDENAMIENTO_CONFIG[currentOrdenamientoTab];
-                            const whereOrdenamiento = buildWhereOrdenamientoForCurrentTerritory(config);
-                            layerGlobal.definitionExpression = whereOrdenamiento;
+                            const config = LAND_USE_PLANNING_CONFIG[currentLandUsePlanningTab];
+                            const landUsePlanningWhere = buildLandUsePlanningWhereForCurrentTerritory(config);
+                            layerGlobal.definitionExpression = landUsePlanningWhere;
                             setLegendLayer(layerGlobal, config.title);
                             updateMapViewBadge(config.title);
-                            renderZonificacionRuralCharts(layerGlobal, config, whereOrdenamiento);
+                            renderRuralZoningCharts(layerGlobal, config, landUsePlanningWhere);
                         }
                     };
 
@@ -1349,42 +1332,42 @@ if (typeof arcgisRequire !== "function") {
         init();
 
         function init() {
-            document.getElementById("btnRefreshBusqueda").onclick = limpiarBusqueda;
-            const btnReiniciarConsulta = document.getElementById("btnReiniciarConsulta");
-            if (btnReiniciarConsulta) {
-                btnReiniciarConsulta.onclick = () => {
-                    reiniciarConsultaActual();
+            document.getElementById("btnRefreshBusqueda").onclick = clearSearch;
+            const restartQueryButton = document.getElementById("restartQueryButton");
+            if (restartQueryButton) {
+                restartQueryButton.onclick = () => {
+                    restartCurrentQuery();
                 };
             }
-            initializeOrdenamientoModule();
-            syncChartSideLayout(currentOrdenamientoTab);
-            cargarMunicipios();
+            initializeLandUsePlanningModule();
+            syncChartSideLayout(currentLandUsePlanningTab);
+            loadMunicipalities();
             document.getElementById("legendToggle").onclick = toggleLegend;
             renderControls();
-            setOrdenamientoInitialChartState();
+            setLandUsePlanningInitialChartState();
             requestAnimationFrame(() => {
-                cargarOrdenamientoActual();
+                loadCurrentLandUsePlanning();
             });
         }
 
-        function limpiarBusqueda() {
+        function clearSearch() {
             hideTimeSlider();
 
             // Reset selects
-            const selectDepto = document.getElementById("departamentos");
+            const departmentSelect = document.getElementById("departamentos");
             const selectMuni = document.getElementById("municipios");
 
-            if (selectDepto) selectDepto.value = "0";
+            if (departmentSelect) departmentSelect.value = "0";
             if (selectMuni) {
                 selectMuni.innerHTML = `<option value="">Seleccione un municipio</option>`;
-                renderizarMunicipios();
+                renderMunicipalities();
                 selectMuni.value = "";
             }
 
             // Reset estado global
-            municipioActual = "";
-            deptoActual = "";
-            filtroNivel = "";
+            currentMunicipalityId = "";
+            currentDepartmentId = "";
+            territoryLevel = "";
             whereBase = "";
             layerViewGlobal = null;
             chartLayerGlobal = null;
@@ -1401,10 +1384,10 @@ if (typeof arcgisRequire !== "function") {
                 try { highlightHandle.remove(); } catch (e) { }
                 highlightHandle = null;
             }
-            clearVigenciaMunicipioHighlight();
+            clearValidityMunicipalityHighlight();
 
             // Limpiar gráfica
-            setOrdenamientoInitialChartState();
+            setLandUsePlanningInitialChartState();
 
             // Limpiar leyenda
             const legendTitle = document.getElementById("legendTitle");
@@ -1447,31 +1430,31 @@ if (typeof arcgisRequire !== "function") {
             }
         }
 
-        function destroyOrdenamientoChartInstance() {
+        function destroyLandUsePlanningChartInstance() {
             if (chartInstance) {
                 try { chartInstance.destroy(); } catch (_) { }
                 chartInstance = null;
             }
-            if (vigenciaTipoChartInstance) {
-                try { vigenciaTipoChartInstance.destroy(); } catch (_) { }
-                vigenciaTipoChartInstance = null;
+            if (validityTypeChartInstance) {
+                try { validityTypeChartInstance.destroy(); } catch (_) { }
+                validityTypeChartInstance = null;
             }
-            if (vigenciaEstadoChartInstance) {
-                try { vigenciaEstadoChartInstance.destroy(); } catch (_) { }
-                vigenciaEstadoChartInstance = null;
+            if (validityStatusChartInstance) {
+                try { validityStatusChartInstance.destroy(); } catch (_) { }
+                validityStatusChartInstance = null;
             }
 
-            const vigenciaCharts = document.getElementById("vigenciaCharts");
-            if (vigenciaCharts) {
-                vigenciaCharts.remove();
+            const validityCharts = document.getElementById("validityCharts");
+            if (validityCharts) {
+                validityCharts.remove();
             }
 
             document.getElementById("chartHighlightOverlay")?.remove();
             document.querySelectorAll("[data-aa-empty-msg='true']").forEach(el => el.remove());
             document.querySelectorAll("[data-zr-empty-msg='true']").forEach(el => el.remove());
-            areasActividadCanvasChartState = null;
-            zonificacionRuralCanvasChartState = null;
-            areasActividadChartHighlightedCode = null;
+            activityAreasCanvasChartState = null;
+            ruralZoningCanvasChartState = null;
+            activityAreasChartHighlightedCode = null;
 
             const canvas = document.getElementById("chart");
             if (canvas) {
@@ -1493,15 +1476,15 @@ if (typeof arcgisRequire !== "function") {
             }
         }
 
-        function hasOrdenamientoActiveTerritorySelection() {
+        function hasLandUsePlanningActiveTerritorySelection() {
             return Boolean(
-                municipioActual ||
-                (filtroNivel === "DEPTO" && deptoActual && deptoActual !== "0" && deptoActual !== "COL")
+                currentMunicipalityId ||
+                (territoryLevel === "DEPTO" && currentDepartmentId && currentDepartmentId !== "0" && currentDepartmentId !== "COL")
             );
         }
 
-        function hasOrdenamientoActiveCategoryFilters() {
-            if (currentOrdenamientoTab === "AREAS_ACTIVIDAD") {
+        function hasLandUsePlanningActiveCategoryFilters() {
+            if (currentLandUsePlanningTab === "AREAS_ACTIVIDAD") {
                 const fullCodes = window.__aa_full_codes;
                 const activeFilters = window.__aa_active_filters;
                 if (Array.isArray(fullCodes) && fullCodes.length && activeFilters instanceof Set) {
@@ -1509,14 +1492,14 @@ if (typeof arcgisRequire !== "function") {
                 }
             }
 
-            if (currentOrdenamientoTab === "CLASIFICACION_SUELO") {
+            if (currentLandUsePlanningTab === "CLASIFICACION_SUELO") {
                 const state = window.__legendState;
-                if (state?.isClasificacionSuelo && Array.isArray(state.allCodes) && state.allCodes.length && state.activeCodes instanceof Set) {
+                if (state?.isSoilClassification && Array.isArray(state.allCodes) && state.allCodes.length && state.activeCodes instanceof Set) {
                     return state.activeCodes.size > 0 && state.activeCodes.size < state.allCodes.length;
                 }
             }
 
-            if (currentOrdenamientoTab === "ZONIFICACION_RURAL") {
+            if (currentLandUsePlanningTab === "ZONIFICACION_RURAL") {
                 const state = window.__legendState;
                 if (Array.isArray(state?.allCodes) && state.allCodes.length && state.activeCodes instanceof Set) {
                     return state.activeCodes.size > 0 && state.activeCodes.size < state.allCodes.length;
@@ -1528,26 +1511,26 @@ if (typeof arcgisRequire !== "function") {
             return false;
         }
 
-        function shouldShowOrdenamientoNoData(options = {}) {
+        function shouldShowLandUsePlanningNoData(options = {}) {
             const serviceResponded = options.serviceResponded !== false;
             const zeroRecords = options.zeroRecords !== false;
 
             if (!serviceResponded || !zeroRecords) return false;
 
-            return hasOrdenamientoActiveTerritorySelection() || hasOrdenamientoActiveCategoryFilters();
+            return hasLandUsePlanningActiveTerritorySelection() || hasLandUsePlanningActiveCategoryFilters();
         }
 
-        function getOrdenamientoDefaultChartBaseTitle() {
-            if (currentOrdenamientoTab === "VIGENCIA") {
+        function getLandUsePlanningDefaultChartBaseTitle() {
+            if (currentLandUsePlanningTab === "VIGENCIA") {
                 return "Distribución de instrumentos de ordenamiento territorial";
             }
-            if (currentOrdenamientoTab === "CLASIFICACION_SUELO") {
+            if (currentLandUsePlanningTab === "CLASIFICACION_SUELO") {
                 return "Distribución de la clasificación del suelo";
             }
-            if (currentOrdenamientoTab === "AREAS_ACTIVIDAD") {
+            if (currentLandUsePlanningTab === "AREAS_ACTIVIDAD") {
                 return "Distribución de áreas de actividad";
             }
-            if (currentOrdenamientoTab === "ZONIFICACION_RURAL") {
+            if (currentLandUsePlanningTab === "ZONIFICACION_RURAL") {
                 return currentRuralChartView === "CATEGORIA"
                     ? "Distribución de categorías de zonificación rural"
                     : "Distribución del uso principal de la zonificación rural";
@@ -1555,20 +1538,20 @@ if (typeof arcgisRequire !== "function") {
             return "Ordenamiento Territorial";
         }
 
-        function getOrdenamientoInitialChartSummary() {
-            if (hasOrdenamientoActiveTerritorySelection()) return "";
+        function getLandUsePlanningInitialChartSummary() {
+            if (hasLandUsePlanningActiveTerritorySelection()) return "";
             return "Seleccione un departamento o municipio para consultar.";
         }
 
-        function setOrdenamientoInitialChartState(options = {}) {
-            const baseTitle = options.baseTitle || getOrdenamientoDefaultChartBaseTitle();
-            setOrdenamientoChartStatus(buildOrdenamientoChartTitle(baseTitle), {
-                summary: options.summary ?? getOrdenamientoInitialChartSummary()
+        function setLandUsePlanningInitialChartState(options = {}) {
+            const baseTitle = options.baseTitle || getLandUsePlanningDefaultChartBaseTitle();
+            setLandUsePlanningChartStatus(buildLandUsePlanningChartTitle(baseTitle), {
+                summary: options.summary ?? getLandUsePlanningInitialChartSummary()
             });
         }
 
-        function setOrdenamientoChartStatus(message, options = {}) {
-            destroyOrdenamientoChartInstance();
+        function setLandUsePlanningChartStatus(message, options = {}) {
+            destroyLandUsePlanningChartInstance();
 
             const titleElement = document.getElementById("chartTitle");
             if (titleElement) {
@@ -1583,25 +1566,25 @@ if (typeof arcgisRequire !== "function") {
             }
         }
 
-        function setOrdenamientoChartLoading() {
-            setOrdenamientoChartStatus("Cargando gráfico...");
+        function setLandUsePlanningChartLoading() {
+            setLandUsePlanningChartStatus("Cargando gráfico...");
         }
 
-        function setOrdenamientoChartNoData(summary = "", options = {}) {
-            if (!shouldShowOrdenamientoNoData(options)) {
-                setOrdenamientoInitialChartState({
-                    summary: summary || getOrdenamientoInitialChartSummary()
+        function setLandUsePlanningChartNoData(summary = "", options = {}) {
+            if (!shouldShowLandUsePlanningNoData(options)) {
+                setLandUsePlanningInitialChartState({
+                    summary: summary || getLandUsePlanningInitialChartSummary()
                 });
                 return;
             }
-            setOrdenamientoChartStatus("Sin datos", { summary });
+            setLandUsePlanningChartStatus("Sin datos", { summary });
         }
 
-        function setOrdenamientoChartError(summary = "No fue posible cargar el gráfico. Intente nuevamente.") {
-            setOrdenamientoChartStatus("Error al cargar el gráfico", { summary });
+        function setLandUsePlanningChartError(summary = "No fue posible cargar el gráfico. Intente nuevamente.") {
+            setLandUsePlanningChartStatus("Error al cargar el gráfico", { summary });
         }
 
-        function showOrdenamientoChartCanvas() {
+        function showLandUsePlanningChartCanvas() {
             const canvas = document.getElementById("chart");
             if (!canvas) return;
 
@@ -1617,7 +1600,7 @@ if (typeof arcgisRequire !== "function") {
 
         function renderControls() {
             renderSubTabs();
-            syncChartSideLayout(currentOrdenamientoTab);
+            syncChartSideLayout(currentLandUsePlanningTab);
         }
         window.renderControls = renderControls;
 
@@ -1634,7 +1617,7 @@ if (typeof arcgisRequire !== "function") {
             }
         }
 
-        function actualizarLeyenda(labels, colors, codes = null) {
+        function updateLegend(labels, colors, codes = null) {
             try {
                 const content = document.getElementById("legendContent");
                 const title = document.getElementById("legendTitle");
@@ -1735,7 +1718,7 @@ if (typeof arcgisRequire !== "function") {
                 content.appendChild(frag);
 
             } catch (e) {
-                console.error("actualizarLeyenda error:", e);
+                console.error("updateLegend error:", e);
             }
         }
 
@@ -1875,7 +1858,7 @@ if (typeof arcgisRequire !== "function") {
             resetLegendVisualState();
         }
 
-        async function zoomOrdenamientoLayerToWhere(layer, whereClause, cycleId, options = {}) {
+        async function zoomLandUsePlanningLayerToWhere(layer, whereClause, cycleId, options = {}) {
             if (!layer || !view || layer.destroyed) return false;
 
             const where = String(whereClause || "1=1").trim() || "1=1";
@@ -1902,72 +1885,72 @@ if (typeof arcgisRequire !== "function") {
             return false;
         }
 
-        function hasClasificacionTerritoryFilter() {
-            return hasOrdenamientoActiveTerritorySelection();
+        function hasClassificationTerritoryFilter() {
+            return hasLandUsePlanningActiveTerritorySelection();
         }
 
-        function getClasificacionMunicipioCacheKey(municipioCode) {
+        function getMunicipalityClassificationCacheKey(municipioCode) {
             const code = normalizeCode(municipioCode || "");
             return code ? `MUNI:${code}` : "";
         }
 
-        function getClasificacionDeptCacheKey(deptoCode) {
-            const code = normalizeCode(deptoCode || "");
+        function getClassificationDepartmentCacheKey(contextDepartmentCode) {
+            const code = normalizeCode(contextDepartmentCode || "");
             return code ? `DEPTO:${code}` : "";
         }
 
-        function getClasificacionVisualWhere(whereClause) {
-            if (!hasClasificacionTerritoryFilter()) return "1=0";
+        function getClassificationVisualWhere(whereClause) {
+            if (!hasClassificationTerritoryFilter()) return "1=0";
             return whereClause && String(whereClause).trim() ? whereClause : "1=1";
         }
 
-        function ensureClasificacionTerritoryLayer() {
-            if (!clasificacionTerritoryLayer || clasificacionTerritoryLayer.destroyed) {
-                clasificacionTerritoryLayer = new FeatureLayer({
-                    url: MUNICIPIOS_SOURCE_LAYER_URL,
+        function ensureClassificationTerritoryLayer() {
+            if (!classificationTerritoryLayer || classificationTerritoryLayer.destroyed) {
+                classificationTerritoryLayer = new FeatureLayer({
+                    url: MUNICIPALITIES_SOURCE_LAYER_URL,
                     outFields: ["mpcodigo"]
                 });
             }
-            return clasificacionTerritoryLayer;
+            return classificationTerritoryLayer;
         }
 
-        async function zoomClasificacionToTerritory(cycleId) {
-            if (!view || (!municipioActual && !(filtroNivel === "DEPTO" && deptoActual))) return false;
+        async function zoomClassificationToTerritory(cycleId) {
+            if (!view || (!currentMunicipalityId && !(territoryLevel === "DEPTO" && currentDepartmentId))) return false;
 
-            const requestId = ++clasificacionZoomRequestId;
-            const where = municipioActual
-                ? sqlEquals("mpcodigo", municipioActual)
-                : sqlStartsWith("mpcodigo", deptoActual);
-            const cacheKey = municipioActual
-                ? getClasificacionMunicipioCacheKey(municipioActual)
-                : getClasificacionDeptCacheKey(deptoActual);
-            markClasificacionPerf("zoom-territory-start", cycleId, { cacheKey });
+            const requestId = ++classificationZoomRequestId;
+            const where = currentMunicipalityId
+                ? sqlEquals("mpcodigo", currentMunicipalityId)
+                : sqlStartsWith("mpcodigo", currentDepartmentId);
+            const cacheKey = currentMunicipalityId
+                ? getMunicipalityClassificationCacheKey(currentMunicipalityId)
+                : getClassificationDepartmentCacheKey(currentDepartmentId);
+            markClassificationPerformance("zoom-territory-start", cycleId, { cacheKey });
 
             try {
-                const cachedExtent = clasificacionTerritoryExtentCache.get(cacheKey);
+                const cachedExtent = classificationTerritoryExtentCache.get(cacheKey);
                 if (cachedExtent) {
-                    if (cycleId !== renderCycleId || requestId !== clasificacionZoomRequestId) return false;
+                    if (cycleId !== renderCycleId || requestId !== classificationZoomRequestId) return false;
                     const extent = typeof cachedExtent.clone === "function" ? cachedExtent.clone() : cachedExtent;
-                    await view.goTo(extent.expand(municipioActual ? 1.35 : 1.18), {
+                    await view.goTo(extent.expand(currentMunicipalityId ? 1.35 : 1.18), {
                         duration: 800,
                         easing: "ease-in-out"
                     });
-                    markClasificacionPerf("zoom-territory-cache", cycleId, { cacheKey });
+                    markClassificationPerformance("zoom-territory-cache", cycleId, { cacheKey });
                     return true;
                 }
 
-                const result = await ensureClasificacionTerritoryLayer().queryExtent({ where });
+                const result = await ensureClassificationTerritoryLayer().queryExtent({ where });
 
-                if (cycleId !== renderCycleId || requestId !== clasificacionZoomRequestId) return false;
+                if (cycleId !== renderCycleId || requestId !== classificationZoomRequestId) return false;
 
                 if (result?.extent) {
                     const extent = typeof result.extent.clone === "function" ? result.extent.clone() : result.extent;
-                    clasificacionTerritoryExtentCache.set(cacheKey, extent);
-                    await view.goTo(extent.expand(municipioActual ? 1.35 : 1.18), {
+                    classificationTerritoryExtentCache.set(cacheKey, extent);
+                    await view.goTo(extent.expand(currentMunicipalityId ? 1.35 : 1.18), {
                         duration: 800,
                         easing: "ease-in-out"
                     });
-                    markClasificacionPerf("zoom-territory-query", cycleId, { cacheKey });
+                    markClassificationPerformance("zoom-territory-query", cycleId, { cacheKey });
                     return true;
                 }
             } catch (e) {
@@ -1986,60 +1969,60 @@ if (typeof arcgisRequire !== "function") {
             ]);
         }
 
-        function getClasificacionTerritoryCacheKey() {
-            if (municipioActual) return `MUNI:${municipioActual}`;
-            if (filtroNivel === "DEPTO" && deptoActual) return `DEPTO:${deptoActual}`;
+        function getClassificationTerritoryCacheKey() {
+            if (currentMunicipalityId) return `MUNI:${currentMunicipalityId}`;
+            if (territoryLevel === "DEPTO" && currentDepartmentId) return `DEPTO:${currentDepartmentId}`;
             return "";
         }
 
-        function rememberClasificacionTerritoryRender(baseWhere, items = null) {
-            const cacheKey = getClasificacionTerritoryCacheKey();
+        function rememberClassificationTerritoryRender(baseWhere, items = null) {
+            const cacheKey = getClassificationTerritoryCacheKey();
             if (!cacheKey) return;
 
-            if (clasificacionRecentTerritoryCache.has(cacheKey)) {
-                clasificacionRecentTerritoryCache.delete(cacheKey);
+            if (classificationRecentTerritoryCache.has(cacheKey)) {
+                classificationRecentTerritoryCache.delete(cacheKey);
             }
-            clasificacionRecentTerritoryCache.set(cacheKey, {
+            classificationRecentTerritoryCache.set(cacheKey, {
                 baseWhere,
-                itemCodes: getClasificacionCategoryCodes(items),
+                itemCodes: getClassificationCategoryCodes(items),
                 t: Date.now()
             });
 
-            while (clasificacionRecentTerritoryCache.size > CLASIFICACION_RECENT_TERRITORIES_LIMIT) {
-                clasificacionRecentTerritoryCache.delete(clasificacionRecentTerritoryCache.keys().next().value);
+            while (classificationRecentTerritoryCache.size > CLASSIFICATION_RECENT_TERRITORIES_LIMIT) {
+                classificationRecentTerritoryCache.delete(classificationRecentTerritoryCache.keys().next().value);
             }
         }
 
-        function getClasificacionCategorySignature(baseWhere, items = null) {
+        function getClassificationCategorySignature(baseWhere, items = null) {
             return [
-                getClasificacionTerritoryCacheKey(),
-                getClasificacionVisualWhere(baseWhere),
-                getClasificacionCategoryCodes(items).join(",")
+                getClassificationTerritoryCacheKey(),
+                getClassificationVisualWhere(baseWhere),
+                getClassificationCategoryCodes(items).join(",")
             ].join("|");
         }
 
-        function hasClasificacionCategoryLayerSet(baseWhere, items = null) {
-            const codes = getClasificacionCategoryCodes(items);
-            if (!codes.length || clasificacionCategoryBaseWhereApplied !== baseWhere) return false;
+        function hasClassificationCategoryLayerSet(baseWhere, items = null) {
+            const codes = getClassificationCategoryCodes(items);
+            if (!codes.length || classificationCategoryBaseWhereApplied !== baseWhere) return false;
             return codes.every(code => {
-                const layer = clasificacionCategoryLayers.get(String(code));
+                const layer = classificationCategoryLayers.get(String(code));
                 return layer && !layer.destroyed;
             });
         }
 
-        function cancelClasificacionCategoryPrewarm() {
-            if (clasificacionCategoryPrewarmTimer) {
-                clearTimeout(clasificacionCategoryPrewarmTimer);
-                clasificacionCategoryPrewarmTimer = null;
+        function cancelClassificationCategoryPrewarm() {
+            if (classificationCategoryPrewarmTimer) {
+                clearTimeout(classificationCategoryPrewarmTimer);
+                classificationCategoryPrewarmTimer = null;
             }
-            clasificacionCategoryPrewarmSeq++;
+            classificationCategoryPrewarmSequence++;
         }
 
-        function parkClasificacionCategoryLayers(source = "render") {
+        function parkClassificationCategoryLayers(source = "render") {
             let changed = false;
-            clasificacionCategoryModeActive = false;
+            classificationCategoryModeActive = false;
 
-            for (const layer of clasificacionCategoryLayers.values()) {
+            for (const layer of classificationCategoryLayers.values()) {
                 if (!layer || layer.destroyed) continue;
                 if (layer.visible !== false) {
                     layer.visible = false;
@@ -2049,7 +2032,7 @@ if (typeof arcgisRequire !== "function") {
                     layer.opacity = 0.001;
                     changed = true;
                 }
-                const sublayer = layer.findSublayerById?.(ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO.mapServerLayerId ?? 1);
+                const sublayer = layer.findSublayerById?.(LAND_USE_PLANNING_CONFIG.CLASIFICACION_SUELO.mapServerLayerId ?? 1);
                 if (sublayer && sublayer.visible !== false) {
                     sublayer.visible = false;
                     changed = true;
@@ -2057,26 +2040,26 @@ if (typeof arcgisRequire !== "function") {
             }
 
             if (changed) {
-                markClasificacionPerf("category-layers-parked", renderCycleId, { source });
+                markClassificationPerformance("category-layers-parked", renderCycleId, { source });
             }
         }
 
-        function blankClasificacionVisualLayerForNewQuery(source = "territory-change") {
-            const config = ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO || {};
+        function blankClassificationVisualLayerForNewQuery(source = "territory-change") {
+            const config = LAND_USE_PLANNING_CONFIG.CLASIFICACION_SUELO || {};
             const sublayerId = config.mapServerLayerId ?? 1;
 
-            clasificacionVisualWhereApplied = null;
-            clasificacionVisualVisibleApplied = false;
-            clasificacionLegendLastSignature = "";
+            classificationVisualWhereApplied = null;
+            classificationVisualVisibleApplied = false;
+            classificationLegendLastSignature = "";
 
-            if (clasificacionVisualLayer && !clasificacionVisualLayer.destroyed) {
+            if (classificationVisualLayer && !classificationVisualLayer.destroyed) {
                 try {
-                    const sublayer = getClasificacionVisualSublayer(sublayerId);
+                    const sublayer = getClassificationVisualSublayer(sublayerId);
                     if (sublayer) {
                         sublayer.definitionExpression = "1=0";
                         sublayer.visible = false;
                     } else {
-                        clasificacionVisualLayer.sublayers = [{
+                        classificationVisualLayer.sublayers = [{
                             id: sublayerId,
                             visible: false,
                             minScale: 0,
@@ -2086,14 +2069,14 @@ if (typeof arcgisRequire !== "function") {
                     }
                 } catch (_) { }
 
-                try { clasificacionVisualLayer.visible = false; } catch (_) { }
-                try { clasificacionVisualLayer.refresh?.(); } catch (_) { }
+                try { classificationVisualLayer.visible = false; } catch (_) { }
+                try { classificationVisualLayer.refresh?.(); } catch (_) { }
             }
 
-            markClasificacionPerf("visual-blanked", renderCycleId, { source });
+            markClassificationPerformance("visual-blanked", renderCycleId, { source });
         }
 
-        function waitForClasificacionViewStationary(timeoutMs = 1800) {
+        function waitForClassificationViewStationary(timeoutMs = 1800) {
             if (!view || view.destroyed || view.stationary) return Promise.resolve(true);
 
             return new Promise(resolve => {
@@ -2120,53 +2103,53 @@ if (typeof arcgisRequire !== "function") {
             });
         }
 
-        function cancelClasificacionDepartmentWarmup() {
-            if (clasificacionDeptWarmupTimer) {
-                clearTimeout(clasificacionDeptWarmupTimer);
-                clasificacionDeptWarmupTimer = null;
+        function cancelClassificationDepartmentWarmup() {
+            if (classificationDepartmentWarmupTimer) {
+                clearTimeout(classificationDepartmentWarmupTimer);
+                classificationDepartmentWarmupTimer = null;
             }
-            clasificacionDeptWarmupSeq++;
+            classificationDepartmentWarmupSequence++;
         }
 
-        function getClasificacionMunicipiosForDept(deptoCode) {
-            const depto = normalizeCode(deptoCode || "");
-            if (!depto || !Array.isArray(todosMunicipios)) return [];
+        function getMunicipalityClassificationsForDepartment(contextDepartmentCode) {
+            const departmentId = normalizeCode(contextDepartmentCode || "");
+            if (!departmentId || !Array.isArray(municipalities)) return [];
 
-            return todosMunicipios
-                .filter(muni => String(muni?.depto || "") === depto)
+            return municipalities
+                .filter(muni => String(muni?.departmentId || "") === departmentId)
                 .map(muni => normalizeCode(muni.codigo || ""))
                 .filter(Boolean);
         }
 
-        function buildClasificacionWarmupMunicipios(deptoCode, priorityMunicipio = "", limit = CLASIFICACION_DEPT_WARMUP_LIMIT) {
-            const municipiosDepto = getClasificacionMunicipiosForDept(deptoCode);
-            if (!municipiosDepto.length) return [];
+        function buildSoilClassificationWarmupMunicipalities(contextDepartmentCode, priorityMunicipality = "", limit = CLASSIFICATION_DEPT_WARMUP_LIMIT) {
+            const departmentMunicipalities = getMunicipalityClassificationsForDepartment(contextDepartmentCode);
+            if (!departmentMunicipalities.length) return [];
 
-            const selected = normalizeCode(priorityMunicipio || "");
+            const selected = normalizeCode(priorityMunicipality || "");
             const ordered = [];
             const pushIfUseful = code => {
                 const normalized = normalizeCode(code || "");
-                const cacheKey = getClasificacionMunicipioCacheKey(normalized);
+                const cacheKey = getMunicipalityClassificationCacheKey(normalized);
                 if (
                     normalized &&
                     !ordered.includes(normalized) &&
-                    !clasificacionTerritoryExtentCache.has(cacheKey)
+                    !classificationTerritoryExtentCache.has(cacheKey)
                 ) {
                     ordered.push(normalized);
                 }
             };
 
-            if (selected && municipiosDepto.includes(selected)) {
+            if (selected && departmentMunicipalities.includes(selected)) {
                 pushIfUseful(selected);
-                const index = municipiosDepto.indexOf(selected);
-                for (let offset = 1; ordered.length < limit && offset < municipiosDepto.length; offset++) {
-                    pushIfUseful(municipiosDepto[index + offset]);
+                const index = departmentMunicipalities.indexOf(selected);
+                for (let offset = 1; ordered.length < limit && offset < departmentMunicipalities.length; offset++) {
+                    pushIfUseful(departmentMunicipalities[index + offset]);
                     if (ordered.length >= limit) break;
-                    pushIfUseful(municipiosDepto[index - offset]);
+                    pushIfUseful(departmentMunicipalities[index - offset]);
                 }
             }
 
-            for (const code of municipiosDepto) {
+            for (const code of departmentMunicipalities) {
                 if (ordered.length >= limit) break;
                 pushIfUseful(code);
             }
@@ -2174,10 +2157,10 @@ if (typeof arcgisRequire !== "function") {
             return ordered.slice(0, limit);
         }
 
-        async function warmupClasificacionMunicipioExtent(municipioCode, seq, cycleId) {
+        async function warmupMunicipalityClassificationExtent(municipioCode, seq, cycleId) {
             const code = normalizeCode(municipioCode || "");
-            const cacheKey = getClasificacionMunicipioCacheKey(code);
-            if (!code || !cacheKey || clasificacionTerritoryExtentCache.has(cacheKey)) {
+            const cacheKey = getMunicipalityClassificationCacheKey(code);
+            if (!code || !cacheKey || classificationTerritoryExtentCache.has(cacheKey)) {
                 return false;
             }
 
@@ -2186,7 +2169,7 @@ if (typeof arcgisRequire !== "function") {
                 : Date.now();
 
             const result = await withTimeout(
-                ensureClasificacionTerritoryLayer().queryExtent({
+                ensureClassificationTerritoryLayer().queryExtent({
                     where: sqlEquals("mpcodigo", code)
                 }),
                 3500,
@@ -2194,147 +2177,147 @@ if (typeof arcgisRequire !== "function") {
             );
 
             if (
-                seq !== clasificacionDeptWarmupSeq ||
+                seq !== classificationDepartmentWarmupSequence ||
                 cycleId !== renderCycleId ||
-                currentOrdenamientoTab !== "CLASIFICACION_SUELO"
+                currentLandUsePlanningTab !== "CLASIFICACION_SUELO"
             ) {
                 return false;
             }
 
             if (result?.extent) {
-                clasificacionTerritoryExtentCache.set(
+                classificationTerritoryExtentCache.set(
                     cacheKey,
                     typeof result.extent.clone === "function" ? result.extent.clone() : result.extent
                 );
                 const finishedAt = typeof performance !== "undefined" && typeof performance.now === "function"
                     ? performance.now()
                     : Date.now();
-                markClasificacionPerf("dept-warmup-extent", cycleId, {
+                markClassificationPerformance("dept-warmup-extent", cycleId, {
                     municipio: code,
                     elapsedMs: Math.round(finishedAt - startedAt)
                 });
                 return true;
             }
 
-            markClasificacionPerf("dept-warmup-empty", cycleId, { municipio: code });
+            markClassificationPerformance("dept-warmup-empty", cycleId, { municipio: code });
             return false;
         }
 
-        function scheduleClasificacionDepartmentWarmup(deptoCode, options = {}) {
-            cancelClasificacionDepartmentWarmup();
+        function scheduleClassificationDepartmentWarmup(contextDepartmentCode, options = {}) {
+            cancelClassificationDepartmentWarmup();
 
             if (
-                currentOrdenamientoTab !== "CLASIFICACION_SUELO" ||
-                !deptoCode ||
-                deptoCode === "0" ||
-                deptoCode === "COL"
+                currentLandUsePlanningTab !== "CLASIFICACION_SUELO" ||
+                !contextDepartmentCode ||
+                contextDepartmentCode === "0" ||
+                contextDepartmentCode === "COL"
             ) {
                 return;
             }
 
             const cycleId = Number(options.cycleId || renderCycleId);
-            const priorityMunicipio = options.priorityMunicipio || municipioActual || "";
+            const priorityMunicipality = options.priorityMunicipality || currentMunicipalityId || "";
             const limit = Number(options.limit || (
-                priorityMunicipio
-                    ? CLASIFICACION_MUNI_NEIGHBOR_WARMUP_LIMIT
-                    : CLASIFICACION_DEPT_WARMUP_LIMIT
+                priorityMunicipality
+                    ? CLASSIFICATION_MUNICIPAL_NEIGHBOR_WARMUP_LIMIT
+                    : CLASSIFICATION_DEPT_WARMUP_LIMIT
             ));
-            const municipios = buildClasificacionWarmupMunicipios(deptoCode, priorityMunicipio, limit);
+            const municipalityCodes = buildSoilClassificationWarmupMunicipalities(contextDepartmentCode, priorityMunicipality, limit);
 
-            if (isClasificacionAuxBackoffActive()) {
-                markClasificacionPerf("dept-warmup-skipped", cycleId, {
-                    depto: deptoCode,
+            if (isClassificationAuxiliaryBackoffActive()) {
+                markClassificationPerformance("dept-warmup-skipped", cycleId, {
+                    departmentId: contextDepartmentCode,
                     reason: "aux-backoff"
                 });
                 return;
             }
 
-            if (!municipios.length) {
-                markClasificacionPerf("dept-warmup-skipped", cycleId, {
-                    depto: deptoCode,
+            if (!municipalityCodes.length) {
+                markClassificationPerformance("dept-warmup-skipped", cycleId, {
+                    departmentId: contextDepartmentCode,
                     reason: "cached-or-empty"
                 });
                 return;
             }
 
-            const seq = ++clasificacionDeptWarmupSeq;
+            const seq = ++classificationDepartmentWarmupSequence;
             const delayMs = Number(options.delayMs ?? (
-                priorityMunicipio
-                    ? CLASIFICACION_MUNI_WARMUP_DELAY_MS
-                    : CLASIFICACION_DEPT_WARMUP_DELAY_MS
+                priorityMunicipality
+                    ? CLASSIFICATION_MUNICIPAL_WARMUP_DELAY_MS
+                    : CLASSIFICATION_DEPT_WARMUP_DELAY_MS
             ));
 
-            markClasificacionPerf("dept-warmup-scheduled", cycleId, {
-                depto: deptoCode,
-                priorityMunicipio,
-                count: municipios.length,
+            markClassificationPerformance("dept-warmup-scheduled", cycleId, {
+                departmentId: contextDepartmentCode,
+                priorityMunicipality,
+                count: municipalityCodes.length,
                 delayMs
             });
 
-            clasificacionDeptWarmupTimer = setTimeout(() => {
-                clasificacionDeptWarmupTimer = null;
+            classificationDepartmentWarmupTimer = setTimeout(() => {
+                classificationDepartmentWarmupTimer = null;
 
                 Promise.resolve()
                     .then(async () => {
                         if (
-                            seq !== clasificacionDeptWarmupSeq ||
+                            seq !== classificationDepartmentWarmupSequence ||
                             cycleId !== renderCycleId ||
-                            currentOrdenamientoTab !== "CLASIFICACION_SUELO"
+                            currentLandUsePlanningTab !== "CLASIFICACION_SUELO"
                         ) {
-                            markClasificacionPerf("dept-warmup-skipped", cycleId, { reason: "stale-before-start" });
+                            markClassificationPerformance("dept-warmup-skipped", cycleId, { reason: "stale-before-start" });
                             return;
                         }
 
-                        const visualReady = await waitForClasificacionVisualReady(cycleId, "dept-warmup", 1800);
+                        const visualReady = await waitForClassificationVisualReady(cycleId, "dept-warmup", 1800);
                         if (
                             !visualReady ||
-                            seq !== clasificacionDeptWarmupSeq ||
+                            seq !== classificationDepartmentWarmupSequence ||
                             cycleId !== renderCycleId ||
-                            currentOrdenamientoTab !== "CLASIFICACION_SUELO"
+                            currentLandUsePlanningTab !== "CLASIFICACION_SUELO"
                         ) {
-                            markClasificacionPerf("dept-warmup-skipped", cycleId, { reason: visualReady ? "stale-after-idle" : "visual-busy" });
+                            markClassificationPerformance("dept-warmup-skipped", cycleId, { reason: visualReady ? "stale-after-idle" : "visual-busy" });
                             return;
                         }
 
-                        markClasificacionPerf("dept-warmup-start", cycleId, {
-                            depto: deptoCode,
-                            count: municipios.length
+                        markClassificationPerformance("dept-warmup-start", cycleId, {
+                            departmentId: contextDepartmentCode,
+                            count: municipalityCodes.length
                         });
 
                         let cached = 0;
-                        for (const code of municipios) {
+                        for (const code of municipalityCodes) {
                             if (
-                                seq !== clasificacionDeptWarmupSeq ||
+                                seq !== classificationDepartmentWarmupSequence ||
                                 cycleId !== renderCycleId ||
-                                currentOrdenamientoTab !== "CLASIFICACION_SUELO"
+                                currentLandUsePlanningTab !== "CLASIFICACION_SUELO"
                             ) {
-                                markClasificacionPerf("dept-warmup-stopped", cycleId, { cached });
+                                markClassificationPerformance("dept-warmup-stopped", cycleId, { cached });
                                 return;
                             }
 
                             try {
-                                if (await warmupClasificacionMunicipioExtent(code, seq, cycleId)) {
+                                if (await warmupMunicipalityClassificationExtent(code, seq, cycleId)) {
                                     cached++;
                                 }
                             } catch (e) {
-                                recordClasificacionAsyncIssue("dept-warmup-error", e, cycleId, { municipio: code });
+                                recordClassificationAsyncIssue("dept-warmup-error", e, cycleId, { municipio: code });
                             }
 
-                            await new Promise(resolve => setTimeout(resolve, CLASIFICACION_DEPT_WARMUP_STEP_MS));
+                            await new Promise(resolve => setTimeout(resolve, CLASSIFICATION_DEPT_WARMUP_STEP_MS));
                         }
 
-                        markClasificacionPerf("dept-warmup-finished", cycleId, {
-                            depto: deptoCode,
+                        markClassificationPerformance("dept-warmup-finished", cycleId, {
+                            departmentId: contextDepartmentCode,
                             cached
                         });
                     })
                     .catch(e => {
-                        recordClasificacionAsyncIssue("dept-warmup-error", e, cycleId, { depto: deptoCode });
+                        recordClassificationAsyncIssue("dept-warmup-error", e, cycleId, { departmentId: contextDepartmentCode });
                     });
             }, delayMs);
         }
 
-        async function waitForClasificacionLayerIdle(layer, timeoutMs = 1800) {
+        async function waitForClassificationLayerIdle(layer, timeoutMs = 1800) {
             if (!view || !layer || layer.destroyed) return false;
 
             try {
@@ -2368,61 +2351,61 @@ if (typeof arcgisRequire !== "function") {
             }
         }
 
-        function isClasificacionAuxBackoffActive() {
-            return Date.now() < clasificacionAuxBackoffUntil;
+        function isClassificationAuxiliaryBackoffActive() {
+            return Date.now() < classificationAuxiliaryBackoffUntil;
         }
 
-        function activateClasificacionAuxBackoff(source, cycleId = renderCycleId) {
-            clasificacionAuxBackoffUntil = Math.max(
-                clasificacionAuxBackoffUntil,
-                Date.now() + CLASIFICACION_AUX_BACKOFF_MS
+        function activateClassificationAuxiliaryBackoff(source, cycleId = renderCycleId) {
+            classificationAuxiliaryBackoffUntil = Math.max(
+                classificationAuxiliaryBackoffUntil,
+                Date.now() + CLASSIFICATION_AUX_BACKOFF_MS
             );
-            markClasificacionPerf("aux-backoff", cycleId, {
+            markClassificationPerformance("aux-backoff", cycleId, {
                 source,
-                untilMs: clasificacionAuxBackoffUntil
+                untilMs: classificationAuxiliaryBackoffUntil
             });
         }
 
-        async function waitForClasificacionVisualReady(cycleId, source, timeoutMs = CLASIFICACION_VISUAL_IDLE_TIMEOUT_MS) {
+        async function waitForClassificationVisualReady(cycleId, source, timeoutMs = CLASSIFICATION_VISUAL_IDLE_TIMEOUT_MS) {
             if (
                 cycleId !== renderCycleId ||
-                !clasificacionVisualLayer ||
-                clasificacionVisualLayer.destroyed ||
-                currentOrdenamientoTab !== "CLASIFICACION_SUELO"
+                !classificationVisualLayer ||
+                classificationVisualLayer.destroyed ||
+                currentLandUsePlanningTab !== "CLASIFICACION_SUELO"
             ) {
-                markClasificacionPerf("visual-ready-skipped", cycleId, { source, reason: "stale" });
+                markClassificationPerformance("visual-ready-skipped", cycleId, { source, reason: "stale" });
                 return false;
             }
 
-            await waitForClasificacionViewStationary(1200);
+            await waitForClassificationViewStationary(1200);
 
             if (
                 cycleId !== renderCycleId ||
-                !clasificacionVisualLayer ||
-                clasificacionVisualLayer.destroyed ||
-                currentOrdenamientoTab !== "CLASIFICACION_SUELO"
+                !classificationVisualLayer ||
+                classificationVisualLayer.destroyed ||
+                currentLandUsePlanningTab !== "CLASIFICACION_SUELO"
             ) {
-                markClasificacionPerf("visual-ready-skipped", cycleId, { source, reason: "stale-after-stationary" });
+                markClassificationPerformance("visual-ready-skipped", cycleId, { source, reason: "stale-after-stationary" });
                 return false;
             }
 
-            const ready = await waitForClasificacionLayerIdle(clasificacionVisualLayer, timeoutMs);
+            const ready = await waitForClassificationLayerIdle(classificationVisualLayer, timeoutMs);
             if (!ready) {
-                markClasificacionPerf("visual-busy-skip-aux", cycleId, { source, timeoutMs });
-                activateClasificacionAuxBackoff(source, cycleId);
+                markClassificationPerformance("visual-busy-skip-aux", cycleId, { source, timeoutMs });
+                activateClassificationAuxiliaryBackoff(source, cycleId);
                 return false;
             }
 
-            markClasificacionPerf("visual-ready", cycleId, { source });
+            markClassificationPerformance("visual-ready", cycleId, { source });
             return true;
         }
 
-        function nudgeClasificacionVisualPaint(cycleId, source = "render") {
+        function nudgeClassificationVisualPaint(cycleId, source = "render") {
             if (
                 cycleId !== renderCycleId ||
                 !view ||
-                !clasificacionVisualLayer ||
-                clasificacionVisualLayer.destroyed
+                !classificationVisualLayer ||
+                classificationVisualLayer.destroyed
             ) {
                 return;
             }
@@ -2431,8 +2414,8 @@ if (typeof arcgisRequire !== "function") {
                 if (
                     cycleId !== renderCycleId ||
                     !view ||
-                    !clasificacionVisualLayer ||
-                    clasificacionVisualLayer.destroyed
+                    !classificationVisualLayer ||
+                    classificationVisualLayer.destroyed
                 ) {
                     return;
                 }
@@ -2441,21 +2424,21 @@ if (typeof arcgisRequire !== "function") {
                     if (view && typeof view.resize === "function") view.resize();
                 } catch (_) { }
                 try {
-                    if (clasificacionVisualLayer && typeof clasificacionVisualLayer.refresh === "function") {
-                        clasificacionVisualLayer.refresh();
+                    if (classificationVisualLayer && typeof classificationVisualLayer.refresh === "function") {
+                        classificationVisualLayer.refresh();
                     }
                 } catch (_) { }
-                markClasificacionPerf("visual-paint-nudge", cycleId, { source });
+                markClassificationPerformance("visual-paint-nudge", cycleId, { source });
             });
         }
 
-        function getClasificacionVisualSublayer(sublayerId) {
-            if (!clasificacionVisualLayer || clasificacionVisualLayer.destroyed) return null;
+        function getClassificationVisualSublayer(sublayerId) {
+            if (!classificationVisualLayer || classificationVisualLayer.destroyed) return null;
 
-            let sublayer = clasificacionVisualLayer.findSublayerById?.(sublayerId);
+            let sublayer = classificationVisualLayer.findSublayerById?.(sublayerId);
             if (sublayer) return sublayer;
 
-            const sublayers = clasificacionVisualLayer.sublayers;
+            const sublayers = classificationVisualLayer.sublayers;
             if (typeof sublayers?.find === "function") {
                 sublayer = sublayers.find(item => Number(item?.id) === Number(sublayerId));
             } else if (Array.isArray(sublayers)) {
@@ -2465,7 +2448,7 @@ if (typeof arcgisRequire !== "function") {
             return sublayer || null;
         }
 
-        function allowClasificacionSublayerAtAllScales(sublayer) {
+        function allowClassificationSublayerAtAllScales(sublayer) {
             if (!sublayer) return false;
 
             let changed = false;
@@ -2480,61 +2463,61 @@ if (typeof arcgisRequire !== "function") {
             return changed;
         }
 
-        function reapplyClasificacionVisualWhenReady(whereClause, cycleId, source = "layer-ready") {
-            if (!clasificacionVisualLayer || clasificacionVisualLayer.destroyed) return;
+        function reapplyClassificationVisualWhenReady(whereClause, cycleId, source = "layer-ready") {
+            if (!classificationVisualLayer || classificationVisualLayer.destroyed) return;
 
             Promise.resolve(
-                clasificacionVisualLayer && typeof clasificacionVisualLayer.when === "function"
-                    ? clasificacionVisualLayer.when()
+                classificationVisualLayer && typeof classificationVisualLayer.when === "function"
+                    ? classificationVisualLayer.when()
                     : null
             )
                 .then(async () => {
                     if (
                         cycleId !== renderCycleId ||
-                        !clasificacionVisualLayer ||
-                        clasificacionVisualLayer.destroyed
+                        !classificationVisualLayer ||
+                        classificationVisualLayer.destroyed
                     ) {
                         return;
                     }
 
-                    const sublayerId = ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO.mapServerLayerId ?? 1;
-                    const sublayer = getClasificacionVisualSublayer(sublayerId);
+                    const sublayerId = LAND_USE_PLANNING_CONFIG.CLASIFICACION_SUELO.mapServerLayerId ?? 1;
+                    const sublayer = getClassificationVisualSublayer(sublayerId);
                     if (sublayer && typeof sublayer.load === "function") {
                         await sublayer.load();
                     }
 
                     if (
                         cycleId !== renderCycleId ||
-                        !clasificacionVisualLayer ||
-                        clasificacionVisualLayer.destroyed
+                        !classificationVisualLayer ||
+                        classificationVisualLayer.destroyed
                     ) {
                         return;
                     }
 
-                    allowClasificacionSublayerAtAllScales(sublayer);
+                    allowClassificationSublayerAtAllScales(sublayer);
 
-                    applyClasificacionVisualWhere(whereClause, {
+                    applyClassificationVisualWhere(whereClause, {
                         updateCategoryLayers: false,
                         forceRefresh: true,
                         source
                     });
-                    nudgeClasificacionVisualPaint(cycleId, source);
+                    nudgeClassificationVisualPaint(cycleId, source);
                 })
                 .catch(e => {
-                    recordClasificacionAsyncIssue("visual-layer-ready-error", e, cycleId, { source });
+                    recordClassificationAsyncIssue("visual-layer-ready-error", e, cycleId, { source });
                 });
         }
 
-        function scheduleClasificacionCategoryPrewarm(baseWhere, items = null, cycleId = renderCycleId, delayMs = null) {
-            cancelClasificacionCategoryPrewarm();
+        function scheduleClassificationCategoryPrewarm(baseWhere, items = null, cycleId = renderCycleId, delayMs = null) {
+            cancelClassificationCategoryPrewarm();
 
-            if (!hasClasificacionTerritoryFilter() || getClasificacionVisualWhere(baseWhere) === "1=0") {
-                markClasificacionPerf("category-prewarm-skipped", cycleId, { reason: "no-territory" });
+            if (!hasClassificationTerritoryFilter() || getClassificationVisualWhere(baseWhere) === "1=0") {
+                markClassificationPerformance("category-prewarm-skipped", cycleId, { reason: "no-territory" });
                 return;
             }
 
-            if (isClasificacionAuxBackoffActive()) {
-                markClasificacionPerf("category-prewarm-skipped", cycleId, { reason: "aux-backoff" });
+            if (isClassificationAuxiliaryBackoffActive()) {
+                markClassificationPerformance("category-prewarm-skipped", cycleId, { reason: "aux-backoff" });
                 return;
             }
 
@@ -2542,94 +2525,94 @@ if (typeof arcgisRequire !== "function") {
             // sería un MapImageLayer que cubre todo el departamento y, al pasar luego a
             // una consulta municipal, esas capas quedarían como residuo mostrando el
             // departamento completo. Se mantiene el prewarm solo a nivel municipal.
-            if (!municipioActual) {
-                markClasificacionPerf("category-prewarm-skipped", cycleId, { reason: "department-too-heavy" });
+            if (!currentMunicipalityId) {
+                markClassificationPerformance("category-prewarm-skipped", cycleId, { reason: "department-too-heavy" });
                 return;
             }
 
-            const effectiveItems = Array.isArray(items) && items.length ? items : getClasificacionFallbackItems();
-            const signature = getClasificacionCategorySignature(baseWhere, effectiveItems);
-            rememberClasificacionTerritoryRender(baseWhere, effectiveItems);
+            const effectiveItems = Array.isArray(items) && items.length ? items : getClassificationFallbackItems();
+            const signature = getClassificationCategorySignature(baseWhere, effectiveItems);
+            rememberClassificationTerritoryRender(baseWhere, effectiveItems);
 
             if (
-                signature === clasificacionCategoryPrewarmSignature &&
-                hasClasificacionCategoryLayerSet(baseWhere, effectiveItems)
+                signature === classificationCategoryPrewarmSignature &&
+                hasClassificationCategoryLayerSet(baseWhere, effectiveItems)
             ) {
-                markClasificacionPerf("category-prewarm-skipped", cycleId, { reason: "cached" });
+                markClassificationPerformance("category-prewarm-skipped", cycleId, { reason: "cached" });
                 return;
             }
 
-            const seq = ++clasificacionCategoryPrewarmSeq;
+            const seq = ++classificationCategoryPrewarmSequence;
             const waitMs = Number.isFinite(Number(delayMs))
                 ? Number(delayMs)
-                : (municipioActual ? CLASIFICACION_CATEGORY_PREWARM_MUNI_DELAY_MS : CLASIFICACION_CATEGORY_PREWARM_DEPTO_DELAY_MS);
+                : (currentMunicipalityId ? CLASSIFICATION_CATEGORY_PREWARM_MUNICIPAL_DELAY_MS : CLASSIFICATION_CATEGORY_PREWARM_DEPARTMENT_DELAY_MS);
 
-            markClasificacionPerf("category-prewarm-scheduled", cycleId, {
+            markClassificationPerformance("category-prewarm-scheduled", cycleId, {
                 delayMs: waitMs,
-                territory: getClasificacionTerritoryCacheKey()
+                territory: getClassificationTerritoryCacheKey()
             });
 
-            clasificacionCategoryPrewarmTimer = setTimeout(() => {
-                clasificacionCategoryPrewarmTimer = null;
+            classificationCategoryPrewarmTimer = setTimeout(() => {
+                classificationCategoryPrewarmTimer = null;
 
                 Promise.resolve()
                     .then(async () => {
                         if (
-                            seq !== clasificacionCategoryPrewarmSeq ||
+                            seq !== classificationCategoryPrewarmSequence ||
                             cycleId !== renderCycleId ||
-                            !clasificacionVisualLayer ||
-                            clasificacionVisualLayer.destroyed
+                            !classificationVisualLayer ||
+                            classificationVisualLayer.destroyed
                         ) {
-                            markClasificacionPerf("category-prewarm-skipped", cycleId, { reason: "stale-before-idle" });
+                            markClassificationPerformance("category-prewarm-skipped", cycleId, { reason: "stale-before-idle" });
                             return;
                         }
 
-                        markClasificacionPerf("category-prewarm-waiting-idle", cycleId);
-                        const visualReady = await waitForClasificacionVisualReady(cycleId, "category-prewarm", 1600);
+                        markClassificationPerformance("category-prewarm-waiting-idle", cycleId);
+                        const visualReady = await waitForClassificationVisualReady(cycleId, "category-prewarm", 1600);
                         if (!visualReady) {
-                            markClasificacionPerf("category-prewarm-skipped", cycleId, { reason: "visual-busy" });
+                            markClassificationPerformance("category-prewarm-skipped", cycleId, { reason: "visual-busy" });
                             return;
                         }
 
                         if (
-                            seq !== clasificacionCategoryPrewarmSeq ||
+                            seq !== classificationCategoryPrewarmSequence ||
                             cycleId !== renderCycleId ||
-                            !clasificacionVisualLayer ||
-                            clasificacionVisualLayer.destroyed
+                            !classificationVisualLayer ||
+                            classificationVisualLayer.destroyed
                         ) {
-                            markClasificacionPerf("category-prewarm-skipped", cycleId, { reason: "stale-after-idle" });
+                            markClassificationPerformance("category-prewarm-skipped", cycleId, { reason: "stale-after-idle" });
                             return;
                         }
 
-                        markClasificacionPerf("category-prewarm-start", cycleId, {
-                            territory: getClasificacionTerritoryCacheKey()
+                        markClassificationPerformance("category-prewarm-start", cycleId, {
+                            territory: getClassificationTerritoryCacheKey()
                         });
-                        if (ensureClasificacionCategoryLayers(baseWhere, effectiveItems, {
+                        if (ensureClassificationCategoryLayers(baseWhere, effectiveItems, {
                             prewarm: true,
                             source: "idle-prewarm"
                         })) {
-                            clasificacionCategoryPrewarmSignature = signature;
+                            classificationCategoryPrewarmSignature = signature;
                         }
                     })
                     .catch(e => {
-                        recordClasificacionAsyncIssue("category-prewarm-error", e, cycleId);
+                        recordClassificationAsyncIssue("category-prewarm-error", e, cycleId);
                     });
             }, waitMs);
         }
 
-        function applyClasificacionVisualWhere(whereClause, options = {}) {
+        function applyClassificationVisualWhere(whereClause, options = {}) {
             const where = whereClause && String(whereClause).trim() ? whereClause : "1=1";
             const updateVisual = options.updateVisual !== false;
             const updateFeatureLayer = options.updateFeatureLayer !== false;
             const updateCategoryLayers = options.updateCategoryLayers === true;
             const source = options.source || "render";
             const forceRefresh = options.forceRefresh === true;
-            const visualWhere = getClasificacionVisualWhere(where);
+            const visualWhere = getClassificationVisualWhere(where);
             const canRenderVisual = visualWhere !== "1=0";
-            const useMunicipalFeatureVisual = Boolean(municipioActual && canRenderVisual);
+            const useMunicipalFeatureVisual = Boolean(currentMunicipalityId && canRenderVisual);
             let didChange = false;
 
-            if ((updateFeatureLayer || municipioActual) && layerGlobal && !layerGlobal.destroyed) {
+            if ((updateFeatureLayer || currentMunicipalityId) && layerGlobal && !layerGlobal.destroyed) {
                 if (layerGlobal.definitionExpression !== visualWhere) {
                     layerGlobal.definitionExpression = visualWhere;
                     didChange = true;
@@ -2644,21 +2627,21 @@ if (typeof arcgisRequire !== "function") {
 
             if (!updateVisual) return;
 
-            if (clasificacionVisualLayer && !clasificacionVisualLayer.destroyed) {
+            if (classificationVisualLayer && !classificationVisualLayer.destroyed) {
                 const showMapImage = canRenderVisual && !useMunicipalFeatureVisual;
-                if (clasificacionVisualLayer.visible !== showMapImage) {
-                    clasificacionVisualLayer.visible = showMapImage;
+                if (classificationVisualLayer.visible !== showMapImage) {
+                    classificationVisualLayer.visible = showMapImage;
                     didChange = true;
                 }
             }
 
-            const sublayerId = ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO.mapServerLayerId ?? 1;
-            const sublayer = getClasificacionVisualSublayer(sublayerId);
+            const sublayerId = LAND_USE_PLANNING_CONFIG.CLASIFICACION_SUELO.mapServerLayerId ?? 1;
+            const sublayer = getClassificationVisualSublayer(sublayerId);
             if (sublayer) {
-                sublayer.renderer = buildClasificacionSueloRenderer(
-                    ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO
+                sublayer.renderer = buildSoilClassificationRenderer(
+                    LAND_USE_PLANNING_CONFIG.CLASIFICACION_SUELO
                 );
-                if (allowClasificacionSublayerAtAllScales(sublayer)) {
+                if (allowClassificationSublayerAtAllScales(sublayer)) {
                     didChange = true;
                 }
                 if (sublayer.definitionExpression !== visualWhere) {
@@ -2670,44 +2653,44 @@ if (typeof arcgisRequire !== "function") {
                     sublayer.visible = showMapImage;
                     didChange = true;
                 }
-            } else if (clasificacionVisualLayer && !clasificacionVisualLayer.destroyed) {
-                clasificacionVisualLayer.sublayers = [{
+            } else if (classificationVisualLayer && !classificationVisualLayer.destroyed) {
+                classificationVisualLayer.sublayers = [{
                     id: sublayerId,
                     visible: canRenderVisual,
                     minScale: 0,
                     maxScale: 0,
                     definitionExpression: visualWhere,
-                    renderer: buildClasificacionSueloRenderer(
-                        ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO
+                    renderer: buildSoilClassificationRenderer(
+                        LAND_USE_PLANNING_CONFIG.CLASIFICACION_SUELO
                     )
                 }];
                 didChange = true;
-                markClasificacionPerf("visual-sublayer-reset", renderCycleId, {
+                markClassificationPerformance("visual-sublayer-reset", renderCycleId, {
                     source,
                     visible: canRenderVisual
                 });
             }
 
             if (
-                clasificacionVisualWhereApplied !== visualWhere ||
-                clasificacionVisualVisibleApplied !== canRenderVisual
+                classificationVisualWhereApplied !== visualWhere ||
+                classificationVisualVisibleApplied !== canRenderVisual
             ) {
                 didChange = true;
-                clasificacionVisualWhereApplied = visualWhere;
-                clasificacionVisualVisibleApplied = canRenderVisual;
+                classificationVisualWhereApplied = visualWhere;
+                classificationVisualVisibleApplied = canRenderVisual;
             }
-            markClasificacionPerf("visual-filter-ready", renderCycleId, {
+            markClassificationPerformance("visual-filter-ready", renderCycleId, {
                 visible: canRenderVisual,
                 changed: didChange,
                 source
             });
 
-            if (forceRefresh && didChange && clasificacionVisualLayer && !clasificacionVisualLayer.destroyed) {
-                try { clasificacionVisualLayer.refresh?.(); } catch (_) { }
+            if (forceRefresh && didChange && classificationVisualLayer && !classificationVisualLayer.destroyed) {
+                try { classificationVisualLayer.refresh?.(); } catch (_) { }
             }
 
             if (updateCategoryLayers) {
-                ensureClasificacionCategoryLayers(where, getClasificacionFallbackItems(), {
+                ensureClassificationCategoryLayers(where, getClassificationFallbackItems(), {
                     prewarm: true,
                     source
                 });
@@ -2716,77 +2699,77 @@ if (typeof arcgisRequire !== "function") {
             return canRenderVisual;
         }
 
-        function syncClasificacionManagedLayers() {
+        function syncClassificationManagedLayers() {
             const managed = [];
-            if (clasificacionVisualLayer && !clasificacionVisualLayer.destroyed) {
-                managed.push(clasificacionVisualLayer);
+            if (classificationVisualLayer && !classificationVisualLayer.destroyed) {
+                managed.push(classificationVisualLayer);
             }
-            for (const layer of clasificacionCategoryLayers.values()) {
+            for (const layer of classificationCategoryLayers.values()) {
                 if (layer && !layer.destroyed) managed.push(layer);
             }
             layersGlobal = managed;
             AppState.layersGlobal = layersGlobal;
         }
 
-        function resetClasificacionCategoryVisuals() {
-            cancelClasificacionCategoryPrewarm();
-            cancelClasificacionDepartmentWarmup();
+        function resetClassificationCategoryVisuals() {
+            cancelClassificationCategoryPrewarm();
+            cancelClassificationDepartmentWarmup();
             // Eliminar realmente las capas por categoría del mapa (no solo limpiar la
             // referencia). Si solo se limpia el Map, las capas quedan huérfanas en el
             // mapa y se ven como residuos del territorio anterior.
-            for (const layer of clasificacionCategoryLayers.values()) {
+            for (const layer of classificationCategoryLayers.values()) {
                 if (!layer) continue;
                 try { layer.visible = false; } catch (_) { }
                 try { map?.remove(layer); } catch (_) { }
                 try { layer.destroy?.(); } catch (_) { }
             }
-            clasificacionCategoryLayers.clear();
-            clasificacionCategoryModeActive = false;
-            clasificacionCategoryBaseWhereApplied = "";
-            clasificacionCategoryPrewarmSignature = "";
+            classificationCategoryLayers.clear();
+            classificationCategoryModeActive = false;
+            classificationCategoryBaseWhereApplied = "";
+            classificationCategoryPrewarmSignature = "";
         }
 
-        function getClasificacionCategoryCodes(items = null) {
+        function getClassificationCategoryCodes(items = null) {
             const fromItems = Array.isArray(items)
                 ? items.map(item => String(item.code ?? "").trim()).filter(Boolean)
                 : [];
             const codes = fromItems.length
                 ? fromItems
-                : Object.keys(CLASIFICACION_SUELO_PALETTE);
+                : Object.keys(SOIL_CLASSIFICATION_PALETTE);
             return Array.from(new Set(codes)).sort((a, b) => Number(a) - Number(b));
         }
 
-        function buildClasificacionCategoryWhere(baseWhere, code) {
-            const config = ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO;
+        function buildClassificationCategoryWhere(baseWhere, code) {
+            const config = LAND_USE_PLANNING_CONFIG.CLASIFICACION_SUELO;
             const typeField = config.typeField || "Tipo_Clasificacion_Suelo";
-            const visualWhere = getClasificacionVisualWhere(baseWhere);
+            const visualWhere = getClassificationVisualWhere(baseWhere);
             const numericCode = Number(String(code).trim());
 
             if (visualWhere === "1=0" || !Number.isFinite(numericCode)) return "1=0";
             return `(${visualWhere}) AND (${typeField} = ${numericCode})`;
         }
 
-        function ensureClasificacionCategoryLayers(baseWhere, items = null, options = {}) {
-            if (!map || !clasificacionVisualLayer || clasificacionVisualLayer.destroyed) return false;
+        function ensureClassificationCategoryLayers(baseWhere, items = null, options = {}) {
+            if (!map || !classificationVisualLayer || classificationVisualLayer.destroyed) return false;
 
-            const config = ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO;
-            const codes = getClasificacionCategoryCodes(items);
-            const canRender = getClasificacionVisualWhere(baseWhere) !== "1=0";
+            const config = LAND_USE_PLANNING_CONFIG.CLASIFICACION_SUELO;
+            const codes = getClassificationCategoryCodes(items);
+            const canRender = getClassificationVisualWhere(baseWhere) !== "1=0";
             const isPrewarm = options.prewarm === true;
-            const opacity = clasificacionCategoryModeActive ? 0.92 : 0.001;
-            const legendState = window.__legendState?.isClasificacionSuelo ? window.__legendState : null;
+            const opacity = classificationCategoryModeActive ? 0.92 : 0.001;
+            const legendState = window.__legendState?.isSoilClassification ? window.__legendState : null;
             let created = 0;
             let updated = 0;
 
             for (const code of codes) {
-                const categoryWhere = buildClasificacionCategoryWhere(baseWhere, code);
-                const paletteInfo = CLASIFICACION_SUELO_PALETTE[String(code)] || {};
+                const categoryWhere = buildClassificationCategoryWhere(baseWhere, code);
+                const paletteInfo = SOIL_CLASSIFICATION_PALETTE[String(code)] || {};
                 const shouldShow = canRender && !isPrewarm && (
-                    !clasificacionCategoryModeActive ||
+                    !classificationCategoryModeActive ||
                     !legendState?.activeCodes ||
                     legendState.activeCodes.has(String(code))
                 );
-                let layer = clasificacionCategoryLayers.get(String(code));
+                let layer = classificationCategoryLayers.get(String(code));
 
                 if (!layer || layer.destroyed) {
                     layer = new MapImageLayer({
@@ -2801,22 +2784,22 @@ if (typeof arcgisRequire !== "function") {
                             minScale: 0,
                             maxScale: 0,
                             definitionExpression: categoryWhere,
-                            renderer: buildClasificacionSueloRenderer(config)
+                            renderer: buildSoilClassificationRenderer(config)
                         }]
                     });
-                    clasificacionCategoryLayers.set(String(code), layer);
+                    classificationCategoryLayers.set(String(code), layer);
                     map.add(layer);
                     layer.when(() => {
-                        allowClasificacionSublayerAtAllScales(
+                        allowClassificationSublayerAtAllScales(
                             layer.findSublayerById?.(config.mapServerLayerId ?? 1)
                         );
                     }).catch(() => { });
                     created++;
                 } else {
                     const sublayer = layer.findSublayerById?.(config.mapServerLayerId ?? 1);
-                    allowClasificacionSublayerAtAllScales(sublayer);
+                    allowClassificationSublayerAtAllScales(sublayer);
                     if (sublayer) {
-                        sublayer.renderer = buildClasificacionSueloRenderer(config);
+                        sublayer.renderer = buildSoilClassificationRenderer(config);
                     }
                     if (sublayer && sublayer.definitionExpression !== categoryWhere) {
                         sublayer.definitionExpression = categoryWhere;
@@ -2837,25 +2820,25 @@ if (typeof arcgisRequire !== "function") {
                 }
             }
 
-            for (const [code, layer] of Array.from(clasificacionCategoryLayers.entries())) {
+            for (const [code, layer] of Array.from(classificationCategoryLayers.entries())) {
                 if (!codes.includes(code)) {
                     try { map.remove(layer); } catch (_) { }
                     try {
                         if (layer && typeof layer.destroy === "function") layer.destroy();
                     } catch (_) { }
-                    clasificacionCategoryLayers.delete(code);
+                    classificationCategoryLayers.delete(code);
                 }
             }
 
-            clasificacionCategoryBaseWhereApplied = baseWhere;
-            syncClasificacionManagedLayers();
+            classificationCategoryBaseWhereApplied = baseWhere;
+            syncClassificationManagedLayers();
 
             if (created || updated || options.source) {
-                markClasificacionPerf("category-layers-ready", renderCycleId, {
+                markClassificationPerformance("category-layers-ready", renderCycleId, {
                     source: options.source || "render",
                     created,
                     updated,
-                    count: clasificacionCategoryLayers.size,
+                    count: classificationCategoryLayers.size,
                     prewarm: Boolean(options.prewarm)
                 });
             }
@@ -2863,8 +2846,8 @@ if (typeof arcgisRequire !== "function") {
             return true;
         }
 
-        function applyClasificacionCategoryVisibility(state, options = {}) {
-            if (!state?.activeCodes || !clasificacionCategoryLayers.size) return false;
+        function applyClassificationCategoryVisibility(state, options = {}) {
+            if (!state?.activeCodes || !classificationCategoryLayers.size) return false;
 
             const activeCodes = state.activeCodes;
             const startedAt = Number(options.startedAt || (
@@ -2874,10 +2857,10 @@ if (typeof arcgisRequire !== "function") {
             ));
             let changed = false;
 
-            clasificacionCategoryModeActive = true;
+            classificationCategoryModeActive = true;
 
-            if (municipioActual && layerGlobal && !layerGlobal.destroyed) {
-                const compiled = getClasificacionLegendFilter(state);
+            if (currentMunicipalityId && layerGlobal && !layerGlobal.destroyed) {
+                const compiled = getClassificationLegendFilter(state);
                 if (layerGlobal.definitionExpression !== compiled.where) {
                     layerGlobal.definitionExpression = compiled.where;
                     changed = true;
@@ -2887,28 +2870,28 @@ if (typeof arcgisRequire !== "function") {
                     layerGlobal.visible = shouldShowFeatureLayer;
                     changed = true;
                 }
-                if (clasificacionVisualLayer && !clasificacionVisualLayer.destroyed) {
-                    clasificacionVisualLayer.visible = false;
+                if (classificationVisualLayer && !classificationVisualLayer.destroyed) {
+                    classificationVisualLayer.visible = false;
                 }
-                for (const layer of clasificacionCategoryLayers.values()) {
+                for (const layer of classificationCategoryLayers.values()) {
                     if (layer && !layer.destroyed) layer.visible = false;
                 }
 
-                markClasificacionPerf("category-toggle-applied", renderCycleId, {
+                markClassificationPerformance("category-toggle-applied", renderCycleId, {
                     active: activeCodes.size,
-                    all: state.allCodes?.length || clasificacionCategoryLayers.size,
+                    all: state.allCodes?.length || classificationCategoryLayers.size,
                     changed,
                     municipalFeatureLayer: true
                 });
                 return true;
             }
 
-            if (clasificacionVisualLayer && !clasificacionVisualLayer.destroyed && clasificacionVisualLayer.visible !== false) {
-                clasificacionVisualLayer.visible = false;
+            if (classificationVisualLayer && !classificationVisualLayer.destroyed && classificationVisualLayer.visible !== false) {
+                classificationVisualLayer.visible = false;
                 changed = true;
             }
 
-            for (const [code, layer] of clasificacionCategoryLayers.entries()) {
+            for (const [code, layer] of classificationCategoryLayers.entries()) {
                 if (!layer || layer.destroyed) continue;
                 const shouldShow = activeCodes.has(String(code));
                 if (layer.visible !== shouldShow) {
@@ -2919,7 +2902,7 @@ if (typeof arcgisRequire !== "function") {
                     layer.opacity = 0.92;
                     changed = true;
                 }
-                const sublayer = layer.findSublayerById?.(ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO.mapServerLayerId ?? 1);
+                const sublayer = layer.findSublayerById?.(LAND_USE_PLANNING_CONFIG.CLASIFICACION_SUELO.mapServerLayerId ?? 1);
                 if (sublayer && sublayer.visible !== shouldShow) {
                     sublayer.visible = shouldShow;
                     changed = true;
@@ -2930,9 +2913,9 @@ if (typeof arcgisRequire !== "function") {
                 ? performance.now()
                 : Date.now();
 
-            markClasificacionPerf("category-toggle-applied", renderCycleId, {
+            markClassificationPerformance("category-toggle-applied", renderCycleId, {
                 active: activeCodes.size,
-                all: state.allCodes?.length || clasificacionCategoryLayers.size,
+                all: state.allCodes?.length || classificationCategoryLayers.size,
                 changed,
                 elapsedMs: Math.round(finishedAt - startedAt)
             });
@@ -2940,16 +2923,16 @@ if (typeof arcgisRequire !== "function") {
             return true;
         }
 
-        function cancelClasificacionAuxiliaryLoad() {
-            if (clasificacionChartTimer) {
-                clearTimeout(clasificacionChartTimer);
-                clasificacionChartTimer = null;
+        function cancelClassificationAuxiliaryiliaryLoad() {
+            if (classificationChartTimer) {
+                clearTimeout(classificationChartTimer);
+                classificationChartTimer = null;
             }
         }
 
         // Lectura sincrónica del caché de estadísticas (sin disparar red).
         // Permite renderizar el gráfico al instante cuando ya hay datos cacheados.
-        function getClasificacionStatsFromCacheSync(layer, config, whereClause) {
+        function getClassificationStatsFromCacheSync(layer, config, whereClause) {
             const areaField = config.areaField || "CSArea";
             const typeField = config.typeField || "Tipo_Clasificacion_Suelo";
             const primaryLayerUrl = config.mapServerUrl && config.mapServerLayerId !== undefined
@@ -2962,70 +2945,70 @@ if (typeof arcgisRequire !== "function") {
                 typeField,
                 areaField
             ].join("|");
-            return clasificacionStatsCache.has(cacheKey) ? clasificacionStatsCache.get(cacheKey) : null;
+            return classificationStatsCache.has(cacheKey) ? classificationStatsCache.get(cacheKey) : null;
         }
 
-        function runClasificacionChartRender(layer, config, whereClause, cycleId, stage) {
+        function runClassificationChartRender(layer, config, whereClause, cycleId, stage) {
             Promise.resolve()
                 .then(async () => {
                     if (cycleId !== renderCycleId || layerGlobal !== layer || layer?.destroyed) {
-                        markClasificacionPerf("aux-skipped-stale", cycleId, { stage });
+                        markClassificationPerformance("aux-skipped-stale", cycleId, { stage });
                         return;
                     }
-                    markClasificacionPerf("aux-start", cycleId, { stage });
+                    markClassificationPerformance("aux-start", cycleId, { stage });
                     // El gráfico se consulta en paralelo con el mapa: NO espera a que
                     // la capa visual de Clasificación del suelo termine de pintarse.
-                    await renderClasificacionSueloCharts(layer, config, whereClause, cycleId);
+                    await renderSoilClassificationCharts(layer, config, whereClause, cycleId);
                 })
                 .catch(e => {
-                    recordClasificacionAsyncIssue("aux-error", e, cycleId);
+                    recordClassificationAsyncIssue("aux-error", e, cycleId);
                     if (cycleId === renderCycleId && layerGlobal === layer && !layer?.destroyed) {
-                        setOrdenamientoChartError(
+                        setLandUsePlanningChartError(
                             "El servicio de Clasificación del suelo está tardando más de lo normal. La capa se muestra en el mapa; vuelva a intentarlo."
                         );
                     }
                 })
                 .finally(() => {
                     if (cycleId === renderCycleId && layerGlobal === layer && !layer?.destroyed) {
-                        markClasificacionPerf("aux-finished", cycleId, { stage });
+                        markClassificationPerformance("aux-finished", cycleId, { stage });
                     }
                 });
         }
 
-        function scheduleClasificacionAuxiliaryLoad(layer, config, whereClause, cycleId, delayMs = 250) {
-            cancelClasificacionAuxiliaryLoad();
+        function scheduleClassificationAuxiliaryiliaryLoad(layer, config, whereClause, cycleId, delayMs = 250) {
+            cancelClassificationAuxiliaryiliaryLoad();
 
-            if (!hasClasificacionTerritoryFilter()) return;
+            if (!hasClassificationTerritoryFilter()) return;
 
             // Caché disponible -> renderizar el gráfico de inmediato (sin demora ni
             // espera a la capa del mapa).
-            if (getClasificacionStatsFromCacheSync(layer, config, whereClause)) {
-                markClasificacionPerf("aux-cache-immediate", cycleId, { where: whereClause });
-                runClasificacionChartRender(layer, config, whereClause, cycleId, "cache-immediate");
+            if (getClassificationStatsFromCacheSync(layer, config, whereClause)) {
+                markClassificationPerformance("aux-cache-immediate", cycleId, { where: whereClause });
+                runClassificationChartRender(layer, config, whereClause, cycleId, "cache-immediate");
                 return;
             }
 
-            markClasificacionPerf("aux-scheduled", cycleId, {
+            markClassificationPerformance("aux-scheduled", cycleId, {
                 delayMs,
                 where: whereClause
             });
 
-            clasificacionChartTimer = setTimeout(() => {
-                clasificacionChartTimer = null;
-                runClasificacionChartRender(layer, config, whereClause, cycleId, "scheduled");
+            classificationChartTimer = setTimeout(() => {
+                classificationChartTimer = null;
+                runClassificationChartRender(layer, config, whereClause, cycleId, "scheduled");
             }, delayMs);
         }
 
-        function cancelClasificacionLegendFilter() {
-            if (clasificacionLegendFilterTimer) {
-                clearTimeout(clasificacionLegendFilterTimer);
-                clasificacionLegendFilterTimer = null;
+        function cancelClassificationLegendFilter() {
+            if (classificationLegendFilterTimer) {
+                clearTimeout(classificationLegendFilterTimer);
+                classificationLegendFilterTimer = null;
             }
-            clasificacionLegendFilterSeq++;
+            classificationLegendFilterSequence++;
         }
 
-        function getClasificacionLegendFilter(state) {
-            const field = state?.field || ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO.typeField || "Tipo_Clasificacion_Suelo";
+        function getClassificationLegendFilter(state) {
+            const field = state?.field || LAND_USE_PLANNING_CONFIG.CLASIFICACION_SUELO.typeField || "Tipo_Clasificacion_Suelo";
             const baseWhere = state?.baseWhere && String(state.baseWhere).trim()
                 ? String(state.baseWhere).trim()
                 : "1=1";
@@ -3044,7 +3027,7 @@ if (typeof arcgisRequire !== "function") {
                 activeCodes.join(",")
             ].join("|");
 
-            const cachedWhere = clasificacionLegendWhereCache.get(signature);
+            const cachedWhere = classificationLegendWhereCache.get(signature);
             if (cachedWhere) {
                 return {
                     where: cachedWhere,
@@ -3068,9 +3051,9 @@ if (typeof arcgisRequire !== "function") {
                     : "1=0";
             }
 
-            clasificacionLegendWhereCache.set(signature, where);
-            while (clasificacionLegendWhereCache.size > 40) {
-                clasificacionLegendWhereCache.delete(clasificacionLegendWhereCache.keys().next().value);
+            classificationLegendWhereCache.set(signature, where);
+            while (classificationLegendWhereCache.size > 40) {
+                classificationLegendWhereCache.delete(classificationLegendWhereCache.keys().next().value);
             }
 
             return {
@@ -3082,7 +3065,7 @@ if (typeof arcgisRequire !== "function") {
             };
         }
 
-        function syncClasificacionLegendDomState(state) {
+        function syncClassificationLegendDomState(state) {
             const content = document.getElementById("legendContent");
             if (!content || !state?.activeCodes) return;
 
@@ -3096,17 +3079,17 @@ if (typeof arcgisRequire !== "function") {
             });
         }
 
-        function scheduleClasificacionLegendMapFilter(state, options = {}) {
-            if (!state?.isClasificacionSuelo || !(state.activeCodes instanceof Set)) return;
+        function scheduleClassificationLegendMapFilter(state, options = {}) {
+            if (!state?.isSoilClassification || !(state.activeCodes instanceof Set)) return;
 
-            const startedAt = Number(options.startedAt || markClasificacionPerf("legend-toggle-start").t);
-            const delayMs = Number(options.delayMs ?? CLASIFICACION_LEGEND_TOGGLE_DELAY_MS);
-            const compiled = getClasificacionLegendFilter(state);
+            const startedAt = Number(options.startedAt || markClassificationPerformance("legend-toggle-start").t);
+            const delayMs = Number(options.delayMs ?? CLASSIFICATION_LEGEND_TOGGLE_DELAY_MS);
+            const compiled = getClassificationLegendFilter(state);
 
-            syncClasificacionLegendDomState(state);
+            syncClassificationLegendDomState(state);
 
-            if (compiled.signature === clasificacionLegendLastSignature && !clasificacionLegendFilterTimer) {
-                markClasificacionPerf("legend-toggle-noop", renderCycleId, {
+            if (compiled.signature === classificationLegendLastSignature && !classificationLegendFilterTimer) {
+                markClassificationPerformance("legend-toggle-noop", renderCycleId, {
                     active: compiled.activeCount,
                     all: compiled.allCount,
                     cacheHit: compiled.cacheHit
@@ -3114,33 +3097,33 @@ if (typeof arcgisRequire !== "function") {
                 return;
             }
 
-            if (clasificacionLegendFilterTimer) {
-                clearTimeout(clasificacionLegendFilterTimer);
+            if (classificationLegendFilterTimer) {
+                clearTimeout(classificationLegendFilterTimer);
             }
 
-            const seq = ++clasificacionLegendFilterSeq;
-            markClasificacionPerf("legend-toggle-queued", renderCycleId, {
+            const seq = ++classificationLegendFilterSequence;
+            markClassificationPerformance("legend-toggle-queued", renderCycleId, {
                 delayMs,
                 active: compiled.activeCount,
                 all: compiled.allCount,
                 cacheHit: compiled.cacheHit
             });
 
-            clasificacionLegendFilterTimer = setTimeout(() => {
-                clasificacionLegendFilterTimer = null;
+            classificationLegendFilterTimer = setTimeout(() => {
+                classificationLegendFilterTimer = null;
 
                 const content = document.getElementById("legendContent");
                 if (
-                    seq !== clasificacionLegendFilterSeq ||
+                    seq !== classificationLegendFilterSequence ||
                     (content?.__clasificacionLegendState !== state && window.__legendState !== state)
                 ) {
-                    markClasificacionPerf("legend-toggle-skipped-stale", renderCycleId);
+                    markClassificationPerformance("legend-toggle-skipped-stale", renderCycleId);
                     return;
                 }
 
-                const latest = getClasificacionLegendFilter(state);
-                if (latest.signature === clasificacionLegendLastSignature) {
-                    markClasificacionPerf("legend-toggle-noop", renderCycleId, {
+                const latest = getClassificationLegendFilter(state);
+                if (latest.signature === classificationLegendLastSignature) {
+                    markClassificationPerformance("legend-toggle-noop", renderCycleId, {
                         active: latest.activeCount,
                         all: latest.allCount,
                         cacheHit: latest.cacheHit
@@ -3149,8 +3132,8 @@ if (typeof arcgisRequire !== "function") {
                 }
 
                 const categoryItems = Array.from(state.allCodes || []).map(code => ({ code }));
-                const baseWhere = state.baseWhere || clasificacionBaseWhere;
-                const hasLocalLayers = hasClasificacionCategoryLayerSet(baseWhere, categoryItems);
+                const baseWhere = state.baseWhere || classificationBaseWhere;
+                const hasLocalLayers = hasClassificationCategoryLayerSet(baseWhere, categoryItems);
                 let usedLocalToggle = false;
 
                 // Camino confiable: si ya existen las capas por categoría (prewarm),
@@ -3159,28 +3142,28 @@ if (typeof arcgisRequire !== "function") {
                 // el servidor, SIN recrear la capa). Cualquiera de los dos garantiza
                 // que el mapa muestre únicamente las categorías activas.
                 if (hasLocalLayers) {
-                    ensureClasificacionCategoryLayers(baseWhere, categoryItems, {
+                    ensureClassificationCategoryLayers(baseWhere, categoryItems, {
                         prewarm: false,
                         source: "legend-toggle"
                     });
-                    usedLocalToggle = applyClasificacionCategoryVisibility(state, { startedAt });
+                    usedLocalToggle = applyClassificationCategoryVisibility(state, { startedAt });
                 }
 
                 if (!usedLocalToggle) {
-                    parkClasificacionCategoryLayers("legend-toggle-direct");
-                    applyClasificacionVisualWhere(latest.where, {
+                    parkClassificationCategoryLayers("legend-toggle-direct");
+                    applyClassificationVisualWhere(latest.where, {
                         updateFeatureLayer: false,
                         updateCategoryLayers: false,
                         source: "legend-toggle-direct"
                     });
-                    scheduleClasificacionCategoryPrewarm(baseWhere, categoryItems, renderCycleId, municipioActual ? 650 : 1600);
+                    scheduleClassificationCategoryPrewarm(baseWhere, categoryItems, renderCycleId, currentMunicipalityId ? 650 : 1600);
                 }
-                clasificacionLegendLastSignature = latest.signature;
+                classificationLegendLastSignature = latest.signature;
 
                 const finishedAt = typeof performance !== "undefined" && typeof performance.now === "function"
                     ? performance.now()
                     : Date.now();
-                markClasificacionPerf("legend-toggle-applied", renderCycleId, {
+                markClassificationPerformance("legend-toggle-applied", renderCycleId, {
                     active: latest.activeCount,
                     all: latest.allCount,
                     cacheHit: latest.cacheHit,
@@ -3190,37 +3173,37 @@ if (typeof arcgisRequire !== "function") {
             }, delayMs);
         }
 
-        function getClasificacionMapServerLayerUrl(config = ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO) {
+        function getClassificationMapServerLayerUrl(config = LAND_USE_PLANNING_CONFIG.CLASIFICACION_SUELO) {
             if (config?.mapServerUrl && config.mapServerLayerId !== undefined) {
                 return `${String(config.mapServerUrl).replace(/\/+$/, "")}/${config.mapServerLayerId}`;
             }
             return config?.url || layerGlobal?.url || "";
         }
 
-        function getClasificacionLegendState() {
+        function getClassificationLegendState() {
             const content = document.getElementById("legendContent");
             let state = content?.__clasificacionLegendState || window.__legendState;
             const items = window.__cs_items || [];
 
-            if (!state?.isClasificacionSuelo && items.length) {
-                const config = ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO;
+            if (!state?.isSoilClassification && items.length) {
+                const config = LAND_USE_PLANNING_CONFIG.CLASIFICACION_SUELO;
                 state = {
                     activeCodes: new Set(items.map(item => String(item.code))),
                     allCodes: items.map(item => String(item.code)),
                     field: config.typeField || "Tipo_Clasificacion_Suelo",
                     layer: layerGlobal || window.activeFeatureLayer,
-                    baseWhere: clasificacionBaseWhere || layerGlobal?.definitionExpression || "1=1",
+                    baseWhere: classificationBaseWhere || layerGlobal?.definitionExpression || "1=1",
                     fieldType: "integer",
-                    isClasificacionSuelo: true
+                    isSoilClassification: true
                 };
                 window.__legendState = state;
                 if (content) content.__clasificacionLegendState = state;
             }
 
-            return state?.isClasificacionSuelo ? state : null;
+            return state?.isSoilClassification ? state : null;
         }
 
-        function syncClasificacionChartWithLegend(state = getClasificacionLegendState(), selectedCode = null) {
+        function syncClassificationChartWithLegend(state = getClassificationLegendState(), selectedCode = null) {
             const dataset = chartInstance?.data?.datasets?.[0];
             if (!dataset || !Array.isArray(dataset.codes) || !state?.activeCodes) return;
 
@@ -3247,15 +3230,15 @@ if (typeof arcgisRequire !== "function") {
             // Colores normales para Clasificacion del suelo; la seleccion es funcional,
             // pero este grafico no debe mostrar borde/offset de seleccion.
             dataset.backgroundColor = codes.map(code => {
-                const paletteInfo = CLASIFICACION_SUELO_PALETTE[code] || {};
+                const paletteInfo = SOIL_CLASSIFICATION_PALETTE[code] || {};
                 return String(paletteInfo.fillColor || "#999");
             });
             dataset.borderColor = codes.map(code => {
-                const paletteInfo = CLASIFICACION_SUELO_PALETTE[code] || {};
+                const paletteInfo = SOIL_CLASSIFICATION_PALETTE[code] || {};
                 return String(paletteInfo.outlineColor || "rgba(0,0,0,0)");
             });
             dataset.borderWidth = codes.map(code => {
-                const paletteInfo = CLASIFICACION_SUELO_PALETTE[code] || {};
+                const paletteInfo = SOIL_CLASSIFICATION_PALETTE[code] || {};
                 return Number(paletteInfo.outlineWidth || 1);
             });
             dataset.offset = codes.map(() => 0);
@@ -3263,25 +3246,25 @@ if (typeof arcgisRequire !== "function") {
             chartInstance.update?.("none");
         }
 
-        function applyClasificacionSingleSelection(code, options = {}) {
+        function applyClassificationSingleSelection(code, options = {}) {
             const safeCode = String(code ?? "").trim();
-            const state = getClasificacionLegendState();
+            const state = getClassificationLegendState();
             if (!safeCode || !state?.allCodes?.map(String).includes(safeCode)) return null;
 
             state.activeCodes = new Set([safeCode]);
-            syncClasificacionLegendDomState(state);
-            syncClasificacionChartWithLegend(state, safeCode);
+            syncClassificationLegendDomState(state);
+            syncClassificationChartWithLegend(state, safeCode);
 
             if (options.applyMap !== false) {
-                applyClasificacionLegendFilter(state, {
+                applyClassificationLegendFilter(state, {
                     delayMs: 0,
-                    startedAt: markClasificacionPerf("selection-sync-start", renderCycleId, { code: safeCode }).t
+                    startedAt: markClassificationPerformance("selection-sync-start", renderCycleId, { code: safeCode }).t
                 });
             }
 
             if (options.updateSummary !== false) {
-                actualizarResumenClasificacionSuelo(
-                    ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO,
+                updateSoilClassificationSummary(
+                    LAND_USE_PLANNING_CONFIG.CLASIFICACION_SUELO,
                     safeCode,
                     renderCycleId
                 ).catch(() => { });
@@ -3292,8 +3275,8 @@ if (typeof arcgisRequire !== "function") {
 
         // Restaura TODAS las categorías: vuelven al mapa, al gráfico y a la leyenda,
         // eliminando cualquier filtro/selección previa.
-        function restaurarClasificacionLegendCompleto() {
-            const state = getClasificacionLegendState();
+        function restoreCompleteClassificationLegend() {
+            const state = getClassificationLegendState();
             if (!state?.allCodes || !state.allCodes.length) return null;
 
             const allActive = new Set(state.allCodes.map(code => String(code)));
@@ -3306,28 +3289,28 @@ if (typeof arcgisRequire !== "function") {
             }
 
             state.activeCodes = allActive;
-            syncClasificacionLegendDomState(state);
-            syncClasificacionChartWithLegend(state, null);
-            applyClasificacionLegendFilter(state, {
+            syncClassificationLegendDomState(state);
+            syncClassificationChartWithLegend(state, null);
+            applyClassificationLegendFilter(state, {
                 delayMs: 0,
-                startedAt: markClasificacionPerf("legend-restore-start", renderCycleId, {
+                startedAt: markClassificationPerformance("legend-restore-start", renderCycleId, {
                     all: allActive.size
                 }).t
             });
             return state;
         }
 
-        async function obtenerCodigoClasificacionDesdeMapa(event) {
+        async function getClassificationCodeFromMap(event) {
             if (
                 currentMainModule !== "ORDENAMIENTO" ||
-                currentOrdenamientoTab !== "CLASIFICACION_SUELO" ||
+                currentLandUsePlanningTab !== "CLASIFICACION_SUELO" ||
                 !view ||
                 (event?.button != null && event.button !== 0)
             ) {
                 return null;
             }
 
-            const config = ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO;
+            const config = LAND_USE_PLANNING_CONFIG.CLASIFICACION_SUELO;
             const typeField = config.typeField || "Tipo_Clasificacion_Suelo";
             const mapPoint = event.mapPoint || (
                 event?.x != null && event?.y != null
@@ -3336,7 +3319,7 @@ if (typeof arcgisRequire !== "function") {
             );
             if (!mapPoint) return null;
 
-            const sourceUrl = getClasificacionMapServerLayerUrl(config);
+            const sourceUrl = getClassificationMapServerLayerUrl(config);
             if (!sourceUrl) return null;
 
             try {
@@ -3349,9 +3332,9 @@ if (typeof arcgisRequire !== "function") {
                 query.distance = Math.max(Number(view.resolution || 0) * 24, 120);
                 query.units = "meters";
                 query.spatialRelationship = "intersects";
-                const legendState = getClasificacionLegendState();
-                const legendWhere = legendState ? getClasificacionLegendFilter(legendState).where : "";
-                query.where = clasificacionVisualWhereApplied || legendWhere || clasificacionBaseWhere || "1=1";
+                const legendState = getClassificationLegendState();
+                const legendWhere = legendState ? getClassificationLegendFilter(legendState).where : "";
+                query.where = classificationVisualWhereApplied || legendWhere || classificationBaseWhere || "1=1";
                 query.returnGeometry = false;
                 query.outFields = [typeField];
                 query.num = 1;
@@ -3366,151 +3349,151 @@ if (typeof arcgisRequire !== "function") {
             }
         }
 
-        async function manejarClickMapaClasificacionSuelo(event) {
-            const code = await obtenerCodigoClasificacionDesdeMapa(event);
+        async function handleSoilClassificationMapClick(event) {
+            const code = await getClassificationCodeFromMap(event);
             console.log("[Clasificación] clic en mapa -> código:", code);
             if (!code) return;
-            applyClasificacionSingleSelection(code, { applyMap: true });
+            applyClassificationSingleSelection(code, { applyMap: true });
         }
 
 
-        function buildWhereOrdenamientoForCurrentTerritory(config = ORDENAMIENTO_CONFIG[currentOrdenamientoTab]) {
+        function buildLandUsePlanningWhereForCurrentTerritory(config = LAND_USE_PLANNING_CONFIG[currentLandUsePlanningTab]) {
             if (!config) return "1=1";
 
-            let whereOrdenamiento = "1=1";
+            let landUsePlanningWhere = "1=1";
             const filterField = config.filterField || "mpcodigo";
-            const selectedMunicipio = normalizeCode(document.getElementById("municipios")?.value || "");
-            const selectedDepto = normalizeCode(document.getElementById("departamentos")?.value || "");
-            const effectiveMunicipio = normalizeCode(municipioActual || selectedMunicipio);
-            const effectiveDepto = normalizeCode(
-                deptoActual ||
-                (effectiveMunicipio ? effectiveMunicipio.substring(0, 2) : "") ||
-                selectedDepto
+            const selectedMunicipality = normalizeCode(document.getElementById("municipios")?.value || "");
+            const selectedDepartment = normalizeCode(document.getElementById("departamentos")?.value || "");
+            const effectiveMunicipality = normalizeCode(currentMunicipalityId || selectedMunicipality);
+            const effectiveDepartment = normalizeCode(
+                currentDepartmentId ||
+                (effectiveMunicipality ? effectiveMunicipality.substring(0, 2) : "") ||
+                selectedDepartment
             );
-            const hasDeptoSelection =
-                effectiveDepto &&
-                effectiveDepto !== "0" &&
-                effectiveDepto !== "COL";
+            const hasDepartmentSelection =
+                effectiveDepartment &&
+                effectiveDepartment !== "0" &&
+                effectiveDepartment !== "COL";
 
-            if (effectiveMunicipio) {
-                whereOrdenamiento = sqlEquals(filterField, effectiveMunicipio);
-            } else if ((filtroNivel === "DEPTO" || hasDeptoSelection) && hasDeptoSelection) {
+            if (effectiveMunicipality) {
+                landUsePlanningWhere = sqlEquals(filterField, effectiveMunicipality);
+            } else if ((territoryLevel === "DEPTO" || hasDepartmentSelection) && hasDepartmentSelection) {
                 if (
                     config.ordenamientoType === "vigencia" &&
                     String(filterField).toLowerCase() === "mdanmcodig"
                 ) {
-                    whereOrdenamiento = sqlStartsWith(filterField, effectiveDepto);
+                    landUsePlanningWhere = sqlStartsWith(filterField, effectiveDepartment);
                 } else if (config.deptoFilterField) {
-                    whereOrdenamiento = sqlEquals(config.deptoFilterField, effectiveDepto);
+                    landUsePlanningWhere = sqlEquals(config.deptoFilterField, effectiveDepartment);
                 } else if (
-                    getOrdenamientoDeptoPrefixFields().has(filterField.toLowerCase())
+                    getLandUsePlanningDepartmentPrefixFields().has(filterField.toLowerCase())
                 ) {
-                    whereOrdenamiento = sqlStartsWith(filterField, effectiveDepto);
+                    landUsePlanningWhere = sqlStartsWith(filterField, effectiveDepartment);
                 }
             }
 
-            return whereOrdenamiento;
+            return landUsePlanningWhere;
         }
 
-        function buildVigenciaDepartmentWhere(config = ORDENAMIENTO_CONFIG.VIGENCIA) {
+        function buildValidityDepartmentWhere(config = LAND_USE_PLANNING_CONFIG.VIGENCIA) {
             const filterField = config?.filterField || "MDANMCodig";
-            const deptoCode = deptoActual || (municipioActual ? normalizeCode(municipioActual).substring(0, 2) : "");
-            if (!deptoCode || deptoCode === "0" || deptoCode === "COL") return "1=1";
+            const contextDepartmentCode = currentDepartmentId || (currentMunicipalityId ? normalizeCode(currentMunicipalityId).substring(0, 2) : "");
+            if (!contextDepartmentCode || contextDepartmentCode === "0" || contextDepartmentCode === "COL") return "1=1";
 
-            return sqlStartsWith(filterField, deptoCode);
+            return sqlStartsWith(filterField, contextDepartmentCode);
         }
 
-        function getVigenciaMapDisplayWhere(config, chartWhere) {
+        function getValidityMapDisplayWhere(config, chartWhere) {
             if (config?.ordenamientoType !== "vigencia") return chartWhere || "1=1";
             // El mapa siempre muestra el departamento completo cuando hay un municipio
             // o un departamento seleccionado (salvo Colombia / sin selección, que es
             // contexto nacional). Se calcula directamente desde el estado para no
             // depender de que el "where" del gráfico llegue correcto.
-            const hasDeptoContext =
-                filtroNivel === "DEPTO" &&
-                deptoActual &&
-                deptoActual !== "0" &&
-                deptoActual !== "COL";
-            if (municipioActual || hasDeptoContext) {
-                return buildVigenciaDepartmentWhere(config);
+            const hasDepartmentContext =
+                territoryLevel === "DEPTO" &&
+                currentDepartmentId &&
+                currentDepartmentId !== "0" &&
+                currentDepartmentId !== "COL";
+            if (currentMunicipalityId || hasDepartmentContext) {
+                return buildValidityDepartmentWhere(config);
             }
             return chartWhere || "1=1";
         }
 
-        function clearVigenciaMunicipioHighlight() {
-            vigenciaHighlightedMunicipio = null;
-            if (vigenciaMunicipioHighlightHandle) {
-                try { vigenciaMunicipioHighlightHandle.remove(); } catch (_) {}
-                vigenciaMunicipioHighlightHandle = null;
+        function clearValidityMunicipalityHighlight() {
+            validityHighlightedMunicipality = null;
+            if (validityMunicipalityHighlightHandle) {
+                try { validityMunicipalityHighlightHandle.remove(); } catch (_) {}
+                validityMunicipalityHighlightHandle = null;
             }
-            if (vigenciaMunicipioHighlightLayer?.graphics) {
-                try { vigenciaMunicipioHighlightLayer.graphics.removeAll(); } catch (_) {}
+            if (validityMunicipalityHighlightLayer?.graphics) {
+                try { validityMunicipalityHighlightLayer.graphics.removeAll(); } catch (_) {}
             }
         }
 
         // Mantiene la capa de resaltado del municipio siempre por encima de las
         // demás capas, para que el borde amarillo no quede tapado cuando la capa
         // de Vigencia termina de dibujarse o se agregan otras capas.
-        function bringVigenciaHighlightToFront() {
+        function bringValidityHighlightToFront() {
             return;
         }
 
-        async function highlightVigenciaMunicipio(municipioCode = municipioActual) {
-            return highlightVigenciaMunicipioDesdeCapaActiva(municipioCode);
+        async function highlightValidityMunicipality(municipioCode = currentMunicipalityId) {
+            return highlightValidityMunicipalityFromActiveLayer(municipioCode);
             const code = String(municipioCode || "").trim();
             if (!code || !map || !view) {
-                clearVigenciaMunicipioHighlight();
+                clearValidityMunicipalityHighlight();
                 return;
             }
 
             try {
-                if (!vigenciaMunicipioHighlightLayer) {
-                    vigenciaMunicipioHighlightLayer = new GraphicsLayer({
+                if (!validityMunicipalityHighlightLayer) {
+                    validityMunicipalityHighlightLayer = new GraphicsLayer({
                         title: "Municipio seleccionado Vigencia",
                         listMode: "hide"
                     });
-                    map.add(vigenciaMunicipioHighlightLayer);
-                } else if (!map.layers.find(layer => layer === vigenciaMunicipioHighlightLayer)) {
-                    map.add(vigenciaMunicipioHighlightLayer);
+                    map.add(validityMunicipalityHighlightLayer);
+                } else if (!map.layers.find(layer => layer === validityMunicipalityHighlightLayer)) {
+                    map.add(validityMunicipalityHighlightLayer);
                 }
 
                 // Si el municipio ya está resaltado y su gráfico sigue presente, no
                 // se vuelve a consultar (evita parpadeo); solo se asegura que quede
                 // por encima de las capas recién dibujadas.
-                const vigenciaLayer = layerGlobal;
-                const filterField = ORDENAMIENTO_CONFIG.VIGENCIA?.filterField || "MDANMCodig";
-                if (!vigenciaLayer || vigenciaLayer.destroyed || currentOrdenamientoTab !== "VIGENCIA") {
-                    clearVigenciaMunicipioHighlight();
+                const validityLayer = layerGlobal;
+                const filterField = LAND_USE_PLANNING_CONFIG.VIGENCIA?.filterField || "MDANMCodig";
+                if (!validityLayer || validityLayer.destroyed || currentLandUsePlanningTab !== "VIGENCIA") {
+                    clearValidityMunicipalityHighlight();
                     return;
                 }
 
-                const query = typeof vigenciaLayer.createQuery === "function"
-                    ? vigenciaLayer.createQuery()
+                const query = typeof validityLayer.createQuery === "function"
+                    ? validityLayer.createQuery()
                     : {};
                 query.where = sqlEquals(filterField, code);
                 query.outFields = [filterField];
                 query.returnGeometry = true;
                 query.num = 500;
 
-                const result = await vigenciaLayer.queryFeatures(query);
+                const result = await validityLayer.queryFeatures(query);
                 // Si mientras se consultaba cambió la selección, no pisar el estado nuevo.
                 if (
-                    String(municipioActual || "").trim() !== code ||
-                    layerGlobal !== vigenciaLayer ||
-                    currentOrdenamientoTab !== "VIGENCIA"
+                    String(currentMunicipalityId || "").trim() !== code ||
+                    layerGlobal !== validityLayer ||
+                    currentLandUsePlanningTab !== "VIGENCIA"
                 ) return;
 
                 const geometries = (result?.features || [])
                     .map(feature => feature.geometry)
                     .filter(Boolean);
                 if (!geometries.length) {
-                    clearVigenciaMunicipioHighlight();
+                    clearValidityMunicipalityHighlight();
                     return;
                 }
 
-                vigenciaMunicipioHighlightLayer.graphics.removeAll();
+                validityMunicipalityHighlightLayer.graphics.removeAll();
                 geometries.forEach(geometry => {
-                    vigenciaMunicipioHighlightLayer.graphics.add(new Graphic({
+                    validityMunicipalityHighlightLayer.graphics.add(new Graphic({
                         geometry,
                         symbol: {
                             type: "simple-fill",
@@ -3522,45 +3505,45 @@ if (typeof arcgisRequire !== "function") {
                         }
                     }));
                 });
-                vigenciaHighlightedMunicipio = code;
-                bringVigenciaHighlightToFront();
+                validityHighlightedMunicipality = code;
+                bringValidityHighlightToFront();
             } catch (e) {
                 console.warn("Vigencia: no se pudo resaltar el municipio seleccionado.", e);
             }
         }
 
-        async function highlightVigenciaMunicipioDesdeCapaActiva(municipioCode = municipioActual) {
+        async function highlightValidityMunicipalityFromActiveLayer(municipioCode = currentMunicipalityId) {
             const code = String(municipioCode || "").trim();
             if (!code || !view) {
-                clearVigenciaMunicipioHighlight();
+                clearValidityMunicipalityHighlight();
                 return;
             }
 
             try {
-                const vigenciaLayer = layerGlobal;
-                const filterField = ORDENAMIENTO_CONFIG.VIGENCIA?.filterField || "MDANMCodig";
-                if (!vigenciaLayer || vigenciaLayer.destroyed || currentOrdenamientoTab !== "VIGENCIA") {
-                    clearVigenciaMunicipioHighlight();
+                const validityLayer = layerGlobal;
+                const filterField = LAND_USE_PLANNING_CONFIG.VIGENCIA?.filterField || "MDANMCodig";
+                if (!validityLayer || validityLayer.destroyed || currentLandUsePlanningTab !== "VIGENCIA") {
+                    clearValidityMunicipalityHighlight();
                     return;
                 }
 
-                const objectIds = await vigenciaLayer.queryObjectIds({
+                const objectIds = await validityLayer.queryObjectIds({
                     where: sqlEquals(filterField, code)
                 });
                 if (
-                    String(municipioActual || "").trim() !== code ||
-                    layerGlobal !== vigenciaLayer ||
-                    currentOrdenamientoTab !== "VIGENCIA"
+                    String(currentMunicipalityId || "").trim() !== code ||
+                    layerGlobal !== validityLayer ||
+                    currentLandUsePlanningTab !== "VIGENCIA"
                 ) return;
 
                 if (!Array.isArray(objectIds) || !objectIds.length) {
-                    clearVigenciaMunicipioHighlight();
+                    clearValidityMunicipalityHighlight();
                     return;
                 }
 
-                if (vigenciaMunicipioHighlightHandle) {
-                    try { vigenciaMunicipioHighlightHandle.remove(); } catch (_) {}
-                    vigenciaMunicipioHighlightHandle = null;
+                if (validityMunicipalityHighlightHandle) {
+                    try { validityMunicipalityHighlightHandle.remove(); } catch (_) {}
+                    validityMunicipalityHighlightHandle = null;
                 }
                 if (view?.highlightOptions) {
                     view.highlightOptions = {
@@ -3570,24 +3553,24 @@ if (typeof arcgisRequire !== "function") {
                     };
                 }
 
-                const layerView = await view.whenLayerView(vigenciaLayer);
+                const layerView = await view.whenLayerView(validityLayer);
                 if (
-                    String(municipioActual || "").trim() !== code ||
-                    layerGlobal !== vigenciaLayer ||
-                    currentOrdenamientoTab !== "VIGENCIA"
+                    String(currentMunicipalityId || "").trim() !== code ||
+                    layerGlobal !== validityLayer ||
+                    currentLandUsePlanningTab !== "VIGENCIA"
                 ) return;
 
-                vigenciaMunicipioHighlightHandle = layerView.highlight(objectIds);
-                vigenciaHighlightedMunicipio = code;
+                validityMunicipalityHighlightHandle = layerView.highlight(objectIds);
+                validityHighlightedMunicipality = code;
             } catch (e) {
                 console.warn("Vigencia: no se pudo resaltar el municipio seleccionado desde la capa activa.", e);
             }
         }
 
-        async function manejarClickMapaVigencia(event) {
+        async function handleValidityMapClick(event) {
             if (
                 currentMainModule !== "ORDENAMIENTO" ||
-                currentOrdenamientoTab !== "VIGENCIA" ||
+                currentLandUsePlanningTab !== "VIGENCIA" ||
                 !view ||
                 !layerGlobal ||
                 layerGlobal.destroyed ||
@@ -3602,41 +3585,41 @@ if (typeof arcgisRequire !== "function") {
                 const code = String(feature?.attributes?.MDANMCodig ?? feature?.attributes?.mdanmcodig ?? "").trim();
                 if (!code) return;
 
-                municipioActual = code;
-                deptoActual = normalizeCode(code).substring(0, 2);
-                filtroNivel = "MUNI";
+                currentMunicipalityId = code;
+                currentDepartmentId = normalizeCode(code).substring(0, 2);
+                territoryLevel = "MUNI";
 
-                const selectDepto = document.getElementById("departamentos");
+                const departmentSelect = document.getElementById("departamentos");
                 const selectMuni = document.getElementById("municipios");
-                if (selectDepto) selectDepto.value = deptoActual;
-                renderizarMunicipios(deptoActual);
+                if (departmentSelect) departmentSelect.value = currentDepartmentId;
+                renderMunicipalities(currentDepartmentId);
                 if (selectMuni) selectMuni.value = code;
 
                 renderControls();
-                await highlightVigenciaMunicipioDesdeCapaActiva(code);
-                scheduleOrdenamientoRender();
+                await highlightValidityMunicipalityFromActiveLayer(code);
+                scheduleLandUsePlanningRender();
             } catch (e) {
                 console.warn("Vigencia: no se pudo seleccionar municipio desde el mapa.", e);
             }
         }
 
-        async function zoomToInitialQueryExtent(whereOrdenamiento = buildWhereOrdenamientoForCurrentTerritory()) {
+        async function zoomToInitialQueryExtent(landUsePlanningWhere = buildLandUsePlanningWhereForCurrentTerritory()) {
             if (!view) return;
 
-            if (currentOrdenamientoTab === "VIGENCIA") {
-                const config = ORDENAMIENTO_CONFIG.VIGENCIA;
-                const mapWhere = getVigenciaMapDisplayWhere(config, whereOrdenamiento);
+            if (currentLandUsePlanningTab === "VIGENCIA") {
+                const config = LAND_USE_PLANNING_CONFIG.VIGENCIA;
+                const mapWhere = getValidityMapDisplayWhere(config, landUsePlanningWhere);
                 if (layerGlobal && !layerGlobal.destroyed) {
-                    await zoomOrdenamientoLayerToWhere(layerGlobal, mapWhere, renderCycleId, { skipNational: true });
+                    await zoomLandUsePlanningLayerToWhere(layerGlobal, mapWhere, renderCycleId, { skipNational: true });
                 }
                 return;
             }
 
             if (
-                currentOrdenamientoTab === "CLASIFICACION_SUELO" &&
-                hasClasificacionTerritoryFilter()
+                currentLandUsePlanningTab === "CLASIFICACION_SUELO" &&
+                hasClassificationTerritoryFilter()
             ) {
-                await zoomClasificacionToTerritory(renderCycleId);
+                await zoomClassificationToTerritory(renderCycleId);
                 return;
             }
 
@@ -3648,7 +3631,7 @@ if (typeof arcgisRequire !== "function") {
             }
 
             try {
-                const res = await layerGlobal.queryExtent({ where: whereOrdenamiento || "1=1" });
+                const res = await layerGlobal.queryExtent({ where: landUsePlanningWhere || "1=1" });
                 if (res?.extent) {
                     await view.goTo(res.extent.expand(1.2), {
                         duration: 900,
@@ -3662,47 +3645,47 @@ if (typeof arcgisRequire !== "function") {
             }
         }
 
-        function reiniciarClasificacionConsultaVisual(whereOrdenamiento) {
-            cancelClasificacionLegendFilter();
+        function restartClassificationVisualQuery(landUsePlanningWhere) {
+            cancelClassificationLegendFilter();
 
             const content = document.getElementById("legendContent");
             const state = content?.__clasificacionLegendState || window.__legendState;
 
             if (state?.allCodes?.length) {
                 state.activeCodes = new Set(state.allCodes.map(code => String(code)));
-                syncClasificacionLegendDomState(state);
-                applyClasificacionLegendFilter(state);
+                syncClassificationLegendDomState(state);
+                applyClassificationLegendFilter(state);
             }
 
-            parkClasificacionCategoryLayers("query-reset");
-            applyClasificacionVisualWhere(whereOrdenamiento, {
+            parkClassificationCategoryLayers("query-reset");
+            applyClassificationVisualWhere(landUsePlanningWhere, {
                 updateCategoryLayers: true,
                 source: "query-reset"
             });
         }
 
-        function paintZonificacionRuralViewFromItems(layer, config, whereClause, catItems = [], useItems = []) {
+        function paintRuralZoningViewFromItems(layer, config, whereClause, catItems = [], useItems = []) {
             let activeItems = [];
             let chartTitleText = "";
             let legendTitleText = "";
 
             if (currentRuralChartView === "CATEGORIA") {
                 activeItems = catItems;
-                chartTitleText = municipioActual
+                chartTitleText = currentMunicipalityId
                     ? "Distribución de categorías de zonificación rural"
                     : "Distribución nacional de categorías de zonificación rural";
                 legendTitleText = "Categorías rurales";
             } else {
                 activeItems = useItems;
-                chartTitleText = municipioActual
+                chartTitleText = currentMunicipalityId
                     ? "Distribución del uso principal de la zonificación rural"
                     : "Distribución nacional del uso principal de la zonificación rural";
                 legendTitleText = "Uso principal rural";
             }
 
             if (!activeItems.length) {
-                actualizarLeyendaOrdenamientoRural(legendTitleText, [], whereClause);
-                setOrdenamientoChartNoData();
+                updateRuralPlanningLegend(legendTitleText, [], whereClause);
+                setLandUsePlanningChartNoData();
                 return;
             }
 
@@ -3712,7 +3695,7 @@ if (typeof arcgisRequire !== "function") {
 
             const titleElement = document.getElementById("chartTitle");
             if (titleElement) {
-                titleElement.textContent = buildOrdenamientoChartTitle(chartTitleText);
+                titleElement.textContent = buildLandUsePlanningChartTitle(chartTitleText);
             }
 
             const ruralDataset = [{
@@ -3724,23 +3707,23 @@ if (typeof arcgisRequire !== "function") {
                 codes: activeItems.map(x => String(x.code))
             }];
 
-            actualizarLeyendaOrdenamientoRural(legendTitleText, activeItems, whereClause);
-            crearGrafica(labels, values, colors, "doughnut", false, ruralDataset);
-            // Actualizar el resumen/textos inmediatamente después de crear el gráfico,
+            updateRuralPlanningLegend(legendTitleText, activeItems, whereClause);
+            createChart(labels, values, colors, "doughnut", false, ruralDataset);
+            // Actualizar el resumen/texts inmediatamente después de crear el gráfico,
             // para que aunque un paso posterior (leyenda, interacciones) falle, la
-            // sección de textos descriptivos no quede nula.
-            actualizarResumenOrdenamientoRural(layer, config, whereClause);
+            // sección de texts descriptivos no quede nula.
+            updateRuralPlanningSummary(layer, config, whereClause);
             // Los pasos de leyenda/interacción no deben romper el render del gráfico
-            // ni la sección de textos si fallan: aislarlos.
+            // ni la sección de texts si fallan: aislarlos.
             try {
                 if (chartInstance) {
                     chartInstance.$zrAllItems = (window.__legendState?.allItems || activeItems)
-                        .map(normalizeZonificacionRuralChartItem);
+                        .map(normalizeRuralZoningChartItem);
                 }
-                configureZonificacionRuralChartLegend(chartInstance);
+                configureRuralZoningChartLegend(chartInstance);
                 chartInstance?.update?.("none");
-                updateZonificacionRuralChartEmptyMessage(chartInstance, false);
-                bindZonificacionRuralCanvasInteractions(activeItems, config);
+                updateRuralZoningChartEmptyMessage(chartInstance, false);
+                bindRuralZoningCanvasInteractions(activeItems, config);
 
                 // El texto de la leyenda se superpone al gráfico la primera vez porque
                 // al crearse el canvas aún no tiene su tamaño final y Chart.js calcula
@@ -3760,7 +3743,7 @@ if (typeof arcgisRequire !== "function") {
             }
         }
 
-        function bindZonificacionRuralCanvasInteractions(items = [], config = ORDENAMIENTO_CONFIG.ZONIFICACION_RURAL) {
+        function bindRuralZoningCanvasInteractions(items = [], config = LAND_USE_PLANNING_CONFIG.ZONIFICACION_RURAL) {
             const canvas = document.getElementById("chart");
             if (!canvas || !Array.isArray(items) || !items.length) return;
 
@@ -3783,7 +3766,7 @@ if (typeof arcgisRequire !== "function") {
                 start = end;
             });
 
-            zonificacionRuralCanvasChartState = {
+            ruralZoningCanvasChartState = {
                 items,
                 slices,
                 cx,
@@ -3795,7 +3778,7 @@ if (typeof arcgisRequire !== "function") {
             canvas.__zrItems = items;
 
             const getItemFromEvent = event => {
-                const state = zonificacionRuralCanvasChartState;
+                const state = ruralZoningCanvasChartState;
                 if (!state) return null;
 
                 const bounds = canvas.getBoundingClientRect();
@@ -3814,7 +3797,7 @@ if (typeof arcgisRequire !== "function") {
             canvas.onclick = async event => {
                 if (
                     currentMainModule !== "ORDENAMIENTO" ||
-                    currentOrdenamientoTab !== "ZONIFICACION_RURAL"
+                    currentLandUsePlanningTab !== "ZONIFICACION_RURAL"
                 ) {
                     return;
                 }
@@ -3824,39 +3807,39 @@ if (typeof arcgisRequire !== "function") {
                 if (!selected) return;
 
                 const selectedCode = String(selected.code);
-                applyZonificacionRuralSingleSelection(selectedCode);
-                await selectZonificacionRuralFromCode(selectedCode, {
+                applyRuralZoningSingleSelection(selectedCode);
+                await selectRuralZoningFromCode(selectedCode, {
                     temporaryMs: 2200,
                     highlightMap: true
                 });
 
                 if (currentRuralChartView === "CATEGORIA") {
-                    await zoomMapaZonificacionRural(null, selectedCode);
+                    await zoomRuralZoningMap(null, selectedCode);
                 } else {
-                    await zoomMapaZonificacionRural(selectedCode, null);
+                    await zoomRuralZoningMap(selectedCode, null);
                 }
             };
 
             canvas.ondblclick = event => {
                 if (
                     currentMainModule !== "ORDENAMIENTO" ||
-                    currentOrdenamientoTab !== "ZONIFICACION_RURAL"
+                    currentLandUsePlanningTab !== "ZONIFICACION_RURAL"
                 ) {
                     return;
                 }
 
                 if (getItemFromEvent(event)) return;
-                setTimeout(() => restoreZonificacionRuralLegendFilter(), 0);
+                setTimeout(() => restoreRuralZoningLegendFilter(), 0);
             };
         }
 
-        async function reiniciarConsultaActual() {
+        async function restartCurrentQuery() {
             if (currentMainModule !== "ORDENAMIENTO") return;
 
-            const config = ORDENAMIENTO_CONFIG[currentOrdenamientoTab];
+            const config = LAND_USE_PLANNING_CONFIG[currentLandUsePlanningTab];
             if (!config || !layerGlobal || layerGlobal.destroyed || !view) return;
 
-            const whereOrdenamiento = buildWhereOrdenamientoForCurrentTerritory(config);
+            const landUsePlanningWhere = buildLandUsePlanningWhereForCurrentTerritory(config);
 
             clearHighlight();
             lastHoverWhere = "";
@@ -3865,156 +3848,156 @@ if (typeof arcgisRequire !== "function") {
                 try { view.popup.close(); } catch (_) { }
             }
 
-            if (areasActividadSelectionTimer) {
-                clearTimeout(areasActividadSelectionTimer);
-                areasActividadSelectionTimer = null;
+            if (activityAreasSelectionTimer) {
+                clearTimeout(activityAreasSelectionTimer);
+                activityAreasSelectionTimer = null;
             }
-            areasActividadSelectionToken++;
+            activityAreasSelectionToken++;
 
             try {
-                if (currentOrdenamientoTab === "VIGENCIA") {
-                    layerGlobal.definitionExpression = getVigenciaMapDisplayWhere(config, whereOrdenamiento);
-                    if (municipioActual) {
-                        await highlightVigenciaMunicipioDesdeCapaActiva(municipioActual);
+                if (currentLandUsePlanningTab === "VIGENCIA") {
+                    layerGlobal.definitionExpression = getValidityMapDisplayWhere(config, landUsePlanningWhere);
+                    if (currentMunicipalityId) {
+                        await highlightValidityMunicipalityFromActiveLayer(currentMunicipalityId);
                     } else {
-                        clearVigenciaMunicipioHighlight();
+                        clearValidityMunicipalityHighlight();
                     }
-                    await renderVigenciaCharts(layerGlobal, config, whereOrdenamiento);
-                } else if (currentOrdenamientoTab === "AREAS_ACTIVIDAD") {
+                    await renderValidityCharts(layerGlobal, config, landUsePlanningWhere);
+                } else if (currentLandUsePlanningTab === "AREAS_ACTIVIDAD") {
                     window.__aa_selected_code = null;
-                    await restaurarAreasActividadLegend();
+                    await restoreActivityAreasLegend();
 
                     const titleElement = document.getElementById("chartTitle");
                     if (titleElement) {
-                        titleElement.textContent = buildOrdenamientoChartTitle("Distribución de áreas de actividad");
+                        titleElement.textContent = buildLandUsePlanningChartTitle("Distribución de áreas de actividad");
                     }
-                } else if (currentOrdenamientoTab === "CLASIFICACION_SUELO") {
-                    reiniciarClasificacionConsultaVisual(whereOrdenamiento);
-                    clasificacionBaseWhere = whereOrdenamiento;
+                } else if (currentLandUsePlanningTab === "CLASIFICACION_SUELO") {
+                    restartClassificationVisualQuery(landUsePlanningWhere);
+                    classificationBaseWhere = landUsePlanningWhere;
                     if (layerGlobal && !layerGlobal.destroyed) {
-                        layerGlobal.definitionExpression = whereOrdenamiento;
+                        layerGlobal.definitionExpression = landUsePlanningWhere;
                     }
-                    await renderClasificacionSueloCharts(layerGlobal, config, whereOrdenamiento, renderCycleId);
-                } else if (currentOrdenamientoTab === "ZONIFICACION_RURAL") {
+                    await renderSoilClassificationCharts(layerGlobal, config, landUsePlanningWhere, renderCycleId);
+                } else if (currentLandUsePlanningTab === "ZONIFICACION_RURAL") {
                     const catItems = window.__zr_categoria_items || [];
                     const useItems = window.__zr_uso_items || [];
                     const activeItems = currentRuralChartView === "CATEGORIA" ? catItems : useItems;
 
                     if (window.__legendState && activeItems.length) {
                         window.__legendState.activeCodes = new Set(activeItems.map(item => String(item.code)));
-                        window.__legendState.baseWhere = whereOrdenamiento;
+                        window.__legendState.baseWhere = landUsePlanningWhere;
                         resetLegendVisualState();
                         applyLegendFilter();
                     }
 
-                    layerGlobal.definitionExpression = whereOrdenamiento;
-                    paintZonificacionRuralViewFromItems(layerGlobal, config, whereOrdenamiento, catItems, useItems);
+                    layerGlobal.definitionExpression = landUsePlanningWhere;
+                    paintRuralZoningViewFromItems(layerGlobal, config, landUsePlanningWhere, catItems, useItems);
                 } else {
-                    layerGlobal.definitionExpression = whereOrdenamiento;
+                    layerGlobal.definitionExpression = landUsePlanningWhere;
                 }
 
-                await zoomToInitialQueryExtent(whereOrdenamiento);
+                await zoomToInitialQueryExtent(landUsePlanningWhere);
             } catch (e) {
                 console.warn("No se pudo reiniciar la consulta actual:", e);
             }
         }
 
-        async function cargarOrdenamientoActual() {
-            const config = ORDENAMIENTO_CONFIG[currentOrdenamientoTab];
+        async function loadCurrentLandUsePlanning() {
+            const config = LAND_USE_PLANNING_CONFIG[currentLandUsePlanningTab];
             if (!config) return;
 
-            const whereOrdenamiento = buildWhereOrdenamientoForCurrentTerritory(config);
-            const isClasificacionSuelo = config.ordenamientoType === "clasificacion_suelo";
-            const isVigencia = config.ordenamientoType === "vigencia";
-            if (isVigencia) {
-                removeClasificacionVisualLayers();
-            } else if (isClasificacionSuelo) {
-                removeVigenciaVisualLayers();
+            const landUsePlanningWhere = buildLandUsePlanningWhereForCurrentTerritory(config);
+            const isSoilClassification = config.ordenamientoType === "clasificacion_suelo";
+            const isValidity = config.ordenamientoType === "vigencia";
+            if (isValidity) {
+                removeClassificationVisualLayers();
+            } else if (isSoilClassification) {
+                removeValidityVisualLayers();
             } else {
-                removeVigenciaVisualLayers();
-                removeClasificacionVisualLayers();
+                removeValidityVisualLayers();
+                removeClassificationVisualLayers();
             }
-            if (!isClasificacionSuelo) {
-                cancelClasificacionAuxiliaryLoad();
-                cancelClasificacionCategoryPrewarm();
-                cancelClasificacionDepartmentWarmup();
-                resetClasificacionCategoryVisuals();
+            if (!isSoilClassification) {
+                cancelClassificationAuxiliaryiliaryLoad();
+                cancelClassificationCategoryPrewarm();
+                cancelClassificationDepartmentWarmup();
+                resetClassificationCategoryVisuals();
             }
 
             const configUrl = String(config.url || "").replace(/\/+$/, "");
             const visualUrl = String(config.mapServerUrl || "").replace(/\/+$/, "");
-            const canReuseClasificacionLayer =
-                isClasificacionSuelo &&
+            const canReuseClassificationLayer =
+                isSoilClassification &&
                 layerGlobal &&
                 !layerGlobal.destroyed &&
                 String(layerGlobal.url || "").replace(/\/+$/, "") === configUrl &&
-                clasificacionVisualLayer &&
-                !clasificacionVisualLayer.destroyed &&
-                String(clasificacionVisualLayer.url || "").replace(/\/+$/, "") === visualUrl;
-            const canReuseVigenciaLayer =
-                isVigencia &&
+                classificationVisualLayer &&
+                !classificationVisualLayer.destroyed &&
+                String(classificationVisualLayer.url || "").replace(/\/+$/, "") === visualUrl;
+            const canReuseValidityLayer =
+                isValidity &&
                 layerGlobal &&
                 !layerGlobal.destroyed &&
                 String(layerGlobal.url || "").replace(/\/+$/, "") === configUrl;
-            const canReuseDataLayer = canReuseClasificacionLayer || canReuseVigenciaLayer;
+            const canReuseDataLayer = canReuseClassificationLayer || canReuseValidityLayer;
 
             if (!canReuseDataLayer) {
                 clearLayers();
-                resetClasificacionCategoryVisuals();
-                if (isClasificacionSuelo) {
-                    removeClasificacionVisualLayers();
-                    clasificacionVisualLayer = null;
-                    clasificacionVisualWhereApplied = null;
-                    clasificacionVisualVisibleApplied = null;
-                    resetClasificacionCategoryVisuals();
+                resetClassificationCategoryVisuals();
+                if (isSoilClassification) {
+                    removeClassificationVisualLayers();
+                    classificationVisualLayer = null;
+                    classificationVisualWhereApplied = null;
+                    classificationVisualVisibleApplied = null;
+                    resetClassificationCategoryVisuals();
                 }
             }
 
             const currentCycle = ++renderCycleId;
-            const vigenciaMapWhere = isVigencia
-                ? getVigenciaMapDisplayWhere(config, whereOrdenamiento)
-                : whereOrdenamiento;
+            const validityMapWhere = isValidity
+                ? getValidityMapDisplayWhere(config, landUsePlanningWhere)
+                : landUsePlanningWhere;
             if (
-                isVigencia ||
+                isValidity ||
                 config.ordenamientoType === "zonificacion_rural" ||
                 config.ordenamientoType === "areas_actividad" ||
-                isClasificacionSuelo
+                isSoilClassification
             ) {
-                setOrdenamientoChartLoading();
+                setLandUsePlanningChartLoading();
             }
-            if (isClasificacionSuelo) {
-                cancelClasificacionAuxiliaryLoad();
-                cancelClasificacionCategoryPrewarm();
-                cancelClasificacionDepartmentWarmup();
+            if (isSoilClassification) {
+                cancelClassificationAuxiliaryiliaryLoad();
+                cancelClassificationCategoryPrewarm();
+                cancelClassificationDepartmentWarmup();
                 // Si el territorio consultado cambió (p.ej. Cundinamarca → Boyacá, o
                 // departamento → municipio), eliminar por completo las capas por
                 // categoría del territorio anterior para que NO queden residuos en el
                 // mapa. Antes solo se ocultaban (park), lo que podía dejar geometrías
                 // del territorio previo.
-                const clasificacionTerritoryChanged = clasificacionBaseWhere !== whereOrdenamiento;
-                if (canReuseClasificacionLayer && clasificacionTerritoryChanged) {
-                    blankClasificacionVisualLayerForNewQuery("render-territory-change");
-                    resetClasificacionCategoryVisuals();
+                const classificationTerritoryChanged = classificationBaseWhere !== landUsePlanningWhere;
+                if (canReuseClassificationLayer && classificationTerritoryChanged) {
+                    blankClassificationVisualLayerForNewQuery("render-territory-change");
+                    resetClassificationCategoryVisuals();
                     const legendContent = document.getElementById("legendContent");
                     if (legendContent) {
                         legendContent.__clasificacionLegendState = null;
                     }
-                    if (window.__legendState?.isClasificacionSuelo) {
+                    if (window.__legendState?.isSoilClassification) {
                         window.__legendState = {
                             allCodes: [],
                             activeCodes: new Set(),
                             field: null,
                             layer: null,
-                            baseWhere: whereOrdenamiento,
-                            isClasificacionSuelo: true
+                            baseWhere: landUsePlanningWhere,
+                            isSoilClassification: true
                         };
                     }
                 }
-                parkClasificacionCategoryLayers("render-start");
-                clasificacionBaseWhere = whereOrdenamiento;
-                markClasificacionPerf("render-start", currentCycle, {
-                    reused: canReuseClasificacionLayer,
-                    where: whereOrdenamiento
+                parkClassificationCategoryLayers("render-start");
+                classificationBaseWhere = landUsePlanningWhere;
+                markClassificationPerformance("render-start", currentCycle, {
+                    reused: canReuseClassificationLayer,
+                    where: landUsePlanningWhere
                 });
             }
 
@@ -4022,29 +4005,29 @@ if (typeof arcgisRequire !== "function") {
                 ? layerGlobal
                 : new FeatureLayer({
                     url: config.url,
-                    definitionExpression: isClasificacionSuelo
-                        ? whereOrdenamiento
-                        : vigenciaMapWhere,
+                    definitionExpression: isSoilClassification
+                        ? landUsePlanningWhere
+                        : validityMapWhere,
                     outFields: config.outFields || ["*"],
                     opacity: 0.85,
-                    minScale: isClasificacionSuelo ? 0 : undefined,
-                    maxScale: isClasificacionSuelo ? 0 : undefined,
-                    listMode: isClasificacionSuelo ? "hide" : undefined,
-                    popupEnabled: !isClasificacionSuelo,
-                    visible: !isClasificacionSuelo
+                    minScale: isSoilClassification ? 0 : undefined,
+                    maxScale: isSoilClassification ? 0 : undefined,
+                    listMode: isSoilClassification ? "hide" : undefined,
+                    popupEnabled: !isSoilClassification,
+                    visible: !isSoilClassification
                 });
-            const vigenciaMapWhereChanged = isVigencia && (
-                !canReuseVigenciaLayer ||
-                String(newLayer.__vigenciaMapWhere || "") !== String(vigenciaMapWhere)
+            const validityMapWhereChanged = isValidity && (
+                !canReuseValidityLayer ||
+                String(newLayer.__vigenciaMapWhere || "") !== String(validityMapWhere)
             );
 
-            if (isClasificacionSuelo && !canReuseClasificacionLayer) {
-                const visualWhere = hasClasificacionTerritoryFilter()
+            if (isSoilClassification && !canReuseClassificationLayer) {
+                const visualWhere = hasClassificationTerritoryFilter()
                     ? "1=0"
-                    : getClasificacionVisualWhere(whereOrdenamiento);
+                    : getClassificationVisualWhere(landUsePlanningWhere);
                 const canRenderVisual = visualWhere !== "1=0";
 
-                clasificacionVisualLayer = new MapImageLayer({
+                classificationVisualLayer = new MapImageLayer({
                     url: config.mapServerUrl,
                     title: config.title,
                     opacity: 0.92,
@@ -4055,47 +4038,47 @@ if (typeof arcgisRequire !== "function") {
                         minScale: 0,
                         maxScale: 0,
                         definitionExpression: visualWhere,
-                        renderer: buildClasificacionSueloRenderer(config)
+                        renderer: buildSoilClassificationRenderer(config)
                     }]
                 });
 
-                map.add(clasificacionVisualLayer);
-                layersGlobal = [clasificacionVisualLayer];
-                syncClasificacionManagedLayers();
-                markClasificacionPerf("visual-layer-created", currentCycle, {
+                map.add(classificationVisualLayer);
+                layersGlobal = [classificationVisualLayer];
+                syncClassificationManagedLayers();
+                markClassificationPerformance("visual-layer-created", currentCycle, {
                     visible: canRenderVisual
                 });
-            } else if (isClasificacionSuelo) {
-                markClasificacionPerf("visual-layer-reused", currentCycle);
+            } else if (isSoilClassification) {
+                markClassificationPerformance("visual-layer-reused", currentCycle);
             }
 
             newLayer.opacity = 0.85;
-            if (isClasificacionSuelo) {
-                newLayer.renderer = buildClasificacionSueloRenderer(config);
+            if (isSoilClassification) {
+                newLayer.renderer = buildSoilClassificationRenderer(config);
                 newLayer.visible = false;
             } else {
-                if (newLayer.definitionExpression !== vigenciaMapWhere) {
-                    newLayer.definitionExpression = vigenciaMapWhere;
+                if (newLayer.definitionExpression !== validityMapWhere) {
+                    newLayer.definitionExpression = validityMapWhere;
                 }
-                if (isVigencia) {
-                    newLayer.__vigenciaMapWhere = vigenciaMapWhere;
+                if (isValidity) {
+                    newLayer.__vigenciaMapWhere = validityMapWhere;
                 }
                 newLayer.visible = true;
             }
 
             if (config.ordenamientoType === "areas_actividad") {
-                applyAreasActividadPaletteRenderer(newLayer, config);
+                applyActivityAreasPaletteRenderer(newLayer, config);
             }
 
             if (!canReuseDataLayer) {
                 map.add(newLayer);
             }
-            if (isClasificacionSuelo) {
+            if (isSoilClassification) {
                 newLayer.when(() => {
                     if (currentCycle !== renderCycleId || layerGlobal !== newLayer || newLayer.destroyed) return;
                     newLayer.minScale = 0;
                     newLayer.maxScale = 0;
-                    applyClasificacionVisualWhere(whereOrdenamiento, {
+                    applyClassificationVisualWhere(landUsePlanningWhere, {
                         updateCategoryLayers: false,
                         source: "feature-layer-ready"
                     });
@@ -4105,10 +4088,10 @@ if (typeof arcgisRequire !== "function") {
             // anterior) para que NO coexistan con la consulta actual. Se reafirma al
             // terminar de cargar la capa por si una capa previa lenta cargó tarde.
             if (config.ordenamientoType === "areas_actividad") {
-                removeStrayOrdenamientoDataLayers(newLayer);
+                removeStrayLandUsePlanningDataLayers(newLayer);
                 newLayer.when(() => {
                     if (currentCycle !== renderCycleId || layerGlobal !== newLayer || newLayer.destroyed) return;
-                    removeStrayOrdenamientoDataLayers(newLayer);
+                    removeStrayLandUsePlanningDataLayers(newLayer);
                 }).catch(() => {});
             }
             // Zonificación Rural: garantizar una sola capa del servicio en el mapa
@@ -4120,8 +4103,8 @@ if (typeof arcgisRequire !== "function") {
                 newLayer.when(() => {
                     if (currentCycle !== renderCycleId || layerGlobal !== newLayer || newLayer.destroyed) return;
                     removeStrayRuralLayers(newLayer);
-                    if (newLayer.definitionExpression !== whereOrdenamiento) {
-                        newLayer.definitionExpression = whereOrdenamiento;
+                    if (newLayer.definitionExpression !== landUsePlanningWhere) {
+                        newLayer.definitionExpression = landUsePlanningWhere;
                     }
                     if (window.__RURAL_DEBUG) {
                         try {
@@ -4132,59 +4115,59 @@ if (typeof arcgisRequire !== "function") {
                                 def: l.definitionExpression,
                                 visible: l.visible
                             }));
-                            console.log("[RURAL] where=", whereOrdenamiento, "newLayer.def=", newLayer.definitionExpression, "layers=", snap);
+                            console.log("[RURAL] where=", landUsePlanningWhere, "newLayer.def=", newLayer.definitionExpression, "layers=", snap);
                         } catch (_) { }
                     }
                 }).catch(() => {});
             }
             layerGlobal = newLayer;
             window.activeFeatureLayer = newLayer;
-            window.activeVisualLayer = isClasificacionSuelo
-                ? clasificacionVisualLayer
+            window.activeVisualLayer = isSoilClassification
+                ? classificationVisualLayer
                 : newLayer;
             syncStateFromGlobals();
-            if (isClasificacionSuelo) {
-                if (hasClasificacionTerritoryFilter()) {
+            if (isSoilClassification) {
+                if (hasClassificationTerritoryFilter()) {
                     // La leyenda permanece vacía hasta confirmar que hay elementos en el
                     // mapa; solo se muestra "Cargando gráfico..." mientras responde el servicio.
-                    actualizarLeyendaClasificacionSuelo("Clasificación del suelo", []);
-                    setOrdenamientoChartLoading();
+                    updateSoilClassificationLegend("Clasificación del suelo", []);
+                    setLandUsePlanningChartLoading();
                 } else {
-                    actualizarLeyendaClasificacionSuelo("Clasificación del suelo", []);
-                    setOrdenamientoInitialChartState();
+                    updateSoilClassificationLegend("Clasificación del suelo", []);
+                    setLandUsePlanningInitialChartState();
                 }
-                if (hasClasificacionTerritoryFilter()) {
-                    const territorySource = municipioActual ? "municipality" : "department";
-                    applyClasificacionVisualWhere("1=0", {
+                if (hasClassificationTerritoryFilter()) {
+                    const territorySource = currentMunicipalityId ? "municipality" : "department";
+                    applyClassificationVisualWhere("1=0", {
                         updateFeatureLayer: false,
                         updateCategoryLayers: false,
                         source: `render-before-${territorySource}-zoom`
                     });
                     try {
-                        await withTimeout(zoomClasificacionToTerritory(currentCycle), 5000, false);
+                        await withTimeout(zoomClassificationToTerritory(currentCycle), 5000, false);
                     } catch (e) {
                         if (String(e?.name || "") !== "AbortError") {
                             console.warn("No se pudo hacer zoom a Clasificacion del suelo:", e);
                         }
                     }
                     if (currentCycle !== renderCycleId || layerGlobal !== newLayer || newLayer.destroyed) return;
-                    applyClasificacionVisualWhere(whereOrdenamiento, {
+                    applyClassificationVisualWhere(landUsePlanningWhere, {
                         updateCategoryLayers: false,
                         forceRefresh: true,
                         source: `render-after-${territorySource}-zoom`
                     });
-                    nudgeClasificacionVisualPaint(currentCycle, `${territorySource}-after-zoom`);
-                    reapplyClasificacionVisualWhenReady(whereOrdenamiento, currentCycle, `${territorySource}-layer-ready`);
+                    nudgeClassificationVisualPaint(currentCycle, `${territorySource}-after-zoom`);
+                    reapplyClassificationVisualWhenReady(landUsePlanningWhere, currentCycle, `${territorySource}-layer-ready`);
                 } else {
-                    applyClasificacionVisualWhere(whereOrdenamiento, {
+                    applyClassificationVisualWhere(landUsePlanningWhere, {
                         updateCategoryLayers: false,
                         forceRefresh: true,
                         source: "render"
                     });
-                    reapplyClasificacionVisualWhenReady(whereOrdenamiento, currentCycle, "territory-layer-ready");
-                    withTimeout(zoomClasificacionToTerritory(currentCycle), 5000, false)
+                    reapplyClassificationVisualWhenReady(landUsePlanningWhere, currentCycle, "territory-layer-ready");
+                    withTimeout(zoomClassificationToTerritory(currentCycle), 5000, false)
                         .then(() => {
-                            nudgeClasificacionVisualPaint(currentCycle, "territory-after-zoom");
+                            nudgeClassificationVisualPaint(currentCycle, "territory-after-zoom");
                         })
                         .catch(e => {
                             if (String(e?.name || "") !== "AbortError") {
@@ -4193,20 +4176,20 @@ if (typeof arcgisRequire !== "function") {
                         });
                 }
 
-                scheduleClasificacionAuxiliaryLoad(newLayer, config, whereOrdenamiento, currentCycle);
-                scheduleClasificacionDepartmentWarmup(deptoActual, {
+                scheduleClassificationAuxiliaryiliaryLoad(newLayer, config, landUsePlanningWhere, currentCycle);
+                scheduleClassificationDepartmentWarmup(currentDepartmentId, {
                     cycleId: currentCycle,
-                    priorityMunicipio: municipioActual,
-                    delayMs: municipioActual
-                        ? CLASIFICACION_MUNI_WARMUP_DELAY_MS
-                        : CLASIFICACION_DEPT_WARMUP_DELAY_MS
+                    priorityMunicipality: currentMunicipalityId,
+                    delayMs: currentMunicipalityId
+                        ? CLASSIFICATION_MUNICIPAL_WARMUP_DELAY_MS
+                        : CLASSIFICATION_DEPT_WARMUP_DELAY_MS
                 });
             }
 
             setLegendLayer(newLayer, config.title);
             updateMapViewBadge(config.title);
             const legendContent = document.getElementById("legendContent");
-            if (legendContent && !isClasificacionSuelo) {
+            if (legendContent && !isSoilClassification) {
                 legendContent.innerHTML = "";
             }
             window.__lastLegendRenderKey = "";
@@ -4216,33 +4199,33 @@ if (typeof arcgisRequire !== "function") {
                 // Defensa: garantizar una sola capa de Vigencia en el mapa. Elimina
                 // cualquier capa residual del servicio (p.ej. la capa nacional inicial)
                 // que pudiera quedar de fondo mostrando todo el país.
-                removeVigenciaVisualLayers(newLayer);
+                removeValidityVisualLayers(newLayer);
                 // Reafirmar el filtro departamental/municipal una vez la capa cargue,
                 // por si el definitionExpression no quedó aplicado antes del load.
                 newLayer.when(() => {
                     if (currentCycle !== renderCycleId || layerGlobal !== newLayer || newLayer.destroyed) return;
-                    if (newLayer.definitionExpression !== vigenciaMapWhere) {
-                        newLayer.definitionExpression = vigenciaMapWhere;
+                    if (newLayer.definitionExpression !== validityMapWhere) {
+                        newLayer.definitionExpression = validityMapWhere;
                     }
                     // La capa de Vigencia ya está dibujada: asegurar que el resaltado
                     // amarillo del municipio quede por encima y permanezca visible.
-                    if (municipioActual) {
-                        bringVigenciaHighlightToFront();
+                    if (currentMunicipalityId) {
+                        bringValidityHighlightToFront();
                     }
                 }).catch(() => {});
-                actualizarLeyendaVigencia("Vigencia", [], newLayer, config, whereOrdenamiento);
+                updateValidityLegend("Vigencia", [], newLayer, config, landUsePlanningWhere);
                 requestAnimationFrame(async () => {
                     if (currentCycle !== renderCycleId || layerGlobal !== newLayer || newLayer.destroyed) return;
-                    await renderVigenciaCharts(newLayer, config, whereOrdenamiento);
+                    await renderValidityCharts(newLayer, config, landUsePlanningWhere);
                 });
-                if (municipioActual) {
-                    highlightVigenciaMunicipioDesdeCapaActiva(municipioActual);
+                if (currentMunicipalityId) {
+                    highlightValidityMunicipalityFromActiveLayer(currentMunicipalityId);
                 } else {
-                    clearVigenciaMunicipioHighlight();
+                    clearValidityMunicipalityHighlight();
                 }
-                if (vigenciaMapWhereChanged) {
+                if (validityMapWhereChanged) {
                     void withTimeout(
-                        zoomOrdenamientoLayerToWhere(newLayer, vigenciaMapWhere, currentCycle, { skipNational: true }),
+                        zoomLandUsePlanningLayerToWhere(newLayer, validityMapWhere, currentCycle, { skipNational: true }),
                         5000,
                         false
                     ).catch((error) => {
@@ -4257,7 +4240,7 @@ if (typeof arcgisRequire !== "function") {
             newLayer.when(async () => {
                 if (currentCycle !== renderCycleId || layerGlobal !== newLayer || newLayer.destroyed) return;
 
-                if (isClasificacionSuelo) return;
+                if (isSoilClassification) return;
 
                 // ZONIFICACIÓN RURAL: el render del gráfico NO debe quedar encadenado
                 // detrás del queryExtent (zoom). El servicio rural es lento y, si el
@@ -4266,11 +4249,11 @@ if (typeof arcgisRequire !== "function") {
                 if (config.ordenamientoType === "zonificacion_rural") {
                     requestAnimationFrame(async () => {
                         if (currentCycle !== renderCycleId || layerGlobal !== newLayer || newLayer.destroyed) return;
-                        await renderZonificacionRuralCharts(newLayer, config, whereOrdenamiento);
+                        await renderRuralZoningCharts(newLayer, config, landUsePlanningWhere);
                     });
                     try {
                         const res = await withTimeout(
-                            newLayer.queryExtent({ where: whereOrdenamiento }),
+                            newLayer.queryExtent({ where: landUsePlanningWhere }),
                             6000,
                             null
                         );
@@ -4287,7 +4270,7 @@ if (typeof arcgisRequire !== "function") {
                 }
 
                 try {
-                    const res = await newLayer.queryExtent({ where: whereOrdenamiento });
+                    const res = await newLayer.queryExtent({ where: landUsePlanningWhere });
                     if (currentCycle !== renderCycleId || layerGlobal !== newLayer || newLayer.destroyed) return;
 
                     if (res?.extent) {
@@ -4304,15 +4287,15 @@ if (typeof arcgisRequire !== "function") {
                     if (currentCycle !== renderCycleId || layerGlobal !== newLayer || newLayer.destroyed) return;
 
                     if (config.ordenamientoType === "vigencia") {
-                        await renderVigenciaCharts(newLayer, config, whereOrdenamiento);
+                        await renderValidityCharts(newLayer, config, landUsePlanningWhere);
                         if (currentCycle !== renderCycleId || layerGlobal !== newLayer || newLayer.destroyed) return;
 
                     } else if (config.ordenamientoType === "zonificacion_rural") {
-                        await renderZonificacionRuralCharts(newLayer, config, whereOrdenamiento);
+                        await renderRuralZoningCharts(newLayer, config, landUsePlanningWhere);
                         if (currentCycle !== renderCycleId || layerGlobal !== newLayer || newLayer.destroyed) return;
 
                     } else if (config.ordenamientoType === "areas_actividad") {
-                        await renderAreasActividadCharts(newLayer, config, whereOrdenamiento);
+                        await renderActivityAreasCharts(newLayer, config, landUsePlanningWhere);
                         if (currentCycle !== renderCycleId || layerGlobal !== newLayer || newLayer.destroyed) return;
 
                     } else {
@@ -4332,7 +4315,8 @@ if (typeof arcgisRequire !== "function") {
                 });
             });
         }
-        window.cargarOrdenamientoActual = cargarOrdenamientoActual;
+        window.loadCurrentLandUsePlanning = loadCurrentLandUsePlanning;
+        window.cargarOrdenamientoActual = loadCurrentLandUsePlanning;
 
         function getFieldDomainLabel(layer, fieldName, code) {
             const field = (layer.fields || []).find(f => f.name === fieldName);
@@ -4366,7 +4350,7 @@ if (typeof arcgisRequire !== "function") {
             return map;
         }
 
-        const CLASIFICACION_SUELO_PALETTE = {
+        const SOIL_CLASSIFICATION_PALETTE = {
             "1": {
                 label: "Urbano",
                 fillColor: "#F57A7A",
@@ -4387,13 +4371,13 @@ if (typeof arcgisRequire !== "function") {
             }
         };
 
-        function buildClasificacionSueloRenderer(config = ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO) {
+        function buildSoilClassificationRenderer(config = LAND_USE_PLANNING_CONFIG.CLASIFICACION_SUELO) {
             const field = config?.typeField || "tipo_clasificacion_suelo";
 
             return {
                 type: "unique-value",
                 field,
-                uniqueValueInfos: Object.entries(CLASIFICACION_SUELO_PALETTE).map(([code, info]) => ({
+                uniqueValueInfos: Object.entries(SOIL_CLASSIFICATION_PALETTE).map(([code, info]) => ({
                     value: code,
                     label: info.label,
                     symbol: {
@@ -4408,8 +4392,8 @@ if (typeof arcgisRequire !== "function") {
             };
         }
 
-        function getClasificacionFallbackItems() {
-            return Object.entries(CLASIFICACION_SUELO_PALETTE).map(([code, info]) => ({
+        function getClassificationFallbackItems() {
+            return Object.entries(SOIL_CLASSIFICATION_PALETTE).map(([code, info]) => ({
                 code,
                 label: info.label,
                 value: 0,
@@ -4442,7 +4426,7 @@ if (typeof arcgisRequire !== "function") {
             "20": { label: "Otro", fillColor: "#BDBDBD", outlineColor: "rgba(0,0,0,0)", outlineWidth: 0 }
         };
 
-        function normalizeZonificacionRuralLabel(value) {
+        function normalizeRuralZoningLabel(value) {
             let label = String(value ?? "").trim();
             if (!label) return "";
 
@@ -4469,7 +4453,7 @@ if (typeof arcgisRequire !== "function") {
             return label;
         }
 
-        const AREA_ACTIVIDAD_PALETTE = {
+        const ACTIVITY_AREA_PALETTE = {
             "1": { fillColor: "#FFD966", outlineColor: "#666666", outlineWidth: 0.3, label: "Residencial" },
             "2": { fillColor: "#F4A261", outlineColor: "#666666", outlineWidth: 0.3, label: "Comercial" },
             "3": { fillColor: "#5DADE2", outlineColor: "#666666", outlineWidth: 0.3, label: "Servicios" },
@@ -4480,18 +4464,18 @@ if (typeof arcgisRequire !== "function") {
             "8": { fillColor: "#98E600", outlineColor: "#666666", outlineWidth: 0.3, label: "Otro" }
         };
 
-        function getAreaActividadPaletteInfo(code) {
+        function getActivityAreaPaletteInfo(code) {
             const safeCode = String(code ?? "").trim();
-            return AREA_ACTIVIDAD_PALETTE[safeCode] || AREA_ACTIVIDAD_PALETTE["8"];
+            return ACTIVITY_AREA_PALETTE[safeCode] || ACTIVITY_AREA_PALETTE["8"];
         }
 
-        function normalizeAreaActividadCode(value, layer = null, fieldName = "Uso_Principal") {
+        function normalizeActivityAreaCode(value, layer = null, fieldName = "Uso_Principal") {
             const raw = String(value ?? "").trim();
             if (!raw) return "";
-            if (AREA_ACTIVIDAD_PALETTE[raw]) return raw;
+            if (ACTIVITY_AREA_PALETTE[raw]) return raw;
 
             const rawKey = normKey(raw);
-            const paletteMatch = Object.entries(AREA_ACTIVIDAD_PALETTE).find(([, info]) =>
+            const paletteMatch = Object.entries(ACTIVITY_AREA_PALETTE).find(([, info]) =>
                 normKey(info.label) === rawKey
             );
             if (paletteMatch) return paletteMatch[0];
@@ -4505,9 +4489,9 @@ if (typeof arcgisRequire !== "function") {
             return domainMatch ? String(domainMatch.code) : raw;
         }
 
-        function buildAreaActividadItem(code, value = 0) {
+        function buildActivityAreaItem(code, value = 0) {
             const safeCode = String(code ?? "").trim() || "8";
-            const paletteInfo = getAreaActividadPaletteInfo(safeCode);
+            const paletteInfo = getActivityAreaPaletteInfo(safeCode);
 
             return {
                 code: safeCode,
@@ -4519,9 +4503,9 @@ if (typeof arcgisRequire !== "function") {
             };
         }
 
-        function buildAreasActividadRenderer(config = ORDENAMIENTO_CONFIG.AREAS_ACTIVIDAD) {
+        function buildActivityAreasRenderer(config = LAND_USE_PLANNING_CONFIG.AREAS_ACTIVIDAD) {
             const useField = config?.useField || "Uso_Principal";
-            const defaultInfo = getAreaActividadPaletteInfo("8");
+            const defaultInfo = getActivityAreaPaletteInfo("8");
 
             return {
                 type: "unique-value",
@@ -4535,7 +4519,7 @@ if (typeof arcgisRequire !== "function") {
                     }
                 },
                 defaultLabel: defaultInfo.label,
-                uniqueValueInfos: Object.entries(AREA_ACTIVIDAD_PALETTE).map(([code, info]) => ({
+                uniqueValueInfos: Object.entries(ACTIVITY_AREA_PALETTE).map(([code, info]) => ({
                     value: Number.isFinite(Number(code)) ? Number(code) : code,
                     label: info.label,
                     symbol: {
@@ -4550,14 +4534,14 @@ if (typeof arcgisRequire !== "function") {
             };
         }
 
-        function applyAreasActividadPaletteRenderer(layer, config) {
+        function applyActivityAreasPaletteRenderer(layer, config) {
             if (!layer || layer.destroyed) return;
-            layer.renderer = buildAreasActividadRenderer(config);
+            layer.renderer = buildActivityAreasRenderer(config);
         }
 
-        function getRuralCategoriaPaletteInfo(code) {
+        function getRuralCategoryPaletteInfo(code) {
             const safeCode = String(code ?? "").trim();
-            return ruralCategoriaDict?.[safeCode] || ruralCategoriaDefaultInfo;
+            return ruralCategoryDictionary?.[safeCode] || ruralCategoryDefaultInfo;
         }
 
         function getRuralUsePaletteInfo(code) {
@@ -4565,16 +4549,16 @@ if (typeof arcgisRequire !== "function") {
             return RURAL_USE_PALETTE[safeCode] || RURAL_USE_PALETTE["20"];
         }
 
-        function buildRuralCategoriaItem(code, value = 0, layer = null, fieldName = "Tipo_Categoria_Rural") {
+        function buildRuralCategoryItem(code, value = 0, layer = null, fieldName = "Tipo_Categoria_Rural") {
             const safeCode = String(code ?? "").trim();
-            const paletteInfo = getRuralCategoriaPaletteInfo(safeCode);
+            const paletteInfo = getRuralCategoryPaletteInfo(safeCode);
             const domainLabel = layer ? getFieldDomainLabel(layer, fieldName, safeCode) : safeCode;
 
             return {
                 code: safeCode,
-                label: normalizeZonificacionRuralLabel(paletteInfo?.label || domainLabel || safeCode),
+                label: normalizeRuralZoningLabel(paletteInfo?.label || domainLabel || safeCode),
                 value,
-                color: paletteInfo?.fillColor ? String(paletteInfo.fillColor) : ruralCategoriaFallbackColor(safeCode),
+                color: paletteInfo?.fillColor ? String(paletteInfo.fillColor) : ruralCategoryFallbackColor(safeCode),
                 borderColor: paletteInfo?.outlineColor ? String(paletteInfo.outlineColor) : "rgba(0,0,0,0.25)",
                 borderWidth: Number(paletteInfo?.outlineWidth || 0)
             };
@@ -4588,7 +4572,7 @@ if (typeof arcgisRequire !== "function") {
 
             return {
                 code: safeCode,
-                label: normalizeZonificacionRuralLabel(paletteInfo.label),
+                label: normalizeRuralZoningLabel(paletteInfo.label),
                 value,
                 color: String(paletteInfo.fillColor),
                 borderColor: String(paletteInfo.outlineColor),
@@ -4596,7 +4580,7 @@ if (typeof arcgisRequire !== "function") {
             };
         }
 
-        function normalizeZonificacionRuralChartItem(item) {
+        function normalizeRuralZoningChartItem(item) {
             return {
                 code: String(item?.code ?? ""),
                 label: String(item?.label ?? item?.code ?? ""),
@@ -4607,12 +4591,12 @@ if (typeof arcgisRequire !== "function") {
             };
         }
 
-        function buildZonificacionRuralCategoriaRenderer(config = ORDENAMIENTO_CONFIG.ZONIFICACION_RURAL) {
+        function buildRuralZoningCategoryRenderer(config = LAND_USE_PLANNING_CONFIG.ZONIFICACION_RURAL) {
             const categoryField = config?.categoryField || "Tipo_Categoria_Rural";
             const renderer = {
                 type: "unique-value",
                 field: categoryField,
-                uniqueValueInfos: Object.entries(ruralCategoriaDict || {}).map(([code, info]) => ({
+                uniqueValueInfos: Object.entries(ruralCategoryDictionary || {}).map(([code, info]) => ({
                     value: Number.isFinite(Number(code)) ? Number(code) : code,
                     label: info.label,
                     symbol: {
@@ -4626,22 +4610,22 @@ if (typeof arcgisRequire !== "function") {
                 }))
             };
 
-            if (ruralCategoriaDefaultInfo) {
+            if (ruralCategoryDefaultInfo) {
                 renderer.defaultSymbol = {
                     type: "simple-fill",
-                    color: ruralCategoriaDefaultInfo.fillColor,
+                    color: ruralCategoryDefaultInfo.fillColor,
                     outline: {
-                        color: ruralCategoriaDefaultInfo.outlineColor,
-                        width: Number(ruralCategoriaDefaultInfo.outlineWidth || 0)
+                        color: ruralCategoryDefaultInfo.outlineColor,
+                        width: Number(ruralCategoryDefaultInfo.outlineWidth || 0)
                     }
                 };
-                renderer.defaultLabel = ruralCategoriaDefaultInfo.label;
+                renderer.defaultLabel = ruralCategoryDefaultInfo.label;
             }
 
             return renderer;
         }
 
-        function buildZonificacionRuralUsoRenderer(config = ORDENAMIENTO_CONFIG.ZONIFICACION_RURAL) {
+        function buildRuralZoningUseRenderer(config = LAND_USE_PLANNING_CONFIG.ZONIFICACION_RURAL) {
             const useField = config?.useField || "Uso_Principal";
             const defaultInfo = getRuralUsePaletteInfo("20");
 
@@ -4672,7 +4656,7 @@ if (typeof arcgisRequire !== "function") {
             };
         }
 
-        function applyZonificacionRuralPaletteRenderer(layer, config) {
+        function applyRuralZoningPaletteRenderer(layer, config) {
             if (!layer || layer.destroyed) return;
             const rendererView = currentRuralChartView === "USO_PRINCIPAL" ? "USO_PRINCIPAL" : "CATEGORIA";
             // Evitar re-aplicar el mismo renderer a la misma capa: reasignar el
@@ -4680,12 +4664,12 @@ if (typeof arcgisRequire !== "function") {
             // cambia la vista (Categorías/Uso) o la capa.
             if (layer.__zrRendererView === rendererView) return;
             layer.renderer = rendererView === "USO_PRINCIPAL"
-                ? buildZonificacionRuralUsoRenderer(config)
-                : buildZonificacionRuralCategoriaRenderer(config);
+                ? buildRuralZoningUseRenderer(config)
+                : buildRuralZoningCategoryRenderer(config);
             layer.__zrRendererView = rendererView;
         }
 
-        const VIGENCIA_FALLBACK_COLORS = [
+        const VALIDITY_FALLBACK_COLORS = [
             "#0079C1",
             "#6A3D9A",
             "#2A9D8F",
@@ -4695,25 +4679,25 @@ if (typeof arcgisRequire !== "function") {
             "#546E7A",
             "#D81B60"
         ];
-        let vigenciaRendererDict = null;
-        let vigenciaRendererDictPromise = null;
-        const VIGENCIA_TIPO_LABELS = {
+        let validityRendererDictionary = null;
+        let validityRendererDictionaryPromise = null;
+        const VALIDITY_TYPE_LABELS = {
             EOT: "Esquema de Ordenamiento Territorial",
             PBOT: "Plan Básico de Ordenamiento Territorial",
             POT: "Plan de Ordenamiento Territorial",
             SIN_POT: "Sin POT"
         };
-        const VIGENCIA_TIPO_ORDER = ["EOT", "PBOT", "POT", "SIN_POT"];
-        let vigenciaTipoItemsFull = [];
-        let vigenciaEstadoItemsFull = [];
+        const VALIDITY_TYPE_ORDER = ["EOT", "PBOT", "POT", "SIN_POT"];
+        let validityTypeItemsFull = [];
+        let validityStatusItemsFull = [];
 
-        async function ensureVigenciaRendererDict(layerUrl) {
-            if (vigenciaRendererDict) return vigenciaRendererDict;
-            if (vigenciaRendererDictPromise) return vigenciaRendererDictPromise;
+        async function ensureValidityRendererDictionary(layerUrl) {
+            if (validityRendererDictionary) return validityRendererDictionary;
+            if (validityRendererDictionaryPromise) return validityRendererDictionaryPromise;
 
-            vigenciaRendererDictPromise = (async () => {
+            validityRendererDictionaryPromise = (async () => {
                 try {
-                    const url = String(layerUrl || ORDENAMIENTO_CONFIG.VIGENCIA.url).replace(/\/+$/, "") + "?f=pjson";
+                    const url = String(layerUrl || LAND_USE_PLANNING_CONFIG.VIGENCIA.url).replace(/\/+$/, "") + "?f=pjson";
                     const res = await fetch(url);
                     if (!res.ok) throw new Error(`HTTP ${res.status}`);
                     const json = await res.json();
@@ -4729,7 +4713,7 @@ if (typeof arcgisRequire !== "function") {
                         dict[code] = {
                             code,
                             label: String(info.label || code).trim(),
-                            color: rgbaArrayToCss(info?.symbol?.color, VIGENCIA_FALLBACK_COLORS[index % VIGENCIA_FALLBACK_COLORS.length]),
+                            color: rgbaArrayToCss(info?.symbol?.color, VALIDITY_FALLBACK_COLORS[index % VALIDITY_FALLBACK_COLORS.length]),
                             borderColor: rgbaArrayToCss(info?.symbol?.outline?.color, "rgba(0,0,0,0)"),
                             borderWidth: Number(info?.symbol?.outline?.width || 1)
                         };
@@ -4744,31 +4728,31 @@ if (typeof arcgisRequire !== "function") {
                             dict[code] = {
                                 code,
                                 label: String(cls.label || code).trim(),
-                                color: rgbaArrayToCss(cls?.symbol?.color, VIGENCIA_FALLBACK_COLORS[index % VIGENCIA_FALLBACK_COLORS.length]),
+                                color: rgbaArrayToCss(cls?.symbol?.color, VALIDITY_FALLBACK_COLORS[index % VALIDITY_FALLBACK_COLORS.length]),
                                 borderColor: rgbaArrayToCss(cls?.symbol?.outline?.color, "rgba(0,0,0,0)"),
                                 borderWidth: Number(cls?.symbol?.outline?.width || 1)
                             };
                         });
                     });
 
-                    vigenciaRendererDict = dict;
+                    validityRendererDictionary = dict;
                 } catch (error) {
                     console.warn("Vigencia: no se pudieron cargar los metadatos de simbologia; se usaran colores locales.", error);
-                    vigenciaRendererDict = {};
+                    validityRendererDictionary = {};
                 }
-                return vigenciaRendererDict;
+                return validityRendererDictionary;
             })();
 
             try {
-                return await vigenciaRendererDictPromise;
+                return await validityRendererDictionaryPromise;
             } finally {
-                if (!vigenciaRendererDict) vigenciaRendererDictPromise = null;
+                if (!validityRendererDictionary) validityRendererDictionaryPromise = null;
             }
         }
 
-        function getVigenciaRendererInfo(layer, code, index = 0) {
+        function getValidityRendererInfo(layer, code, index = 0) {
             const safeCode = String(code ?? "").trim();
-            const dictInfo = vigenciaRendererDict?.[safeCode];
+            const dictInfo = validityRendererDictionary?.[safeCode];
             if (dictInfo) return dictInfo;
 
             const infos = layer?.renderer?.uniqueValueInfos || [];
@@ -4778,13 +4762,13 @@ if (typeof arcgisRequire !== "function") {
 
             return {
                 label: String(match?.label || safeCode || "Sin clasificar"),
-                color: fillColor || VIGENCIA_FALLBACK_COLORS[index % VIGENCIA_FALLBACK_COLORS.length],
+                color: fillColor || VALIDITY_FALLBACK_COLORS[index % VALIDITY_FALLBACK_COLORS.length],
                 borderColor: outlineColor,
                 borderWidth: Number(match?.symbol?.outline?.width || 1)
             };
         }
 
-        function normalizeVigenciaTipoCode(value) {
+        function normalizeValidityTypeCode(value) {
             const raw = String(value ?? "").trim();
             const base = raw.split(",")[0].trim().toUpperCase();
             if (base === "EOT") return "EOT";
@@ -4794,30 +4778,30 @@ if (typeof arcgisRequire !== "function") {
             return base || "SIN_POT";
         }
 
-        function getVigenciaTipoLabel(code) {
+        function getValidityTypeLabel(code) {
             const safeCode = String(code ?? "").trim().toUpperCase();
-            return VIGENCIA_TIPO_LABELS[safeCode] || safeCode || "Sin POT";
+            return VALIDITY_TYPE_LABELS[safeCode] || safeCode || "Sin POT";
         }
 
-        function getVigenciaTipoSortIndex(code) {
-            const index = VIGENCIA_TIPO_ORDER.indexOf(String(code ?? "").trim().toUpperCase());
-            return index >= 0 ? index : VIGENCIA_TIPO_ORDER.length;
+        function getValidityTypeSortIndex(code) {
+            const index = VALIDITY_TYPE_ORDER.indexOf(String(code ?? "").trim().toUpperCase());
+            return index >= 0 ? index : VALIDITY_TYPE_ORDER.length;
         }
 
-        function getVigenciaTipoInfoFromRawValues(rawValues = [], code = "", index = 0) {
+        function getValidityTypeInfoFromRawValues(rawValues = [], code = "", index = 0) {
             const values = Array.isArray(rawValues) && rawValues.length ? rawValues : [code];
             const rawInfo = values
-                .map(value => getVigenciaRendererInfo(layerGlobal, value, index))
+                .map(value => getValidityRendererInfo(layerGlobal, value, index))
                 .find(info => info?.color);
             return {
-                label: getVigenciaTipoLabel(code),
-                color: rawInfo?.color || VIGENCIA_FALLBACK_COLORS[index % VIGENCIA_FALLBACK_COLORS.length],
+                label: getValidityTypeLabel(code),
+                color: rawInfo?.color || VALIDITY_FALLBACK_COLORS[index % VALIDITY_FALLBACK_COLORS.length],
                 borderColor: rawInfo?.borderColor || "rgba(0,0,0,0.35)",
                 borderWidth: Number(rawInfo?.borderWidth || 1)
             };
         }
 
-        async function fetchVigenciaStats(layer, config, whereClause) {
+        async function fetchValidityStats(layer, config, whereClause) {
             const typeField = config.typeField || "PotTipo";
             const objectIdField = layer?.objectIdField || "OBJECTID";
             const layerUrl = config.url || layer.url;
@@ -4871,7 +4855,7 @@ if (typeof arcgisRequire !== "function") {
             }));
         }
 
-        async function fetchVigenciaRows(layer, config, whereClause, fieldNames = []) {
+        async function fetchValidityRows(layer, config, whereClause, fieldNames = []) {
             const layerUrl = config.url || layer.url;
             const where = whereClause || layer.definitionExpression || "1=1";
             const safeFields = Array.from(new Set(fieldNames.filter(Boolean)));
@@ -4882,11 +4866,11 @@ if (typeof arcgisRequire !== "function") {
                 safeFields.map(field => String(field).toLowerCase()).sort().join(",")
             ].join("|");
 
-            if (vigenciaStatsCache.has(cacheKey)) {
-                return vigenciaStatsCache.get(cacheKey).map(row => ({ ...row }));
+            if (validityStatsCache.has(cacheKey)) {
+                return validityStatsCache.get(cacheKey).map(row => ({ ...row }));
             }
-            if (vigenciaStatsInFlight.has(cacheKey)) {
-                const pendingRows = await vigenciaStatsInFlight.get(cacheKey);
+            if (validityStatsInFlight.has(cacheKey)) {
+                const pendingRows = await validityStatsInFlight.get(cacheKey);
                 return pendingRows.map(row => ({ ...row }));
             }
 
@@ -4908,22 +4892,22 @@ if (typeof arcgisRequire !== "function") {
                 }
             })();
 
-            vigenciaStatsInFlight.set(cacheKey, requestPromise);
+            validityStatsInFlight.set(cacheKey, requestPromise);
             try {
                 const rows = await requestPromise;
                 if (rows.length) {
-                    vigenciaStatsCache.set(cacheKey, rows.map(row => ({ ...row })));
-                    while (vigenciaStatsCache.size > VIGENCIA_STATS_CACHE_LIMIT) {
-                        vigenciaStatsCache.delete(vigenciaStatsCache.keys().next().value);
+                    validityStatsCache.set(cacheKey, rows.map(row => ({ ...row })));
+                    while (validityStatsCache.size > VALIDITY_STATS_CACHE_LIMIT) {
+                        validityStatsCache.delete(validityStatsCache.keys().next().value);
                     }
                 }
                 return rows.map(row => ({ ...row }));
             } finally {
-                vigenciaStatsInFlight.delete(cacheKey);
+                validityStatsInFlight.delete(cacheKey);
             }
         }
 
-        function countVigenciaRowsByField(rows, fieldName) {
+        function countValidityRowsByField(rows, fieldName) {
             const grouped = new Map();
             for (const row of rows || []) {
                 const code = String(row?.[fieldName] ?? "Sin clasificar").trim() || "Sin clasificar";
@@ -4935,7 +4919,7 @@ if (typeof arcgisRequire !== "function") {
             }));
         }
 
-        function buildVigenciaCountItems(rows, fieldName, colorResolver) {
+        function buildValidityCountItems(rows, fieldName, colorResolver) {
             const totals = new Map();
 
             for (const row of rows || []) {
@@ -4963,13 +4947,13 @@ if (typeof arcgisRequire !== "function") {
                 .sort((a, b) => b.count - a.count);
         }
 
-        function buildVigenciaTipoItems(rows, fieldName) {
+        function buildValidityTypeItems(rows, fieldName) {
             const totals = new Map();
             const rawValues = new Map();
 
             for (const row of rows || []) {
                 const rawCode = String(row[fieldName] ?? "Sin POT").trim() || "Sin POT";
-                const code = normalizeVigenciaTipoCode(rawCode);
+                const code = normalizeValidityTypeCode(rawCode);
                 const total = Number(row.total ?? row.TOTAL ?? row.count ?? 0);
                 if (!Number.isFinite(total) || total <= 0) continue;
 
@@ -4982,7 +4966,7 @@ if (typeof arcgisRequire !== "function") {
             return Array.from(totals.entries())
                 .map(([code, count], index) => {
                     const values = Array.from(rawValues.get(code) || []);
-                    const info = getVigenciaTipoInfoFromRawValues(values, code, index);
+                    const info = getValidityTypeInfoFromRawValues(values, code, index);
                     return {
                         code,
                         rawValues: values,
@@ -4995,14 +4979,14 @@ if (typeof arcgisRequire !== "function") {
                     };
                 })
                 .sort((a, b) => {
-                    const byOrder = getVigenciaTipoSortIndex(a.code) - getVigenciaTipoSortIndex(b.code);
+                    const byOrder = getValidityTypeSortIndex(a.code) - getValidityTypeSortIndex(b.code);
                     return byOrder || b.count - a.count;
                 });
         }
 
-        function getVigenciaEstadoInfo(code, index = 0) {
+        function getValidityStatusInfo(code, index = 0) {
             const safeCode = String(code ?? "").trim();
-            const color = VIGENCIA_FALLBACK_COLORS[(index + 4) % VIGENCIA_FALLBACK_COLORS.length];
+            const color = VALIDITY_FALLBACK_COLORS[(index + 4) % VALIDITY_FALLBACK_COLORS.length];
             return {
                 label: safeCode || "Sin clasificar",
                 color,
@@ -5011,7 +4995,7 @@ if (typeof arcgisRequire !== "function") {
             };
         }
 
-        function ensureVigenciaChartsContainer() {
+        function ensureValidityChartsContainer() {
             const chartCanvas = document.getElementById("chart");
             const chartCard = chartCanvas?.closest(".chart-card");
             if (!chartCanvas || !chartCard) return null;
@@ -5021,10 +5005,10 @@ if (typeof arcgisRequire !== "function") {
             chartCanvas.style.visibility = "hidden";
             chartCanvas.style.opacity = "0";
 
-            let container = document.getElementById("vigenciaCharts");
+            let container = document.getElementById("validityCharts");
             if (!container) {
                 container = document.createElement("div");
-                container.id = "vigenciaCharts";
+                container.id = "validityCharts";
                 container.className = "vigencia-charts";
                 chartCanvas.insertAdjacentElement("afterend", container);
             }
@@ -5036,7 +5020,7 @@ if (typeof arcgisRequire !== "function") {
                 </div>
             </div>
             <div class="vigencia-chart-block vigencia-chart-block--estado">
-                <h4 class="vigencia-chart-title">${buildOrdenamientoChartTitle("Estado de vigencia de los instrumentos")}</h4>
+                <h4 class="vigencia-chart-title">${buildLandUsePlanningChartTitle("Estado de vigencia de los instrumentos")}</h4>
                 <div class="vigencia-canvas-wrap">
                     <canvas id="vigenciaEstadoChart"></canvas>
                 </div>
@@ -5050,23 +5034,23 @@ if (typeof arcgisRequire !== "function") {
             };
         }
 
-        function getVigenciaActiveItems(items = [], activeCodes = null) {
+        function getValidityActiveItems(items = [], activeCodes = null) {
             if (!(activeCodes instanceof Set)) return items;
             return items.filter(item => activeCodes.has(String(item.code)));
         }
 
-        function updateVigenciaChartSize(wrap, itemCount) {
+        function updateValidityChartSize(wrap, itemCount) {
             if (!wrap) return;
-            const size = getOrdenamientoPieChartHeight(itemCount, { compact: true });
+            const size = getLandUsePlanningPieChartHeight(itemCount, { compact: true });
             wrap.style.setProperty("--vigencia-chart-size", `${size}px`);
         }
 
-        function applyVigenciaChartItems(chart, allItems = [], activeCodes = null) {
+        function applyValidityChartItems(chart, allItems = [], activeCodes = null) {
             if (!chart?.data?.datasets?.[0]) return;
-            const activeItems = getVigenciaActiveItems(allItems, activeCodes);
+            const activeItems = getValidityActiveItems(allItems, activeCodes);
             const dataset = chart.data.datasets[0];
             const wrap = chart.canvas?.closest(".vigencia-canvas-wrap");
-            updateVigenciaChartSize(wrap, activeItems.length);
+            updateValidityChartSize(wrap, activeItems.length);
 
             // Reconstruir el gráfico SOLO con las categorías activas y
             // re-normalizar los porcentajes entre ellas, para que la torta
@@ -5090,13 +5074,13 @@ if (typeof arcgisRequire !== "function") {
             dataset.counts = activeItems.map(item => Number(item.count));
             dataset.empty = activeItems.length === 0;
             chart.update?.("none");
-            updateVigenciaChartEmptyState(chart);
+            updateValidityChartEmptyState(chart);
         }
 
         // Estado vacío del gráfico: cuando no hay categorías activas, se oculta
         // la torta (conservando el espacio del contenedor) y se muestra un
         // mensaje. La leyenda HTML permanece visible para reactivar categorías.
-        function updateVigenciaChartEmptyState(chart) {
+        function updateValidityChartEmptyState(chart) {
             const canvas = chart?.canvas;
             const wrap = canvas?.closest(".vigencia-canvas-wrap");
             if (!wrap) return;
@@ -5119,15 +5103,15 @@ if (typeof arcgisRequire !== "function") {
             }
         }
 
-        function createVigenciaDoughnut(canvas, items, options = {}) {
+        function createValidityDoughnut(canvas, items, options = {}) {
             if (!canvas || typeof Chart === "undefined") return null;
             const allItems = Array.isArray(items) ? items : [];
             const activeCodes = options.activeCodes instanceof Set
                 ? options.activeCodes
                 : new Set(allItems.map(item => String(item.code)));
-            const initialItems = getVigenciaActiveItems(allItems, activeCodes);
+            const initialItems = getValidityActiveItems(allItems, activeCodes);
             const wrap = canvas.closest(".vigencia-canvas-wrap");
-            updateVigenciaChartSize(wrap, initialItems.length);
+            updateValidityChartSize(wrap, initialItems.length);
             canvas.style.height = "100%";
 
             const chart = new Chart(canvas.getContext("2d"), {
@@ -5170,7 +5154,7 @@ if (typeof arcgisRequire !== "function") {
                     },
                     plugins: {
                         // La leyenda interactiva se renderiza como HTML DEBAJO del
-                        // canvas (ver renderVigenciaChartLegend). Se desactiva la
+                        // canvas (ver renderValidityChartLegend). Se desactiva la
                         // leyenda interna de Chart.js para que NUNCA se superponga
                         // con la torta al redibujar/redimensionar.
                         legend: {
@@ -5189,15 +5173,15 @@ if (typeof arcgisRequire !== "function") {
                     }
                 },
                 plugins: [
-                    createOrdenamientoPiePercentageLabelsPlugin()
+                    createLandUsePlanningPiePercentageLabelsPlugin()
                 ]
             });
             chart.$vigenciaItems = allItems;
             chart.$vigenciaActiveCodes = activeCodes;
             chart.$vigenciaOnToggle = options.onToggle || null;
             chart.update?.("none");
-            renderVigenciaChartLegend(chart);
-            updateVigenciaChartEmptyState(chart);
+            renderValidityChartLegend(chart);
+            updateValidityChartEmptyState(chart);
 
             canvas.ondblclick = event => {
                 if (typeof options.onRestore !== "function") return;
@@ -5221,7 +5205,7 @@ if (typeof arcgisRequire !== "function") {
         // Leyenda interactiva en HTML, ubicada DEBAJO del canvas (flujo normal),
         // por lo que es imposible que se monte sobre la torta. Replica el toggle
         // original: activar/desactivar categorías y sincronizar.
-        function renderVigenciaChartLegend(chart) {
+        function renderValidityChartLegend(chart) {
             if (!chart) return;
             const canvas = chart.canvas;
             const block = canvas?.closest(".vigencia-chart-block");
@@ -5273,32 +5257,32 @@ if (typeof arcgisRequire !== "function") {
                         set.add(code);
                     }
                     chart.$vigenciaActiveCodes = set;
-                    applyVigenciaChartItems(chart, items, set);
+                    applyValidityChartItems(chart, items, set);
                     if (typeof chart.$vigenciaOnToggle === "function") {
                         chart.$vigenciaOnToggle(code, set, chart);
                     }
-                    renderVigenciaChartLegend(chart);
+                    renderValidityChartLegend(chart);
                 });
 
                 legendEl.appendChild(row);
             });
         }
 
-        function syncVigenciaChartWithLegend(state = window.__legendState) {
+        function syncValidityChartWithLegend(state = window.__legendState) {
             if (
-                currentOrdenamientoTab !== "VIGENCIA" ||
+                currentLandUsePlanningTab !== "VIGENCIA" ||
                 !state?.activeCodes ||
-                !vigenciaTipoChartInstance?.data?.datasets?.[0]
+                !validityTypeChartInstance?.data?.datasets?.[0]
             ) {
                 return;
             }
 
-            vigenciaTipoChartInstance.$vigenciaActiveCodes = new Set(state.activeCodes);
-            applyVigenciaChartItems(vigenciaTipoChartInstance, vigenciaTipoItemsFull, state.activeCodes);
-            renderVigenciaChartLegend(vigenciaTipoChartInstance);
+            validityTypeChartInstance.$vigenciaActiveCodes = new Set(state.activeCodes);
+            applyValidityChartItems(validityTypeChartInstance, validityTypeItemsFull, state.activeCodes);
+            renderValidityChartLegend(validityTypeChartInstance);
         }
 
-        function syncVigenciaLegendDom(state = window.__legendState) {
+        function syncValidityLegendDom(state = window.__legendState) {
             if (!state?.activeCodes) return;
             document.querySelectorAll("#legendContent .legend-item[data-code]").forEach(row => {
                 const active = state.activeCodes.has(String(row.dataset.code || ""));
@@ -5308,28 +5292,28 @@ if (typeof arcgisRequire !== "function") {
             });
         }
 
-        function applyVigenciaSingleSelection(code) {
+        function applyValiditySingleSelection(code) {
             const safeCode = String(code ?? "").trim();
             const state = window.__legendState;
             if (!safeCode || !state?.activeCodes) return;
 
             state.activeCodes = new Set([safeCode]);
-            syncVigenciaLegendDom(state);
-            applyVigenciaLegendFilter(state);
-            syncVigenciaChartWithLegend(state);
+            syncValidityLegendDom(state);
+            applyValidityLegendFilter(state);
+            syncValidityChartWithLegend(state);
         }
 
-        function restoreVigenciaAllCategories() {
+        function restoreValidityAllCategories() {
             const state = window.__legendState;
-            if (!state?.isVigencia || !Array.isArray(state.allCodes)) return;
+            if (!state?.isValidity || !Array.isArray(state.allCodes)) return;
 
             state.activeCodes = new Set(state.allCodes.map(code => String(code)));
-            syncVigenciaLegendDom(state);
-            applyVigenciaLegendFilter(state);
-            syncVigenciaChartWithLegend(state);
+            syncValidityLegendDom(state);
+            applyValidityLegendFilter(state);
+            syncValidityChartWithLegend(state);
         }
 
-        function applyVigenciaLegendFilter(state = window.__legendState) {
+        function applyValidityLegendFilter(state = window.__legendState) {
             if (!state?.field) return;
 
             const activeCodes = state.activeCodes instanceof Set
@@ -5370,7 +5354,7 @@ if (typeof arcgisRequire !== "function") {
             }
         }
 
-        function actualizarLeyendaVigencia(titleText, items = [], layer = layerGlobal, config = ORDENAMIENTO_CONFIG.VIGENCIA, whereClause = "1=1") {
+        function updateValidityLegend(titleText, items = [], layer = layerGlobal, config = LAND_USE_PLANNING_CONFIG.VIGENCIA, whereClause = "1=1") {
             const title = document.getElementById("legendTitle");
             const content = document.getElementById("legendContent");
 
@@ -5388,8 +5372,8 @@ if (typeof arcgisRequire !== "function") {
                     visualLayer: window.activeVisualLayer,
                     mapServerLayerId: config.mapServerLayerId ?? 0,
                     baseWhere: whereClause,
-                    mapBaseWhere: getVigenciaMapDisplayWhere(config, whereClause),
-                    isVigencia: true
+                    mapBaseWhere: getValidityMapDisplayWhere(config, whereClause),
+                    isValidity: true
                 };
                 return;
             }
@@ -5408,8 +5392,8 @@ if (typeof arcgisRequire !== "function") {
                 visualLayer: window.activeVisualLayer,
                 mapServerLayerId: config.mapServerLayerId ?? 0,
                 baseWhere: whereClause,
-                mapBaseWhere: getVigenciaMapDisplayWhere(config, whereClause),
-                isVigencia: true
+                mapBaseWhere: getValidityMapDisplayWhere(config, whereClause),
+                isValidity: true
             };
 
             items.forEach(item => {
@@ -5455,106 +5439,106 @@ if (typeof arcgisRequire !== "function") {
                         state.activeCodes.add(code);
                     }
 
-                    syncVigenciaLegendDom(state);
-                    applyVigenciaLegendFilter(state);
-                    syncVigenciaChartWithLegend(state);
+                    syncValidityLegendDom(state);
+                    applyValidityLegendFilter(state);
+                    syncValidityChartWithLegend(state);
                 });
                 content.appendChild(row);
             });
         }
 
-        async function renderVigenciaCharts(layer, config, whereClause) {
+        async function renderValidityCharts(layer, config, whereClause) {
             try {
-                if (currentOrdenamientoTab !== "VIGENCIA" || layerGlobal !== layer || layer?.destroyed) return;
-                setOrdenamientoChartLoading();
-                const rendererPromise = ensureVigenciaRendererDict(config.url || layer.url);
+                if (currentLandUsePlanningTab !== "VIGENCIA" || layerGlobal !== layer || layer?.destroyed) return;
+                setLandUsePlanningChartLoading();
+                const rendererPromise = ensureValidityRendererDictionary(config.url || layer.url);
 
                 const typeField = config.typeField || "PotTipo";
                 const estadoField = config.statusField || "estado_instrumento";
                 // Mapa y leyenda conservan el contexto departamental; los gráficos usan
                 // la información específica del municipio seleccionado. Cuando hay
                 // municipio, la leyenda se arma con el "where" del departamento.
-                const mapLegendWhere = getVigenciaMapDisplayWhere(config, whereClause);
+                const mapLegendWhere = getValidityMapDisplayWhere(config, whereClause);
                 const needsSeparateLegend =
                     !!mapLegendWhere &&
                     String(mapLegendWhere).trim() !== String(whereClause || "").trim();
 
                 const [, chartRows, legendRows] = await Promise.all([
                     rendererPromise,
-                    fetchVigenciaRows(layer, config, whereClause, [typeField, estadoField]),
+                    fetchValidityRows(layer, config, whereClause, [typeField, estadoField]),
                     needsSeparateLegend
-                        ? fetchVigenciaRows(layer, config, mapLegendWhere, [typeField])
+                        ? fetchValidityRows(layer, config, mapLegendWhere, [typeField])
                         : Promise.resolve(null)
                 ]);
-                if (currentOrdenamientoTab !== "VIGENCIA" || layerGlobal !== layer || layer?.destroyed) return;
+                if (currentLandUsePlanningTab !== "VIGENCIA" || layerGlobal !== layer || layer?.destroyed) return;
 
-                const tipoRows = countVigenciaRowsByField(chartRows, typeField);
-                const estadoRows = countVigenciaRowsByField(chartRows, estadoField);
+                const tipoRows = countValidityRowsByField(chartRows, typeField);
+                const estadoRows = countValidityRowsByField(chartRows, estadoField);
                 const legendTipoRows = needsSeparateLegend
-                    ? countVigenciaRowsByField(legendRows || [], typeField)
+                    ? countValidityRowsByField(legendRows || [], typeField)
                     : null;
 
-                const items = buildVigenciaTipoItems(tipoRows, typeField);
-                const estadoItems = buildVigenciaCountItems(
+                const items = buildValidityTypeItems(tipoRows, typeField);
+                const estadoItems = buildValidityCountItems(
                     estadoRows,
                     estadoField,
-                    (code, index) => getVigenciaEstadoInfo(code, index)
+                    (code, index) => getValidityStatusInfo(code, index)
                 );
                 // Categorías de la leyenda del mapa (departamento completo).
                 const legendItems = needsSeparateLegend
-                    ? buildVigenciaTipoItems(legendTipoRows || [], typeField)
+                    ? buildValidityTypeItems(legendTipoRows || [], typeField)
                     : items;
 
                 if (!items.length && !estadoItems.length) {
-                    actualizarLeyendaVigencia("Vigencia", legendItems, layer, config, whereClause);
-                    setOrdenamientoChartNoData("No se encontraron instrumentos de ordenamiento territorial para la selección actual.");
+                    updateValidityLegend("Vigencia", legendItems, layer, config, whereClause);
+                    setLandUsePlanningChartNoData("No se encontraron instrumentos de ordenamiento territorial para la selección actual.");
                     return;
                 }
 
-                destroyOrdenamientoChartInstance();
+                destroyLandUsePlanningChartInstance();
                 const titleElement = document.getElementById("chartTitle");
-                if (currentOrdenamientoTab !== "VIGENCIA" || layerGlobal !== layer || layer?.destroyed) return;
+                if (currentLandUsePlanningTab !== "VIGENCIA" || layerGlobal !== layer || layer?.destroyed) return;
 
                 if (titleElement) {
-                    titleElement.textContent = buildOrdenamientoChartTitle("Distribución de instrumentos de ordenamiento territorial");
+                    titleElement.textContent = buildLandUsePlanningChartTitle("Distribución de instrumentos de ordenamiento territorial");
                 }
 
-                const chartTargets = ensureVigenciaChartsContainer();
+                const chartTargets = ensureValidityChartsContainer();
                 if (!chartTargets) {
-                    setOrdenamientoChartError("No fue posible preparar los gráficos de Vigencia.");
+                    setLandUsePlanningChartError("No fue posible preparar los gráficos de Vigencia.");
                     return;
                 }
 
-                vigenciaTipoItemsFull = items;
-                vigenciaEstadoItemsFull = estadoItems;
-                vigenciaTipoChartInstance = createVigenciaDoughnut(chartTargets.tipoCanvas, items, {
+                validityTypeItemsFull = items;
+                validityStatusItemsFull = estadoItems;
+                validityTypeChartInstance = createValidityDoughnut(chartTargets.tipoCanvas, items, {
                     activeCodes: new Set(items.map(item => String(item.code))),
                     onSelect(code) {
-                        applyVigenciaSingleSelection(code);
+                        applyValiditySingleSelection(code);
                     },
                     onRestore() {
-                        restoreVigenciaAllCategories();
+                        restoreValidityAllCategories();
                     },
                     onToggle(_code, activeSet) {
                         const state = window.__legendState;
-                        if (!state?.isVigencia) return;
+                        if (!state?.isValidity) return;
                         state.activeCodes = new Set(activeSet);
-                        syncVigenciaLegendDom(state);
-                        applyVigenciaLegendFilter(state);
+                        syncValidityLegendDom(state);
+                        applyValidityLegendFilter(state);
                     }
                 });
-                vigenciaEstadoChartInstance = createVigenciaDoughnut(chartTargets.estadoCanvas, estadoItems, {
+                validityStatusChartInstance = createValidityDoughnut(chartTargets.estadoCanvas, estadoItems, {
                     activeCodes: new Set(estadoItems.map(item => String(item.code)))
                 });
-                actualizarLeyendaVigencia("Vigencia", legendItems, layer, config, whereClause);
+                updateValidityLegend("Vigencia", legendItems, layer, config, whereClause);
             } catch (e) {
                 console.warn("No se pudo renderizar gráfico de Vigencia:", e);
-                actualizarLeyendaVigencia("Vigencia", [], layer, config, whereClause);
-                setOrdenamientoChartError("No fue posible cargar la distribución por tipo de instrumento.");
+                updateValidityLegend("Vigencia", [], layer, config, whereClause);
+                setLandUsePlanningChartError("No fue posible cargar la distribución por tipo de instrumento.");
             }
         }
 
-        async function fetchClasificacionRawStatsFallback({
+        async function fetchClassificationRawStatsFallback({
             layerUrl,
             where,
             typeField,
@@ -5567,7 +5551,7 @@ if (typeof arcgisRequire !== "function") {
 
             for (let page = 0; page < maxPages; page++) {
                 const resultOffset = page * pageSize;
-                markClasificacionPerf("stats-raw-fallback-page-start", cycleId, {
+                markClassificationPerformance("stats-raw-fallback-page-start", cycleId, {
                     where,
                     resultOffset
                 });
@@ -5590,7 +5574,7 @@ if (typeof arcgisRequire !== "function") {
                     }
                 }
 
-                markClasificacionPerf("stats-raw-fallback-page-finished", cycleId, {
+                markClassificationPerformance("stats-raw-fallback-page-finished", cycleId, {
                     where,
                     resultOffset,
                     rows: features.length,
@@ -5606,7 +5590,7 @@ if (typeof arcgisRequire !== "function") {
             }));
         }
 
-        async function fetchClasificacionSueloStats(layer, config, whereClause, cycleId = renderCycleId) {
+        async function fetchSoilClassificationStats(layer, config, whereClause, cycleId = renderCycleId) {
             const areaField = config.areaField || "CSArea";
             const typeField = config.typeField || "Tipo_Clasificacion_Suelo";
             const primaryLayerUrl = config.mapServerUrl && config.mapServerLayerId !== undefined
@@ -5621,9 +5605,9 @@ if (typeof arcgisRequire !== "function") {
                 areaField
             ].join("|");
 
-            if (clasificacionStatsCache.has(cacheKey)) {
-                markClasificacionPerf("stats-cache-hit", cycleId, { where });
-                return clasificacionStatsCache.get(cacheKey).map(row => ({ ...row }));
+            if (classificationStatsCache.has(cacheKey)) {
+                markClassificationPerformance("stats-cache-hit", cycleId, { where });
+                return classificationStatsCache.get(cacheKey).map(row => ({ ...row }));
             }
 
             const attempts = [{
@@ -5647,7 +5631,7 @@ if (typeof arcgisRequire !== "function") {
 
             for (const attempt of attempts) {
                 try {
-                    markClasificacionPerf("stats-query-start", cycleId, {
+                    markClassificationPerformance("stats-query-start", cycleId, {
                         where,
                         source: attempt.source
                     });
@@ -5659,19 +5643,19 @@ if (typeof arcgisRequire !== "function") {
                         outFieldName: "sum_area",
                         timeoutMs: attempt.timeoutMs
                     });
-                    markClasificacionPerf("stats-query-finished", cycleId, {
+                    markClassificationPerformance("stats-query-finished", cycleId, {
                         where,
                         rows: rows.length,
                         source: attempt.source
                     });
                     if (rows.length || attempt === attempts[attempts.length - 1]) break;
-                    markClasificacionPerf("stats-empty-retry", cycleId, {
+                    markClassificationPerformance("stats-empty-retry", cycleId, {
                         where,
                         source: attempt.source
                     });
                 } catch (e) {
                     lastError = e;
-                    markClasificacionPerf("stats-query-failed", cycleId, {
+                    markClassificationPerformance("stats-query-failed", cycleId, {
                         where,
                         source: attempt.source,
                         message: String(e?.message || e || "")
@@ -5681,20 +5665,20 @@ if (typeof arcgisRequire !== "function") {
 
             if (!rows.length && fallbackLayerUrl) {
                 try {
-                    markClasificacionPerf("stats-raw-fallback-start", cycleId, { where });
-                    rows = await fetchClasificacionRawStatsFallback({
+                    markClassificationPerformance("stats-raw-fallback-start", cycleId, { where });
+                    rows = await fetchClassificationRawStatsFallback({
                         layerUrl: fallbackLayerUrl,
                         where,
                         typeField,
                         areaField,
                         cycleId
                     });
-                    markClasificacionPerf("stats-raw-fallback-finished", cycleId, {
+                    markClassificationPerformance("stats-raw-fallback-finished", cycleId, {
                         where,
                         rows: rows.length
                     });
                 } catch (e) {
-                    markClasificacionPerf("stats-raw-fallback-failed", cycleId, {
+                    markClassificationPerformance("stats-raw-fallback-failed", cycleId, {
                         where,
                         message: String(e?.message || e || "")
                     });
@@ -5705,16 +5689,16 @@ if (typeof arcgisRequire !== "function") {
 
             if (!rows.length && lastError) throw lastError;
 
-            rememberClasificacionStats(cacheKey, rows);
+            rememberClassificationStats(cacheKey, rows);
             return rows.map(row => ({ ...row }));
         }
 
-        async function renderZonificacionRuralCharts(layer, config, whereClause) {
-            const seq = ++zonificacionRuralRenderSeq;
+        async function renderRuralZoningCharts(layer, config, whereClause) {
+            const seq = ++ruralZoningRenderSequence;
             const requestedView = currentRuralChartView;
             try {
                 if (
-                    currentOrdenamientoTab !== "ZONIFICACION_RURAL" ||
+                    currentLandUsePlanningTab !== "ZONIFICACION_RURAL" ||
                     layerGlobal !== layer ||
                     layer?.destroyed
                 ) {
@@ -5723,24 +5707,24 @@ if (typeof arcgisRequire !== "function") {
                 // Estado limpio en cada consulta: cancelar selección/resaltado temporal
                 // de consultas anteriores para que no queden residuos (Req. consultas
                 // departamentales/municipales sin mezclas ni geometrías previas).
-                if (zonificacionRuralSelectionTimer) {
-                    clearTimeout(zonificacionRuralSelectionTimer);
-                    zonificacionRuralSelectionTimer = null;
+                if (ruralZoningSelectionTimer) {
+                    clearTimeout(ruralZoningSelectionTimer);
+                    ruralZoningSelectionTimer = null;
                 }
                 clearHighlight();
-                zonificacionRuralCanvasChartState = null;
+                ruralZoningCanvasChartState = null;
                 document.querySelectorAll("#legendContent .legend-item.selected").forEach(row => {
                     row.classList.remove("selected");
                     row.style.background = "transparent";
                     row.style.outline = "none";
                 });
                 // Limpiar el estado de la consulta anterior para que una nueva
-                // consulta no reutilice items previos (evita textos/resúmenes nulos
+                // consulta no reutilice items previos (evita texts/resúmenes nulos
                 // o desfasados entre consultas).
                 window.__zr_categoria_items = [];
                 window.__zr_uso_items = [];
-                setOrdenamientoChartLoading();
-                actualizarLeyendaOrdenamientoRural(
+                setLandUsePlanningChartLoading();
+                updateRuralPlanningLegend(
                     requestedView === "CATEGORIA" ? "Categorías rurales" : "Uso principal rural",
                     [],
                     whereClause || layer.definitionExpression || "1=1"
@@ -5749,20 +5733,20 @@ if (typeof arcgisRequire !== "function") {
                 // "Categorías rurales", pero su carga no debe bloquear el render si
                 // el servicio falla: continuar con lo que haya disponible.
                 try {
-                    await ensureRuralCategoriaDict(config.url || layer.url);
+                    await ensureRuralCategoryDictionaryionary(config.url || layer.url);
                 } catch (dictErr) {
                     console.warn("Diccionario de categorías rurales no disponible:", dictErr);
                 }
                 if (
-                    seq !== zonificacionRuralRenderSeq ||
-                    currentOrdenamientoTab !== "ZONIFICACION_RURAL" ||
+                    seq !== ruralZoningRenderSequence ||
+                    currentLandUsePlanningTab !== "ZONIFICACION_RURAL" ||
                     currentRuralChartView !== requestedView ||
                     layerGlobal !== layer ||
                     layer?.destroyed
                 ) {
                     return;
                 }
-                applyZonificacionRuralPaletteRenderer(layer, config);
+                applyRuralZoningPaletteRenderer(layer, config);
 
                 const areaField = config.areaField || "UsoArea";
                 const areaFallbackField = config.areaFallbackField || "st_area(shape)";
@@ -5804,7 +5788,7 @@ if (typeof arcgisRequire !== "function") {
                 // departamento/municipio). Si no hay caché, consultar y guardar.
                 let catRows;
                 let useRows;
-                const cachedStats = zonificacionRuralStatsCache.get(statsCacheKey);
+                const cachedStats = ruralZoningStatsCache.get(statsCacheKey);
                 if (
                     cachedStats &&
                     hasPositiveArea(cachedStats.catRows) &&
@@ -5820,16 +5804,16 @@ if (typeof arcgisRequire !== "function") {
                     // Guardar solo respuestas válidas (evita cachear fallos/vacíos
                     // por timeouts del servicio, que sí deben poder reintentarse).
                     if ((catRows && catRows.length) || (useRows && useRows.length)) {
-                        if (zonificacionRuralStatsCache.size >= ZONIFICACION_RURAL_STATS_CACHE_LIMIT) {
-                            const oldestKey = zonificacionRuralStatsCache.keys().next().value;
-                            if (oldestKey !== undefined) zonificacionRuralStatsCache.delete(oldestKey);
+                        if (ruralZoningStatsCache.size >= RURAL_ZONING_STATS_CACHE_LIMIT) {
+                            const oldestKey = ruralZoningStatsCache.keys().next().value;
+                            if (oldestKey !== undefined) ruralZoningStatsCache.delete(oldestKey);
                         }
-                        zonificacionRuralStatsCache.set(statsCacheKey, { catRows, useRows });
+                        ruralZoningStatsCache.set(statsCacheKey, { catRows, useRows });
                     }
                 }
                 if (
-                    seq !== zonificacionRuralRenderSeq ||
-                    currentOrdenamientoTab !== "ZONIFICACION_RURAL" ||
+                    seq !== ruralZoningRenderSequence ||
+                    currentLandUsePlanningTab !== "ZONIFICACION_RURAL" ||
                     currentRuralChartView !== requestedView ||
                     layerGlobal !== layer ||
                     layer?.destroyed
@@ -5838,16 +5822,16 @@ if (typeof arcgisRequire !== "function") {
                 }
 
                 if (!catRows.length && !useRows.length) {
-                    actualizarLeyendaOrdenamientoRural(
+                    updateRuralPlanningLegend(
                         requestedView === "CATEGORIA" ? "Categorías rurales" : "Uso principal rural",
                         [],
                         whereClause
                     );
                     window.__zr_categoria_items = [];
                     window.__zr_uso_items = [];
-                    setOrdenamientoChartNoData();
-                    // No dejar la sección de textos nula: mostrar mensaje controlado.
-                    actualizarResumenOrdenamientoRural(layer, config, whereClause);
+                    setLandUsePlanningChartNoData();
+                    // No dejar la sección de texts nula: mostrar mensaje controlado.
+                    updateRuralPlanningSummary(layer, config, whereClause);
                     return;
                 }
 
@@ -5871,7 +5855,7 @@ if (typeof arcgisRequire !== "function") {
 
                 const catItems = Array.from(catMap.entries())
                     .map(([code, area]) => {
-                        return buildRuralCategoriaItem(
+                        return buildRuralCategoryItem(
                             code,
                             totalCat ? (area / totalCat) * 100 : 0,
                             layer,
@@ -5894,24 +5878,24 @@ if (typeof arcgisRequire !== "function") {
                 window.__zr_uso_items = useItems;
 
                 if (
-                    seq !== zonificacionRuralRenderSeq ||
-                    currentOrdenamientoTab !== "ZONIFICACION_RURAL" ||
+                    seq !== ruralZoningRenderSequence ||
+                    currentLandUsePlanningTab !== "ZONIFICACION_RURAL" ||
                     currentRuralChartView !== requestedView ||
                     layerGlobal !== layer ||
                     layer?.destroyed
                 ) {
                     return;
                 }
-                paintZonificacionRuralViewFromItems(layer, config, whereClause, catItems, useItems);
+                paintRuralZoningViewFromItems(layer, config, whereClause, catItems, useItems);
 
             } catch (e) {
                 if (
-                    seq !== zonificacionRuralRenderSeq ||
-                    currentOrdenamientoTab !== "ZONIFICACION_RURAL"
+                    seq !== ruralZoningRenderSequence ||
+                    currentLandUsePlanningTab !== "ZONIFICACION_RURAL"
                 ) {
                     return;
                 }
-                console.error("renderZonificacionRuralCharts error:", e);
+                console.error("renderRuralZoningCharts error:", e);
                 // Solo mostrar el estado de error si el gráfico NO llegó a construirse.
                 // Si ya existe un gráfico con datos, el error proviene de un paso
                 // posterior (no crítico) y no debemos destruir el gráfico válido.
@@ -5921,9 +5905,9 @@ if (typeof arcgisRequire !== "function") {
                     chartInstance.data.datasets[0]?.data?.length
                 );
                 if (!chartHasData) {
-                    // No dejar el módulo bloqueado ni la sección de textos nula tras un
+                    // No dejar el módulo bloqueado ni la sección de texts nula tras un
                     // error: dejar un estado controlado para permitir nuevas consultas.
-                    setOrdenamientoChartError("No fue posible cargar el gráfico de zonificación rural. Intente nuevamente.");
+                    setLandUsePlanningChartError("No fue posible cargar el gráfico de zonificación rural. Intente nuevamente.");
                     const div = document.getElementById("summaryDiv");
                     if (div) {
                         div.style.display = "";
@@ -5932,10 +5916,10 @@ if (typeof arcgisRequire !== "function") {
             }
         }
 
-        async function renderClasificacionSueloCharts(layer, config, whereClause, cycleId = renderCycleId) {
+        async function renderSoilClassificationCharts(layer, config, whereClause, cycleId = renderCycleId) {
             try {
-                if (currentOrdenamientoTab !== "CLASIFICACION_SUELO" || cycleId !== renderCycleId || layerGlobal !== layer || layer?.destroyed) return;
-                markClasificacionPerf("chart-render-start", cycleId);
+                if (currentLandUsePlanningTab !== "CLASIFICACION_SUELO" || cycleId !== renderCycleId || layerGlobal !== layer || layer?.destroyed) return;
+                markClassificationPerformance("chart-render-start", cycleId);
 
                 const areaField = config.areaField || "CSArea";
                 const typeField = config.typeField || "Tipo_Clasificacion_Suelo";
@@ -5943,13 +5927,13 @@ if (typeof arcgisRequire !== "function") {
                 const summaryDiv = document.getElementById("summaryDiv");
 
                 // Estado "Cargando gráfico..." persistente mientras el servicio responde.
-                const showClasificacionLoadingState = () => {
-                    setOrdenamientoChartLoading();
+                const showClassificationLoadingState = () => {
+                    setLandUsePlanningChartLoading();
                     if (summaryDiv) {
                         summaryDiv.style.display = "";
-                        summaryDiv.textContent = municipioActual
+                        summaryDiv.textContent = currentMunicipalityId
                             ? "Cargando información del municipio..."
-                            : (filtroNivel === "DEPTO"
+                            : (territoryLevel === "DEPTO"
                                 ? "Cargando resumen departamental..."
                                 : "Cargando información de la clasificación del suelo...");
                     }
@@ -5967,50 +5951,50 @@ if (typeof arcgisRequire !== "function") {
                 let gotData = false;
 
                 // Mostrar el estado de carga una sola vez al inicio.
-                showClasificacionLoadingState();
+                showClassificationLoadingState();
 
                 while (Date.now() - loadingStartedAt < maxLoadingMs) {
                     attempt++;
-                    if (currentOrdenamientoTab !== "CLASIFICACION_SUELO" || cycleId !== renderCycleId || layerGlobal !== layer || layer?.destroyed) return;
+                    if (currentLandUsePlanningTab !== "CLASIFICACION_SUELO" || cycleId !== renderCycleId || layerGlobal !== layer || layer?.destroyed) return;
                     try {
                         const result = await withTimeout(
-                            fetchClasificacionSueloStats(layer, config, whereClause, cycleId),
+                            fetchSoilClassificationStats(layer, config, whereClause, cycleId),
                             25000,
                             null
                         );
-                        if (currentOrdenamientoTab !== "CLASIFICACION_SUELO" || cycleId !== renderCycleId || layerGlobal !== layer || layer?.destroyed) return;
+                        if (currentLandUsePlanningTab !== "CLASIFICACION_SUELO" || cycleId !== renderCycleId || layerGlobal !== layer || layer?.destroyed) return;
                         if (result === null) throw new Error("timeout-clasificacion-stats");
                         rows = result;
                         gotData = true;
                         break;
                     } catch (e) {
                         lastFetchError = e;
-                        markClasificacionPerf("clasificacion-fetch-failed", cycleId, {
+                        markClassificationPerformance("clasificacion-fetch-failed", cycleId, {
                             attempt,
                             elapsedMs: Date.now() - loadingStartedAt,
                             message: String(e?.message || e || "")
                         });
-                        if (currentOrdenamientoTab !== "CLASIFICACION_SUELO" || cycleId !== renderCycleId || layerGlobal !== layer || layer?.destroyed) return;
+                        if (currentLandUsePlanningTab !== "CLASIFICACION_SUELO" || cycleId !== renderCycleId || layerGlobal !== layer || layer?.destroyed) return;
                         const elapsed = Date.now() - loadingStartedAt;
                         if (elapsed >= maxLoadingMs) break;
                         // Reintentar la CONSULTA tras una breve pausa, sin tocar el gráfico.
                         const waitMs = Math.min(2000, Math.max(0, maxLoadingMs - elapsed));
                         await new Promise(resolve => setTimeout(resolve, waitMs));
-                        if (currentOrdenamientoTab !== "CLASIFICACION_SUELO" || cycleId !== renderCycleId || layerGlobal !== layer || layer?.destroyed) return;
+                        if (currentLandUsePlanningTab !== "CLASIFICACION_SUELO" || cycleId !== renderCycleId || layerGlobal !== layer || layer?.destroyed) return;
                     }
                 }
 
-                if (currentOrdenamientoTab !== "CLASIFICACION_SUELO" || cycleId !== renderCycleId || layerGlobal !== layer || layer?.destroyed) return;
+                if (currentLandUsePlanningTab !== "CLASIFICACION_SUELO" || cycleId !== renderCycleId || layerGlobal !== layer || layer?.destroyed) return;
 
                 if (!gotData) {
                     console.error(
                         "Clasificación del suelo: la consulta de datos no respondió a tiempo.",
                         lastFetchError
                     );
-                    markClasificacionPerf("clasificacion-fetch-exhausted", cycleId, {
+                    markClassificationPerformance("clasificacion-fetch-exhausted", cycleId, {
                         message: String(lastFetchError?.message || lastFetchError || "")
                     });
-                    setOrdenamientoChartError(
+                    setLandUsePlanningChartError(
                         "El servicio de Clasificación del suelo está tardando más de lo normal. La capa se muestra en el mapa; vuelva a intentarlo."
                     );
                     return;
@@ -6020,8 +6004,8 @@ if (typeof arcgisRequire !== "function") {
 
                 if (!features.length) {
                     // Sin elementos en el mapa para esta selección: la leyenda queda vacía.
-                    actualizarLeyendaClasificacionSuelo("Clasificación del suelo", []);
-                    setOrdenamientoChartNoData();
+                    updateSoilClassificationLegend("Clasificación del suelo", []);
+                    setLandUsePlanningChartNoData();
                     return;
                 }
 
@@ -6050,7 +6034,7 @@ if (typeof arcgisRequire !== "function") {
                     .map(([code, area]) => {
                         const safeCode = String(code).trim();
                         const domainLabel = getFieldDomainLabel(layer, typeField, safeCode);
-                        const paletteInfo = CLASIFICACION_SUELO_PALETTE[safeCode] || {};
+                        const paletteInfo = SOIL_CLASSIFICATION_PALETTE[safeCode] || {};
 
                         return {
                             code: safeCode,
@@ -6070,10 +6054,10 @@ if (typeof arcgisRequire !== "function") {
                 const values = items.map(x => Number(x.value.toFixed(2)));
                 const colors = items.map(x => String(x.color));
 
-                if (currentOrdenamientoTab !== "CLASIFICACION_SUELO" || cycleId !== renderCycleId || layerGlobal !== layer || layer?.destroyed) return;
+                if (currentLandUsePlanningTab !== "CLASIFICACION_SUELO" || cycleId !== renderCycleId || layerGlobal !== layer || layer?.destroyed) return;
 
                 if (titleElement) {
-                    titleElement.textContent = buildOrdenamientoChartTitle("Distribución de la clasificación del suelo");
+                    titleElement.textContent = buildLandUsePlanningChartTitle("Distribución de la clasificación del suelo");
                 }
 
                 const csDataset = [{
@@ -6085,10 +6069,10 @@ if (typeof arcgisRequire !== "function") {
                     codes: items.map(x => String(x.code))
                 }];
 
-                crearGrafica(labels, values, colors, "doughnut", false, csDataset);
-                markClasificacionPerf("chart-rendered", cycleId, { items: items.length });
+                createChart(labels, values, colors, "doughnut", false, csDataset);
+                markClassificationPerformance("chart-rendered", cycleId, { items: items.length });
 
-                // El clic en segmentos del gráfico se maneja dentro de crearGrafica()
+                // El clic en segmentos del gráfico se maneja dentro de createChart()
                 // (config.options.onClick), que es la forma fiable en Chart.js 4.
 
                 // Doble clic fuera de un segmento del gráfico -> restaurar todas las
@@ -6098,7 +6082,7 @@ if (typeof arcgisRequire !== "function") {
                     csChartCanvas.ondblclick = (event) => {
                         if (
                             currentMainModule !== "ORDENAMIENTO" ||
-                            currentOrdenamientoTab !== "CLASIFICACION_SUELO"
+                            currentLandUsePlanningTab !== "CLASIFICACION_SUELO"
                         ) {
                             return;
                         }
@@ -6106,26 +6090,26 @@ if (typeof arcgisRequire !== "function") {
                             ? chartInstance.getElementsAtEventForMode(event, "nearest", { intersect: true }, true)
                             : [];
                         if (hit.length) return;
-                        restaurarClasificacionLegendCompleto();
+                        restoreCompleteClassificationLegend();
                     };
                 }
 
                 // La leyenda y el resumen son pasos NO críticos: si fallan, NO deben
                 // destruir ni reconstruir el gráfico ya dibujado.
                 try {
-                    actualizarLeyendaClasificacionSuelo("Clasificación del suelo", items);
-                    syncClasificacionChartWithLegend();
-                    markClasificacionPerf("legend-ready", cycleId, { items: items.length });
+                    updateSoilClassificationLegend("Clasificación del suelo", items);
+                    syncClassificationChartWithLegend();
+                    markClassificationPerformance("legend-ready", cycleId, { items: items.length });
                 } catch (legendErr) {
                     console.warn("Clasificación del suelo: la leyenda no pudo actualizarse (el gráfico sigue visible).", legendErr);
                 }
                 if (cycleId !== renderCycleId || layerGlobal !== layer || layer?.destroyed) return;
 
                 try {
-                    await actualizarResumenClasificacionSuelo(config, null, cycleId);
+                    await updateSoilClassificationSummary(config, null, cycleId);
                     if (cycleId !== renderCycleId || layerGlobal !== layer || layer?.destroyed) return;
                 } catch (_) {
-                    markClasificacionPerf("summary-timeout", cycleId);
+                    markClassificationPerformance("summary-timeout", cycleId);
                     if (summaryDiv) {
                         summaryDiv.textContent = "La capa y el grafico de Clasificacion del suelo se muestran en el mapa. El resumen normativo tardo demasiado en responder.";
                     }
@@ -6133,36 +6117,36 @@ if (typeof arcgisRequire !== "function") {
 
             } catch (e) {
                 if (cycleId !== renderCycleId || layerGlobal !== layer || layer?.destroyed) return;
-                markClasificacionPerf("chart-error", cycleId, {
+                markClassificationPerformance("chart-error", cycleId, {
                     message: String(e?.message || e || "")
                 });
                 console.error("Clasificación del suelo: error inesperado al renderizar el gráfico.", e);
-                setOrdenamientoChartError(
+                setLandUsePlanningChartError(
                     "El servicio de Clasificación del suelo está tardando más de lo normal. La capa se muestra en el mapa; vuelva a intentarlo."
                 );
             }
         }
 
-        async function renderAreasActividadCharts(layer, config, whereClause, cargarNormativa = true, options = {}) {
+        async function renderActivityAreasCharts(layer, config, whereClause, cargarNormativa = true, options = {}) {
             try {
                 if (options.showLoading !== false) {
-                    setOrdenamientoChartLoading();
+                    setLandUsePlanningChartLoading();
                 }
                 const areaField = config.areaField || "AActArea";
                 const useField = config.useField || "Uso_Principal";
                 const filterField = config.filterField || "Mp_Codigo";
                 let baseWhere = "1=1";
 
-                if (municipioActual) {
-                    baseWhere = `${filterField} = '${String(municipioActual).replace(/'/g, "''")}'`;
-                } else if (filtroNivel === "DEPTO" && deptoActual) {
+                if (currentMunicipalityId) {
+                    baseWhere = `${filterField} = '${String(currentMunicipalityId).replace(/'/g, "''")}'`;
+                } else if (territoryLevel === "DEPTO" && currentDepartmentId) {
                     if (config.deptoFilterField) {
-                        baseWhere = `${config.deptoFilterField} = '${String(deptoActual).replace(/'/g, "''")}'`;
+                        baseWhere = `${config.deptoFilterField} = '${String(currentDepartmentId).replace(/'/g, "''")}'`;
                     } else if (
                         String(filterField).toLowerCase() === "mpcodigo" ||
                         String(filterField).toLowerCase() === "mp_codigo"
                     ) {
-                        baseWhere = sqlStartsWith(filterField, deptoActual);
+                        baseWhere = sqlStartsWith(filterField, currentDepartmentId);
                     }
                 }
 
@@ -6180,7 +6164,7 @@ if (typeof arcgisRequire !== "function") {
                 if (!features.length) {
                     const fullItems = window.__aa_all_items?.length ? window.__aa_all_items : [];
                     const allCategoriesDisabled =
-                        currentOrdenamientoTab === "AREAS_ACTIVIDAD" &&
+                        currentLandUsePlanningTab === "AREAS_ACTIVIDAD" &&
                         whereClause === "1=0" &&
                         fullItems.length > 0 &&
                         window.__aa_active_filters instanceof Set &&
@@ -6188,17 +6172,17 @@ if (typeof arcgisRequire !== "function") {
 
                     if (allCategoriesDisabled) {
                         window.__aa_items = [];
-                        renderAreasActividadCanvasChart(fullItems, config);
-                        actualizarLeyendaAreasActividad("Áreas de actividad", fullItems);
-                        actualizarResumenAreasActividadSinNormativa();
+                        renderActivityAreasCanvasChart(fullItems, config);
+                        updateActivityAreasLegend("Áreas de actividad", fullItems);
+                        updateActivityAreasSummaryWithoutRegulation();
                         return;
                     }
 
-                    actualizarLeyendaAreasActividad(
+                    updateActivityAreasLegend(
                         "Áreas de actividad",
                         fullItems
                     );
-                    setOrdenamientoChartNoData();
+                    setLandUsePlanningChartNoData();
                     return;
                 }
 
@@ -6227,7 +6211,7 @@ if (typeof arcgisRequire !== "function") {
                 const items = Array.from(useMap.entries())
                     .map(([code, area]) => {
                         const safeCode = String(code).trim();
-                        const areaItem = buildAreaActividadItem(
+                        const areaItem = buildActivityAreaItem(
                             safeCode,
                             totalArea ? (Number(area) / totalArea) * 100 : 0
                         );
@@ -6266,7 +6250,7 @@ if (typeof arcgisRequire !== "function") {
 
                 const titleElement = document.getElementById("chartTitle");
                 if (titleElement) {
-                    titleElement.textContent = buildOrdenamientoChartTitle("Distribución de áreas de actividad");
+                    titleElement.textContent = buildLandUsePlanningChartTitle("Distribución de áreas de actividad");
                 }
 
                 const aaDataset = [{
@@ -6275,15 +6259,15 @@ if (typeof arcgisRequire !== "function") {
                     backgroundColor: context => String(items[context.dataIndex]?.color || "#BDBDBD"),
                     borderColor: context => {
                         const item = items[context.dataIndex];
-                        const code = item ? normalizeAreaActividadCode(item.code, layerGlobal) : null;
-                        return code && code === areasActividadChartHighlightedCode
+                        const code = item ? normalizeActivityAreaCode(item.code, layerGlobal) : null;
+                        return code && code === activityAreasChartHighlightedCode
                             ? "#5B2EFF"
                             : String(item?.borderColor || "rgba(0,0,0,0)");
                     },
                     borderWidth: context => {
                         const item = items[context.dataIndex];
-                        const code = item ? normalizeAreaActividadCode(item.code, layerGlobal) : null;
-                        return code && code === areasActividadChartHighlightedCode
+                        const code = item ? normalizeActivityAreaCode(item.code, layerGlobal) : null;
+                        return code && code === activityAreasChartHighlightedCode
                             ? 4
                             : Number(item?.borderWidth || 1);
                     },
@@ -6292,10 +6276,10 @@ if (typeof arcgisRequire !== "function") {
                     offset: 0
                 }];
 
-                renderAreasActividadCanvasChart(items, config);
-                areasActividadChartCodes = items.map(x => String(x.code));
+                renderActivityAreasCanvasChart(items, config);
+                activityAreasChartCodes = items.map(x => String(x.code));
                 if (chartInstance) {
-                    chartInstance.$areasActividadCodes = areasActividadChartCodes;
+                    chartInstance.$areasActividadCodes = activityAreasChartCodes;
                     syncStateFromGlobals();
                 }
 
@@ -6309,10 +6293,10 @@ if (typeof arcgisRequire !== "function") {
                         if (!selected) return;
 
                         window.__aa_active_filters = new Set([String(selected.code)]);
-                        seleccionarCategoriaAreasActividad(null, { highlightChart: false });
-                        await aplicarFiltroAreasActividadDesdeLeyenda();
-                        const normativaCode = getNormativaUseCodeAreasActividad(selected);
-                        await actualizarResumenAreasActividad(config, normativaCode);
+                        selectActivityAreaCategory(null, { highlightChart: false });
+                        await applyActivityAreasFilterFromLegend();
+                        const normativaCode = getRegulationUseCodeActivityAreas(selected);
+                        await updateActivityAreasSummary(config, normativaCode);
                     };
 
                     const chartCanvas = document.getElementById("chart");
@@ -6328,37 +6312,37 @@ if (typeof arcgisRequire !== "function") {
                                 : [];
 
                             if (hitItems.length) return;
-                            await restaurarAreasActividadLegend();
+                            await restoreActivityAreasLegend();
                         };
                     }
                 }
 
-                actualizarLeyendaAreasActividad(
+                updateActivityAreasLegend(
                     "Áreas de actividad",
                     window.__aa_all_items?.length ? window.__aa_all_items : items
                 );
 
                 if (window.__aa_selected_code) {
-                    seleccionarCategoriaAreasActividad(window.__aa_selected_code);
+                    selectActivityAreaCategory(window.__aa_selected_code);
                 }
 
                 if (cargarNormativa) {
-                    await actualizarResumenAreasActividad(config, null);
+                    await updateActivityAreasSummary(config, null);
                 } else {
-                    actualizarResumenAreasActividadSinNormativa();
+                    updateActivityAreasSummaryWithoutRegulation();
                 }
 
             } catch (e) {
-                console.error("renderAreasActividadCharts error:", e);
+                console.error("renderActivityAreasCharts error:", e);
             }
         }
 
-        function actualizarResumenOrdenamientoRural(layer, config, whereClause) {
+        function updateRuralPlanningSummary(layer, config, whereClause) {
             const div = document.getElementById("summaryDiv");
             if (!div) return;
 
-            // Garantizar que la sección de textos descriptivos sea visible: los
-            // estados de carga (setOrdenamientoChartLoading) dejan el contenedor en
+            // Garantizar que la sección de texts descriptivos sea visible: los
+            // estados de carga (setLandUsePlanningChartLoading) dejan el contenedor en
             // display:none, por lo que el texto quedaba escrito pero oculto (nulo).
             div.style.display = "";
 
@@ -6366,7 +6350,7 @@ if (typeof arcgisRequire !== "function") {
                 const useItems = Array.isArray(window.__zr_uso_items) ? window.__zr_uso_items : [];
                 const catItems = Array.isArray(window.__zr_categoria_items) ? window.__zr_categoria_items : [];
 
-                if (!municipioActual) {
+                if (!currentMunicipalityId) {
                     div.innerHTML = `
                 <p class="oot-js-ordenamiento-main-2">
                     Visualización nacional de la zonificación del suelo rural.
@@ -6383,14 +6367,14 @@ if (typeof arcgisRequire !== "function") {
                 // vacía ni nula: mostrar un mensaje controlado.
                 if (!catItems.length && !useItems.length) {
                     div.innerHTML = `
-                <p class="oot-js-ordenamiento-main-3"><b>Municipio:</b> ${escapeHtml(getMunicipioDisplayName(municipioActual, diccionarioMunicipios))}</p>
+                <p class="oot-js-ordenamiento-main-3"><b>Municipio:</b> ${escapeHtml(getMunicipalityDisplayName(currentMunicipalityId, municipalityNames))}</p>
                 <p class="oot-js-ordenamiento-main-2">No existe texto descriptivo para la categoría seleccionada en este municipio.</p>
             `;
                     return;
                 }
 
                 div.innerHTML = `
-            <p class="oot-js-ordenamiento-main-3"><b>Municipio:</b> ${escapeHtml(getMunicipioDisplayName(municipioActual, diccionarioMunicipios))}</p>
+            <p class="oot-js-ordenamiento-main-3"><b>Municipio:</b> ${escapeHtml(getMunicipalityDisplayName(currentMunicipalityId, municipalityNames))}</p>
             <p class="oot-js-ordenamiento-main-3"><b>Categorías rurales identificadas:</b> ${catItems.length}</p>
             <p class="oot-js-ordenamiento-main-3"><b>Categoría predominante:</b> ${topCat ? escapeHtml(topCat.label) : "Sin información"}</p>
             <p class="oot-js-ordenamiento-main-2"><b>Uso principal predominante:</b> ${topUso ? escapeHtml(topUso.label) : "Sin información"}</p>
@@ -6404,15 +6388,15 @@ if (typeof arcgisRequire !== "function") {
             }
         }
 
-        async function actualizarResumenClasificacionSuelo(config, selectedTypeCode = null, cycleId = renderCycleId) {
+        async function updateSoilClassificationSummary(config, selectedTypeCode = null, cycleId = renderCycleId) {
             const div = document.getElementById("summaryDiv");
             if (!div) return;
 
-            const requestId = ++clasificacionSummaryRequestId;
-            const municipioResumen = municipioActual;
+            const requestId = ++classificationSummaryRequestId;
+            const municipalitySummary = currentMunicipalityId;
             const items = window.__cs_items || [];
 
-            if (!municipioResumen) {
+            if (!municipalitySummary) {
                 div.innerHTML = `
                 <p class="oot-js-ordenamiento-main-2">
                     Visualización nacional de la clasificación del suelo.
@@ -6426,10 +6410,10 @@ if (typeof arcgisRequire !== "function") {
             let normHtml = "";
 
             try {
-                if (cycleId !== renderCycleId || requestId !== clasificacionSummaryRequestId) return;
+                if (cycleId !== renderCycleId || requestId !== classificationSummaryRequestId) return;
 
-                if (!clasificacionNormativaLayer || clasificacionNormativaLayer.destroyed) {
-                    clasificacionNormativaLayer = new FeatureLayer({
+                if (!classificationRegulationLayer || classificationRegulationLayer.destroyed) {
+                    classificationRegulationLayer = new FeatureLayer({
                         url: config.normativaTableUrl,
                         outFields: [
                             config.normativaSpecificTextField,
@@ -6438,8 +6422,8 @@ if (typeof arcgisRequire !== "function") {
                     });
                 }
 
-                const q = clasificacionNormativaLayer.createQuery();
-                const baseWhere = sqlEquals(config.normativaJoinField, municipioResumen);
+                const q = classificationRegulationLayer.createQuery();
+                const baseWhere = sqlEquals(config.normativaJoinField, municipalitySummary);
                 const selectedTypeValue = String(selectedTypeCode ?? "").trim();
                 const selectedTypeWhere = selectedTypeValue && SQL_NUMBER_RE.test(selectedTypeValue)
                     ? sqlEqualsNumber(config.normativaTypeField, selectedTypeValue)
@@ -6453,34 +6437,34 @@ if (typeof arcgisRequire !== "function") {
                     config.normativaTypeField
                 ];
 
-                const res = await withTimeout(clasificacionNormativaLayer.queryFeatures(q), 5500, null);
+                const res = await withTimeout(classificationRegulationLayer.queryFeatures(q), 5500, null);
                 if (
                     cycleId !== renderCycleId ||
-                    requestId !== clasificacionSummaryRequestId ||
-                    municipioActual !== municipioResumen
+                    requestId !== classificationSummaryRequestId ||
+                    currentMunicipalityId !== municipalitySummary
                 ) {
                     return;
                 }
 
                 if (!res) {
-                    markClasificacionPerf("summary-norm-timeout", cycleId, { municipio: municipioResumen });
+                    markClassificationPerformance("summary-norm-timeout", cycleId, { municipio: municipalitySummary });
                 }
 
-                const textos = (res?.features || [])
+                const texts = (res?.features || [])
                     .map(f => f.attributes?.[config.normativaSpecificTextField])
                     .filter(Boolean);
 
-                if (textos.length) {
+                if (texts.length) {
                     const selectedItem = selectedTypeValue
                         ? items.find(item => String(item.code) === selectedTypeValue)
                         : null;
-                    const selectedLabel = selectedItem?.label || CLASIFICACION_SUELO_PALETTE[selectedTypeValue]?.label || selectedTypeValue;
+                    const selectedLabel = selectedItem?.label || SOIL_CLASSIFICATION_PALETTE[selectedTypeValue]?.label || selectedTypeValue;
                     const title = selectedTypeValue
                         ? `Texto normativo especifico (${escapeHtml(selectedLabel)}):`
                         : "Texto normativo:";
                     normHtml = `
                     <p class="oot-js-ordenamiento-main-4"><b>${title}</b></p>
-                    <div>${[...new Set(textos)].map(t => `<p class="oot-js-ordenamiento-main-5">${escapeHtml(t).replace(/\n/g, "<br>")}</p>`).join("")}</div>
+                    <div>${[...new Set(texts)].map(t => `<p class="oot-js-ordenamiento-main-5">${escapeHtml(t).replace(/\n/g, "<br>")}</p>`).join("")}</div>
                 `;
                 } else if (selectedTypeValue) {
                     normHtml = `
@@ -6490,24 +6474,24 @@ if (typeof arcgisRequire !== "function") {
             } catch (e) {
                 if (
                     cycleId !== renderCycleId ||
-                    requestId !== clasificacionSummaryRequestId ||
-                    municipioActual !== municipioResumen
+                    requestId !== classificationSummaryRequestId ||
+                    currentMunicipalityId !== municipalitySummary
                 ) {
                     return;
                 }
-                recordClasificacionAsyncIssue("summary-norm-error", e, cycleId, { municipio: municipioResumen });
+                recordClassificationAsyncIssue("summary-norm-error", e, cycleId, { municipio: municipalitySummary });
             }
 
             if (
                 cycleId !== renderCycleId ||
-                requestId !== clasificacionSummaryRequestId ||
-                municipioActual !== municipioResumen
+                requestId !== classificationSummaryRequestId ||
+                currentMunicipalityId !== municipalitySummary
             ) {
                 return;
             }
 
             div.innerHTML = `
-            <p class="oot-js-ordenamiento-main-3"><b>Municipio:</b> ${escapeHtml(getMunicipioDisplayName(municipioResumen, diccionarioMunicipios))}</p>
+            <p class="oot-js-ordenamiento-main-3"><b>Municipio:</b> ${escapeHtml(getMunicipalityDisplayName(municipalitySummary, municipalityNames))}</p>
             <p class="oot-js-ordenamiento-main-3"><b>Categorías identificadas:</b> ${items.length}</p>
             <p class="oot-js-ordenamiento-main-3"><b>Tipo predominante:</b> ${topItem ? escapeHtml(topItem.label) : "Sin información"}</p>
             ${normHtml}
@@ -6547,7 +6531,7 @@ if (typeof arcgisRequire !== "function") {
             });
         }
 
-        const AREAS_ACTIVIDAD_NORMATIVA_CODE_BY_LABEL = {
+        const ACTIVITY_AREAS_REGULATION_CODE_BY_LABEL = {
             "Agricola": 1,
             "Agrícola": 1,
             "Pecuario": 2,
@@ -6570,24 +6554,24 @@ if (typeof arcgisRequire !== "function") {
             "Centro Poblado": 12,
             "Otro": 20
         };
-        function getNormativaUseCodeAreasActividad(itemOrCode) {
+        function getRegulationUseCodeActivityAreas(itemOrCode) {
             if (!itemOrCode) return null;
 
             if (typeof itemOrCode === "object") {
                 const label = String(itemOrCode.label || "").trim();
-                return AREAS_ACTIVIDAD_NORMATIVA_CODE_BY_LABEL[label] ?? Number(itemOrCode.code);
+                return ACTIVITY_AREAS_REGULATION_CODE_BY_LABEL[label] ?? Number(itemOrCode.code);
             }
 
             return Number(itemOrCode);
         }
 
-        async function actualizarResumenAreasActividad(config, selectedUseCode = null) {
+        async function updateActivityAreasSummary(config, selectedUseCode = null) {
             const div = document.getElementById("summaryDiv");
             if (!div) return;
 
             const items = window.__aa_items || [];
 
-            if (!municipioActual) {
+            if (!currentMunicipalityId) {
                 div.innerHTML = `
                 <p class="oot-js-ordenamiento-main-2">
                     Visualización nacional de las áreas de actividad.
@@ -6612,7 +6596,7 @@ if (typeof arcgisRequire !== "function") {
         `;
 
             try {
-                const where = `${config.normativaJoinField} = '${String(municipioActual).replace(/'/g, "''")}'`;
+                const where = `${config.normativaJoinField} = '${String(currentMunicipalityId).replace(/'/g, "''")}'`;
 
                 const json = await queryArcGISJsonp(config.normativaTableUrl, {
                     where,
@@ -6646,12 +6630,12 @@ if (typeof arcgisRequire !== "function") {
                         );
 
                         const usoLabel = item?.label || `Uso ${usoCode}`;
-                        const texto = a[config.normativaSpecificTextField] || "";
+                        const text = a[config.normativaSpecificTextField] || "";
 
                         return `
                         <div class="oot-js-ordenamiento-main-7">
                             <p class="oot-js-ordenamiento-main-8"><b>${esc(usoLabel)}</b></p>
-                            <p class="oot-js-ordenamiento-main-2">${esc(texto)}</p>
+                            <p class="oot-js-ordenamiento-main-2">${esc(text)}</p>
                         </div>
                     `;
                     }).join("");
@@ -6713,11 +6697,11 @@ if (typeof arcgisRequire !== "function") {
             });
         }
 
-        function actualizarResumenAreasActividadSinNormativa() {
+        function updateActivityAreasSummaryWithoutRegulation() {
             const div = document.getElementById("summaryDiv");
             if (!div) return;
 
-            if (!municipioActual) {
+            if (!currentMunicipalityId) {
                 div.innerHTML = `
                 <p class="oot-js-ordenamiento-main-2">
                     Seleccione un municipio para ver la descripción normativa.
@@ -6726,10 +6710,10 @@ if (typeof arcgisRequire !== "function") {
                 return;
             }
 
-            const config = ORDENAMIENTO_CONFIG?.AREAS_ACTIVIDAD;
+            const config = LAND_USE_PLANNING_CONFIG?.AREAS_ACTIVIDAD;
 
             if (config) {
-                actualizarResumenAreasActividad(config, null);
+                updateActivityAreasSummary(config, null);
             } else {
                 div.innerHTML = `
                 <p class="oot-js-ordenamiento-main-2">
@@ -6739,7 +6723,7 @@ if (typeof arcgisRequire !== "function") {
             }
         }
 
-        function updateOrdenamientoCanvasEmptyMessage(canvas, isEmpty, options = {}) {
+        function updateLandUsePlanningCanvasEmptyMessage(canvas, isEmpty, options = {}) {
             const parent = canvas?.parentElement;
             if (!parent) return;
 
@@ -6777,14 +6761,14 @@ if (typeof arcgisRequire !== "function") {
             }
         }
 
-        function updateAreasActividadChartEmptyMessage(canvas, isEmpty, bounds = {}) {
-            updateOrdenamientoCanvasEmptyMessage(canvas, isEmpty, {
+        function updateActivityAreasChartEmptyMessage(canvas, isEmpty, bounds = {}) {
+            updateLandUsePlanningCanvasEmptyMessage(canvas, isEmpty, {
                 attr: "data-aa-empty-msg",
                 ...bounds
             });
         }
 
-        function drawAreasActividadSliceLabels(ctx, options = {}) {
+        function drawActivityAreasSliceLabels(ctx, options = {}) {
             const slices = Array.isArray(options.slices) ? options.slices : [];
             const total = Number(options.total) || 0;
             if (!slices.length || total <= 0) return;
@@ -6850,7 +6834,7 @@ if (typeof arcgisRequire !== "function") {
                 if (!Number.isFinite(value) || value <= 0) return;
 
                 const percent = (value / total) * 100;
-                const text = formatOrdenamientoPiePercentLabel(percent);
+                const text = formatLandUsePlanningPiePercentLabel(percent);
                 if (!text) return;
 
                 const angleSize = Math.abs(Number(slice.end) - Number(slice.start));
@@ -6963,12 +6947,12 @@ if (typeof arcgisRequire !== "function") {
             ctx.restore();
         }
 
-        function updateZonificacionRuralChartEmptyMessage(chart, isEmpty) {
+        function updateRuralZoningChartEmptyMessage(chart, isEmpty) {
             const canvas = chart?.canvas || document.getElementById("chart");
             if (!canvas) return;
 
             const rect = canvas.getBoundingClientRect?.() || {};
-            updateOrdenamientoCanvasEmptyMessage(canvas, isEmpty, {
+            updateLandUsePlanningCanvasEmptyMessage(canvas, isEmpty, {
                 attr: "data-zr-empty-msg",
                 width: rect.width || canvas.clientWidth || 320,
                 height: rect.height || canvas.clientHeight || 260,
@@ -6976,11 +6960,11 @@ if (typeof arcgisRequire !== "function") {
             });
         }
 
-        function renderAreasActividadCanvasChart(items, config) {
+        function renderActivityAreasCanvasChart(items, config) {
             const canvas = document.getElementById("chart");
             if (!canvas?.getContext) return;
 
-            showOrdenamientoChartCanvas();
+            showLandUsePlanningChartCanvas();
             document.getElementById("chartHighlightOverlay")?.remove();
             canvas.classList.remove("chart-canvas--pie-like");
             canvas.classList.add("chart-canvas--ordenamiento-adaptive");
@@ -7000,7 +6984,7 @@ if (typeof arcgisRequire !== "function") {
                 : new Set(items.map(item => String(item.code)));
             const chartItems = items.filter(item => activeFilters.has(String(item.code)));
             const legendItems = window.__aa_all_items?.length ? window.__aa_all_items : items;
-            const adaptiveLayout = getOrdenamientoAdaptiveChartLayout(legendItems.length);
+            const adaptiveLayout = getLandUsePlanningAdaptiveChartLayout(legendItems.length);
             const legendColumns = cssWidth >= 560 ? 3 : cssWidth >= 380 ? 2 : 1;
             const legendRowHeight = 20;
             const legendRows = Math.max(1, Math.ceil(Math.max(legendItems.length, 1) / legendColumns));
@@ -7049,8 +7033,8 @@ if (typeof arcgisRequire !== "function") {
                 ctx.strokeStyle = String(item.borderColor || "rgba(0,0,0,0)");
                 ctx.stroke();
 
-                const normalizedCode = normalizeAreaActividadCode(item.code, layerGlobal);
-                if (normalizedCode && normalizedCode === areasActividadChartHighlightedCode) {
+                const normalizedCode = normalizeActivityAreaCode(item.code, layerGlobal);
+                if (normalizedCode && normalizedCode === activityAreasChartHighlightedCode) {
                     ctx.save();
                     ctx.beginPath();
                     ctx.arc(cx, cy, outerRadius - 3, start, end);
@@ -7067,14 +7051,14 @@ if (typeof arcgisRequire !== "function") {
                 start = end;
             });
 
-            updateAreasActividadChartEmptyMessage(canvas, isUserDisabledEmpty, {
+            updateActivityAreasChartEmptyMessage(canvas, isUserDisabledEmpty, {
                 left: 0,
                 top: 0,
                 width: Math.max(1, cssWidth),
                 height: chartAreaHeight
             });
 
-            drawAreasActividadSliceLabels(ctx, {
+            drawActivityAreasSliceLabels(ctx, {
                 slices,
                 total,
                 cx,
@@ -7087,9 +7071,9 @@ if (typeof arcgisRequire !== "function") {
             });
 
             const chartDescription = chartItems.map(item => {
-                const paletteItem = buildAreaActividadItem(item.code, Number(item.value || 0));
+                const paletteItem = buildActivityAreaItem(item.code, Number(item.value || 0));
                 const percent = total ? (Number(item.value || 0) / total) * 100 : 0;
-                return `${paletteItem.label}: ${formatOrdenamientoPiePercentLabel(percent)}`;
+                return `${paletteItem.label}: ${formatLandUsePlanningPiePercentLabel(percent)}`;
             }).join("; ");
             canvas.setAttribute(
                 "aria-label",
@@ -7104,7 +7088,7 @@ if (typeof arcgisRequire !== "function") {
             ctx.textBaseline = "middle";
             const legendEntries = legendItems.map(item => {
                 const code = String(item.code);
-                const paletteItem = buildAreaActividadItem(code, Number(item.value || 0));
+                const paletteItem = buildActivityAreaItem(code, Number(item.value || 0));
                 const labelText = String(paletteItem.label || code);
                 return {
                     code,
@@ -7163,7 +7147,7 @@ if (typeof arcgisRequire !== "function") {
                 });
             });
 
-            areasActividadCanvasChartState = {
+            activityAreasCanvasChartState = {
                 items: chartItems,
                 legendItems,
                 legendHits,
@@ -7176,7 +7160,7 @@ if (typeof arcgisRequire !== "function") {
             };
             canvas.__aaItems = chartItems;
             canvas.onclick = async event => {
-                const state = areasActividadCanvasChartState;
+                const state = activityAreasCanvasChartState;
                 if (!state) return;
 
                 const bounds = canvas.getBoundingClientRect();
@@ -7194,9 +7178,9 @@ if (typeof arcgisRequire !== "function") {
                     const code = String(legendHit.code);
                     const wasActive = window.__aa_active_filters?.has(code);
                     if (wasActive && String(window.__aa_selected_code || "") === code) {
-                        seleccionarCategoriaAreasActividad(null);
+                        selectActivityAreaCategory(null);
                     }
-                    await toggleAreaActividadCategory(code);
+                    await toggleActivityAreaCategory(code);
                     return;
                 }
 
@@ -7211,13 +7195,13 @@ if (typeof arcgisRequire !== "function") {
                 if (!selected) return;
 
                 window.__aa_active_filters = new Set([String(selected.code)]);
-                seleccionarCategoriaAreasActividad(null, { highlightChart: false });
-                await aplicarFiltroAreasActividadDesdeLeyenda();
-                const normativaCode = getNormativaUseCodeAreasActividad(selected);
-                await actualizarResumenAreasActividad(state.config, normativaCode);
+                selectActivityAreaCategory(null, { highlightChart: false });
+                await applyActivityAreasFilterFromLegend();
+                const normativaCode = getRegulationUseCodeActivityAreas(selected);
+                await updateActivityAreasSummary(state.config, normativaCode);
             };
             canvas.onmousemove = event => {
-                const state = areasActividadCanvasChartState;
+                const state = activityAreasCanvasChartState;
                 if (!state) return;
 
                 const bounds = canvas.getBoundingClientRect();
@@ -7235,7 +7219,7 @@ if (typeof arcgisRequire !== "function") {
                 canvas.style.cursor = "default";
             };
             canvas.ondblclick = async event => {
-                const state = areasActividadCanvasChartState;
+                const state = activityAreasCanvasChartState;
                 if (!state) return;
 
                 const bounds = canvas.getBoundingClientRect();
@@ -7245,15 +7229,15 @@ if (typeof arcgisRequire !== "function") {
                 const dy = y - state.cy;
                 const radius = Math.sqrt(dx * dx + dy * dy);
                 if (radius >= state.innerRadius && radius <= state.outerRadius) return;
-                await restaurarAreasActividadLegend();
+                await restoreActivityAreasLegend();
             };
         }
 
-        function bindAreasActividadMapClickFallback() {
+        function bindActivityAreasMapClickFallback() {
             if (window.__aa_map_click_fallback_bound) return;
             window.__aa_map_click_fallback_bound = true;
 
-            const isAreasActividadMapUiClick = target => {
+            const isActivityAreasMapUiClick = target => {
                 if (!target || typeof target.closest !== "function") return false;
                 return Boolean(target.closest([
                     "#mapLegend",
@@ -7277,7 +7261,7 @@ if (typeof arcgisRequire !== "function") {
             const handleMapDomClick = async (event) => {
                 const mapDivNode = document.getElementById("mapDiv");
                 if (!mapDivNode || !mapDivNode.contains(event.target)) return;
-                if (isAreasActividadMapUiClick(event.target)) return;
+                if (isActivityAreasMapUiClick(event.target)) return;
 
                 const rect = mapDivNode.getBoundingClientRect();
                 if (
@@ -7289,13 +7273,13 @@ if (typeof arcgisRequire !== "function") {
                     return;
                 }
 
-                await manejarClickMapaAreasActividad({
+                await handleActivityAreasMapClick({
                     x: event.clientX - rect.left,
                     y: event.clientY - rect.top,
                     button: event.button,
                     source: `dom-${event.type}`
                 });
-                await manejarClickMapaZonificacionRural({
+                await handleRuralZoningMapClick({
                     x: event.clientX - rect.left,
                     y: event.clientY - rect.top,
                     button: event.button,
@@ -7306,13 +7290,13 @@ if (typeof arcgisRequire !== "function") {
             document.addEventListener("click", handleMapDomClick, true);
         }
 
-        async function manejarClickMapaAreasActividad(event) {
-            currentOrdenamientoTab = AppState.currentOrdenamientoTab || currentOrdenamientoTab;
+        async function handleActivityAreasMapClick(event) {
+            currentLandUsePlanningTab = AppState.currentLandUsePlanningTab || currentLandUsePlanningTab;
             const activeLayer = layerGlobal || AppState.layerGlobal;
-            const isAreasActividad = currentOrdenamientoTab === "AREAS_ACTIVIDAD";
+            const isActivityAreas = currentLandUsePlanningTab === "AREAS_ACTIVIDAD";
 
             if (
-                !isAreasActividad ||
+                !isActivityAreas ||
                 !activeLayer ||
                 activeLayer.destroyed ||
                 !view
@@ -7325,10 +7309,10 @@ if (typeof arcgisRequire !== "function") {
             }
 
             try {
-                const config = ORDENAMIENTO_CONFIG.AREAS_ACTIVIDAD;
+                const config = LAND_USE_PLANNING_CONFIG.AREAS_ACTIVIDAD;
                 const useField = config.useField || "Uso_Principal";
-                const rawUseCode = await obtenerCodigoAreasActividadDesdeClick(event, config, activeLayer);
-                const useCode = normalizeAreaActividadCode(rawUseCode, activeLayer, useField);
+                const rawUseCode = await getActivityAreaCodeFromClick(event, config, activeLayer);
+                const useCode = normalizeActivityAreaCode(rawUseCode, activeLayer, useField);
 
                 if (useCode === null || useCode === undefined || String(useCode).trim() === "") {
                     return;
@@ -7338,28 +7322,28 @@ if (typeof arcgisRequire !== "function") {
                 if (now - lastAreasMapClickAt < 350) return;
                 lastAreasMapClickAt = now;
 
-                seleccionarCategoriaAreasActividad(useCode, { temporaryMs: 2200 });
+                selectActivityAreaCategory(useCode, { temporaryMs: 2200 });
                 const titleElement = document.getElementById("chartTitle");
                 if (titleElement) {
-                    titleElement.textContent = `${buildOrdenamientoChartTitle("Distribución de áreas de actividad")} - ${buildAreaActividadItem(useCode).label}`;
+                    titleElement.textContent = `${buildLandUsePlanningChartTitle("Distribución de áreas de actividad")} - ${buildActivityAreaItem(useCode).label}`;
                 }
-                await actualizarResumenAreasActividad(config, useCode);
+                await updateActivityAreasSummary(config, useCode);
 
             } catch (e) {
                 console.warn("Error en click de mapa para Áreas de actividad:", e);
             }
         }
 
-        async function manejarClickMapaZonificacionRural(event) {
-            currentOrdenamientoTab = AppState.currentOrdenamientoTab || currentOrdenamientoTab;
-            if (currentOrdenamientoTab !== "ZONIFICACION_RURAL") return;
+        async function handleRuralZoningMapClick(event) {
+            currentLandUsePlanningTab = AppState.currentLandUsePlanningTab || currentLandUsePlanningTab;
+            if (currentLandUsePlanningTab !== "ZONIFICACION_RURAL") return;
 
             const activeLayer = layerGlobal || AppState.layerGlobal;
             if (!activeLayer || activeLayer.destroyed || !view) return;
             if (event?.button != null && event.button !== 0) return;
 
-            const config = ORDENAMIENTO_CONFIG.ZONIFICACION_RURAL;
-            const field = getZonificacionRuralActiveField(config);
+            const config = LAND_USE_PLANNING_CONFIG.ZONIFICACION_RURAL;
+            const field = getRuralZoningActiveField(config);
             const readCode = attrs => {
                 if (!attrs) return null;
                 if (attrs[field] !== null && attrs[field] !== undefined) return attrs[field];
@@ -7375,7 +7359,7 @@ if (typeof arcgisRequire !== "function") {
                 const graphicHit = (hit?.results || []).find(result => result?.graphic?.layer === activeLayer);
                 const hitCode = readCode(graphicHit?.graphic?.attributes);
                 if (hitCode !== null && hitCode !== undefined && String(hitCode).trim() !== "") {
-                    await selectZonificacionRuralFromCode(hitCode, { temporaryMs: 2200 });
+                    await selectRuralZoningFromCode(hitCode, { temporaryMs: 2200 });
                     return;
                 }
             } catch (_) { }
@@ -7398,7 +7382,7 @@ if (typeof arcgisRequire !== "function") {
                 for (const feature of result?.features || []) {
                     const code = readCode(feature.attributes);
                     if (code !== null && code !== undefined && String(code).trim() !== "") {
-                        await selectZonificacionRuralFromCode(code, { temporaryMs: 2200 });
+                        await selectRuralZoningFromCode(code, { temporaryMs: 2200 });
                         return;
                     }
                 }
@@ -7407,7 +7391,7 @@ if (typeof arcgisRequire !== "function") {
             }
         }
 
-        async function obtenerCodigoAreasActividadDesdeClick(event, config, activeLayer = layerGlobal || AppState.layerGlobal) {
+        async function getActivityAreaCodeFromClick(event, config, activeLayer = layerGlobal || AppState.layerGlobal) {
             const useField = config.useField || "Uso_Principal";
             const readUseCode = attrs => {
                 if (!attrs) return null;
@@ -7487,12 +7471,12 @@ if (typeof arcgisRequire !== "function") {
             return null;
         }
 
-        async function resaltarCategoriaAreasActividadEnMapa(useCode, activeLayer = layerGlobal || AppState.layerGlobal) {
+        async function highlightActivityAreaCategoryOnMap(useCode, activeLayer = layerGlobal || AppState.layerGlobal) {
             if (!activeLayer || activeLayer.destroyed || !view) return;
 
-            const config = ORDENAMIENTO_CONFIG.AREAS_ACTIVIDAD;
+            const config = LAND_USE_PLANNING_CONFIG.AREAS_ACTIVIDAD;
             const useField = config?.useField || "Uso_Principal";
-            const normalizedCode = normalizeAreaActividadCode(useCode, activeLayer, useField);
+            const normalizedCode = normalizeActivityAreaCode(useCode, activeLayer, useField);
             if (!normalizedCode) return;
 
             clearHighlight();
@@ -7514,57 +7498,57 @@ if (typeof arcgisRequire !== "function") {
             }
         }
 
-        function getAreasActividadChartCodes(dataset) {
+        function getActivityAreasChartCodes(dataset) {
             if (Array.isArray(dataset?.codes) && dataset.codes.length) {
                 return dataset.codes.map(code => String(code));
             }
-            if (areasActividadChartCodes.length) {
-                return areasActividadChartCodes;
+            if (activityAreasChartCodes.length) {
+                return activityAreasChartCodes;
             }
             return (chartInstance?.$areasActividadCodes || []).map(code => String(code));
         }
 
-        function clearAreaActividadChartHighlight() {
+        function clearActivityAreaChartHighlight() {
             const overlay = document.getElementById("chartHighlightOverlay");
             if (overlay) {
                 overlay.remove();
             }
 
             const dataset = chartInstance?.data?.datasets?.[0];
-            const codes = getAreasActividadChartCodes(dataset);
+            const codes = getActivityAreasChartCodes(dataset);
 
             if (!dataset || !Array.isArray(codes) || !codes.length) {
-                areasActividadChartHighlightedCode = null;
-                if (areasActividadCanvasChartState?.items?.length) {
-                    renderAreasActividadCanvasChart(areasActividadCanvasChartState.items, areasActividadCanvasChartState.config);
+                activityAreasChartHighlightedCode = null;
+                if (activityAreasCanvasChartState?.items?.length) {
+                    renderActivityAreasCanvasChart(activityAreasCanvasChartState.items, activityAreasCanvasChartState.config);
                 }
                 return;
             }
 
-            areasActividadChartHighlightedCode = null;
+            activityAreasChartHighlightedCode = null;
             dataset.borderAlign = "inner";
             dataset.hoverOffset = 0;
             dataset.offset = 0;
             chartInstance.update?.("none");
         }
 
-        function resaltarCategoriaAreasActividadEnGrafica(useCode) {
-            if (!chartInstance && areasActividadCanvasChartState?.items?.length) {
-                const normalizedCanvasCode = normalizeAreaActividadCode(useCode, layerGlobal);
-                areasActividadChartHighlightedCode = normalizedCanvasCode;
-                renderAreasActividadCanvasChart(areasActividadCanvasChartState.items, areasActividadCanvasChartState.config);
+        function highlightActivityAreaCategoryInChart(useCode) {
+            if (!chartInstance && activityAreasCanvasChartState?.items?.length) {
+                const normalizedCanvasCode = normalizeActivityAreaCode(useCode, layerGlobal);
+                activityAreasChartHighlightedCode = normalizedCanvasCode;
+                renderActivityAreasCanvasChart(activityAreasCanvasChartState.items, activityAreasCanvasChartState.config);
                 return;
             }
 
             if (!chartInstance) return;
 
             const dataset = chartInstance.data?.datasets?.[0];
-            const codes = getAreasActividadChartCodes(dataset);
+            const codes = getActivityAreasChartCodes(dataset);
             if (!dataset || !Array.isArray(codes) || !codes.length) return;
 
-            const normalizedCode = normalizeAreaActividadCode(useCode, layerGlobal);
+            const normalizedCode = normalizeActivityAreaCode(useCode, layerGlobal);
             const idx = codes.findIndex(code =>
-                normalizeAreaActividadCode(code, layerGlobal) === normalizedCode
+                normalizeActivityAreaCode(code, layerGlobal) === normalizedCode
             );
             if (idx === -1) {
                 console.warn("Áreas de actividad: la categoría clicada no está en el gráfico activo.", {
@@ -7575,14 +7559,14 @@ if (typeof arcgisRequire !== "function") {
                 return;
             }
 
-            areasActividadChartHighlightedCode = normalizedCode;
+            activityAreasChartHighlightedCode = normalizedCode;
             dataset.borderAlign = "inner";
             dataset.hoverOffset = 0;
             dataset.offset = 0;
             chartInstance.update?.("none");
         }
 
-        function actualizarEstadoLeyendaAreasActividad() {
+        function updateActivityAreasLegendState() {
             const content = document.getElementById("legendContent");
             if (!content) return;
 
@@ -7608,13 +7592,13 @@ if (typeof arcgisRequire !== "function") {
             });
         }
 
-        function seleccionarCategoriaAreasActividad(code, options = {}) {
+        function selectActivityAreaCategory(code, options = {}) {
             const safeCode = code === null || code === undefined ? null : String(code);
             window.__aa_selected_code = safeCode;
 
-            if (areasActividadSelectionTimer) {
-                clearTimeout(areasActividadSelectionTimer);
-                areasActividadSelectionTimer = null;
+            if (activityAreasSelectionTimer) {
+                clearTimeout(activityAreasSelectionTimer);
+                activityAreasSelectionTimer = null;
             }
 
             if (safeCode && options.highlightChart !== false) {
@@ -7624,37 +7608,37 @@ if (typeof arcgisRequire !== "function") {
                 if (chartInstance?.tooltip?.setActiveElements) {
                     chartInstance.tooltip.setActiveElements([], { x: 0, y: 0 });
                 }
-                resaltarCategoriaAreasActividadEnGrafica(safeCode);
-                resaltarCategoriaAreasActividadEnMapa(safeCode);
+                highlightActivityAreaCategoryInChart(safeCode);
+                highlightActivityAreaCategoryOnMap(safeCode);
             } else if (!safeCode) {
                 clearHighlight();
                 if (chartInstance?.data?.datasets?.[0]) {
-                    clearAreaActividadChartHighlight();
+                    clearActivityAreaChartHighlight();
                 }
             }
 
-            actualizarEstadoLeyendaAreasActividad();
+            updateActivityAreasLegendState();
 
             const temporaryMs = Number(options.temporaryMs || 0);
             if (safeCode && temporaryMs > 0) {
-                const token = ++areasActividadSelectionToken;
-                areasActividadSelectionTimer = setTimeout(() => {
-                    if (token !== areasActividadSelectionToken) return;
+                const token = ++activityAreasSelectionToken;
+                activityAreasSelectionTimer = setTimeout(() => {
+                    if (token !== activityAreasSelectionToken) return;
                     window.__aa_selected_code = null;
                     clearHighlight();
-                    clearAreaActividadChartHighlight();
-                    actualizarEstadoLeyendaAreasActividad();
+                    clearActivityAreaChartHighlight();
+                    updateActivityAreasLegendState();
 
                     const titleElement = document.getElementById("chartTitle");
                     if (titleElement) {
-                        titleElement.textContent = buildOrdenamientoChartTitle("Distribución de áreas de actividad");
+                        titleElement.textContent = buildLandUsePlanningChartTitle("Distribución de áreas de actividad");
                     }
-                    areasActividadSelectionTimer = null;
+                    activityAreasSelectionTimer = null;
                 }, temporaryMs);
             }
         }
 
-        async function zoomMapaZonificacionRural(useCode = null, categoryCode = null) {
+        async function zoomRuralZoningMap(useCode = null, categoryCode = null) {
             const layer = layerGlobal;
 
             if (!layer || !view) {
@@ -7662,7 +7646,7 @@ if (typeof arcgisRequire !== "function") {
                 return;
             }
 
-            const config = ORDENAMIENTO_CONFIG[currentOrdenamientoTab];
+            const config = LAND_USE_PLANNING_CONFIG[currentLandUsePlanningTab];
             if (!config) return;
 
             const filterField = config.filterField || "Mp_Codigo";
@@ -7672,8 +7656,8 @@ if (typeof arcgisRequire !== "function") {
             const clauses = [];
 
             // filtro territorial actual
-            if (municipioActual) {
-                clauses.push(`${filterField} = '${String(municipioActual).replace(/'/g, "''")}'`);
+            if (currentMunicipalityId) {
+                clauses.push(`${filterField} = '${String(currentMunicipalityId).replace(/'/g, "''")}'`);
             }
 
             // filtro por uso principal
@@ -7721,16 +7705,16 @@ if (typeof arcgisRequire !== "function") {
             }
         }
 
-        function getZonificacionRuralActiveField(config = ORDENAMIENTO_CONFIG.ZONIFICACION_RURAL) {
+        function getRuralZoningActiveField(config = LAND_USE_PLANNING_CONFIG.ZONIFICACION_RURAL) {
             return currentRuralChartView === "CATEGORIA"
                 ? (config?.categoryField || "Tipo_Categoria_Rural")
                 : (config?.useField || "Uso_Principal");
         }
 
-        function clearZonificacionRuralSelection() {
-            if (zonificacionRuralSelectionTimer) {
-                clearTimeout(zonificacionRuralSelectionTimer);
-                zonificacionRuralSelectionTimer = null;
+        function clearRuralZoningSelection() {
+            if (ruralZoningSelectionTimer) {
+                clearTimeout(ruralZoningSelectionTimer);
+                ruralZoningSelectionTimer = null;
             }
 
             clearHighlight();
@@ -7740,13 +7724,13 @@ if (typeof arcgisRequire !== "function") {
                 const codes = Array.isArray(dataset.codes) ? dataset.codes.map(code => String(code)) : [];
                 dataset.borderColor = codes.map(code => {
                     const item = currentRuralChartView === "CATEGORIA"
-                        ? buildRuralCategoriaItem(code, 0, layerGlobal, getZonificacionRuralActiveField())
+                        ? buildRuralCategoryItem(code, 0, layerGlobal, getRuralZoningActiveField())
                         : buildRuralUseItem(code, 0);
                     return item.borderColor;
                 });
                 dataset.borderWidth = codes.map(code => {
                     const item = currentRuralChartView === "CATEGORIA"
-                        ? buildRuralCategoriaItem(code, 0, layerGlobal, getZonificacionRuralActiveField())
+                        ? buildRuralCategoryItem(code, 0, layerGlobal, getRuralZoningActiveField())
                         : buildRuralUseItem(code, 0);
                     return Number(item.borderWidth || 0);
                 });
@@ -7762,27 +7746,27 @@ if (typeof arcgisRequire !== "function") {
             });
 
             const titleElement = document.getElementById("chartTitle");
-            if (titleElement && currentOrdenamientoTab === "ZONIFICACION_RURAL") {
+            if (titleElement && currentLandUsePlanningTab === "ZONIFICACION_RURAL") {
                 const baseTitle = currentRuralChartView === "CATEGORIA"
                     ? "Distribución de categorías de zonificación rural"
                     : "Distribución del uso principal de la zonificación rural";
-                titleElement.textContent = buildOrdenamientoChartTitle(baseTitle);
+                titleElement.textContent = buildLandUsePlanningChartTitle(baseTitle);
             }
         }
 
-        async function selectZonificacionRuralFromCode(code, options = {}) {
-            const config = ORDENAMIENTO_CONFIG.ZONIFICACION_RURAL;
+        async function selectRuralZoningFromCode(code, options = {}) {
+            const config = LAND_USE_PLANNING_CONFIG.ZONIFICACION_RURAL;
             const safeCode = String(code ?? "").trim();
             if (!safeCode) return;
 
-            if (zonificacionRuralSelectionTimer) {
-                clearTimeout(zonificacionRuralSelectionTimer);
-                zonificacionRuralSelectionTimer = null;
+            if (ruralZoningSelectionTimer) {
+                clearTimeout(ruralZoningSelectionTimer);
+                ruralZoningSelectionTimer = null;
             }
 
-            const field = getZonificacionRuralActiveField(config);
+            const field = getRuralZoningActiveField(config);
             const item = currentRuralChartView === "CATEGORIA"
-                ? buildRuralCategoriaItem(safeCode, 0, layerGlobal, field)
+                ? buildRuralCategoryItem(safeCode, 0, layerGlobal, field)
                 : buildRuralUseItem(safeCode, 0);
 
             if (chartInstance?.data?.datasets?.[0]) {
@@ -7790,12 +7774,12 @@ if (typeof arcgisRequire !== "function") {
                 const codes = Array.isArray(dataset.codes) ? dataset.codes.map(value => String(value)) : [];
                 dataset.borderColor = codes.map(value => String(value) === safeCode ? "#5B2EFF" : (
                     currentRuralChartView === "CATEGORIA"
-                        ? buildRuralCategoriaItem(value, 0, layerGlobal, field).borderColor
+                        ? buildRuralCategoryItem(value, 0, layerGlobal, field).borderColor
                         : buildRuralUseItem(value, 0).borderColor
                 ));
                 dataset.borderWidth = codes.map(value => String(value) === safeCode ? 3 : (
                     currentRuralChartView === "CATEGORIA"
-                        ? Number(buildRuralCategoriaItem(value, 0, layerGlobal, field).borderWidth || 0)
+                        ? Number(buildRuralCategoryItem(value, 0, layerGlobal, field).borderWidth || 0)
                         : Number(buildRuralUseItem(value, 0).borderWidth || 0)
                 ));
                 dataset.offset = codes.map(() => 0);
@@ -7815,7 +7799,7 @@ if (typeof arcgisRequire !== "function") {
                 const baseTitle = currentRuralChartView === "CATEGORIA"
                     ? "Distribución de categorías de zonificación rural"
                     : "Distribución del uso principal de la zonificación rural";
-                titleElement.textContent = `${buildOrdenamientoChartTitle(baseTitle)} - ${item.label}`;
+                titleElement.textContent = `${buildLandUsePlanningChartTitle(baseTitle)} - ${item.label}`;
             }
 
             if (options.highlightMap !== false) {
@@ -7840,13 +7824,13 @@ if (typeof arcgisRequire !== "function") {
 
             const temporaryMs = Number(options.temporaryMs || 0);
             if (temporaryMs > 0) {
-                zonificacionRuralSelectionTimer = setTimeout(() => {
-                    clearZonificacionRuralSelection();
+                ruralZoningSelectionTimer = setTimeout(() => {
+                    clearRuralZoningSelection();
                 }, temporaryMs);
             }
         }
 
-        async function zoomMapaClasificacionSuelo(typeCode = null) {
+        async function zoomSoilClassificationMap(typeCode = null) {
             const layer = layerGlobal;
 
             if (!layer || !view) {
@@ -7854,7 +7838,7 @@ if (typeof arcgisRequire !== "function") {
                 return;
             }
 
-            const config = ORDENAMIENTO_CONFIG[currentOrdenamientoTab];
+            const config = LAND_USE_PLANNING_CONFIG[currentLandUsePlanningTab];
             if (!config) return;
 
             const filterField = config.filterField || "mpcodigo";
@@ -7862,10 +7846,10 @@ if (typeof arcgisRequire !== "function") {
 
             const clauses = [];
 
-            if (municipioActual) {
-                clauses.push(`${filterField} = '${String(municipioActual).replace(/'/g, "''")}'`);
-            } else if (filtroNivel === "DEPTO" && deptoActual) {
-                clauses.push(sqlStartsWith(filterField, deptoActual));
+            if (currentMunicipalityId) {
+                clauses.push(`${filterField} = '${String(currentMunicipalityId).replace(/'/g, "''")}'`);
+            } else if (territoryLevel === "DEPTO" && currentDepartmentId) {
+                clauses.push(sqlStartsWith(filterField, currentDepartmentId));
             }
 
             if (typeCode !== null && typeCode !== undefined) {
@@ -7874,11 +7858,11 @@ if (typeof arcgisRequire !== "function") {
 
             const where = clauses.length ? clauses.join(" AND ") : "1=1";
 
-            applyClasificacionVisualWhere(where);
+            applyClassificationVisualWhere(where);
 
             try {
-                if (hasClasificacionTerritoryFilter()) {
-                    withTimeout(zoomClasificacionToTerritory(renderCycleId), 5000, false)
+                if (hasClassificationTerritoryFilter()) {
+                    withTimeout(zoomClassificationToTerritory(renderCycleId), 5000, false)
                         .catch(e => {
                             if (String(e?.name || "") !== "AbortError") {
                                 console.warn("No se pudo hacer zoom en Clasificacion del suelo:", e);
@@ -7898,18 +7882,18 @@ if (typeof arcgisRequire !== "function") {
                         duration: 1200,
                         easing: "ease-in-out"
                     });
-                } else if (municipioActual || (filtroNivel === "DEPTO" && deptoActual)) {
-                    await zoomClasificacionToTerritory(renderCycleId);
+                } else if (currentMunicipalityId || (territoryLevel === "DEPTO" && currentDepartmentId)) {
+                    await zoomClassificationToTerritory(renderCycleId);
                 }
-                applyClasificacionVisualWhere(where);
+                applyClassificationVisualWhere(where);
             } catch (e) {
                 console.warn("No se pudo hacer zoom en Clasificación del suelo:", e);
-                await zoomClasificacionToTerritory(renderCycleId);
-                applyClasificacionVisualWhere(where);
+                await zoomClassificationToTerritory(renderCycleId);
+                applyClassificationVisualWhere(where);
             }
         }
 
-        async function zoomMapaAreasActividad(useCode = null) {
+        async function zoomActivityAreasMap(useCode = null) {
             const layer = layerGlobal;
 
             if (!layer || !view) {
@@ -7917,7 +7901,7 @@ if (typeof arcgisRequire !== "function") {
                 return;
             }
 
-            const config = ORDENAMIENTO_CONFIG[currentOrdenamientoTab];
+            const config = LAND_USE_PLANNING_CONFIG[currentLandUsePlanningTab];
             if (!config) return;
 
             const filterField = config.filterField || "Mp_codigo";
@@ -7925,8 +7909,8 @@ if (typeof arcgisRequire !== "function") {
 
             const clauses = [];
 
-            if (municipioActual) {
-                clauses.push(`${filterField} = '${String(municipioActual).replace(/'/g, "''")}'`);
+            if (currentMunicipalityId) {
+                clauses.push(`${filterField} = '${String(currentMunicipalityId).replace(/'/g, "''")}'`);
             }
 
             if (useCode !== null && useCode !== undefined) {
@@ -7959,13 +7943,13 @@ if (typeof arcgisRequire !== "function") {
             const state = window.__legendState;
             if (!state || !state.layer || !state.field) return;
 
-            if (state.isClasificacionSuelo) {
-                scheduleClasificacionLegendMapFilter(state);
+            if (state.isSoilClassification) {
+                scheduleClassificationLegendMapFilter(state);
                 return;
             }
 
-            if (state.isVigencia) {
-                applyVigenciaLegendFilter(state);
+            if (state.isValidity) {
+                applyValidityLegendFilter(state);
                 return;
             }
 
@@ -8022,9 +8006,9 @@ if (typeof arcgisRequire !== "function") {
             state.layer.definitionExpression = finalWhere;
         }
 
-        function syncZonificacionRuralChartWithLegend(state = window.__legendState) {
+        function syncRuralZoningChartWithLegend(state = window.__legendState) {
             if (
-                currentOrdenamientoTab !== "ZONIFICACION_RURAL" ||
+                currentLandUsePlanningTab !== "ZONIFICACION_RURAL" ||
                 !state?.activeCodes ||
                 !chartInstance?.data?.datasets?.[0]
             ) {
@@ -8034,16 +8018,16 @@ if (typeof arcgisRequire !== "function") {
             const dataset = chartInstance.data.datasets[0];
             const allItems =
                 Array.isArray(state.allItems) && state.allItems.length
-                    ? state.allItems.map(normalizeZonificacionRuralChartItem)
+                    ? state.allItems.map(normalizeRuralZoningChartItem)
                     : Array.isArray(chartInstance.$zrAllItems) && chartInstance.$zrAllItems.length
-                        ? chartInstance.$zrAllItems.map(normalizeZonificacionRuralChartItem)
+                        ? chartInstance.$zrAllItems.map(normalizeRuralZoningChartItem)
                         : Array.isArray(dataset.allItems) && dataset.allItems.length
-                            ? dataset.allItems.map(normalizeZonificacionRuralChartItem)
+                            ? dataset.allItems.map(normalizeRuralZoningChartItem)
                             : (Array.isArray(dataset.codes) ? dataset.codes.map(code => {
                                 const item = currentRuralChartView === "CATEGORIA"
-                                    ? buildRuralCategoriaItem(code, 0, layerGlobal, getZonificacionRuralActiveField())
+                                    ? buildRuralCategoryItem(code, 0, layerGlobal, getRuralZoningActiveField())
                                     : buildRuralUseItem(code, 0);
-                                return normalizeZonificacionRuralChartItem({ ...item, value: 0, code: String(code) });
+                                return normalizeRuralZoningChartItem({ ...item, value: 0, code: String(code) });
                             }) : []);
             if (!allItems.length) return;
 
@@ -8062,26 +8046,26 @@ if (typeof arcgisRequire !== "function") {
                 empty: isEmpty
             };
 
-            chartInstance.$zrAllItems = allItems.map(normalizeZonificacionRuralChartItem);
+            chartInstance.$zrAllItems = allItems.map(normalizeRuralZoningChartItem);
             chartInstance.data.labels = activeItems.map(item => item.label);
             chartInstance.data.datasets = [rebuiltDataset];
             chartInstance.update?.("none");
-            updateZonificacionRuralChartEmptyMessage(chartInstance, isEmpty);
+            updateRuralZoningChartEmptyMessage(chartInstance, isEmpty);
             if (isEmpty) {
-                zonificacionRuralCanvasChartState = null;
+                ruralZoningCanvasChartState = null;
                 const canvas = chartInstance.canvas || document.getElementById("chart");
                 if (canvas) canvas.__zrItems = [];
             } else {
-                bindZonificacionRuralCanvasInteractions(activeItems, ORDENAMIENTO_CONFIG.ZONIFICACION_RURAL);
+                bindRuralZoningCanvasInteractions(activeItems, LAND_USE_PLANNING_CONFIG.ZONIFICACION_RURAL);
             }
         }
 
-        function configureZonificacionRuralChartLegend(chart = chartInstance) {
+        function configureRuralZoningChartLegend(chart = chartInstance) {
             const dataset = chart?.data?.datasets?.[0];
             const allItems = Array.isArray(chart?.$zrAllItems) && chart.$zrAllItems.length
-                ? chart.$zrAllItems.map(normalizeZonificacionRuralChartItem)
+                ? chart.$zrAllItems.map(normalizeRuralZoningChartItem)
                 : Array.isArray(dataset?.allItems)
-                    ? dataset.allItems.map(normalizeZonificacionRuralChartItem)
+                    ? dataset.allItems.map(normalizeRuralZoningChartItem)
                     : [];
             if (!chart || !allItems.length) return;
 
@@ -8127,13 +8111,13 @@ if (typeof arcgisRequire !== "function") {
                     state.activeCodes.add(code);
                 }
 
-                syncZonificacionRuralLegendDom(state);
+                syncRuralZoningLegendDom(state);
                 applyLegendFilter();
-                syncZonificacionRuralChartWithLegend(state);
+                syncRuralZoningChartWithLegend(state);
             };
         }
 
-        function syncZonificacionRuralLegendDom(state = window.__legendState) {
+        function syncRuralZoningLegendDom(state = window.__legendState) {
             if (!state?.activeCodes) return;
 
             document.querySelectorAll("#legendContent .legend-item[data-code]").forEach(row => {
@@ -8143,18 +8127,18 @@ if (typeof arcgisRequire !== "function") {
             });
         }
 
-        function applyZonificacionRuralSingleSelection(code) {
+        function applyRuralZoningSingleSelection(code) {
             const safeCode = String(code ?? "").trim();
             const state = window.__legendState;
             if (!safeCode || !state?.activeCodes) return;
 
             state.activeCodes = new Set([safeCode]);
-            syncZonificacionRuralLegendDom(state);
+            syncRuralZoningLegendDom(state);
             applyLegendFilter();
-            syncZonificacionRuralChartWithLegend(state);
+            syncRuralZoningChartWithLegend(state);
         }
 
-        function restoreZonificacionRuralLegendFilter() {
+        function restoreRuralZoningLegendFilter() {
             const state = window.__legendState;
             const dataset = chartInstance?.data?.datasets?.[0];
             const codes = Array.isArray(chartInstance?.$zrAllItems) && chartInstance.$zrAllItems.length
@@ -8165,17 +8149,17 @@ if (typeof arcgisRequire !== "function") {
             if (!state?.activeCodes || !codes.length) return;
 
             state.activeCodes = new Set(codes);
-            syncZonificacionRuralLegendDom(state);
+            syncRuralZoningLegendDom(state);
             applyLegendFilter();
-            syncZonificacionRuralChartWithLegend(state);
-            clearZonificacionRuralSelection();
+            syncRuralZoningChartWithLegend(state);
+            clearRuralZoningSelection();
         }
 
-        function applyClasificacionLegendFilter(state, options = {}) {
-            scheduleClasificacionLegendMapFilter(state, options);
+        function applyClassificationLegendFilter(state, options = {}) {
+            scheduleClassificationLegendMapFilter(state, options);
         }
 
-        function actualizarLeyendaOrdenamientoRural(titleText, items = [], baseWhereOverride = null) {
+        function updateRuralPlanningLegend(titleText, items = [], baseWhereOverride = null) {
             const title = document.getElementById("legendTitle");
             const content = document.getElementById("legendContent");
 
@@ -8185,9 +8169,9 @@ if (typeof arcgisRequire !== "function") {
 
             if (!content) return;
 
-            const config = ORDENAMIENTO_CONFIG[currentOrdenamientoTab] || {};
+            const config = LAND_USE_PLANNING_CONFIG[currentLandUsePlanningTab] || {};
             const baseWhere = String(baseWhereOverride || "").trim()
-                || buildWhereOrdenamientoForCurrentTerritory(config);
+                || buildLandUsePlanningWhereForCurrentTerritory(config);
 
             if (!items.length) {
                 content.innerHTML = "<p class='oot-js-ordenamiento-main-1'>Sin clases</p>";
@@ -8213,7 +8197,7 @@ if (typeof arcgisRequire !== "function") {
             window.__legendState = {
                 allCodes: items.map(i => String(i.code)),
                 activeCodes: new Set(items.map(i => String(i.code))),
-                allItems: items.map(normalizeZonificacionRuralChartItem),
+                allItems: items.map(normalizeRuralZoningChartItem),
                 field,
                 fieldType: fieldInfo?.type || "",
                 layer: layerGlobal || window.activeFeatureLayer,
@@ -8226,7 +8210,7 @@ if (typeof arcgisRequire !== "function") {
                 const code = String(item.code);
                 const safeCode = escapeAttr(code);
                 const paletteItem = currentRuralChartView === "CATEGORIA"
-                    ? buildRuralCategoriaItem(code, Number(item.value || 0), layerGlobal, config.categoryField || "Tipo_Categoria_Rural")
+                    ? buildRuralCategoryItem(code, Number(item.value || 0), layerGlobal, config.categoryField || "Tipo_Categoria_Rural")
                     : buildRuralUseItem(code, Number(item.value || 0));
                 const color = paletteItem.color;
                 const borderColor = paletteItem.borderColor;
@@ -8268,15 +8252,15 @@ if (typeof arcgisRequire !== "function") {
                     }
 
                     applyLegendFilter();
-                    syncZonificacionRuralChartWithLegend(state);
+                    syncRuralZoningChartWithLegend(state);
                 });
             });
         }
 
-        function actualizarLeyendaClasificacionSuelo(titleText, items = []) {
+        function updateSoilClassificationLegend(titleText, items = []) {
             const title = document.getElementById("legendTitle");
             const content = document.getElementById("legendContent");
-            const config = ORDENAMIENTO_CONFIG.CLASIFICACION_SUELO;
+            const config = LAND_USE_PLANNING_CONFIG.CLASIFICACION_SUELO;
 
             if (title) {
                 title.textContent = titleText || "Leyenda";
@@ -8284,26 +8268,26 @@ if (typeof arcgisRequire !== "function") {
 
             if (!content) return;
 
-            cancelClasificacionLegendFilter();
+            cancelClassificationLegendFilter();
             content.innerHTML = "";
 
             if (!items.length) {
-                clasificacionLegendLastSignature = "";
+                classificationLegendLastSignature = "";
                 content.innerHTML = "";
                 content.__clasificacionLegendState = null;
-                if (window.__legendState?.isClasificacionSuelo) {
+                if (window.__legendState?.isSoilClassification) {
                     window.__legendState = {
                         allCodes: [],
                         activeCodes: new Set(),
                         field: null,
                         layer: null,
-                        isClasificacionSuelo: true
+                        isSoilClassification: true
                     };
                 }
                 return;
             }
 
-            const baseWhere = clasificacionBaseWhere || layerGlobal?.definitionExpression || getClasificacionVisualWhere("1=1");
+            const baseWhere = classificationBaseWhere || layerGlobal?.definitionExpression || getClassificationVisualWhere("1=1");
             const legendState = {
                 activeCodes: new Set(items.map(i => String(i.code))),
                 allCodes: items.map(i => String(i.code)),
@@ -8311,22 +8295,22 @@ if (typeof arcgisRequire !== "function") {
                 layer: layerGlobal || window.activeFeatureLayer,
                 baseWhere,
                 fieldType: "integer",
-                isClasificacionSuelo: true
+                isSoilClassification: true
             };
             window.__legendState = legendState;
             content.__clasificacionLegendState = legendState;
             // Las capas por categoría son una optimización: si fallan, NO deben
             // impedir que se dibuje la leyenda ni que se adjunten sus eventos.
             try {
-                clasificacionLegendLastSignature = getClasificacionLegendFilter(legendState).signature;
-                if (clasificacionCategoryModeActive) {
-                    ensureClasificacionCategoryLayers(baseWhere, items, {
+                classificationLegendLastSignature = getClassificationLegendFilter(legendState).signature;
+                if (classificationCategoryModeActive) {
+                    ensureClassificationCategoryLayers(baseWhere, items, {
                         prewarm: false,
                         source: "legend-render-active"
                     });
-                    applyClasificacionCategoryVisibility(legendState);
+                    applyClassificationCategoryVisibility(legendState);
                 } else {
-                    scheduleClasificacionCategoryPrewarm(baseWhere, items, renderCycleId);
+                    scheduleClassificationCategoryPrewarm(baseWhere, items, renderCycleId);
                 }
             } catch (prewarmErr) {
                 console.warn("Clasificación del suelo: no se pudo preparar capas por categoría (continúa la leyenda).", prewarmErr);
@@ -8374,7 +8358,7 @@ if (typeof arcgisRequire !== "function") {
                     const state = content.__clasificacionLegendState || window.__legendState;
                     console.log("[Clasificación] clic en leyenda:", code, "state?", !!state, "activeCodes?", !!state?.activeCodes);
                     if (!code || !state?.activeCodes) return;
-                    const startedAt = markClasificacionPerf("legend-toggle-click", renderCycleId, {
+                    const startedAt = markClassificationPerformance("legend-toggle-click", renderCycleId, {
                         code,
                         wasActive: state.activeCodes.has(code)
                     }).t;
@@ -8391,13 +8375,13 @@ if (typeof arcgisRequire !== "function") {
                         this.style.opacity = "1";
                     }
 
-                    syncClasificacionChartWithLegend(state);
-                    applyClasificacionLegendFilter(state, { startedAt });
+                    syncClassificationChartWithLegend(state);
+                    applyClassificationLegendFilter(state, { startedAt });
                 });
             });
         }
 
-        function actualizarLeyendaAreasActividad(titleText, items = []) {
+        function updateActivityAreasLegend(titleText, items = []) {
             const title = document.getElementById("legendTitle");
             const content = document.getElementById("legendContent");
 
@@ -8425,7 +8409,7 @@ if (typeof arcgisRequire !== "function") {
             items.forEach(item => {
                 const code = String(item.code);
                 const isActive = window.__aa_active_filters.has(code);
-                const paletteItem = buildAreaActividadItem(code, Number(item.value || 0));
+                const paletteItem = buildActivityAreaItem(code, Number(item.value || 0));
 
                 const row = document.createElement("div");
                 row.className = "legend-item" + (isActive ? " active" : "");
@@ -8461,21 +8445,21 @@ if (typeof arcgisRequire !== "function") {
                     event.stopPropagation();
                     const wasActive = window.__aa_active_filters?.has(code);
                     if (wasActive && String(window.__aa_selected_code || "") === code) {
-                        seleccionarCategoriaAreasActividad(null);
+                        selectActivityAreaCategory(null);
                     } else if (!wasActive) {
-                        actualizarEstadoLeyendaAreasActividad();
+                        updateActivityAreasLegendState();
                     }
                     row.classList.toggle("active", !wasActive);
                     row.style.opacity = wasActive ? "0.35" : "1";
-                    await toggleAreaActividadCategory(code);
+                    await toggleActivityAreaCategory(code);
                 };
 
                 content.appendChild(row);
             });
 
-            actualizarEstadoLeyendaAreasActividad();
+            updateActivityAreasLegendState();
         }
-        async function toggleAreaActividadCategory(code) {
+        async function toggleActivityAreaCategory(code) {
             code = String(code);
 
             if (!window.__aa_active_filters || !(window.__aa_active_filters instanceof Set)) {
@@ -8488,12 +8472,12 @@ if (typeof arcgisRequire !== "function") {
                 window.__aa_active_filters.add(code);
             }
 
-            await aplicarFiltroAreasActividadDesdeLeyenda();
+            await applyActivityAreasFilterFromLegend();
         }
 
-        async function aplicarFiltroAreasActividadDesdeLeyenda() {
-            const config = ORDENAMIENTO_CONFIG[currentOrdenamientoTab];
-            if (!config || currentOrdenamientoTab !== "AREAS_ACTIVIDAD" || !layerGlobal) return;
+        async function applyActivityAreasFilterFromLegend() {
+            const config = LAND_USE_PLANNING_CONFIG[currentLandUsePlanningTab];
+            if (!config || currentLandUsePlanningTab !== "AREAS_ACTIVIDAD" || !layerGlobal) return;
 
             const activeCodes = Array.from(window.__aa_active_filters || []);
             const filterField = config.filterField || "Mp_Codigo";
@@ -8511,27 +8495,27 @@ if (typeof arcgisRequire !== "function") {
 
             layerGlobal.definitionExpression = finalWhere;
 
-            await renderAreasActividadCharts(layerGlobal, config, finalWhere, false, { showLoading: false });
+            await renderActivityAreasCharts(layerGlobal, config, finalWhere, false, { showLoading: false });
         }
 
-        async function restaurarAreasActividadLegend() {
+        async function restoreActivityAreasLegend() {
             const fullCodes = window.__aa_full_codes || [];
             window.__aa_active_filters = new Set(fullCodes.map(code => String(code)));
             window.__aa_selected_code = null;
-            actualizarEstadoLeyendaAreasActividad();
-            await aplicarFiltroAreasActividadDesdeLeyenda();
+            updateActivityAreasLegendState();
+            await applyActivityAreasFilterFromLegend();
         }
 
-        async function cargarMunicipios() {
-            if (Object.keys(diccionarioMunicipios).length === 0) {
-                await cargarDiccionarioMunicipios();
+        async function loadMunicipalities() {
+            if (Object.keys(municipalityNames).length === 0) {
+                await loadMunicipalityDictionary();
             }
 
-            // Intentar obtener municipios desde el FeatureLayer
-            let codigos = [];
+            // Intentar obtener municipalityCodes desde el FeatureLayer
+            let municipalityCodes = [];
             try {
                 const tempLayer = new FeatureLayer({
-                    url: MUNICIPIOS_SOURCE_LAYER_URL
+                    url: MUNICIPALITIES_SOURCE_LAYER_URL
                 });
 
                 const q = tempLayer.createQuery();
@@ -8542,134 +8526,134 @@ if (typeof arcgisRequire !== "function") {
 
                 const res = await tempLayer.queryFeatures(q);
 
-                codigos = [...new Set(
+                municipalityCodes = [...new Set(
                     res.features.map(f => f.attributes.mpcodigo)
                 )].sort();
             } catch (e) {
-                console.warn("Error consultando FeatureLayer para municipios, usando diccionario como fallback:", e);
+                console.warn("Error consultando FeatureLayer para municipalityCodes, usando diccionario como fallback:", e);
                 // Fallback: usar las claves del diccionario como códigos de municipio
-                codigos = Object.keys(diccionarioMunicipios)
+                municipalityCodes = Object.keys(municipalityNames)
                     .filter(k => k && k.length >= 4 && !isNaN(Number(k)))
                     .sort();
             }
 
             // Si aún no hay códigos, poblar con algunos códigos por defecto para que no quede vacío
-            if (!codigos.length) {
+            if (!municipalityCodes.length) {
                 console.warn("No se obtuvieron códigos de municipio. El select quedaría vacío.");
-                cargarDepartamentosFallback();
-                renderizarMunicipiosFallback();
+                loadDepartmentsFallback();
+                renderMunicipalitiesFallback();
                 return;
             }
 
-            // Guardar todos los municipios con su departamento
-            todosMunicipios = codigos.map(codigo => {
-                const depto = normalizeCode(codigo).substring(0, 2);
+            // Guardar todos los municipalityCodes con su departamento
+            municipalities = municipalityCodes.map(code => {
+                const departmentId = normalizeCode(code).substring(0, 2);
                 return {
-                    codigo: codigo,
-                    nombre: diccionarioMunicipios[codigo] || String(codigo),
-                    depto: depto
+                    codigo: code,
+                    nombre: municipalityNames[code] || String(code),
+                    departmentId: departmentId
                 };
             });
 
             // Poblar selects
-            cargarDepartamentos();
-            renderizarMunicipios();
+            loadDepartments();
+            renderMunicipalities();
         }
 
-        function cargarDepartamentosFallback() {
-            const selectDepto = document.getElementById("departamentos");
-            if (!selectDepto) return;
-            selectDepto.innerHTML = `<option value="0">Seleccione departamento</option>`;
+        function loadDepartmentsFallback() {
+            const departmentSelect = document.getElementById("departamentos");
+            if (!departmentSelect) return;
+            departmentSelect.innerHTML = `<option value="0">Seleccione departamento</option>`;
             const optionColombia = document.createElement("option");
             optionColombia.value = "COL";
             optionColombia.textContent = "Colombia";
-            selectDepto.appendChild(optionColombia);
+            departmentSelect.appendChild(optionColombia);
         }
 
-        function renderizarMunicipiosFallback() {
+        function renderMunicipalitiesFallback() {
             const select = document.getElementById("municipios");
             if (!select) return;
             select.innerHTML = `<option value="">Seleccione un municipio</option>`;
         }
 
-        function cargarDepartamentos() {
+        function loadDepartments() {
 
-            const selectDepto = document.getElementById("departamentos");
+            const departmentSelect = document.getElementById("departamentos");
 
             // limpiar
-            selectDepto.innerHTML = `<option value="0">Seleccione departamento</option>`;
+            departmentSelect.innerHTML = `<option value="0">Seleccione departamento</option>`;
 
             // agregar Colombia
             const optionColombia = document.createElement("option");
             optionColombia.value = "COL";
             optionColombia.textContent = "Colombia";
-            selectDepto.appendChild(optionColombia);
+            departmentSelect.appendChild(optionColombia);
 
-            const deptosUnicos = sortDepartamentoCodesAlphabetically(
-                todosMunicipios.map(m => m.depto),
-                diccionarioDepartamentos
+            const uniqueDepartmentCodes = sortDepartmentCodesAlphabetically(
+                municipalities.map(m => m.departmentId),
+                departmentNames
             );
 
-            deptosUnicos.forEach(codigoDepto => {
+            uniqueDepartmentCodes.forEach(codigoDepto => {
                 const opt = document.createElement("option");
                 opt.value = codigoDepto;
-                opt.textContent = getDepartamentoDisplayName(codigoDepto, diccionarioDepartamentos);
-                selectDepto.appendChild(opt);
+                opt.textContent = getDepartmentDisplayName(codigoDepto, departmentNames);
+                departmentSelect.appendChild(opt);
             });
 
         }
 
-        function renderizarMunicipios(deptoFiltro = null) {
+        function renderMunicipalities(deptoFiltro = null) {
             const select = document.getElementById("municipios");
             select.innerHTML = `<option value="">Seleccione un municipio</option>`;
 
-            let municipiosFiltrados = todosMunicipios;
+            let filteredMunicipalities = municipalities;
 
             // Filtrar por departamento
             if (deptoFiltro && deptoFiltro !== "0") {
-                municipiosFiltrados = municipiosFiltrados.filter(m => m.depto === deptoFiltro);
+                filteredMunicipalities = filteredMunicipalities.filter(m => m.departmentId === deptoFiltro);
             }
 
-            municipiosFiltrados.forEach(muni => {
+            filteredMunicipalities.forEach(muni => {
                 const opt = document.createElement("option");
                 opt.value = muni.codigo;
-                opt.textContent = getMunicipioDisplayName(muni, diccionarioMunicipios);
+                opt.textContent = getMunicipalityDisplayName(muni, municipalityNames);
                 select.appendChild(opt);
             });
         }
 
         document.getElementById("departamentos").onchange = function () {
 
-            const deptoSeleccionado = this.value;
+            const selectedDepartmentId = this.value;
 
             // =====================================================
             // CASO ESPECIAL: COLOMBIA
             // =====================================================
-            if (deptoSeleccionado === "COL") {
+            if (selectedDepartmentId === "COL") {
 
-                // limpiar municipios
+                // limpiar municipalityCodes
                 document.getElementById("municipios").value = "";
-                municipioActual = "";
+                currentMunicipalityId = "";
 
                 // limpiar filtros
-                filtroNivel = "";
-                deptoActual = "";
+                territoryLevel = "";
+                currentDepartmentId = "";
                 whereBase = "";
-                clasificacionBaseWhere = "1=1";
-                cancelClasificacionAuxiliaryLoad();
-                cancelClasificacionCategoryPrewarm();
-                cancelClasificacionDepartmentWarmup();
+                classificationBaseWhere = "1=1";
+                cancelClassificationAuxiliaryiliaryLoad();
+                cancelClassificationCategoryPrewarm();
+                cancelClassificationDepartmentWarmup();
 
                 // limpiar capas
                 clearLayers();
-                resetClasificacionCategoryVisuals();
+                resetClassificationCategoryVisuals();
 
                 // limpiar gráfica
                 if (chartInstance) chartInstance.destroy();
 
                 if (currentMainModule === "ORDENAMIENTO") {
-                    setOrdenamientoChartLoading();
-                    scheduleOrdenamientoRender();
+                    setLandUsePlanningChartLoading();
+                    scheduleLandUsePlanningRender();
                 } else {
                     const summaryDiv = document.getElementById("summaryDiv");
                     if (summaryDiv) {
@@ -8690,56 +8674,56 @@ if (typeof arcgisRequire !== "function") {
             // =====================================================
             // FILTRAR MUNICIPIOS
             // =====================================================
-            renderizarMunicipios(deptoSeleccionado);
+            renderMunicipalities(selectedDepartmentId);
             document.getElementById("municipios").value = "";
-            municipioActual = "";
+            currentMunicipalityId = "";
 
             if (currentMainModule === "ORDENAMIENTO") {
-                deptoActual = deptoSeleccionado;
-                filtroNivel = deptoSeleccionado && deptoSeleccionado !== "0" ? "DEPTO" : "";
+                currentDepartmentId = selectedDepartmentId;
+                territoryLevel = selectedDepartmentId && selectedDepartmentId !== "0" ? "DEPTO" : "";
 
-                if (currentOrdenamientoTab === "CLASIFICACION_SUELO") {
-                    cancelClasificacionAuxiliaryLoad();
-                    cancelClasificacionCategoryPrewarm();
-                    cancelClasificacionDepartmentWarmup();
+                if (currentLandUsePlanningTab === "CLASIFICACION_SUELO") {
+                    cancelClassificationAuxiliaryiliaryLoad();
+                    cancelClassificationCategoryPrewarm();
+                    cancelClassificationDepartmentWarmup();
                     renderCycleId++;
-                } else if (currentOrdenamientoTab === "ZONIFICACION_RURAL") {
-                    zonificacionRuralRenderSeq++;
-                    clearZonificacionRuralSelection();
+                } else if (currentLandUsePlanningTab === "ZONIFICACION_RURAL") {
+                    ruralZoningRenderSequence++;
+                    clearRuralZoningSelection();
                 }
-                scheduleOrdenamientoRender();
+                scheduleLandUsePlanningRender();
                 return;
             }
 
         };
 
         document.getElementById("municipios").onchange = function () {
-            const codigo = this.value;
-            if (!codigo) return;
+            const code = this.value;
+            if (!code) return;
 
-            filtroNivel = "MUNI";
-            municipioActual = codigo;
-            deptoActual = normalizeCode(codigo).substring(0, 2);
+            territoryLevel = "MUNI";
+            currentMunicipalityId = code;
+            currentDepartmentId = normalizeCode(code).substring(0, 2);
 
             renderControls();
 
             if (currentMainModule === "ORDENAMIENTO") {
-                if (currentOrdenamientoTab === "CLASIFICACION_SUELO") {
-                    cancelClasificacionAuxiliaryLoad();
-                    cancelClasificacionCategoryPrewarm();
-                    cancelClasificacionDepartmentWarmup();
+                if (currentLandUsePlanningTab === "CLASIFICACION_SUELO") {
+                    cancelClassificationAuxiliaryiliaryLoad();
+                    cancelClassificationCategoryPrewarm();
+                    cancelClassificationDepartmentWarmup();
                     renderCycleId++;
-                } else if (currentOrdenamientoTab === "ZONIFICACION_RURAL") {
-                    zonificacionRuralRenderSeq++;
-                    clearZonificacionRuralSelection();
+                } else if (currentLandUsePlanningTab === "ZONIFICACION_RURAL") {
+                    ruralZoningRenderSequence++;
+                    clearRuralZoningSelection();
                 }
-                scheduleOrdenamientoRender();
+                scheduleLandUsePlanningRender();
                 return;
             }
         };
 
         function getAxisTitles(layerConfig, chartType, isVertical, datasets) {
-            // Riesgo CC departamental: conteo de municipios
+            // Riesgo CC departamental: conteo de municipalityCodes
             if (layerConfig?.isDeptoRiskCount) {
                 return { xTitle: "Nivel de riesgo", yTitle: "Cantidad de municipios" };
             }
@@ -8764,7 +8748,7 @@ if (typeof arcgisRequire !== "function") {
             return { xTitle, yTitle };
         }
 
-        function formatOrdenamientoPiePercentLabel(value) {
+        function formatLandUsePlanningPiePercentLabel(value) {
             const number = Number(value);
             if (!Number.isFinite(number)) return "";
 
@@ -8774,7 +8758,7 @@ if (typeof arcgisRequire !== "function") {
             })}%`;
         }
 
-        function createOrdenamientoPiePercentageLabelsPlugin() {
+        function createLandUsePlanningPiePercentageLabelsPlugin() {
             return {
                 id: "ordenamientoPiePercentageLabels",
                 afterDatasetsDraw(chart) {
@@ -8848,7 +8832,7 @@ if (typeof arcgisRequire !== "function") {
                             const value = Number(rawValue);
                             if (!Number.isFinite(value) || value <= 0) return;
 
-                            const text = formatOrdenamientoPiePercentLabel(value);
+                            const text = formatLandUsePlanningPiePercentLabel(value);
                             if (!text) return;
 
                             const arcProps = typeof arc.getProps === "function"
@@ -8975,7 +8959,7 @@ if (typeof arcgisRequire !== "function") {
             };
         }
 
-        function getOrdenamientoAdaptiveChartLayout(itemCount) {
+        function getLandUsePlanningAdaptiveChartLayout(itemCount) {
             const count = Math.max(0, Number(itemCount) || 0);
             const screenW = window.innerWidth || 1200;
             const isSmallScreen = screenW <= 768;
@@ -9010,14 +8994,14 @@ if (typeof arcgisRequire !== "function") {
             };
         }
 
-        function getOrdenamientoPieChartHeight(itemCount, options = {}) {
+        function getLandUsePlanningPieChartHeight(itemCount, options = {}) {
             const count = Math.max(0, Number(itemCount) || 0);
             const screenW = window.innerWidth || 1200;
             const isSmallScreen = screenW <= 768;
             const isVerySmallScreen = screenW <= 480;
 
             if (!options.compact) {
-                return getOrdenamientoAdaptiveChartLayout(count).size;
+                return getLandUsePlanningAdaptiveChartLayout(count).size;
             }
 
             const base = isSmallScreen ? 340 : 370;
@@ -9029,12 +9013,12 @@ if (typeof arcgisRequire !== "function") {
             return Math.min(maxHeight, Math.max(base, base + extra));
         }
 
-        function crearGrafica(labels, values, colors, type = 'bar', isVertical = false, datasets = null) {
+        function createChart(labels, values, colors, type = 'bar', isVertical = false, datasets = null) {
             const layerConfig = (currentMainModule === "ORDENAMIENTO")
-                ? (ORDENAMIENTO_CONFIG[currentOrdenamientoTab] || null)
+                ? (LAND_USE_PLANNING_CONFIG[currentLandUsePlanningTab] || null)
                 : getActiveLayerConfig();
-            toggleGeoformasCharts(false);
-            destroyGeoformasCharts();
+            toggleLandformCharts(false);
+            destroyLandformCharts();
             if (type === 'bar' && !isVertical) {
                 labels = labels.map(l => wrapLabel(l, 22));
             }
@@ -9044,7 +9028,7 @@ if (typeof arcgisRequire !== "function") {
             //  Control de visibilidad de etiquetas (para no saturar en algunas capas)
             let showYLabels = true;
 
-            showOrdenamientoChartCanvas();
+            showLandUsePlanningChartCanvas();
             const ctx = document.getElementById("chart").getContext("2d");
             document.getElementById("chartHighlightOverlay")?.remove();
             if (chartInstance) chartInstance.destroy();
@@ -9065,22 +9049,22 @@ if (typeof arcgisRequire !== "function") {
                     ...(chartDatasets || []).map(dataset => Array.isArray(dataset?.data) ? dataset.data.length : 0)
                 )
                 : 0;
-            const isClasificacionSueloChart = layerConfig?.ordenamientoType === "clasificacion_suelo";
-            const isZonificacionRuralChart = currentMainModule === "ORDENAMIENTO" &&
-                currentOrdenamientoTab === "ZONIFICACION_RURAL";
-            const isAdaptiveOrdenamientoChart = isPieLike &&
+            const isSoilClassificationChart = layerConfig?.ordenamientoType === "clasificacion_suelo";
+            const isRuralZoningChart = currentMainModule === "ORDENAMIENTO" &&
+                currentLandUsePlanningTab === "ZONIFICACION_RURAL";
+            const isAdaptiveLandUsePlanningChart = isPieLike &&
                 currentMainModule === "ORDENAMIENTO" &&
-                (isZonificacionRuralChart || isClasificacionSueloChart);
-            const baseAdaptivePieLayout = isAdaptiveOrdenamientoChart
-                ? getOrdenamientoAdaptiveChartLayout(pieItemCount)
+                (isRuralZoningChart || isSoilClassificationChart);
+            const baseAdaptivePieLayout = isAdaptiveLandUsePlanningChart
+                ? getLandUsePlanningAdaptiveChartLayout(pieItemCount)
                 : null;
-            const adaptiveSizeBoost = isClasificacionSueloChart
+            const adaptiveSizeBoost = isSoilClassificationChart
                 ? ((window.innerWidth || 1200) <= 480 ? 24 : 32)
-                : (isZonificacionRuralChart
+                : (isRuralZoningChart
                     ? ((window.innerWidth || 1200) <= 480 ? 20 : 28)
                     : 0);
             const adaptiveSizeLimit = baseAdaptivePieLayout
-                ? baseAdaptivePieLayout.max + (isZonificacionRuralChart ? adaptiveSizeBoost : 0)
+                ? baseAdaptivePieLayout.max + (isRuralZoningChart ? adaptiveSizeBoost : 0)
                 : 0;
             const adaptivePieLayout = baseAdaptivePieLayout
                 ? {
@@ -9091,7 +9075,7 @@ if (typeof arcgisRequire !== "function") {
                     )
                 }
                 : null;
-            const legendPosition = isAdaptiveOrdenamientoChart || isClasificacionSueloChart
+            const legendPosition = isAdaptiveLandUsePlanningChart || isSoilClassificationChart
                 ? "bottom"
                 : (datasets ? "right" : "bottom");
 
@@ -9101,8 +9085,8 @@ if (typeof arcgisRequire !== "function") {
             chartCard?.classList.remove("chart-card--areas-activity");
             renderCanvas.classList.toggle("chart-canvas--pie-like", isPieLike);
             chartCard?.classList.toggle("chart-card--pie-like", isPieLike);
-            renderCanvas.classList.toggle("chart-canvas--ordenamiento-adaptive", isAdaptiveOrdenamientoChart);
-            chartCard?.classList.toggle("chart-card--ordenamiento-adaptive", isAdaptiveOrdenamientoChart);
+            renderCanvas.classList.toggle("chart-canvas--ordenamiento-adaptive", isAdaptiveLandUsePlanningChart);
+            chartCard?.classList.toggle("chart-card--ordenamiento-adaptive", isAdaptiveLandUsePlanningChart);
 
             if (adaptivePieLayout) {
                 renderCanvas.style.setProperty(
@@ -9135,8 +9119,8 @@ if (typeof arcgisRequire !== "function") {
                     layout: isPieLike ? {
                         padding: {
                             top: pieItemCount >= 10 ? 12 : 8,
-                            right: adaptivePieLayout?.outerPadding ?? (isClasificacionSueloChart ? 34 : (pieItemCount >= 10 ? 48 : 34)),
-                            bottom: isClasificacionSueloChart ? 18 : (pieItemCount >= 10 ? 12 : 8),
+                            right: adaptivePieLayout?.outerPadding ?? (isSoilClassificationChart ? 34 : (pieItemCount >= 10 ? 48 : 34)),
+                            bottom: isSoilClassificationChart ? 18 : (pieItemCount >= 10 ? 12 : 8),
                             left: adaptivePieLayout?.outerPadding ?? (pieItemCount >= 10 ? 48 : 34)
                         }
                     } : undefined,
@@ -9250,7 +9234,7 @@ if (typeof arcgisRequire !== "function") {
                         // =========================
                         if (
                             currentMainModule === "ORDENAMIENTO" &&
-                            currentOrdenamientoTab === "ZONIFICACION_RURAL"
+                            currentLandUsePlanningTab === "ZONIFICACION_RURAL"
                         ) {
                             const clickedCode =
                                 chartInstance.data.datasets?.[el.datasetIndex]?.codes?.[el.index] != null
@@ -9258,15 +9242,15 @@ if (typeof arcgisRequire !== "function") {
                                     : null;
 
                             if (clickedCode != null) {
-                                applyZonificacionRuralSingleSelection(clickedCode);
-                                await selectZonificacionRuralFromCode(clickedCode, {
+                                applyRuralZoningSingleSelection(clickedCode);
+                                await selectRuralZoningFromCode(clickedCode, {
                                     temporaryMs: 2200,
                                     highlightMap: true
                                 });
                                 if (currentRuralChartView === "CATEGORIA") {
-                                    await zoomMapaZonificacionRural(null, clickedCode);
+                                    await zoomRuralZoningMap(null, clickedCode);
                                 } else {
-                                    await zoomMapaZonificacionRural(clickedCode, null);
+                                    await zoomRuralZoningMap(clickedCode, null);
                                 }
                             }
                             return;
@@ -9277,7 +9261,7 @@ if (typeof arcgisRequire !== "function") {
                         // =========================
                         if (
                             currentMainModule === "ORDENAMIENTO" &&
-                            currentOrdenamientoTab === "CLASIFICACION_SUELO"
+                            currentLandUsePlanningTab === "CLASIFICACION_SUELO"
                         ) {
                             const dataCodes = chartInstance?.data?.datasets?.[el.datasetIndex]?.codes;
                             const clickedCode = Array.isArray(dataCodes) && dataCodes[el.index] != null
@@ -9285,8 +9269,8 @@ if (typeof arcgisRequire !== "function") {
                                 : null;
                             console.log("[Clasificación] clic en gráfico:", clickedCode);
                             if (clickedCode) {
-                                applyClasificacionSingleSelection(clickedCode, { applyMap: true });
-                                await zoomMapaClasificacionSuelo(clickedCode);
+                                applyClassificationSingleSelection(clickedCode, { applyMap: true });
+                                await zoomSoilClassificationMap(clickedCode);
                             }
                             return;
                         }
@@ -9314,8 +9298,8 @@ if (typeof arcgisRequire !== "function") {
             };
 
             if (isPieLike) {
-                config.options.maintainAspectRatio = !isAdaptiveOrdenamientoChart;
-                if (!isAdaptiveOrdenamientoChart) {
+                config.options.maintainAspectRatio = !isAdaptiveLandUsePlanningChart;
+                if (!isAdaptiveLandUsePlanningChart) {
                     config.options.aspectRatio = 1;
                 }
                 if (type === "doughnut") {
@@ -9328,7 +9312,7 @@ if (typeof arcgisRequire !== "function") {
                 }
                 config.plugins = [
                     ...(config.plugins || []),
-                    createOrdenamientoPiePercentageLabelsPlugin()
+                    createLandUsePlanningPiePercentageLabelsPlugin()
                 ];
             }
 
@@ -9559,7 +9543,7 @@ if (typeof arcgisRequire !== "function") {
                 chartCanvas.ondblclick = async (event) => {
                     if (
                         currentMainModule === "ORDENAMIENTO" &&
-                        currentOrdenamientoTab === "ZONIFICACION_RURAL"
+                        currentLandUsePlanningTab === "ZONIFICACION_RURAL"
                     ) {
                         const hitItems = chartInstance && typeof chartInstance.getElementsAtEventForMode === "function"
                             ? chartInstance.getElementsAtEventForMode(
@@ -9571,13 +9555,13 @@ if (typeof arcgisRequire !== "function") {
                             : [];
 
                         if (hitItems.length) return;
-                        restoreZonificacionRuralLegendFilter();
+                        restoreRuralZoningLegendFilter();
                         return;
                     }
 
                     if (
                         currentMainModule !== "ORDENAMIENTO" ||
-                        currentOrdenamientoTab !== "AREAS_ACTIVIDAD"
+                        currentLandUsePlanningTab !== "AREAS_ACTIVIDAD"
                     ) {
                         return;
                     }
@@ -9592,20 +9576,20 @@ if (typeof arcgisRequire !== "function") {
                         : [];
 
                     if (hitItems.length) return;
-                    await restaurarAreasActividadLegend();
+                    await restoreActivityAreasLegend();
                 };
             }
         }
 
-        function actualizarTituloGrafico(config, mpnombre, dpnombre) {
+        function updateChartTitle(config, mpnombre, dpnombre) {
             const titleElement = document.getElementById("chartTitle");
             if (!titleElement) return;
 
             let titulo = "Distribución (%)";
-            if (filtroNivel === "DEPTO" && deptoActual) {
-                const depName = diccionarioDepartamentos[deptoActual] || deptoActual;
+            if (territoryLevel === "DEPTO" && currentDepartmentId) {
+                const depName = departmentNames[currentDepartmentId] || currentDepartmentId;
 
-                // fallback depto
+                // fallback departmentId
                 titleElement.textContent = `Distribución (%)`;
                 return;
             }
@@ -9616,7 +9600,7 @@ if (typeof arcgisRequire !== "function") {
             titleElement.textContent = titulo;
         }
 
-        function buildPaisajeDictFromRenderer(layer) {
+        function buildLandscapeDictionaryionaryFromRenderer(layer) {
             const m = new Map();
             const r = layer?.renderer;
             if (!r || r.type !== "unique-value") return m;
@@ -9679,7 +9663,7 @@ if (typeof arcgisRequire !== "function") {
                 if (config.isSuelos && config.suelosType === "orden") {
                     const legendData = buildLegendFromRenderer(layer);
                     if (legendData?.labels?.length) {
-                        actualizarLeyenda(legendData.labels, legendData.colors, legendData.codes);
+                        updateLegend(legendData.labels, legendData.colors, legendData.codes);
                     }
                     return;
                 }
@@ -9700,7 +9684,7 @@ if (typeof arcgisRequire !== "function") {
                 if (!res || !Array.isArray(res.features)) return;
 
                 if (!res.features.length) {
-                    actualizarLeyenda([], []);
+                    updateLegend([], []);
                     return;
                 }
 
@@ -9724,7 +9708,7 @@ if (typeof arcgisRequire !== "function") {
                 const entries = Array.from(byLabel.values());
                 const ordered = sortLegendEntries(config, entries);
 
-                actualizarLeyenda(
+                updateLegend(
                     ordered.map(e => e.label),
                     ordered.map(e => e.color),
                     ordered.map(e => String(e.code ?? e.label))
@@ -9765,7 +9749,7 @@ if (typeof arcgisRequire !== "function") {
         HANDLERS
         ======================= */
 
-        function buildCuencasDictFromRenderer(layerJson) {
+        function buildBasinsDictionaryionaryFromRenderer(layerJson) {
             const infos = layerJson?.drawingInfo?.renderer?.uniqueValueInfos || [];
             const map = new Map();
 
@@ -9805,8 +9789,8 @@ if (typeof arcgisRequire !== "function") {
 
 
         function applyWhereToActiveLayers(where) {
-            if (currentOrdenamientoTab === "CLASIFICACION_SUELO") {
-                applyClasificacionVisualWhere(where);
+            if (currentLandUsePlanningTab === "CLASIFICACION_SUELO") {
+                applyClassificationVisualWhere(where);
                 return;
             }
             // si estás en cuencas (3 capas), aplica a todas
@@ -9876,7 +9860,7 @@ if (typeof arcgisRequire !== "function") {
             });
         };
 
-        function resolveOrdenamientoTabTarget(tabUrl) {
+        function resolveLandUsePlanningTabTarget(tabUrl) {
             const tab = String(tabUrl || "");
             if (tab.includes("Vigencia")) {
                 return "Vigencia";
@@ -9893,20 +9877,20 @@ if (typeof arcgisRequire !== "function") {
             return null;
         }
 
-        function activateOrdenamientoTabFromUrl(tabUrl) {
-            const target = resolveOrdenamientoTabTarget(tabUrl);
+        function activateLandUsePlanningTabFromUrl(tabUrl) {
+            const target = resolveLandUsePlanningTabTarget(tabUrl);
             if (!target) return;
 
-            setOrdenamientoTab(target);
+            setLandUsePlanningTab(target);
             currentMainModule = AppState.currentMainModule;
-            currentOrdenamientoTab = AppState.currentOrdenamientoTab;
+            currentLandUsePlanningTab = AppState.currentLandUsePlanningTab;
             currentRuralChartView = AppState.currentRuralChartView;
             syncStateFromGlobals();
-            cleanupOrdenamientoVisualStateForTab(currentOrdenamientoTab);
-            resetOrdenamientoUI({
+            cleanupLandUsePlanningVisualStateForTab(currentLandUsePlanningTab);
+            resetLandUsePlanningUi({
                 hideTimeSlider,
-                destroyGeoformasCharts,
-                toggleGeoformasCharts,
+                destroyLandformCharts,
+                toggleLandformCharts,
                 chartInstanceRef: {
                     get current() { return chartInstance; },
                     set current(value) { chartInstance = value; }
@@ -9914,8 +9898,8 @@ if (typeof arcgisRequire !== "function") {
                 renderControls
             });
 
-            if (typeof cargarOrdenamientoActual === "function") {
-                cargarOrdenamientoActual();
+            if (typeof loadCurrentLandUsePlanning === "function") {
+                loadCurrentLandUsePlanning();
             }
         }
 
@@ -9928,22 +9912,22 @@ if (typeof arcgisRequire !== "function") {
         globalThis.ModuleNavigation?.applyTerritorySelectionFromUrl?.({
             onTab(tabUrl) {
                 if (!urlContext.municipioId && !urlContext.deptoId) {
-                    activateOrdenamientoTabFromUrl(tabUrl);
+                    activateLandUsePlanningTabFromUrl(tabUrl);
                 }
             },
             onApplied({ tab }) {
                 if (tab) {
-                    activateOrdenamientoTabFromUrl(tab);
+                    activateLandUsePlanningTabFromUrl(tab);
                 }
             },
-            prepareTerritorySelection({ municipioId, deptoId, selectDepto, selectMuni }) {
-                if (deptoId && selectDepto?.querySelector(`option[value="${deptoId}"]`)) {
-                    renderizarMunicipios(deptoId);
+            prepareTerritorySelection({ municipioId, deptoId, departmentSelect, selectMuni }) {
+                if (deptoId && departmentSelect?.querySelector(`option[value="${deptoId}"]`)) {
+                    renderMunicipalities(deptoId);
                     return;
                 }
 
                 if (municipioId && !selectMuni?.querySelector(`option[value="${municipioId}"]`)) {
-                    renderizarMunicipios();
+                    renderMunicipalities();
                 }
             }
         });

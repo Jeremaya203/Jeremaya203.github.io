@@ -1,7 +1,7 @@
-export const MUNICIPIOS_SOURCE_LAYER_URL = "https://mapas2.igac.gov.co/server/rest/services/ordenamiento/componentebiofisico/MapServer/6";
+export const MUNICIPALITIES_SOURCE_LAYER_URL = "https://mapas2.igac.gov.co/server/rest/services/ordenamiento/componentebiofisico/MapServer/6";
 
 
-export const ORDENAMIENTO_CONFIG = {
+export const LAND_USE_PLANNING_CONFIG = {
 
         VIGENCIA: {
         id: "vigencia",

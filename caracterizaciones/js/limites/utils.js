@@ -1,8 +1,8 @@
-export function debounce(fn, ms = 120) {
-    let t = null;
+export function debounce(callback, delayMs = 120) {
+    let timeoutId = null;
     return (...args) => {
-        clearTimeout(t);
-        t = setTimeout(() => fn(...args), ms);
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => callback(...args), delayMs);
     };
 }
 
@@ -11,10 +11,10 @@ export function debounce(fn, ms = 120) {
 export function escapeHtml(value, fallback = "—") {
     if (value === null || value === undefined || value === "") return fallback;
     return String(value)
-        .replace(/&/g, "&")
-        .replace(/</g, "<")
-        .replace(/>/g, ">")
-        .replace(/"/g, "'")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
 }
 
@@ -54,7 +54,7 @@ export function normalizeCode(value) {
     return String(value ?? "").trim();
 }
 
-export function convertAreaToKm2(value, sourceUnit = "km2") {
+export function convertAreaToSquareKilometers(value, sourceUnit = "km2") {
     if (value === null || value === undefined || value === "") return null;
 
     const number = Number(value);
@@ -65,38 +65,38 @@ export function convertAreaToKm2(value, sourceUnit = "km2") {
         : number;
 }
 
-export function normalizeDepartamentoDisplayName(value, codigoDepto = "") {
-    const codigo = String(codigoDepto ?? "").trim();
-    const nombre = String(value ?? "").trim();
-    const normalized = nombre
+export function normalizeDepartmentDisplayName(value, departmentCode = "") {
+    const code = String(departmentCode ?? "").trim();
+    const name = String(value ?? "").trim();
+    const normalized = name
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase();
 
     if (
-        codigo === "88" ||
+        code === "88" ||
         normalized === "san andres, providencia y santa catalina" ||
         normalized === "san andres providencia y santa catalina"
     ) {
         return "San Andr\u00e9s y Providencia";
     }
 
-    return nombre;
+    return name;
 }
 
-export function getDepartamentoDisplayName(codigoDepto, diccionarioDepartamentos = {}) {
-    const codigo = String(codigoDepto ?? "").trim();
-    if (codigo === "00") return "Área en litigio";
-    return normalizeDepartamentoDisplayName(diccionarioDepartamentos[codigo] || codigo, codigo);
+export function getDepartmentDisplayName(departmentCode, departmentNames = {}) {
+    const code = String(departmentCode ?? "").trim();
+    if (code === "00") return "Área en litigio";
+    return normalizeDepartmentDisplayName(departmentNames[code] || code, code);
 }
 
-export function getMunicipioDisplayName(municipio, diccionarioMunicipios = {}) {
-    const codigo = String(municipio?.codigo ?? municipio ?? "").trim();
-    const nombre = String(municipio?.nombre ?? diccionarioMunicipios[codigo] ?? "").trim();
+export function getMunicipalityDisplayName(municipality, municipalityNames = {}) {
+    const code = String(municipality?.codigo ?? municipality ?? "").trim();
+    const name = String(municipality?.nombre ?? municipalityNames[code] ?? "").trim();
 
-    if (codigo === "00000" || nombre === "00000") {
+    if (code === "00000" || name === "00000") {
         return "Área en litigio";
     }
 
-    return nombre || codigo;
+    return name || code;
 }

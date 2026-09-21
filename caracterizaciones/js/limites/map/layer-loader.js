@@ -1,27 +1,27 @@
-import { convertAreaToKm2 } from "../utils.js?v=depto-area-km2-20260716";
+import { convertAreaToSquareKilometers } from "../utils.js?v=depto-area-km2-20260716";
 
 // ── Caché de capas para reutilización ──
-let _municipiosLayer = null;
-let _departamentosLayer = null;
-let _municipiosConfigHash = "";
-let _departamentosConfigHash = "";
+let _municipalitiesLayer = null;
+let _departmentsLayer = null;
+let _municipalitiesConfigHash = "";
+let _departmentsConfigHash = "";
 
 export function clearLayerCache() {
-    if (_municipiosLayer) {
-        try { _municipiosLayer.destroy?.(); } catch (e) {}
-        _municipiosLayer = null;
+    if (_municipalitiesLayer) {
+        try { _municipalitiesLayer.destroy?.(); } catch (e) {}
+        _municipalitiesLayer = null;
     }
-    if (_departamentosLayer) {
-        try { _departamentosLayer.destroy?.(); } catch (e) {}
-        _departamentosLayer = null;
+    if (_departmentsLayer) {
+        try { _departmentsLayer.destroy?.(); } catch (e) {}
+        _departmentsLayer = null;
     }
-    _municipiosConfigHash = "";
-    _departamentosConfigHash = "";
+    _municipalitiesConfigHash = "";
+    _departmentsConfigHash = "";
 }
 
-export function hideAllLimitesLayers() {
-    if (_municipiosLayer) _municipiosLayer.visible = false;
-    if (_departamentosLayer) _departamentosLayer.visible = false;
+export function hideAllBoundaryLayers() {
+    if (_municipalitiesLayer) _municipalitiesLayer.visible = false;
+    if (_departmentsLayer) _departmentsLayer.visible = false;
 }
 
 // ── Helper: construir definitionExpression ──
@@ -36,7 +36,7 @@ function escapeHtml(value) {
         .replace(/>/g, "&gt;");
 }
 
-function formatAreaKm2(value) {
+function formatAreaSquareKilometers(value) {
     if (value === null || value === undefined || value === "") return "";
 
     const number = Number(value);
@@ -69,20 +69,20 @@ function buildSegmentedCodeWhere(field, code, codeLength, segmentSize = 5, maxSe
     return `(${clauses.join(" OR ")})`;
 }
 
-function buildWhereMunicipios(config, deptoActual, municipioActual) {
-    if (municipioActual) {
-        return buildSegmentedCodeWhere(config.filterField, municipioActual, 5) || "1=0";
+function buildMunicipalitiesWhere(config, currentDepartmentId, currentMunicipalityId) {
+    if (currentMunicipalityId) {
+        return buildSegmentedCodeWhere(config.filterField, currentMunicipalityId, 5) || "1=0";
     }
-    if (deptoActual && deptoActual !== "0" && deptoActual !== "COL") {
-        return buildSegmentedCodeWhere(config.filterField, deptoActual, 2) || "1=0";
+    if (currentDepartmentId && currentDepartmentId !== "0" && currentDepartmentId !== "COL") {
+        return buildSegmentedCodeWhere(config.filterField, currentDepartmentId, 2) || "1=0";
     }
     return "1=1";
 }
 
-function buildWhereDepartamentos(config, deptoActual) {
+function buildDepartmentsWhere(config, currentDepartmentId) {
     const fixedWhere = config.fixedWhere || "1=1";
-    if (deptoActual && deptoActual !== "0" && deptoActual !== "COL") {
-        return `(${fixedWhere}) AND (${config.filterField} = '${escapeSqlString(deptoActual)}')`;
+    if (currentDepartmentId && currentDepartmentId !== "0" && currentDepartmentId !== "COL") {
+        return `(${fixedWhere}) AND (${config.filterField} = '${escapeSqlString(currentDepartmentId)}')`;
     }
     return fixedWhere;
 }
@@ -112,45 +112,45 @@ function buildDepartmentRenderer() {
     };
 }
 
-// ── createOrUpdateMunicipiosLayer ──
-export function createOrUpdateMunicipiosLayer({
-    FeatureLayer, map, LIMITES_CONFIG, deptoActual, municipioActual,
+// ── createOrUpdateMunicipalitiesLayer ──
+export function createOrUpdateMunicipalitiesLayer({
+    FeatureLayer, map, boundariesConfig, currentDepartmentId, currentMunicipalityId,
     onReady, onError
 }) {
-    const config = LIMITES_CONFIG.MUNICIPIOS;
+    const config = boundariesConfig.MUNICIPIOS;
     if (!config) return null;
 
-    const whereLimites = buildWhereMunicipios(config, deptoActual, municipioActual);
-    const cacheKey = `muni|${whereLimites}`;
+    const boundariesWhere = buildMunicipalitiesWhere(config, currentDepartmentId, currentMunicipalityId);
+    const cacheKey = `muni|${boundariesWhere}`;
 
     // Si la capa ya existe con el mismo filtro, solo actualizar visibilidad
-    if (_municipiosLayer && _municipiosConfigHash === cacheKey) {
-        _municipiosLayer.visible = false;
-        _departamentosLayer && (_departamentosLayer.visible = false);
+    if (_municipalitiesLayer && _municipalitiesConfigHash === cacheKey) {
+        _municipalitiesLayer.visible = false;
+        _departmentsLayer && (_departmentsLayer.visible = false);
         if (onReady) {
-            Promise.resolve(onReady({ layer: _municipiosLayer, config, whereClause: whereLimites, reused: true }))
+            Promise.resolve(onReady({ layer: _municipalitiesLayer, config, whereClause: boundariesWhere, reused: true }))
                 .catch(error => { if (onError) onError(error); });
         }
-        return { layer: _municipiosLayer, config, whereClause: whereLimites, reused: true };
+        return { layer: _municipalitiesLayer, config, whereClause: boundariesWhere, reused: true };
     }
 
     // Si la capa existe pero cambió el filtro — actualizar definitionExpression
-    if (_municipiosLayer) {
-        _municipiosLayer.definitionExpression = whereLimites;
-        _municipiosLayer.visible = false;
-        _departamentosLayer && (_departamentosLayer.visible = false);
-        _municipiosConfigHash = cacheKey;
+    if (_municipalitiesLayer) {
+        _municipalitiesLayer.definitionExpression = boundariesWhere;
+        _municipalitiesLayer.visible = false;
+        _departmentsLayer && (_departmentsLayer.visible = false);
+        _municipalitiesConfigHash = cacheKey;
         if (onReady) {
-            Promise.resolve(onReady({ layer: _municipiosLayer, config, whereClause: whereLimites, reused: true }))
+            Promise.resolve(onReady({ layer: _municipalitiesLayer, config, whereClause: boundariesWhere, reused: true }))
                 .catch(error => { if (onError) onError(error); });
         }
-        return { layer: _municipiosLayer, config, whereClause: whereLimites, reused: true };
+        return { layer: _municipalitiesLayer, config, whereClause: boundariesWhere, reused: true };
     }
 
     // Primera creación
     const layer = new FeatureLayer({
         url: config.url,
-        definitionExpression: whereLimites,
+        definitionExpression: boundariesWhere,
         outFields: config.outFields || ["*"],
         opacity: 1,
         visible: false,
@@ -206,60 +206,60 @@ export function createOrUpdateMunicipiosLayer({
         }
     };
 
-    _municipiosLayer = layer;
-    _municipiosConfigHash = cacheKey;
-    _departamentosLayer && (_departamentosLayer.visible = false);
+    _municipalitiesLayer = layer;
+    _municipalitiesConfigHash = cacheKey;
+    _departmentsLayer && (_departmentsLayer.visible = false);
 
     map.add(layer);
 
     layer.when(() => {
-        if (onReady) return onReady({ layer, config, whereClause: whereLimites, reused: false });
+        if (onReady) return onReady({ layer, config, whereClause: boundariesWhere, reused: false });
     }).catch(error => {
         if (onError) onError(error);
     });
 
-    return { layer, config, whereClause: whereLimites, reused: false };
+    return { layer, config, whereClause: boundariesWhere, reused: false };
 }
 
-// ── createOrUpdateDepartamentosLayer ──
-export function createOrUpdateDepartamentosLayer({
-    FeatureLayer, map, LIMITES_CONFIG, deptoActual,
+// ── createOrUpdateDepartmentsLayer ──
+export function createOrUpdateDepartmentsLayer({
+    FeatureLayer, map, boundariesConfig, currentDepartmentId,
     onReady
 }) {
-    const config = LIMITES_CONFIG.DEPARTAMENTOS;
+    const config = boundariesConfig.DEPARTAMENTOS;
     if (!config) return null;
 
-    const whereLimites = buildWhereDepartamentos(config, deptoActual);
-    const cacheKey = `depto|${whereLimites}`;
+    const boundariesWhere = buildDepartmentsWhere(config, currentDepartmentId);
+    const cacheKey = `depto|${boundariesWhere}`;
 
     // Si la capa ya existe con el mismo filtro, solo actualizar visibilidad
-    if (_departamentosLayer && _departamentosConfigHash === cacheKey) {
-        _departamentosLayer.visible = true;
-        _departamentosLayer.renderer = buildDepartmentRenderer();
-        _municipiosLayer && (_municipiosLayer.visible = false);
+    if (_departmentsLayer && _departmentsConfigHash === cacheKey) {
+        _departmentsLayer.visible = true;
+        _departmentsLayer.renderer = buildDepartmentRenderer();
+        _municipalitiesLayer && (_municipalitiesLayer.visible = false);
         if (onReady) {
-            onReady({ layer: _departamentosLayer, config, whereClause: whereLimites, reused: true });
+            onReady({ layer: _departmentsLayer, config, whereClause: boundariesWhere, reused: true });
         }
-        return { layer: _departamentosLayer, config, whereClause: whereLimites, reused: true };
+        return { layer: _departmentsLayer, config, whereClause: boundariesWhere, reused: true };
     }
 
     // Si la capa existe pero cambió el filtro — actualizar definitionExpression
-    if (_departamentosLayer) {
-        _departamentosLayer.definitionExpression = whereLimites;
-        _departamentosLayer.visible = true;
-        _departamentosLayer.renderer = buildDepartmentRenderer();
-        _municipiosLayer && (_municipiosLayer.visible = false);
-        _departamentosConfigHash = cacheKey;
+    if (_departmentsLayer) {
+        _departmentsLayer.definitionExpression = boundariesWhere;
+        _departmentsLayer.visible = true;
+        _departmentsLayer.renderer = buildDepartmentRenderer();
+        _municipalitiesLayer && (_municipalitiesLayer.visible = false);
+        _departmentsConfigHash = cacheKey;
         if (onReady) {
-            onReady({ layer: _departamentosLayer, config, whereClause: whereLimites, reused: true });
+            onReady({ layer: _departmentsLayer, config, whereClause: boundariesWhere, reused: true });
         }
-        return { layer: _departamentosLayer, config, whereClause: whereLimites, reused: true };
+        return { layer: _departmentsLayer, config, whereClause: boundariesWhere, reused: true };
     }
 
     // Primera creación
     const layer = new FeatureLayer({
         url: config.url,
-        definitionExpression: whereLimites,
+        definitionExpression: boundariesWhere,
         outFields: config.outFields || ["*"],
         opacity: 0.85,
         visible: true,
@@ -280,7 +280,7 @@ export function createOrUpdateDepartamentosLayer({
             const rows = [
                 { label: "C\u00f3digo DANE", value: att[codeField] },
                 { label: "Departamento", value: resolveCodedFieldLabel(layer, nameField, att[nameField]) },
-                { label: "\u00c1rea (km\u00b2)", value: formatAreaKm2(convertAreaToKm2(att[areaField], config.areaUnit)) },
+                { label: "\u00c1rea (km\u00b2)", value: formatAreaSquareKilometers(convertAreaToSquareKilometers(att[areaField], config.areaUnit)) },
                 { label: "Normatividad", value: att[normaField] },
                 { label: "Fuente", value: att[sourceField] }
             ]
@@ -299,24 +299,24 @@ export function createOrUpdateDepartamentosLayer({
         }
     };
 
-    _departamentosLayer = layer;
-    _departamentosConfigHash = cacheKey;
-    _municipiosLayer && (_municipiosLayer.visible = false);
+    _departmentsLayer = layer;
+    _departmentsConfigHash = cacheKey;
+    _municipalitiesLayer && (_municipalitiesLayer.visible = false);
 
     map.add(layer);
 
     layer.when(() => {
-        if (onReady) onReady({ layer, config, whereClause: whereLimites, reused: false });
+        if (onReady) onReady({ layer, config, whereClause: boundariesWhere, reused: false });
     });
 
-    return { layer, config, whereClause: whereLimites, reused: false };
+    return { layer, config, whereClause: boundariesWhere, reused: false };
 }
 
 // ── Compatibilidad hacia atrás: wrappers para código existente ──
-export function createMunicipiosLayer(opts) {
-    return createOrUpdateMunicipiosLayer(opts);
+export function createMunicipalitiesLayer(opts) {
+    return createOrUpdateMunicipalitiesLayer(opts);
 }
 
-export function createDepartamentosLayer(opts) {
-    return createOrUpdateDepartamentosLayer(opts);
+export function createDepartmentsLayer(opts) {
+    return createOrUpdateDepartmentsLayer(opts);
 }

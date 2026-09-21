@@ -1,16 +1,17 @@
-import { State } from "./core/State.js";
-import { EventBus } from "./core/EventBus.js";
-import { LayerConfig } from "./config/LayerConfig.js";
-import { ModeConfig } from "./config/ModeConfig.js";
-import { DomainConfig } from "./config/DomainConfig.js";
-import { ArcGISQueryService } from "./services/ArcGISQueryService.js";
-import { QueryCache } from "./services/QueryCache.js";
-import { RequestCoordinator } from "./services/RequestCoordinator.js";
-import { OcupacionUtils } from "./utils/OcupacionUtils.js";
-import { LegendDataExtractor } from "./legend/LegendDataExtractor.js";
-import { LegendRenderer } from "./legend/LegendRenderer.js";
+import { State } from "./core/state.js";
+import { EventBus } from "./core/event-bus.js";
+import { LayerConfig } from "./config/layer-config.js";
+import { ModeConfig } from "./config/mode-config.js";
+import { DomainConfig } from "./config/domain-config.js";
+import { ArcGISQueryService } from "./services/arcgis-query-service.js";
+import { QueryCache } from "./services/query-cache.js";
+import { RequestCoordinator } from "./services/request-coordinator.js";
+import { OccupationUtils } from "./utils/occupation-utils.js";
+import { LegendDataExtractor } from "./legend/legend-data-extractor.js";
+import { LegendRenderer } from "./legend/legend-renderer.js";
 import { escapeHtml, escapeHtmlWithBreaks } from "../shared/security/security-utils.js";
-import "./moduleNavigation.js";
+import { loadTerritorialCatalog } from "../shared/territorial-catalog.js";
+import "./module-navigation.js";
 
 const ModuleNavigation = window.ModuleNavigation;
 
@@ -19,10 +20,10 @@ const eventBus = new EventBus();
 const queryCache = new QueryCache({ ttlMs: 300000 });
 const requestCoordinator = new RequestCoordinator();
 const LAYERS_CONFIG = LayerConfig.layers;
-const DEPTO_ONLY_LAYER_IDS = DomainConfig.deptoOnlyLayerIds;
+const DEPARTMENT_ONLY_LAYER_IDS = DomainConfig.deptoOnlyLayerIds;
 const DEPT_TO_MUNI_LAYER_ID = DomainConfig.deptToMuniLayerId;
-const debounce = (...args) => OcupacionUtils.debounce(...args);
-const wrapLabel = (...args) => OcupacionUtils.wrapLabel(...args);
+const debounce = (...args) => OccupationUtils.debounce(...args);
+const wrapLabel = (...args) => OccupationUtils.wrapLabel(...args);
 const arcRestQuery = (layerUrl, params = {}, options = {}) => ArcGISQueryService.query(layerUrl, params, {
     cache: queryCache,
     cacheKey: buildQueryCacheKey("arcRest", layerUrl, params),
@@ -95,8 +96,8 @@ function ensureMunicipalLayerIndex(prevId) {
     }
 
     const cfg = list[currentSubLayerIndex];
-    if (cfg && DEPTO_ONLY_LAYER_IDS.has(cfg.id)) {
-        const fallbackIdx = list.findIndex(layer => !DEPTO_ONLY_LAYER_IDS.has(layer.id));
+    if (cfg && DEPARTMENT_ONLY_LAYER_IDS.has(cfg.id)) {
+        const fallbackIdx = list.findIndex(layer => !DEPARTMENT_ONLY_LAYER_IDS.has(layer.id));
         if (fallbackIdx !== -1) {
             currentSubLayerIndex = fallbackIdx;
             rememberActiveSubLayer(list[fallbackIdx]);
@@ -108,20 +109,20 @@ function getLayerListForCurrentLevel(mode = currentMode) {
     const list = LAYERS_CONFIG[mode] || [];
 
     // Si estoy filtrando por departamento -> SOLO las depto, o todas si no hay configuradas
-    if (filtroNivel === "DEPTO") {
-        const deptoOnly = list.filter(l => DEPTO_ONLY_LAYER_IDS.has(l.id));
-        if (deptoOnly.length) return deptoOnly;
-        return list.filter(l => !DEPTO_ONLY_LAYER_IDS.has(l.id));
+    if (territoryLevel === "DEPTO") {
+        const departmentOnly = list.filter(l => DEPARTMENT_ONLY_LAYER_IDS.has(l.id));
+        if (departmentOnly.length) return departmentOnly;
+        return list.filter(l => !DEPARTMENT_ONLY_LAYER_IDS.has(l.id));
     }
 
     // Si estoy en municipio -> BLOQUEAR las depto
-    if (filtroNivel === "MUNI") {
-        return list.filter(l => !DEPTO_ONLY_LAYER_IDS.has(l.id));
+    if (territoryLevel === "MUNI") {
+        return list.filter(l => !DEPARTMENT_ONLY_LAYER_IDS.has(l.id));
     }
 
     // Si no hay nivel (inicio) -> por defecto NO mostrar las depto
     // (evita que se metan “por accidente” antes de escoger municipio)
-    return list.filter(l => !DEPTO_ONLY_LAYER_IDS.has(l.id));
+    return list.filter(l => !DEPARTMENT_ONLY_LAYER_IDS.has(l.id));
 }
 
 
@@ -133,32 +134,32 @@ function clampSubLayerIndex() {
 // let currentMode = 'DISTRIBUCION_POBLACION'; // modo actual de ocupacion
 let currentMode = 'CONTEXTO_HISTORICO'; // modo actual de ocupacion
 let currentMainModule = "OCUPACION"; // OCUPACION | ORDENAMIENTO
-let currentOrdenamientoTab = "CLASIFICACION_SUELO";
+let currentLandUsePlanningTab = "CLASIFICACION_SUELO";
 let currentRuralChartView = "CATEGORIA"; // "CATEGORIA" | "USO_PRINCIPAL"
 
 let layerGlobal = null;
 let layerViewGlobal = null;
 let whereBase = "";
-let municipioActual = "";
+let currentMunicipalityId = "";
 let chartInstance = null;
 let tcChartInstance = null;
-let diccionarioMunicipios = {};
+let municipalityNames = {};
 let pChartInstances = { 1985: null, 1993: null, 2005: null, 2018: null };
-let diccionarioDepartamentos = {};
-let todosMunicipios = []; // Array de {codigo, nombre, depto}
+let departmentNames = {};
+let municipalities = []; // Array de {codigo, nombre, depto}
 let layersGlobal = []; // para manejar múltiples capas (cuencas)
 let lineNegraLayers = [];
-let lineaNegraTerritoryGeometry = null;
-let lineaNegraLoadToken = 0;
-const lineaNegraLayerCache = new Map();
+let blackLineTerritoryGeometry = null;
+let blackLineLoadToken = 0;
+const blackLineLayerCache = new Map();
 let chartLayerGlobal = null;
 let activeFeatureLayer = null;
 let lastLegendRenderKey = "";
-let geoformaSelectedPaisaje = null;
-let vocacionSelectedLabel = null;
+let selectedLandformLandscape = null;
+let selectedLandSuitabilityLabel = null;
 let lastRenderedLayerKey = "";
 const featureLayerCache = new Map();
-let contextoHistoricoPeriodoActivo = "Todos";
+let activeHistoricalContextPeriod = "Todos";
 let contextoHistoricoTimelineKeyActivo = null;
 
 let map = null;
@@ -167,56 +168,56 @@ let applyLegendLayerViewFilter = async () => { };
 let resetLegendVisualState = () => { };
 let getActiveLayerConfigForSync = () => null;
 
-let deptoActual = "";
-let filtroNivel = ""; // "", "DEPTO", "MUNI"
+let currentDepartmentId = "";
+let territoryLevel = ""; // "", "DEPTO", "MUNI"
 const MUNICIPALITY_REQUIRED_SUMMARY_MESSAGE = "Resumen disponible solo al seleccionar un municipio.";
 
 function isDepartmentOnlySelection() {
-    return filtroNivel === "DEPTO" && !!deptoActual && !municipioActual;
+    return territoryLevel === "DEPTO" && !!currentDepartmentId && !currentMunicipalityId;
 }
 
-let composicionCampoActivo = "nm";
+let activeCompositionField = "nm";
 let tasaCrecimientoCampoActivo = "pt2005";
-let indiceComplementarioCampoActivo = "icmgini";
+let activeComplementaryIndexField = "icmgini";
 let updateLegendByExtent = null;
 
-function ocupacionGlobal(name) {
+function globalOccupation(name) {
     return typeof window !== "undefined" ? window[name] : undefined;
 }
 
-const DEPTO_DISPLAY_NAME_OVERRIDES = {
+const DEPARTMENT_DISPLAY_NAME_OVERRIDES = {
     "00": "Área en litigio",
     "88": "San Andrés y Providencia"
 };
 
-function getDepartamentoDisplayName(codigoDepto) {
-    const codigo = String(codigoDepto ?? "").trim();
-    if (DEPTO_DISPLAY_NAME_OVERRIDES[codigo]) {
-        return DEPTO_DISPLAY_NAME_OVERRIDES[codigo];
+function getDepartmentDisplayName(departmentCode) {
+    const code = String(departmentCode ?? "").trim();
+    if (DEPARTMENT_DISPLAY_NAME_OVERRIDES[code]) {
+        return DEPARTMENT_DISPLAY_NAME_OVERRIDES[code];
     }
-    return diccionarioDepartamentos[codigo] || codigo;
+    return departmentNames[code] || code;
 }
 
-function getMunicipioDisplayName(codigo, nombre = "") {
-    const codigoMuni = String(codigo ?? "").trim();
-    const nombreMuni = String(nombre ?? "").trim();
+function getMunicipalityDisplayName(code, name = "") {
+    const municipalityCode = String(code ?? "").trim();
+    const municipalityName = String(name ?? "").trim();
 
-    if (codigoMuni === "00000" || nombreMuni === "00000") {
+    if (municipalityCode === "00000" || municipalityName === "00000") {
         return "Área en litigio";
     }
 
-    return nombreMuni || diccionarioMunicipios[codigoMuni] || codigoMuni;
+    return municipalityName || municipalityNames[municipalityCode] || municipalityCode;
 }
 
-function sortDepartamentoCodes(codigos = []) {
-    return [...codigos].sort((a, b) =>
-        getDepartamentoDisplayName(a).localeCompare(getDepartamentoDisplayName(b), "es", { sensitivity: "base" })
+function sortDepartmentCodes(codes = []) {
+    return [...codes].sort((a, b) =>
+        getDepartmentDisplayName(a).localeCompare(getDepartmentDisplayName(b), "es", { sensitivity: "base" })
     );
 }
 
-function applyDepartamentoDictionaryOverrides() {
-    Object.entries(DEPTO_DISPLAY_NAME_OVERRIDES).forEach(([codigo, nombre]) => {
-        diccionarioDepartamentos[codigo] = nombre;
+function applyDepartmentDictionaryOverrides() {
+    Object.entries(DEPARTMENT_DISPLAY_NAME_OVERRIDES).forEach(([code, name]) => {
+        departmentNames[code] = name;
     });
 }
 
@@ -349,7 +350,7 @@ function hideMainChartCanvasDuringLoad() {
     chartCanvas.closest(".chart-card")?.classList.remove("composicion-chart-active");
 }
 
-function setConcentracionSummaryPanelActive(active) {
+function setConcentrationSummaryPanelActive(active) {
     const chartDiv = document.getElementById("chartDiv");
     const chartCard = document.getElementById("summaryDiv")?.closest(".chart-card");
     chartDiv?.classList.toggle("concentracion-summary-active", !!active);
@@ -359,7 +360,7 @@ function setConcentracionSummaryPanelActive(active) {
 function showMainChartCanvasForRender() {
     const chartCanvas = document.getElementById("chart");
     if (!chartCanvas) return null;
-    setConcentracionSummaryPanelActive(false);
+    setConcentrationSummaryPanelActive(false);
     chartCanvas.style.display = "block";
     return chartCanvas;
 }
@@ -381,8 +382,8 @@ function getCategoryCodeFromLabel(label) {
     const cleanLabel = normalizeCategoryLabel(label);
 
     if (config?.isDistribucion) {
-        const map = (typeof densidadLabelToTzn !== "undefined")
-            ? densidadLabelToTzn
+        const map = (typeof densityLabelToTzn !== "undefined")
+            ? densityLabelToTzn
             : { "Cabecera Municipal": 1, "Centros Poblados": 2, "Rural Disperso": 3 };
         return map[cleanLabel] != null ? String(map[cleanLabel]) : cleanLabel;
     }
@@ -530,10 +531,10 @@ async function showAllLegendCodes({ zoom = true } = {}) {
     return true;
 }
 
-let seleccionarMunicipioPorCodigoImpl = null;
-let highlightMunicipioOnMapImpl = null;
+let selectMunicipalityByCodeImpl = null;
+let highlightMunicipalityOnMapImpl = null;
 
-function supportsMunicipioMapClick(config = {}) {
+function supportsMunicipalityMapClick(config = {}) {
     return !!(
         config.isDistribucion ||
         config.isPiramides ||
@@ -548,7 +549,7 @@ function supportsMunicipioMapClick(config = {}) {
     );
 }
 
-function isMunicipioMapClickLayer(graphicLayer) {
+function isMunicipalityMapClickLayer(graphicLayer) {
     if (!graphicLayer) return false;
     return graphicLayer === layerGlobal ||
         graphicLayer === activeFeatureLayer ||
@@ -556,12 +557,12 @@ function isMunicipioMapClickLayer(graphicLayer) {
         (Array.isArray(layersGlobal) && layersGlobal.includes(graphicLayer));
 }
 
-function extractMunicipioCodeFromGraphicAttributes(attrs = {}) {
+function extractMunicipalityCodeFromGraphicAttributes(attrs = {}) {
     const rawCode = attrs.mpcodigo ?? attrs.MPCODIGO ?? attrs.MpCodigo;
     return String(rawCode ?? "").trim();
 }
 
-async function queryMunicipioCodeFromLayerAtEvent(event, layer) {
+async function queryMunicipalityCodeFromLayerAtEvent(event, layer) {
     if (!view || !layer || layer.destroyed) return "";
 
     try {
@@ -577,61 +578,61 @@ async function queryMunicipioCodeFromLayerAtEvent(event, layer) {
 
         const result = await layer.queryFeatures(query);
         const attrs = result?.features?.[0]?.attributes;
-        return extractMunicipioCodeFromGraphicAttributes(attrs);
+        return extractMunicipalityCodeFromGraphicAttributes(attrs);
     } catch (error) {
-        console.warn("queryMunicipioCodeFromLayerAtEvent error:", error);
+        console.warn("queryMunicipalityCodeFromLayerAtEvent error:", error);
         return "";
     }
 }
 
-async function resolveMunicipioCodeFromMapClick(event, config) {
+async function resolveMunicipalityCodeFromMapClick(event, config) {
     if (!view || !layerGlobal) return "";
 
     try {
         const response = await view.hitTest(event);
         for (const result of response.results || []) {
             if (!result.graphic?.attributes) continue;
-            if (!isMunicipioMapClickLayer(result.graphic.layer)) continue;
-            const codigo = extractMunicipioCodeFromGraphicAttributes(result.graphic.attributes);
-            if (codigo) return codigo;
+            if (!isMunicipalityMapClickLayer(result.graphic.layer)) continue;
+            const code = extractMunicipalityCodeFromGraphicAttributes(result.graphic.attributes);
+            if (code) return code;
         }
     } catch (error) {
-        console.warn("resolveMunicipioCodeFromMapClick hitTest error:", error);
+        console.warn("resolveMunicipalityCodeFromMapClick hitTest error:", error);
     }
 
     if (config?.isComposicion) {
-        const codigo = await queryMunicipioCodeFromLayerAtEvent(event, layerGlobal);
-        if (codigo) return codigo;
+        const code = await queryMunicipalityCodeFromLayerAtEvent(event, layerGlobal);
+        if (code) return code;
     }
 
     return "";
 }
 
-async function syncMunicipioFromMapClick(event) {
+async function syncMunicipalityFromMapClick(event) {
     if (currentMainModule !== "OCUPACION") return false;
 
     const config = getActiveLayerConfig();
-    if (!supportsMunicipioMapClick(config) || !view || !layerGlobal) return false;
+    if (!supportsMunicipalityMapClick(config) || !view || !layerGlobal) return false;
 
     try {
-        const codigo = await resolveMunicipioCodeFromMapClick(event, config);
-        if (!codigo) return false;
+        const code = await resolveMunicipalityCodeFromMapClick(event, config);
+        if (!code) return false;
 
-        if (codigo === municipioActual) {
-            if (typeof highlightMunicipioOnMapImpl === "function") {
-                await highlightMunicipioOnMapImpl(codigo);
+        if (code === currentMunicipalityId) {
+            if (typeof highlightMunicipalityOnMapImpl === "function") {
+                await highlightMunicipalityOnMapImpl(code);
             }
             return true;
         }
 
-        if (typeof seleccionarMunicipioPorCodigoImpl === "function") {
-            seleccionarMunicipioPorCodigoImpl(codigo);
+        if (typeof selectMunicipalityByCodeImpl === "function") {
+            selectMunicipalityByCodeImpl(code);
             return true;
         }
 
         return false;
     } catch (error) {
-        console.warn("syncMunicipioFromMapClick error:", error);
+        console.warn("syncMunicipalityFromMapClick error:", error);
         return false;
     }
 }
@@ -678,9 +679,9 @@ function getCacheContextParts() {
         currentMode,
         activeSubLayerIdsByMode[currentMode] || `IDX_${currentSubLayerIndex}`,
         currentSubLayerIndex,
-        filtroNivel || "SIN_FILTRO",
-        deptoActual || "SIN_DEPTO",
-        municipioActual || "SIN_MUNI",
+        territoryLevel || "SIN_FILTRO",
+        currentDepartmentId || "SIN_DEPTO",
+        currentMunicipalityId || "SIN_MUNI",
         whereBase || "1=1"
     ];
 }
@@ -757,9 +758,9 @@ function syncStateSnapshot(extra = {}) {
         currentMode,
         currentSubLayerIndex,
         activeSubLayerId: activeSubLayerIdsByMode[currentMode] || null,
-        municipioActual,
-        deptoActual,
-        filtroNivel,
+        currentMunicipalityId,
+        currentDepartmentId,
+        territoryLevel,
         whereBase,
         ...extra
     });
@@ -832,22 +833,22 @@ function getOrCreateFeatureLayer(options, role, FeatureLayerClass) {
     return layer;
 }
 
-function clearLineaNegraLayers({ destroy = false } = {}) {
-    lineaNegraLoadToken += 1;
-    const cachedLayers = Array.from(lineaNegraLayerCache.values());
+function clearBlackLineLayers({ destroy = false } = {}) {
+    blackLineLoadToken += 1;
+    const cachedLayers = Array.from(blackLineLayerCache.values());
     const layersToClear = Array.from(new Set([...lineNegraLayers, ...cachedLayers]));
 
     layersToClear.forEach(layer => {
         layer.visible = false;
         try { map?.remove(layer); } catch (_) { }
         if (destroy) {
-            lineaNegraLayerCache.delete(layer.__lineaNegraId);
+            blackLineLayerCache.delete(layer.__lineaNegraId);
             destroyLayerSafe(layer);
         }
     });
     document.querySelector(".legend-linea-negra-group")?.remove();
     lineNegraLayers = [];
-    lineaNegraTerritoryGeometry = null;
+    blackLineTerritoryGeometry = null;
 }
 
 function clearLayers({ preserveContextoHistoricoPeriod = false } = {}) {
@@ -882,7 +883,7 @@ function clearLayers({ preserveContextoHistoricoPeriod = false } = {}) {
 
     // Siempre invalida las cargas de Linea Negra. Una consulta anterior puede
     // estar esperando el servicio aunque todavia no haya agregado sus capas.
-    clearLineaNegraLayers({ destroy: false });
+    clearBlackLineLayers({ destroy: false });
 
     // limpiar capa principal
     if (layerGlobal) {
@@ -896,17 +897,17 @@ function clearLayers({ preserveContextoHistoricoPeriod = false } = {}) {
     activeFeatureLayer = null;
     barChartSyncState = null;
     if (!preserveContextoHistoricoPeriod) {
-        contextoHistoricoPeriodoActivo = "Todos";
+        activeHistoricalContextPeriod = "Todos";
         contextoHistoricoTimelineKeyActivo = null;
         document.querySelectorAll(".timeline-item.active").forEach(item => item.classList.remove("active"));
     }
-    const periodoSlider = document.getElementById("periodoSlider");
-    const periodoSliderLabel = document.getElementById("periodoSliderLabel");
+    const periodSlider = document.getElementById("periodSlider");
+    const periodSliderLabel = document.getElementById("periodSliderLabel");
     const mapSliderLabel = document.getElementById("mapSliderLabel");
     const timeSliderLabel = document.getElementById("timeSliderLabel");
     if (!preserveContextoHistoricoPeriod) {
-        if (periodoSlider) periodoSlider.value = 0;
-        if (periodoSliderLabel) periodoSliderLabel.textContent = "Periodo: Todos";
+        if (periodSlider) periodSlider.value = 0;
+        if (periodSliderLabel) periodSliderLabel.textContent = "Periodo: Todos";
         if (mapSliderLabel) mapSliderLabel.textContent = "Periodo: Todos";
         if (timeSliderLabel) timeSliderLabel.textContent = "Periodo: Todos";
     }
@@ -921,43 +922,25 @@ function clearLayers({ preserveContextoHistoricoPeriod = false } = {}) {
         baseWhere: "1=1"
     });
 
-    geoformaSelectedPaisaje = null;
-    vocacionSelectedLabel = null;
+    selectedLandformLandscape = null;
+    selectedLandSuitabilityLabel = null;
 
     // limpiar fuente del mapa
-    const fuenteDiv = document.getElementById("mapSource");
-    if (fuenteDiv) {
-        fuenteDiv.textContent = "";
+    const sourceElement = document.getElementById("mapSource");
+    if (sourceElement) {
+        sourceElement.textContent = "";
     }
 }
 
-async function cargarDiccionarioMunicipios() {
+async function loadMunicipalityDictionary() {
     try {
-        const url = "https://serviciosgeovisor.igac.gov.co:8080/Geovisor/config?cmd=config_diccionario2";
-        const json = await fetchJsonCached(url, {
-            cacheKey: QueryCache.stableKey(["diccionario-territorial", url]),
-            ttlMs: 3600000
-        });
-        if (json && json.UNIDAD) {
-            // Cargar municipios
-            json.UNIDAD
-                .filter(u => u.type === "MUNI")
-                .forEach(m => {
-                    if (m.id === "00000") {
-                        diccionarioMunicipios[m.id] = "Área en litigio";
-                    } else {
-                        diccionarioMunicipios[m.id] = m.text;
-                    }
-                });
-
-            // Cargar departamentos
-            json.UNIDAD
-                .filter(u => u.type === "DEPTO")
-                .forEach(d => {
-                    diccionarioDepartamentos[d.id] = d.text;
-                });
-            applyDepartamentoDictionaryOverrides();
+        const catalog = await loadTerritorialCatalog();
+        if (!catalog?.municipalities?.length) {
+            throw new Error("No fue posible cargar el catálogo territorial.");
         }
+        municipalityNames = { ...catalog.municipalityNames };
+        departmentNames = { ...catalog.departmentNames };
+        applyDepartmentDictionaryOverrides();
     } catch (e) {
         console.error("Error cargando diccionario", e);
     }
@@ -978,10 +961,10 @@ function getSummaryOutFieldsForCurrentModule() {
     });
     return Array.from(fields);
 }
-function updateMapViewBadge(nombre) {
+function updateMapViewBadge(name) {
     const badgeText = document.getElementById("mapViewBadgeText");
     if (!badgeText) return;
-    badgeText.textContent = nombre || "Vista";
+    badgeText.textContent = name || "Vista";
 }
 function getCurrentModeLabel(mode = currentMode) {
     return ModeConfig.getLabel(mode);
@@ -1187,8 +1170,8 @@ require([
         }
     });
     view.on("click", async (event) => {
-        const handledMunicipio = await syncMunicipioFromMapClick(event);
-        if (handledMunicipio) return;
+        const handledMunicipality = await syncMunicipalityFromMapClick(event);
+        if (handledMunicipality) return;
 
         const handledCategory = await syncCategoryFromMapClick(event);
         if (handledCategory) return;
@@ -1252,7 +1235,7 @@ require([
 
             } else if (config.isIndicesComplementarios) {
 
-                // const mpNombre = attrs.mpnombre || attrs.mpcodigo || "";
+                // const municipalityName = attrs.mpnombre || attrs.mpcodigo || "";
                 const vGini = Number(attrs.icmgini) || 0;
                 const vTheil = Number(attrs.icmtheil) || 0;
                 const vDispSup = Number(attrs.icmdispsup) || 0;
@@ -1260,7 +1243,7 @@ require([
                 const vInformal = Number(attrs.icminformalporc) || 0;
 
                 let html = `<strong class="oot-js-ocupacion-app-2">Índices Complementarios</strong>`;
-                // if (mpNombre) html += `<br><span class="oot-js-ocupacion-app-5">${mpNombre}</span>`;                        
+                // if (municipalityName) html += `<br><span class="oot-js-ocupacion-app-5">${municipalityName}</span>`;
                 html += `<hr class="oot-js-ocupacion-app-4">`;
 
                 html += `<span class="oot-js-ocupacion-app-6">■</span> Gini: <b>${vGini.toFixed(5)}</b><br>`;
@@ -1270,13 +1253,13 @@ require([
                 html += `<span class="oot-js-ocupacion-app-7">${theil(vTheil) || "Sin rango"}</span><br>`;
 
                 html += `<span class="oot-js-ocupacion-app-9">■</span> Disp. Superior: <b>${vDispSup.toFixed(5)}</b><br>`;
-                html += `<span class="oot-js-ocupacion-app-7">${disparidadSuperior(vDispSup) || "Sin rango"}</span><br>`;
+                html += `<span class="oot-js-ocupacion-app-7">${upperDisparity(vDispSup) || "Sin rango"}</span><br>`;
 
                 html += `<span class="oot-js-ocupacion-app-10">■</span> Disp. Inferior: <b>${vDispInf.toFixed(5)}</b><br>`;
-                html += `<span class="oot-js-ocupacion-app-7">${disparidadInferior(vDispInf) || "Sin rango"}</span><br>`;
+                html += `<span class="oot-js-ocupacion-app-7">${lowerDisparity(vDispInf) || "Sin rango"}</span><br>`;
 
                 html += `<span class="oot-js-ocupacion-app-11">■</span> Informalidad: <b>${vInformal.toFixed(2)}%</b><br>`;
-                html += `<span class="oot-js-ocupacion-app-7">${informalidad(vInformal) || "Sin rango"}</span>`;
+                html += `<span class="oot-js-ocupacion-app-7">${informality(vInformal) || "Sin rango"}</span>`;
 
                 hoverTooltip.innerHTML = html;
             }
@@ -1330,8 +1313,8 @@ require([
     let timeSliderEnabled = false;
     let timeSliderTouched = false;
     let timeSliderContextKey = "";
-    let deforestacionPeriodoActivo = "Todos";
-    let deforestacionPeriodosBase = [];
+    let activeDeforestationPeriod = "Todos";
+    let deforestationBasePeriods = [];
 
     zoomSlider.value = view.zoom;
 
@@ -1379,7 +1362,7 @@ require([
     }
     window.hideTimeSlider = hideTimeSlider;
 
-    function actualizarFuente(layer) {
+    function updateSource(layer) {
         if (!layer || layer.isTable) return;
 
         layer.queryFeatures({
@@ -1389,10 +1372,10 @@ require([
             returnGeometry: false
         }).then((result) => {
             if (result && result.features && result.features.length > 0) {
-                const fuente = result.features[0].attributes.Fuente;
-                const fuenteDiv = document.getElementById("mapSource");
-                if (fuenteDiv && fuente) {
-                    fuenteDiv.textContent = "Fuente: " + fuente;
+                const source = result.features[0].attributes.Fuente;
+                const sourceElement = document.getElementById("mapSource");
+                if (sourceElement && source) {
+                    sourceElement.textContent = "Fuente: " + source;
                 }
             }
         }).catch(err => {
@@ -1410,7 +1393,7 @@ require([
         // =========================
         if (
             currentMainModule === "ORDENAMIENTO" &&
-            currentOrdenamientoTab === "ZONIFICACION_RURAL"
+            currentLandUsePlanningTab === "ZONIFICACION_RURAL"
         ) {
             container.style.display = "flex";
 
@@ -1431,31 +1414,31 @@ require([
 
                     if (
                         currentMainModule === "ORDENAMIENTO" &&
-                        currentOrdenamientoTab === "ZONIFICACION_RURAL" &&
+                        currentLandUsePlanningTab === "ZONIFICACION_RURAL" &&
                         layerGlobal
                     ) {
-                        const config = ORDENAMIENTO_CONFIG[currentOrdenamientoTab];
+                        const config = ORDENAMIENTO_CONFIG[currentLandUsePlanningTab];
 
-                        let whereOrdenamiento = "1=1";
+                        let landUsePlanningWhere = "1=1";
                         const filterField = config.filterField || "mpcodigo";
 
-                        if (municipioActual) {
-                            whereOrdenamiento = `${filterField} = '${String(municipioActual).replace(/'/g, "''")}'`;
-                        } else if (filtroNivel === "DEPTO" && deptoActual) {
+                        if (currentMunicipalityId) {
+                            landUsePlanningWhere = `${filterField} = '${String(currentMunicipalityId).replace(/'/g, "''")}'`;
+                        } else if (territoryLevel === "DEPTO" && currentDepartmentId) {
                             if (config.deptoFilterField) {
-                                whereOrdenamiento = `${config.deptoFilterField} = '${String(deptoActual).replace(/'/g, "''")}'`;
+                                landUsePlanningWhere = `${config.deptoFilterField} = '${String(currentDepartmentId).replace(/'/g, "''")}'`;
                             } else if (
                                 filterField.toLowerCase() === "mpcodigo" ||
                                 filterField.toLowerCase() === "mp_codigo"
                             ) {
-                                whereOrdenamiento = `SUBSTRING(${filterField},1,2) = '${String(deptoActual).replace(/'/g, "''")}'`;
+                                landUsePlanningWhere = `SUBSTRING(${filterField},1,2) = '${String(currentDepartmentId).replace(/'/g, "''")}'`;
                             }
                         }
 
-                        layerGlobal.definitionExpression = whereOrdenamiento;
+                        layerGlobal.definitionExpression = landUsePlanningWhere;
                         setLegendLayer(layerGlobal, config.title);
                         updateMapViewBadge(config.title);
-                        renderZonificacionRuralCharts(layerGlobal, config, whereOrdenamiento);
+                        renderZonificacionRuralCharts(layerGlobal, config, landUsePlanningWhere);
                     }
                 };
 
@@ -1501,27 +1484,27 @@ require([
                 }
                 if (cfg?.isMigracionExterna) {
                     destroyMainChartCanvas();
-                    if (typeof destroyMigracionExternaCharts === "function") destroyMigracionExternaCharts();
-                    if (typeof toggleMigracionExternaCharts === "function") toggleMigracionExternaCharts(true);
+                    if (typeof destroyExternalMigrationCharts === "function") destroyExternalMigrationCharts();
+                    if (typeof toggleExternalMigrationCharts === "function") toggleExternalMigrationCharts(true);
                     const title = document.getElementById("chartTitle");
                     if (title) title.textContent = cfg.title || "Migración Externa";
                 }
                 if (cfg?.isMigracionInterna) {
                     destroyMainChartCanvas();
-                    if (typeof destroyMigracionInternaCharts === "function") destroyMigracionInternaCharts();
-                    if (typeof toggleMigracionInternaCharts === "function") toggleMigracionInternaCharts(true);
+                    if (typeof destroyInternalMigrationCharts === "function") destroyInternalMigrationCharts();
+                    if (typeof toggleInternalMigrationCharts === "function") toggleInternalMigrationCharts(true);
                     const title = document.getElementById("chartTitle");
                     if (title) title.textContent = cfg.title || "Migración Interna";
                 }
                 if (cfg?.isComposicion) {
-                    prepareComposicionChartPanel();
+                    prepareCompositionChartPanel();
                     const title = document.getElementById("chartTitle");
                     if (title) title.textContent = cfg.title || "Estructura población edad y área";
                 }
                 if (cfg?.isAutoreconocimientoEtnico) {
                     destroyMainChartCanvas();
-                    if (typeof destroyAutoreconocimientoCharts === "function") destroyAutoreconocimientoCharts();
-                    if (typeof toggleAutoreconocimientoCharts === "function") toggleAutoreconocimientoCharts(true);
+                    if (typeof destroySelfRecognitionCharts === "function") destroySelfRecognitionCharts();
+                    if (typeof toggleSelfRecognitionCharts === "function") toggleSelfRecognitionCharts(true);
                     const title = document.getElementById("chartTitle");
                     if (title) title.textContent = cfg.title || "Autoreconocimiento étnico";
                 }
@@ -1548,8 +1531,8 @@ require([
                     cfg?.isCondicionesSeguridad ||
                     cfg?.isContextoHistorico;
 
-                if (municipioActual || (filtroNivel === "DEPTO" && deptoActual) || canLoadWithoutTerritory) {
-                    cargarCapaActual();
+                if (currentMunicipalityId || (territoryLevel === "DEPTO" && currentDepartmentId) || canLoadWithoutTerritory) {
+                    loadCurrentLayer();
                 }
             };
 
@@ -1755,10 +1738,10 @@ require([
         const id = map[mode];
         if (id) document.getElementById(id)?.classList.add("active");
 
-        syncDropdownOcupacion(mode);
+        syncOccupationDropdown(mode);
     }
 
-    function syncDropdownOcupacion(mode) {
+    function syncOccupationDropdown(mode) {
         const items = document.querySelectorAll("#dropdownOcupacion .dropdown-item");
         if (!items.length) return;
 
@@ -1794,36 +1777,36 @@ require([
         document.getElementById("itemPropiedadRural").onclick = () => setMode("TAMANO_DISTRIBUCION_PROPIEDAD");
 
 
-        document.getElementById("btnRefreshBusqueda").onclick = limpiarBusqueda;
-        document.getElementById("btnReiniciarConsulta")?.addEventListener("click", reiniciarConsultaActual);
+        document.getElementById("btnRefreshBusqueda").onclick = clearSearch;
+        document.getElementById("btnReiniciarConsulta")?.addEventListener("click", restartCurrentQuery);
 
-        cargarMunicipios();
+        loadMunicipalities();
         document.getElementById("legendToggle").onclick = toggleLegend;
         setMode(currentMode);
     }
 
-    function limpiarBusqueda() {
+    function clearSearch() {
         hideTimeSlider();
         timeSliderTouched = false;
         requestCoordinator.abort("ocupacion:load");
 
         // Reset selects
-        const selectDepto = document.getElementById("departamentos");
+        const departmentSelect = document.getElementById("departamentos");
         const selectMuni = document.getElementById("municipios");
 
-        if (selectDepto) selectDepto.value = "COL";
+        if (departmentSelect) departmentSelect.value = "COL";
         if (selectMuni) {
             selectMuni.innerHTML = `<option value="">Seleccione un municipio</option>`;
-            renderizarMunicipios();
+            renderMunicipalities();
             selectMuni.value = "";
         }
 
         // Reset estado global
-        municipioActual = "";
-        deptoActual = "";
-        filtroNivel = "";
+        currentMunicipalityId = "";
+        currentDepartmentId = "";
+        territoryLevel = "";
         whereBase = "";
-        municipioInfo = null;
+        municipalityInfo = null;
         layerViewGlobal = null;
         chartLayerGlobal = null;
         lastHoverWhere = "";
@@ -1876,7 +1859,7 @@ require([
         }
 
         // Limpiar resumen
-        actualizarResumen();
+        updateSummary();
 
         // Cerrar popup si existe
         try { view?.closePopup?.(); } catch (_) { }
@@ -1887,13 +1870,13 @@ require([
         zoomToCurrentTerritory({ duration: 650 });
     }
 
-    function reiniciarConsultaActual() {
+    function restartCurrentQuery() {
         if (currentMainModule !== "OCUPACION") return;
 
-        const selectDepto = document.getElementById("departamentos");
+        const departmentSelect = document.getElementById("departamentos");
         const selectMuni = document.getElementById("municipios");
-        const selectedMunicipality = String(selectMuni?.value || municipioActual || "").trim();
-        const selectedDepartment = String(selectDepto?.value || deptoActual || "").trim();
+        const selectedMunicipality = String(selectMuni?.value || currentMunicipalityId || "").trim();
+        const selectedDepartment = String(departmentSelect?.value || currentDepartmentId || "").trim();
         const hasSelectedTerritory = Boolean(
             selectedMunicipality
             || (selectedDepartment && selectedDepartment !== "0" && selectedDepartment !== "COL")
@@ -1902,14 +1885,14 @@ require([
         if (!hasSelectedTerritory || !view) return;
 
         if (selectedMunicipality) {
-            municipioActual = selectedMunicipality;
-            deptoActual = selectedMunicipality.substring(0, 2) || selectedDepartment;
-            filtroNivel = "MUNI";
+            currentMunicipalityId = selectedMunicipality;
+            currentDepartmentId = selectedMunicipality.substring(0, 2) || selectedDepartment;
+            territoryLevel = "MUNI";
             whereBase = `mpcodigo = '${selectedMunicipality.replace(/'/g, "''")}'`;
         } else {
-            municipioActual = "";
-            deptoActual = selectedDepartment;
-            filtroNivel = "DEPTO";
+            currentMunicipalityId = "";
+            currentDepartmentId = selectedDepartment;
+            territoryLevel = "DEPTO";
             whereBase = `dpcodigo = '${selectedDepartment.replace(/'/g, "''")}'`;
         }
 
@@ -1929,7 +1912,7 @@ require([
 
         try { view.closePopup?.(); } catch (_) { }
 
-        cargarCapaActual();
+        loadCurrentLayer();
         zoomToCurrentTerritory({ duration: 650 });
     }
 
@@ -1954,12 +1937,12 @@ require([
             if (typeof toggleContextoHistoricoCharts === "function") {
                 toggleContextoHistoricoCharts(true);
             }
-            if (!municipioActual) {
+            if (!currentMunicipalityId) {
                 document.querySelectorAll('.timeline-item').forEach(item => {
                     item.onclick = async function () {
                         const key = this.getAttribute("data-periodo");
-                        const timelinePeriodo = contextoHistoricoTimelineToPeriodo[key] || "Todos";
-                        await applyContextoHistoricoPeriodSelection(timelinePeriodo, { timelineKey: key });
+                        const timelinePeriod = historicalContextTimelineToPeriod[key] || "Todos";
+                        await applyContextoHistoricoPeriodSelection(timelinePeriod, { timelineKey: key });
 
                         const sumDiv = document.getElementById("summaryDiv");
                         if (sumDiv) {
@@ -1969,13 +1952,13 @@ require([
                 });
             }
         } else {
-            contextoHistoricoPeriodoActivo = "Todos";
+            activeHistoricalContextPeriod = "Todos";
             contextoHistoricoTimelineKeyActivo = null;
             if (typeof toggleContextoHistoricoCharts === "function") {
                 toggleContextoHistoricoCharts(false);
             }
             if (mode === "COMPOSICION_POBLACION") {
-                prepareComposicionChartPanel();
+                prepareCompositionChartPanel();
             }
         }
 
@@ -1992,9 +1975,9 @@ require([
             activeConfig?.isAutoreconocimientoEtnico ||
             activeConfig?.isCondicionesSeguridad;
 
-        if (municipioActual || (filtroNivel === "DEPTO" && deptoActual) || canLoadWithoutTerritory) {
+        if (currentMunicipalityId || (territoryLevel === "DEPTO" && currentDepartmentId) || canLoadWithoutTerritory) {
             resetLegendFilterState();
-            cargarCapaActual();
+            loadCurrentLayer();
         }
     }
     window.setMode = setMode;
@@ -2009,41 +1992,41 @@ require([
     }
     window.renderControls = renderControls;
 
-    let municipioInfo = null;
+    let municipalityInfo = null;
 
 
-    async function cargarInfoMunicipio(codigo) {
+    async function loadMunicipalityInfo(code) {
         hideTimeSlider();
         timeSliderTouched = false;
         const url = "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componenteocupacion/MapServer/25";
         const summaryFields = getSummaryOutFieldsForCurrentModule();
         const outFields = summaryFields.length ? summaryFields.join(",") : "*";
-        const queryUrl = `${url}/query?where=mpcodigo='${codigo}'&outFields=${outFields}&returnGeometry=false&f=json`;
+        const queryUrl = `${url}/query?where=mpcodigo='${code}'&outFields=${outFields}&returnGeometry=false&f=json`;
         try {
             const json = await fetchJsonCached(queryUrl, {
                 cacheKey: buildQueryCacheKey("municipio-resumen", queryUrl),
                 ttlMs: 600000
             });
             if (json.features && json.features.length > 0) {
-                municipioInfo = json.features[0].attributes;
+                municipalityInfo = json.features[0].attributes;
             } else {
-                municipioInfo = null;
+                municipalityInfo = null;
             }
-            actualizarResumen();
+            updateSummary();
         } catch (e) {
             if (e?.name === "AbortError" || String(e?.message || "").toLowerCase().includes("aborted")) return;
             console.error("Error cargando info municipio", e);
-            municipioInfo = null;
-            actualizarResumen();
+            municipalityInfo = null;
+            updateSummary();
         }
     }
 
 
-    function actualizarResumen() {
+    function updateSummary() {
         const div = document.getElementById("summaryDiv");
         const config = getActiveLayerConfig();
 
-        if (config?.id === "densidad_poblacion" && !municipioActual && filtroNivel !== "DEPTO") {
+        if (config?.id === "densidad_poblacion" && !currentMunicipalityId && territoryLevel !== "DEPTO") {
             div.innerHTML = "Seleccione un municipio para ver el gráfico.";
             return;
         }
@@ -2054,9 +2037,9 @@ require([
         }
         if (!div) return;
 
-        if (!municipioActual) {
+        if (!currentMunicipalityId) {
             if (config?.isComposicion || config?.isTasaCrecimiento || config?.isMigracionExterna || config?.isMigracionInterna || config?.isIndicesComplementarios) {
-                if (filtroNivel === "DEPTO" && deptoActual) {
+                if (territoryLevel === "DEPTO" && currentDepartmentId) {
                     div.innerHTML = "Seleccione un municipio para ver el resumen descriptivo.";
                 } else {
                     div.innerHTML = "Seleccione un municipio para ver el resumen.";
@@ -2071,17 +2054,17 @@ require([
             return;
         }
 
-        if (!config || !municipioInfo) {
+        if (!config || !municipalityInfo) {
             div.innerHTML = "Cargando información o no disponible...";
             return;
         }
 
         const field = config.summaryField;
-        if (field && municipioInfo[field]) {
-            // div.innerHTML = `<b></b><br>${municipioInfo[field]}`;
+        if (field && municipalityInfo[field]) {
+            // div.innerHTML = `<b></b><br>${municipalityInfo[field]}`;
             div.innerHTML = ""; // limpia
             const p = document.createElement("p");
-            p.textContent = municipioInfo[field]; // seguro
+            p.textContent = municipalityInfo[field]; // seguro
             div.appendChild(p);
         } else {
             div.innerHTML = "No hay información disponible para esta capa.";
@@ -2102,7 +2085,7 @@ require([
         }
     }
 
-    function actualizarLeyenda(labels, colors, codes = null, styles = null, groups = null, itemWheres = null) {
+    function updateLegend(labels, colors, codes = null, styles = null, groups = null, itemWheres = null) {
         try {
             const content = document.getElementById("legendContent");
             const title = document.getElementById("legendTitle");
@@ -2120,11 +2103,11 @@ require([
                 ? "Tasa de crecimiento intercensal"
                 : (config.title || "Leyenda");
             lastLegendRenderKey = lastLegendRenderKey || "";
-            const isDensidadStyleLegend =
+            const isDensityStyleLegend =
                 (config?.isDistribucion || config?.isPiramides || config?.isTransicion) &&
                 Array.isArray(groups) &&
                 groups.length === labels.length;
-            const isVisualOnlyDensidadLegend = isDensidadStyleLegend;
+            const isVisualOnlyDensityLegend = isDensityStyleLegend;
             const hasCustomLegendWheres = Array.isArray(itemWheres) && itemWheres.length === labels.length;
 
             if (!labels || !labels.length) {
@@ -2153,9 +2136,9 @@ require([
                 config?.labelField &&
                 layerGlobal &&
                 (
-                    (hasCustomLegendWheres && !isVisualOnlyDensidadLegend) ||
+                    (hasCustomLegendWheres && !isVisualOnlyDensityLegend) ||
                     (
-                        !isVisualOnlyDensidadLegend &&
+                        !isVisualOnlyDensityLegend &&
                         (!legendState?.field || legendState.layer !== layerGlobal || legendState.field !== config.labelField)
                     )
                 )
@@ -2231,15 +2214,15 @@ require([
                         const subtitle = document.createElement("div");
                         subtitle.className = "legend-period-subtitle";
                         subtitle.textContent = groupTitle;
-                        subtitle.style.position = isDensidadStyleLegend ? "sticky" : "";
-                        subtitle.style.top = isDensidadStyleLegend ? "0" : "";
-                        subtitle.style.zIndex = isDensidadStyleLegend ? "2" : "";
-                        subtitle.style.background = isDensidadStyleLegend ? "#fffdf4" : "";
+                        subtitle.style.position = isDensityStyleLegend ? "sticky" : "";
+                        subtitle.style.top = isDensityStyleLegend ? "0" : "";
+                        subtitle.style.zIndex = isDensityStyleLegend ? "2" : "";
+                        subtitle.style.background = isDensityStyleLegend ? "#fffdf4" : "";
                         subtitle.style.fontWeight = "700";
                         subtitle.style.fontSize = "12px";
                         subtitle.style.color = "#004A69";
                         subtitle.style.margin = lastGroupTitle ? "10px 0 6px" : "0 0 6px";
-                        subtitle.style.padding = isDensidadStyleLegend ? "6px 0 4px" : "4px 0 2px";
+                        subtitle.style.padding = isDensityStyleLegend ? "6px 0 4px" : "4px 0 2px";
                         subtitle.style.borderBottom = "1px solid rgba(0, 74, 105, 0.18)";
                         frag.appendChild(subtitle);
                         lastGroupTitle = groupTitle;
@@ -2335,7 +2318,7 @@ require([
             if (typeof resetLegendVisualState === "function") resetLegendVisualState();
 
         } catch (e) {
-            console.error("actualizarLeyenda error:", e);
+            console.error("updateLegend error:", e);
         }
     }
 
@@ -2482,10 +2465,10 @@ require([
         return clauses.length ? clauses.join(" OR ") : "1=0";
     }
 
-    function getDensidadOriginalColor(value, layer = layerGlobal, tzn = null) {
+    function getOriginalDensityColor(value, layer = layerGlobal, tzn = null) {
         const numericValue = Number(value);
-        if (typeof getDensidadColorByZona === "function" && tzn != null) {
-            return getDensidadColorByZona(numericValue || 0, tzn, deptoActual || null);
+        if (typeof getDensityColorByZone === "function" && tzn != null) {
+            return getDensityColorByZone(numericValue || 0, tzn, currentDepartmentId || null);
         }
 
         const infos = layer?.renderer?.classBreakInfos || [];
@@ -2500,20 +2483,20 @@ require([
             if (rendererColor) return rendererColor;
         }
 
-        if (typeof getColorByDensidad === "function") {
-            return getColorByDensidad(numericValue || 0).color;
+        if (typeof getColorByDensity === "function") {
+            return getColorByDensity(numericValue || 0).color;
         }
 
         return "#999";
     }
 
-    function cargarCapaActual() {
+    function loadCurrentLayer() {
         if (currentMainModule !== "OCUPACION" && currentMainModule !== "ORDENAMIENTO") {
             return;
         }
         const config = getActiveLayerConfig();
         if (!config) return;
-        setConcentracionSummaryPanelActive(!!config.isConcentracionPoblacion);
+        setConcentrationSummaryPanelActive(!!config.isConcentracionPoblacion);
 
         const layerRequest = beginLoadRequest();
         const layerRenderKey = QueryCache.stableKey([
@@ -2527,84 +2510,84 @@ require([
         // gráfico y leyenda. Esto reduce renders repetidos al reabrir submenús.
         if (lastRenderedLayerKey === layerRenderKey && layerGlobal && !layerGlobal.destroyed && map?.layers?.includes(layerGlobal)) {
             syncStateSnapshot();
-            actualizarResumen();
+            updateSummary();
             if (config.isContextoHistorico) {
                 if (typeof toggleContextoHistoricoCharts === "function") toggleContextoHistoricoCharts(true);
                 setLegendLayer(layerGlobal, config.title);
-                actualizarFuente(layerGlobal);
-                actualizarGrafica(layerGlobal, config, { skipSyncMap: true });
+                updateSource(layerGlobal);
+                updateChart(layerGlobal, config, { skipSyncMap: true });
             } else if (config.isTasaCrecimiento) {
                 destroyMainChartCanvas();
                 if (typeof toggleTasaCrecimientoCharts === "function") toggleTasaCrecimientoCharts(true);
-                const mapWhere = municipioActual && deptoActual
-                    ? buildDepartmentMapWhereForConfig(config, deptoActual)
+                const mapWhere = currentMunicipalityId && currentDepartmentId
+                    ? buildDepartmentMapWhereForConfig(config, currentDepartmentId)
                     : (whereBase || "1=1");
                 ensureMapCategorySliderUi({ where: mapWhere, layer: layerGlobal });
-                actualizarGrafica(layerGlobal, config, { skipSyncMap: true });
+                updateChart(layerGlobal, config, { skipSyncMap: true });
             } else if (config.isMigracionExterna) {
                 destroyMainChartCanvas();
-                if (typeof toggleMigracionExternaCharts === "function") toggleMigracionExternaCharts(true);
-                const mapWhere = municipioActual && deptoActual
-                    ? buildDepartmentMapWhereForConfig(config, deptoActual)
+                if (typeof toggleExternalMigrationCharts === "function") toggleExternalMigrationCharts(true);
+                const mapWhere = currentMunicipalityId && currentDepartmentId
+                    ? buildDepartmentMapWhereForConfig(config, currentDepartmentId)
                     : (whereBase || "1=1");
                 ensureMapCategorySliderUi({ where: mapWhere, layer: layerGlobal });
-                actualizarGrafica(layerGlobal, config, { skipSyncMap: true });
+                updateChart(layerGlobal, config, { skipSyncMap: true });
             } else if (config.isMigracionInterna) {
                 destroyMainChartCanvas();
-                if (typeof toggleMigracionInternaCharts === "function") toggleMigracionInternaCharts(true);
-                const mapWhere = municipioActual && deptoActual
-                    ? buildDepartmentMapWhereForConfig(config, deptoActual)
+                if (typeof toggleInternalMigrationCharts === "function") toggleInternalMigrationCharts(true);
+                const mapWhere = currentMunicipalityId && currentDepartmentId
+                    ? buildDepartmentMapWhereForConfig(config, currentDepartmentId)
                     : (whereBase || "1=1");
                 ensureMapCategorySliderUi({ where: mapWhere, layer: layerGlobal });
-                if (municipioActual) highlightMunicipioOnMap(municipioActual);
-                actualizarGrafica(layerGlobal, config, { skipSyncMap: true });
+                if (currentMunicipalityId) highlightMunicipalityOnMap(currentMunicipalityId);
+                updateChart(layerGlobal, config, { skipSyncMap: true });
             } else if (config.isComposicion) {
-                prepareComposicionChartPanel();
-                const isNationalComposicion = !deptoActual && filtroNivel !== "MUNI";
-                const mapWhere = municipioActual && deptoActual
-                    ? buildDepartmentMapWhereForConfig(config, deptoActual)
+                prepareCompositionChartPanel();
+                const isNationalComposition = !currentDepartmentId && territoryLevel !== "MUNI";
+                const mapWhere = currentMunicipalityId && currentDepartmentId
+                    ? buildDepartmentMapWhereForConfig(config, currentDepartmentId)
                     : (whereBase || "1=1");
                 if (layerGlobal) {
                     layerGlobal.definitionExpression = mapWhere;
                     try { layerGlobal.refresh?.(); } catch (_) { }
                 }
-                ensureComposicionUi({ isNational: isNationalComposicion, deptoCode: deptoActual, where: mapWhere });
-                if (municipioActual) highlightMunicipioOnMap(municipioActual);
-                actualizarGrafica(layerGlobal, config, { skipSyncMap: true });
+                ensureCompositionUi({ isNational: isNationalComposition, departmentCode: currentDepartmentId, where: mapWhere });
+                if (currentMunicipalityId) highlightMunicipalityOnMap(currentMunicipalityId);
+                updateChart(layerGlobal, config, { skipSyncMap: true });
             } else if (config.isIndicesComplementarios) {
-                const mapWhere = municipioActual && deptoActual
-                    ? buildDepartmentMapWhereForConfig(config, deptoActual)
+                const mapWhere = currentMunicipalityId && currentDepartmentId
+                    ? buildDepartmentMapWhereForConfig(config, currentDepartmentId)
                     : (whereBase || "1=1");
-                setupIndicesComplementariosSlider({ where: mapWhere, layer: layerGlobal });
-                refreshIndiceComplementarioMapAndLegend({ where: mapWhere, field: indiceComplementarioCampoActivo, layer: layerGlobal });
-                if (municipioActual) highlightMunicipioOnMap(municipioActual);
-                actualizarGrafica(layerGlobal, config, { skipSyncMap: true });
+                setupComplementaryIndicesSlider({ where: mapWhere, layer: layerGlobal });
+                refreshComplementaryIndexMapAndLegend({ where: mapWhere, field: activeComplementaryIndexField, layer: layerGlobal });
+                if (currentMunicipalityId) highlightMunicipalityOnMap(currentMunicipalityId);
+                updateChart(layerGlobal, config, { skipSyncMap: true });
             } else if (config.isAutoreconocimientoEtnico) {
                 destroyMainChartCanvas();
-                if (typeof toggleAutoreconocimientoCharts === "function") toggleAutoreconocimientoCharts(true);
-                ensureAutoreconocimientoUi({ where: getCurrentTerritoryWhere(), layer: layerGlobal });
-                actualizarGrafica(layerGlobal, config, { skipSyncMap: true });
+                if (typeof toggleSelfRecognitionCharts === "function") toggleSelfRecognitionCharts(true);
+                ensureSelfRecognitionUi({ where: getCurrentTerritoryWhere(), layer: layerGlobal });
+                updateChart(layerGlobal, config, { skipSyncMap: true });
             } else if (config.isCondicionesSeguridad) {
                 destroyMainChartCanvas();
                 if (typeof toggleCondicionesSeguridadCharts === "function") toggleCondicionesSeguridadCharts(true);
                 ensureCondicionesSeguridadUi({ where: getCurrentTerritoryWhere(), layer: layerGlobal });
-                actualizarGrafica(layerGlobal, config, { skipSyncMap: true });
+                updateChart(layerGlobal, config, { skipSyncMap: true });
             } else if (config.isDistribucion) {
-                const dpCode = deptoActual || (municipioActual ? String(municipioActual).slice(0, 2) : "");
-                const mapWhere = municipioActual && dpCode
+                const dpCode = currentDepartmentId || (currentMunicipalityId ? String(currentMunicipalityId).slice(0, 2) : "");
+                const mapWhere = currentMunicipalityId && dpCode
                     ? buildDepartmentMapWhereForConfig(config, dpCode)
                     : (whereBase || "1=1");
-                const { buildRenderer } = getDensidadLegendApi();
+                const { buildRenderer } = getDensityLegendApi();
                 if (layerGlobal && typeof buildRenderer === "function") {
                     layerGlobal.renderer = buildRenderer(dpCode || null);
                     layerGlobal.orderByFields = ["tzn"];
                     try { layerGlobal.refresh?.(); } catch (_) { }
                 }
                 applyWhereToActiveLayers(mapWhere);
-                if (municipioActual) highlightMunicipioOnMap(municipioActual);
-                actualizarGrafica(layerGlobal, config, { skipSyncMap: true });
+                if (currentMunicipalityId) highlightMunicipalityOnMap(currentMunicipalityId);
+                updateChart(layerGlobal, config, { skipSyncMap: true });
             } else if (config.isConcentracionPoblacion) {
-                actualizarGrafica(layerGlobal, config, { skipSyncMap: true });
+                updateChart(layerGlobal, config, { skipSyncMap: true });
             }
             return;
         }
@@ -2622,18 +2605,18 @@ require([
         clearLayers({ preserveContextoHistoricoPeriod: !!config.isContextoHistorico });
 
         // Reset paneles al cambiar cualquier sub-capa
-        if (typeof destroyPiramidesCharts === 'function') destroyPiramidesCharts();
-        if (typeof togglePiramidesCharts === 'function') togglePiramidesCharts(false);
+        if (typeof destroyPyramidCharts === 'function') destroyPyramidCharts();
+        if (typeof togglePyramidCharts === 'function') togglePyramidCharts(false);
         if (typeof destroyTransicionCharts === 'function') destroyTransicionCharts();
         if (typeof toggleTransicionCharts === 'function') toggleTransicionCharts(false);
         if (typeof destroyTasaCrecimientoCharts === 'function') destroyTasaCrecimientoCharts();
         if (typeof toggleTasaCrecimientoCharts === 'function') toggleTasaCrecimientoCharts(false);
-        if (typeof destroyMigracionExternaCharts === 'function') destroyMigracionExternaCharts();
-        if (typeof toggleMigracionExternaCharts === 'function') toggleMigracionExternaCharts(false);
-        if (typeof destroyMigracionInternaCharts === 'function') destroyMigracionInternaCharts();
-        if (typeof toggleMigracionInternaCharts === 'function') toggleMigracionInternaCharts(false);
-        if (typeof destroyAutoreconocimientoCharts === 'function') destroyAutoreconocimientoCharts();
-        if (typeof toggleAutoreconocimientoCharts === 'function') toggleAutoreconocimientoCharts(false);
+        if (typeof destroyExternalMigrationCharts === 'function') destroyExternalMigrationCharts();
+        if (typeof toggleExternalMigrationCharts === 'function') toggleExternalMigrationCharts(false);
+        if (typeof destroyInternalMigrationCharts === 'function') destroyInternalMigrationCharts();
+        if (typeof toggleInternalMigrationCharts === 'function') toggleInternalMigrationCharts(false);
+        if (typeof destroySelfRecognitionCharts === 'function') destroySelfRecognitionCharts();
+        if (typeof toggleSelfRecognitionCharts === 'function') toggleSelfRecognitionCharts(false);
         if (typeof destroyCondicionesSeguridadCharts === 'function') destroyCondicionesSeguridadCharts();
         if (typeof toggleCondicionesSeguridadCharts === 'function') toggleCondicionesSeguridadCharts(false);
         if (config.isTasaCrecimiento) {
@@ -2644,30 +2627,30 @@ require([
         }
         if (config.isMigracionExterna) {
             destroyMainChartCanvas();
-            if (typeof toggleMigracionExternaCharts === 'function') toggleMigracionExternaCharts(true);
+            if (typeof toggleExternalMigrationCharts === 'function') toggleExternalMigrationCharts(true);
             const title = document.getElementById("chartTitle");
             if (title) title.textContent = config.title || "Migración Externa";
         }
         if (config.isMigracionInterna) {
             destroyMainChartCanvas();
-            if (typeof toggleMigracionInternaCharts === 'function') toggleMigracionInternaCharts(true);
+            if (typeof toggleInternalMigrationCharts === 'function') toggleInternalMigrationCharts(true);
             const title = document.getElementById("chartTitle");
             if (title) title.textContent = config.title || "Migración Interna";
         }
         if (config.isIndicesComplementarios) {
             destroyMainChartCanvas();
-            if (typeof toggleIndicesCharts === 'function') toggleIndicesCharts(true);
+            if (typeof toggleIndexCharts === 'function') toggleIndexCharts(true);
             const title = document.getElementById("chartTitle");
             if (title) title.textContent = config.title || "Índices complementarios";
         }
         if (config.isComposicion) {
-            prepareComposicionChartPanel();
+            prepareCompositionChartPanel();
             const title = document.getElementById("chartTitle");
             if (title) title.textContent = config.title || "Estructura población edad y área";
         }
         if (config.isAutoreconocimientoEtnico) {
             destroyMainChartCanvas();
-            if (typeof toggleAutoreconocimientoCharts === "function") toggleAutoreconocimientoCharts(true);
+            if (typeof toggleSelfRecognitionCharts === "function") toggleSelfRecognitionCharts(true);
             const title = document.getElementById("chartTitle");
             if (title) title.textContent = config.title || "Autoreconocimiento étnico";
         }
@@ -2679,7 +2662,7 @@ require([
         }
         if (config.isConcentracionPoblacion) {
             syncStateSnapshot();
-            void actualizarGrafica(null, config, { skipSyncMap: true });
+            void updateChart(null, config, { skipSyncMap: true });
             return;
         }
 
@@ -2740,20 +2723,20 @@ require([
             layerGlobal = l_hpl;
             activeFeatureLayer = l_hpl;
             setLegendLayer(l_hpl, config.title);
-            actualizarFuente(l_hpl);
+            updateSource(l_hpl);
 
             Promise.all([l_hpl.when(), l_hln.when()]).then(() => {
                 if (!isCurrentRequest(layerRequest)) return;
                 view.whenLayerView(l_hpl).then(lv => {
                     layerViewGlobal = lv;
                 });
-                actualizarGrafica(l_hpl, config);
+                updateChart(l_hpl, config);
             }).catch(error => {
                 if (String(error?.message || "").toLowerCase().includes("cancel")) return;
                 console.error("contexto historico layers error:", error);
             });
 
-            actualizarResumen();
+            updateSummary();
             return;
         }
 
@@ -2761,11 +2744,11 @@ require([
         const visualUrl = config.mapLayerUrl || config.url;
 
         let defExpr = whereBase || "1=1";
-        if (config.id === "densidad_poblacion" && deptoActual && defExpr.includes("mpcodigo =")) {
-            defExpr = defExpr.replace(/mpcodigo\s*=\s*'[^']+'+/, `dpcodigo = '${deptoActual}'`);
+        if (config.id === "densidad_poblacion" && currentDepartmentId && defExpr.includes("mpcodigo =")) {
+            defExpr = defExpr.replace(/mpcodigo\s*=\s*'[^']+'+/, `dpcodigo = '${currentDepartmentId}'`);
         }
-        if (municipioActual && deptoActual && shouldShowDepartmentMapWhenMunicipal(config)) {
-            defExpr = buildDepartmentMapWhereForConfig(config, deptoActual);
+        if (currentMunicipalityId && currentDepartmentId && shouldShowDepartmentMapWhenMunicipal(config)) {
+            defExpr = buildDepartmentMapWhereForConfig(config, currentDepartmentId);
         }
 
         const attachLoadedLayer = (newLayer) => {
@@ -2773,15 +2756,15 @@ require([
             layerGlobal = newLayer;
             activeFeatureLayer = newLayer;
             setLegendLayer(newLayer, config.title);
-            actualizarFuente(newLayer);
+            updateSource(newLayer);
 
             if (config.isComposicion) {
-                const isNationalComposicion = !deptoActual && filtroNivel !== "MUNI";
-                ensureComposicionUi({ isNational: isNationalComposicion, deptoCode: deptoActual, where: defExpr, layer: newLayer });
-                if (municipioActual) highlightMunicipioOnMap(municipioActual, { request: layerRequest });
+                const isNationalComposition = !currentDepartmentId && territoryLevel !== "MUNI";
+                ensureCompositionUi({ isNational: isNationalComposition, departmentCode: currentDepartmentId, where: defExpr, layer: newLayer });
+                if (currentMunicipalityId) highlightMunicipalityOnMap(currentMunicipalityId, { request: layerRequest });
             }
-            if (config.isDistribucion && municipioActual) {
-                highlightMunicipioOnMap(municipioActual, { request: layerRequest });
+            if (config.isDistribucion && currentMunicipalityId) {
+                highlightMunicipalityOnMap(currentMunicipalityId, { request: layerRequest });
             }
             if (config.isTasaCrecimiento) {
                 ensureTasaCrecimientoUi({ where: defExpr, layer: newLayer });
@@ -2791,21 +2774,21 @@ require([
             }
             if (config.isMigracionInterna) {
                 ensureMapCategorySliderUi({ where: defExpr, layer: newLayer });
-                if (municipioActual) highlightMunicipioOnMap(municipioActual, { request: layerRequest });
+                if (currentMunicipalityId) highlightMunicipalityOnMap(currentMunicipalityId, { request: layerRequest });
             }
             if (config.isIndicesComplementarios) {
-                setupIndicesComplementariosSlider({ where: defExpr, layer: newLayer });
-                refreshIndiceComplementarioMapAndLegend({ where: defExpr, field: indiceComplementarioCampoActivo, layer: newLayer });
-                if (municipioActual) highlightMunicipioOnMap(municipioActual, { request: layerRequest });
+                setupComplementaryIndicesSlider({ where: defExpr, layer: newLayer });
+                refreshComplementaryIndexMapAndLegend({ where: defExpr, field: activeComplementaryIndexField, layer: newLayer });
+                if (currentMunicipalityId) highlightMunicipalityOnMap(currentMunicipalityId, { request: layerRequest });
             }
             if (config.isAutoreconocimientoEtnico) {
-                ensureAutoreconocimientoUi({ where: defExpr, layer: newLayer });
+                ensureSelfRecognitionUi({ where: defExpr, layer: newLayer });
             }
             if (config.isCondicionesSeguridad) {
                 ensureCondicionesSeguridadUi({ where: defExpr, layer: newLayer });
             }
 
-            actualizarResumen();
+            updateSummary();
 
             newLayer.when(() => {
                 if (!isCurrentRequest(layerRequest)) return;
@@ -2828,7 +2811,7 @@ require([
                 if (currentCycle !== renderCycleId || layerGlobal !== newLayer || newLayer.destroyed) return;
 
                 try {
-                    if (newLayer.isTable === false && !config.isContextoHistorico && !municipioActual && !(filtroNivel === "DEPTO" && deptoActual)) {
+                    if (newLayer.isTable === false && !config.isContextoHistorico && !currentMunicipalityId && !(territoryLevel === "DEPTO" && currentDepartmentId)) {
                         const res = await newLayer.queryExtent({ where: defExpr });
                         if (currentCycle !== renderCycleId || layerGlobal !== newLayer || newLayer.destroyed) return;
                         if (res?.extent) {
@@ -2850,8 +2833,8 @@ require([
                     }, `data:${config.id}`, FeatureLayer);
                 }
 
-                actualizarGrafica(dataLayer, config, {
-                    skipSyncMap: config.isDistribucion && !!municipioActual
+                updateChart(dataLayer, config, {
+                    skipSyncMap: config.isDistribucion && !!currentMunicipalityId
                 });
 
                 if (currentCycle !== renderCycleId || layerGlobal !== newLayer || newLayer.destroyed) return;
@@ -2863,19 +2846,19 @@ require([
                 } else if (!skipLegendUpdate) {
                     const legendData = buildLegendFromRenderer(newLayer);
                     if (legendData?.labels?.length) {
-                        actualizarLeyenda(legendData.labels, legendData.colors, legendData.codes, legendData.styles);
+                        updateLegend(legendData.labels, legendData.colors, legendData.codes, legendData.styles);
                     }
                 }
             });
         };
 
         if (config.isComposicion && config.mapLayerUrl) {
-            const isNationalComposicion = !deptoActual && filtroNivel !== "MUNI";
-            createComposicionMapLayer({
+            const isNationalComposition = !currentDepartmentId && territoryLevel !== "MUNI";
+            createCompositionMapLayer({
                 territoryWhere: defExpr,
-                isNational: isNationalComposicion,
-                deptoCode: deptoActual,
-                field: composicionCampoActivo,
+                isNational: isNationalComposition,
+                departmentCode: currentDepartmentId,
+                field: activeCompositionField,
                 signal: layerRequest.signal
             }).then((newLayer) => {
                 if (!isCurrentRequest(layerRequest) || currentCycle !== renderCycleId) return;
@@ -2884,7 +2867,7 @@ require([
             }).catch(async (error) => {
                 if (error?.name === "AbortError" || String(error?.message || "").toLowerCase().includes("aborted")) return;
                 if (String(error?.message || "").toLowerCase().includes("cancel")) return;
-                console.error("createComposicionMapLayer error:", error);
+                console.error("createCompositionMapLayer error:", error);
                 try {
                     if (!isCurrentRequest(layerRequest) || currentCycle !== renderCycleId) return;
                     const fallbackLayer = getOrCreateFeatureLayer({
@@ -2895,22 +2878,22 @@ require([
                         visible: true,
                         minScale: 0,
                         maxScale: 0,
-                        renderer: typeof ocupacionGlobal("buildComposicionRenderer") === "function"
-                            ? ocupacionGlobal("buildComposicionRenderer")(composicionCampoActivo, {
-                                national: isNationalComposicion,
-                                deptoCode: deptoActual
+                        renderer: typeof globalOccupation("buildCompositionRenderer") === "function"
+                            ? globalOccupation("buildCompositionRenderer")(activeCompositionField, {
+                                national: isNationalComposition,
+                                departmentCode: currentDepartmentId
                             })
                             : undefined
                     }, `visual:${config.id}:fallback`, FeatureLayer);
                     attachLoadedLayer(fallbackLayer);
                 } catch (fallbackError) {
-                    console.error("createComposicionMapLayer fallback error:", fallbackError);
+                    console.error("createCompositionMapLayer fallback error:", fallbackError);
                 }
             });
             return;
         }
 
-        const isDensidadVisualLayer = config.id === "densidad_poblacion" || config.isPiramides || config.isTransicion;
+        const isDensityVisualLayer = config.id === "densidad_poblacion" || config.isPiramides || config.isTransicion;
         const newLayer = getOrCreateFeatureLayer({
             url: visualUrl,
             definitionExpression: defExpr,
@@ -2921,41 +2904,41 @@ require([
             visible: true,
             minScale: 0,
             maxScale: 0,
-            orderByFields: isDensidadVisualLayer ? ["tzn"] : undefined,
-            renderer: isDensidadVisualLayer && typeof buildDensidadPoblacionalRenderer === "function"
-                ? buildDensidadPoblacionalRenderer(deptoActual || null)
-                : config.isComposicion && typeof ocupacionGlobal("buildComposicionRenderer") === "function"
-                        ? ocupacionGlobal("buildComposicionRenderer")(composicionCampoActivo, { national: !deptoActual && filtroNivel !== "MUNI", deptoCode: deptoActual })
-                    : (config.isTasaCrecimiento || config.isMigracionExterna || config.isMigracionInterna) && typeof ocupacionGlobal("buildTasaCrecimientoRenderer") === "function"
-                        ? ocupacionGlobal("buildTasaCrecimientoRenderer")(tasaCrecimientoCampoActivo)
+            orderByFields: isDensityVisualLayer ? ["tzn"] : undefined,
+            renderer: isDensityVisualLayer && typeof buildPopulationDensityRenderer === "function"
+                ? buildPopulationDensityRenderer(currentDepartmentId || null)
+                : config.isComposicion && typeof globalOccupation("buildCompositionRenderer") === "function"
+                        ? globalOccupation("buildCompositionRenderer")(activeCompositionField, { national: !currentDepartmentId && territoryLevel !== "MUNI", departmentCode: currentDepartmentId })
+                    : (config.isTasaCrecimiento || config.isMigracionExterna || config.isMigracionInterna) && typeof globalOccupation("buildTasaCrecimientoRenderer") === "function"
+                        ? globalOccupation("buildTasaCrecimientoRenderer")(tasaCrecimientoCampoActivo)
                         : config.isIndicesComplementarios
-                            ? buildIndiceComplementarioRenderer(indiceComplementarioCampoActivo)
-                            : config.isAutoreconocimientoEtnico && typeof ocupacionGlobal("buildAutoreconocimientoRenderer") === "function"
-                                ? ocupacionGlobal("buildAutoreconocimientoRenderer")()
-                                : config.isCondicionesSeguridad && typeof ocupacionGlobal("buildCondicionesSeguridadRenderer") === "function"
-                                    ? ocupacionGlobal("buildCondicionesSeguridadRenderer")()
+                            ? buildComplementaryIndexRenderer(activeComplementaryIndexField)
+                            : config.isAutoreconocimientoEtnico && typeof globalOccupation("buildSelfRecognitionRenderer") === "function"
+                                ? globalOccupation("buildSelfRecognitionRenderer")()
+                                : config.isCondicionesSeguridad && typeof globalOccupation("buildCondicionesSeguridadRenderer") === "function"
+                                    ? globalOccupation("buildCondicionesSeguridadRenderer")()
                                     : undefined
         }, `visual:${config.id}`, FeatureLayer);
 
-        if ((config.id === "densidad_poblacion" || config.isPiramides || config.isTransicion) && typeof buildDensidadPoblacionalRenderer === "function") {
-            newLayer.renderer = buildDensidadPoblacionalRenderer(deptoActual || null);
+        if ((config.id === "densidad_poblacion" || config.isPiramides || config.isTransicion) && typeof buildPopulationDensityRenderer === "function") {
+            newLayer.renderer = buildPopulationDensityRenderer(currentDepartmentId || null);
             newLayer.orderByFields = ["tzn"];
         }
-        if (config.isComposicion && typeof ocupacionGlobal("buildComposicionRenderer") === "function") {
-            const isNationalComposicion = !deptoActual && filtroNivel !== "MUNI";
-            newLayer.renderer = ocupacionGlobal("buildComposicionRenderer")(composicionCampoActivo, { national: isNationalComposicion, deptoCode: deptoActual });
+        if (config.isComposicion && typeof globalOccupation("buildCompositionRenderer") === "function") {
+            const isNationalComposition = !currentDepartmentId && territoryLevel !== "MUNI";
+            newLayer.renderer = globalOccupation("buildCompositionRenderer")(activeCompositionField, { national: isNationalComposition, departmentCode: currentDepartmentId });
         }
-        if ((config.isTasaCrecimiento || config.isMigracionExterna || config.isMigracionInterna) && typeof ocupacionGlobal("buildTasaCrecimientoRenderer") === "function") {
-            newLayer.renderer = ocupacionGlobal("buildTasaCrecimientoRenderer")(tasaCrecimientoCampoActivo);
+        if ((config.isTasaCrecimiento || config.isMigracionExterna || config.isMigracionInterna) && typeof globalOccupation("buildTasaCrecimientoRenderer") === "function") {
+            newLayer.renderer = globalOccupation("buildTasaCrecimientoRenderer")(tasaCrecimientoCampoActivo);
         }
         if (config.isIndicesComplementarios) {
-            newLayer.renderer = buildIndiceComplementarioRenderer(indiceComplementarioCampoActivo);
+            newLayer.renderer = buildComplementaryIndexRenderer(activeComplementaryIndexField);
         }
-        if (config.isAutoreconocimientoEtnico && typeof ocupacionGlobal("buildAutoreconocimientoRenderer") === "function") {
-            newLayer.renderer = ocupacionGlobal("buildAutoreconocimientoRenderer")();
+        if (config.isAutoreconocimientoEtnico && typeof globalOccupation("buildSelfRecognitionRenderer") === "function") {
+            newLayer.renderer = globalOccupation("buildSelfRecognitionRenderer")();
         }
-        if (config.isCondicionesSeguridad && typeof ocupacionGlobal("buildCondicionesSeguridadRenderer") === "function") {
-            newLayer.renderer = ocupacionGlobal("buildCondicionesSeguridadRenderer")();
+        if (config.isCondicionesSeguridad && typeof globalOccupation("buildCondicionesSeguridadRenderer") === "function") {
+            newLayer.renderer = globalOccupation("buildCondicionesSeguridadRenderer")();
         }
         if (config.isPropiedadRural) {
             newLayer.when(() => ensurePropiedadRuralRenderer(newLayer)).catch(() => ensurePropiedadRuralRenderer(newLayer));
@@ -3061,7 +3044,7 @@ require([
         const baseWhere = currentLegendState.baseWhere && String(currentLegendState.baseWhere).trim()
             ? String(currentLegendState.baseWhere)
             : "1=1";
-        const shouldApplyDefinitionFilter = config?.isDistribucion && !deptoActual && !municipioActual;
+        const shouldApplyDefinitionFilter = config?.isDistribucion && !currentDepartmentId && !currentMunicipalityId;
 
         for (const currentLayer of targetLayers) {
             let fieldInfo = null;
@@ -3107,9 +3090,9 @@ require([
 
 
 
-    async function cargarMunicipios() {
-        if (Object.keys(diccionarioMunicipios).length === 0) {
-            await cargarDiccionarioMunicipios();
+    async function loadMunicipalities() {
+        if (Object.keys(municipalityNames).length === 0) {
+            await loadMunicipalityDictionary();
         }
 
         // Capa de referencia para municipios (densidad de población)
@@ -3127,102 +3110,119 @@ require([
         try {
             const res = await tempLayer.queryFeatures(q);
 
-            const codigos = [...new Set(
+            const codes = [...new Set(
                 res.features.map(f => f.attributes.mpcodigo)
             )].sort();
 
             // Guardar todos los municipios con su departamento
-            todosMunicipios = codigos.map(codigo => {
-                const depto = codigo.substring(0, 2);
-                const nombre = getMunicipioDisplayName(codigo, diccionarioMunicipios[codigo] || codigo);
+            municipalities = codes.map(code => {
+                const departmentId = code.substring(0, 2);
+                const name = getMunicipalityDisplayName(code, municipalityNames[code] || code);
                 return {
-                    codigo: codigo,
-                    nombre,
-                    depto: depto
+                    codigo: code,
+                    nombre: name,
+                    depto: departmentId
                 };
             });
 
             // Cargar departamentos en el select
-            cargarDepartamentos();
+            loadDepartments();
 
             // Renderizar todos los municipios inicialmente
-            renderizarMunicipios();
+            renderMunicipalities();
 
         } catch (e) {
-            console.error("Error cargando municipios", e);
+            console.warn("No se pudo consultar la capa temática para construir los selects; se usa el catálogo territorial.", e);
+            const codes = Object.keys(municipalityNames)
+                .filter(code => /^\d{5}$/.test(String(code)))
+                .sort();
+            municipalities = codes.map(code => ({
+                codigo: code,
+                nombre: getMunicipalityDisplayName(code, municipalityNames[code] || code),
+                depto: code.substring(0, 2)
+            }));
+            if (municipalities.length) {
+                loadDepartments();
+                renderMunicipalities();
+            } else {
+                const departmentSelect = document.getElementById("departamentos");
+                const municipalitySelect = document.getElementById("municipios");
+                if (departmentSelect) departmentSelect.innerHTML = `<option value="">Error al cargar</option>`;
+                if (municipalitySelect) municipalitySelect.innerHTML = `<option value="">Error al cargar</option>`;
+            }
         }
     }
 
 
 
-    function cargarDepartamentos() {
+    function loadDepartments() {
 
-        const selectDepto = document.getElementById("departamentos");
+        const departmentSelect = document.getElementById("departamentos");
 
         // limpiar
-        selectDepto.innerHTML = `<option value="0">Seleccione departamento</option>`;
+        departmentSelect.innerHTML = `<option value="0">Seleccione departamento</option>`;
 
         // agregar Colombia
         const optionColombia = document.createElement("option");
         optionColombia.value = "COL";
         optionColombia.textContent = "Colombia";
-        selectDepto.appendChild(optionColombia);
+        departmentSelect.appendChild(optionColombia);
 
         // Obtener departamentos únicos en orden alfabético (Colombia se mantiene aparte)
-        const deptosUnicos = sortDepartamentoCodes([...new Set(todosMunicipios.map(m => m.depto))]);
+        const uniqueDepartmentCodes = sortDepartmentCodes([...new Set(municipalities.map(m => m.depto))]);
 
-        deptosUnicos.forEach(codigoDepto => {
+        uniqueDepartmentCodes.forEach(codigoDepto => {
             const opt = document.createElement("option");
             opt.value = codigoDepto;
-            opt.textContent = getDepartamentoDisplayName(codigoDepto);
-            selectDepto.appendChild(opt);
+            opt.textContent = getDepartmentDisplayName(codigoDepto);
+            departmentSelect.appendChild(opt);
         });
 
-        if (!filtroNivel && !deptoActual && !municipioActual) {
-            selectDepto.value = "COL";
+        if (!territoryLevel && !currentDepartmentId && !currentMunicipalityId) {
+            departmentSelect.value = "COL";
         }
 
     }
 
-    function renderizarMunicipios(deptoFiltro = null) {
+    function renderMunicipalities(deptoFiltro = null) {
         const select = document.getElementById("municipios");
         select.innerHTML = `<option value="">Seleccione un municipio</option>`;
 
-        let municipiosFiltrados = todosMunicipios;
+        let filteredMunicipalities = municipalities;
 
         // Filtrar por departamento
         if (deptoFiltro && deptoFiltro !== "0") {
-            municipiosFiltrados = municipiosFiltrados.filter(m => m.depto === deptoFiltro);
+            filteredMunicipalities = filteredMunicipalities.filter(m => m.depto === deptoFiltro);
         }
 
-        municipiosFiltrados
+        filteredMunicipalities
             .slice()
             .sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" }))
             .forEach(muni => {
             const opt = document.createElement("option");
             opt.value = muni.codigo;
-            opt.textContent = getMunicipioDisplayName(muni.codigo, muni.nombre);
+            opt.textContent = getMunicipalityDisplayName(muni.codigo, muni.nombre);
             select.appendChild(opt);
         });
     }
 
     document.getElementById("departamentos").onchange = function () {
 
-        const deptoSeleccionado = this.value;
+        const selectedDepartment = this.value;
 
         // =====================================================
         // CASO ESPECIAL: COLOMBIA
         // =====================================================
-        if (deptoSeleccionado === "COL") {
+        if (selectedDepartment === "COL") {
 
             // limpiar municipios
             document.getElementById("municipios").value = "";
-            municipioActual = "";
-            municipioInfo = null;
+            currentMunicipalityId = "";
+            municipalityInfo = null;
 
             // limpiar filtros
-            filtroNivel = "";
-            deptoActual = "";
+            territoryLevel = "";
+            currentDepartmentId = "";
             whereBase = "";
             resetLegendFilterState();
             syncStateSnapshot({ activeSelection: null, activeFilter: "" });
@@ -3234,8 +3234,8 @@ require([
             if (chartInstance) chartInstance.destroy();
 
             renderControls();
-            cargarCapaActual();
-            actualizarResumen();
+            loadCurrentLayer();
+            updateSummary();
 
 
             // enfocar Colombia
@@ -3247,18 +3247,18 @@ require([
         // =====================================================
         // FILTRAR MUNICIPIOS
         // =====================================================
-        renderizarMunicipios(deptoSeleccionado);
+        renderMunicipalities(selectedDepartment);
         document.getElementById("municipios").value = "";
-        municipioActual = "";
-        municipioInfo = null;
+        currentMunicipalityId = "";
+        municipalityInfo = null;
 
         if (currentMainModule === "ORDENAMIENTO") {
-            deptoActual = deptoSeleccionado;
-            filtroNivel = deptoSeleccionado && deptoSeleccionado !== "0" ? "DEPTO" : "";
+            currentDepartmentId = selectedDepartment;
+            territoryLevel = selectedDepartment && selectedDepartment !== "0" ? "DEPTO" : "";
             syncStateSnapshot({ activeSelection: null, activeFilter: "" });
 
-            if (typeof window.cargarOrdenamientoActual === "function") {
-                window.cargarOrdenamientoActual();
+            if (typeof window.loadCurrentLandUsePlanning === "function") {
+                window.loadCurrentLandUsePlanning();
             }
             return;
         }
@@ -3266,22 +3266,22 @@ require([
         // =====================================================
         // NIVEL DEPARTAMENTAL
         // =====================================================
-        if (deptoSeleccionado && deptoSeleccionado !== "0") {
+        if (selectedDepartment && selectedDepartment !== "0") {
 
-            filtroNivel = "DEPTO";
-            deptoActual = deptoSeleccionado;
+            territoryLevel = "DEPTO";
+            currentDepartmentId = selectedDepartment;
             resetLegendFilterState();
 
             restoreSubLayerSelection();
             renderControls();
 
             // filtro departamental
-            whereBase = `dpcodigo = '${deptoSeleccionado}'`;
+            whereBase = `dpcodigo = '${selectedDepartment}'`;
             syncStateSnapshot({ activeSelection: null, activeFilter: "" });
 
             // cargar capa y gráfica
-            cargarCapaActual();
-            actualizarResumen();
+            loadCurrentLayer();
+            updateSummary();
 
         }
         // =====================================================
@@ -3289,8 +3289,8 @@ require([
         // =====================================================
         else {
 
-            filtroNivel = "";
-            deptoActual = "";
+            territoryLevel = "";
+            currentDepartmentId = "";
             whereBase = "";
             resetLegendFilterState();
             syncStateSnapshot({ activeSelection: null, activeFilter: "" });
@@ -3299,36 +3299,36 @@ require([
 
             if (chartInstance) chartInstance.destroy();
 
-            actualizarResumen();
+            updateSummary();
         }
     };
 
 
-    function seleccionarMunicipioPorCodigo(codigo) {
-        if (!codigo) return;
+    function selectMunicipalityByCode(code) {
+        if (!code) return;
 
-        const dpCode = codigo.substring(0, 2);
-        const selectDepto = document.getElementById("departamentos");
+        const dpCode = code.substring(0, 2);
+        const departmentSelect = document.getElementById("departamentos");
         const selectMuni = document.getElementById("municipios");
 
-        if (selectDepto && selectDepto.value !== dpCode) {
-            selectDepto.value = dpCode;
-            renderizarMunicipios(dpCode);
+        if (departmentSelect && departmentSelect.value !== dpCode) {
+            departmentSelect.value = dpCode;
+            renderMunicipalities(dpCode);
         }
         if (selectMuni) {
-            selectMuni.value = codigo;
+            selectMuni.value = code;
         }
 
-        filtroNivel = "MUNI";
-        municipioActual = codigo;
-        deptoActual = dpCode;
+        territoryLevel = "MUNI";
+        currentMunicipalityId = code;
+        currentDepartmentId = dpCode;
         resetLegendFilterState();
         syncStateSnapshot({ activeSelection: null, activeFilter: "" });
 
         if (currentMainModule === "ORDENAMIENTO") {
             renderControls();
-            if (typeof window.cargarOrdenamientoActual === "function") {
-                window.cargarOrdenamientoActual();
+            if (typeof window.loadCurrentLandUsePlanning === "function") {
+                window.loadCurrentLandUsePlanning();
             }
             return;
         }
@@ -3337,21 +3337,21 @@ require([
         const prevCfg = prevList?.[currentSubLayerIndex];
         const prevId = prevCfg?.id;
 
-        whereBase = `mpcodigo = '${String(codigo).replace(/'/g, "''")}'`;
+        whereBase = `mpcodigo = '${String(code).replace(/'/g, "''")}'`;
         syncStateSnapshot({ activeSelection: null, activeFilter: "" });
 
         ensureMunicipalLayerIndex(prevId);
         renderControls();
-        cargarInfoMunicipio(codigo);
-        cargarCapaActual();
+        loadMunicipalityInfo(code);
+        loadCurrentLayer();
     }
 
-    seleccionarMunicipioPorCodigoImpl = seleccionarMunicipioPorCodigo;
+    selectMunicipalityByCodeImpl = selectMunicipalityByCode;
 
     document.getElementById("municipios").onchange = function () {
-        const codigo = this.value;
-        if (!codigo) return;
-        seleccionarMunicipioPorCodigo(codigo);
+        const code = this.value;
+        if (!code) return;
+        selectMunicipalityByCode(code);
     };
 
 
@@ -3407,16 +3407,16 @@ require([
         chartCard?.classList.toggle("contexto-historico-active", show);
     }
 
-    function prepareComposicionChartPanel() {
+    function prepareCompositionChartPanel() {
         toggleContextoHistoricoCharts(false);
-        togglePiramidesCharts(false);
+        togglePyramidCharts(false);
         toggleTransicionCharts(false);
         toggleTasaCrecimientoCharts(false);
-        toggleMigracionExternaCharts(false);
-        toggleMigracionInternaCharts(false);
-        toggleAutoreconocimientoCharts(false);
+        toggleExternalMigrationCharts(false);
+        toggleInternalMigrationCharts(false);
+        toggleSelfRecognitionCharts(false);
         toggleCondicionesSeguridadCharts(false);
-        toggleIndicesCharts(false);
+        toggleIndexCharts(false);
 
         hideMainChartCanvasDuringLoad();
     }
@@ -3424,7 +3424,7 @@ require([
 
 
     // ─── PIRÁMIDES POBLACIONALES ─────────────────────────────────────────
-    function togglePiramidesCharts(show) {
+    function togglePyramidCharts(show) {
         const ctxHist = document.getElementById("contextoHistoricoTimeline");
         if (ctxHist) ctxHist.style.display = "none";
         const ctxSlider = document.getElementById("periodoSliderContainer");
@@ -3453,7 +3453,7 @@ require([
         if (csg) csg.style.display = "none";
     }
 
-    function destroyPiramidesCharts() {
+    function destroyPyramidCharts() {
         [1985, 1993, 2005, 2018].forEach(yr => {
             if (pChartInstances[yr]) { pChartInstances[yr].destroy(); pChartInstances[yr] = null; }
         });
@@ -3471,7 +3471,7 @@ require([
 
         const panel = document.getElementById("transicionCharts");
         const single = document.getElementById("chart");
-        const piramides = document.getElementById("piramidesCharts");
+        const pyramids = document.getElementById("piramidesCharts");
         const geo = document.getElementById("geoformasCharts");
         const indices = document.getElementById("indicesCharts");
         const tc = document.getElementById("tasaCrecimientoCharts");
@@ -3482,7 +3482,7 @@ require([
 
         if (panel) panel.style.display = show ? "block" : "none";
         if (single) single.style.display = show ? "none" : "block";
-        if (piramides) piramides.style.display = "none";
+        if (pyramids) pyramids.style.display = "none";
         if (geo) geo.style.display = "none";
         if (indices) indices.style.display = "none";
         if (tc) tc.style.display = "none";
@@ -3503,7 +3503,7 @@ require([
     // ─── ÍNDICES COMPLEMENTARIOS ────────────────────────────────────────
     let indicesChartInstances = { 1: null, 2: null, 3: null };
 
-    function toggleIndicesCharts(show) {
+    function toggleIndexCharts(show) {
         const ctxHist = document.getElementById("contextoHistoricoTimeline");
         if (ctxHist) ctxHist.style.display = "none";
         const ctxSlider = document.getElementById("periodoSliderContainer");
@@ -3511,7 +3511,7 @@ require([
 
         const panel = document.getElementById("indicesCharts");
         const single = document.getElementById("chart");
-        const piramides = document.getElementById("piramidesCharts");
+        const pyramids = document.getElementById("piramidesCharts");
         const transicion = document.getElementById("transicionCharts");
         const geo = document.getElementById("geoformasCharts");
         const tc = document.getElementById("tasaCrecimientoCharts");
@@ -3522,7 +3522,7 @@ require([
 
         if (panel) panel.style.display = show ? "block" : "none";
         if (single) single.style.display = show ? "none" : "block";
-        if (piramides) piramides.style.display = "none";
+        if (pyramids) pyramids.style.display = "none";
         if (transicion) transicion.style.display = "none";
         if (geo) geo.style.display = "none";
         if (tc) tc.style.display = "none";
@@ -3540,7 +3540,7 @@ require([
 
         const panel = document.getElementById("tasaCrecimientoCharts");
         const single = document.getElementById("chart");
-        const piramides = document.getElementById("piramidesCharts");
+        const pyramids = document.getElementById("piramidesCharts");
         const transicion = document.getElementById("transicionCharts");
         const indices = document.getElementById("indicesCharts");
         const geo = document.getElementById("geoformasCharts");
@@ -3551,7 +3551,7 @@ require([
 
         if (panel) panel.style.display = show ? "block" : "none";
         if (single) single.style.display = show ? "none" : "block";
-        if (piramides) piramides.style.display = "none";
+        if (pyramids) pyramids.style.display = "none";
         if (transicion) transicion.style.display = "none";
         if (indices) indices.style.display = "none";
         if (geo) geo.style.display = "none";
@@ -3572,7 +3572,7 @@ require([
     // ─── AUTORECONOCIMIENTO ÉTNICO ─────────────────────────────────────────
     let mgeChartInstance = null;
 
-    function toggleMigracionExternaCharts(show) {
+    function toggleExternalMigrationCharts(show) {
         const ctxHist = document.getElementById("contextoHistoricoTimeline");
         if (ctxHist) ctxHist.style.display = "none";
         const ctxSlider = document.getElementById("periodoSliderContainer");
@@ -3580,7 +3580,7 @@ require([
 
         const panel = document.getElementById("migracionExternaCharts");
         const single = document.getElementById("chart");
-        const piramides = document.getElementById("piramidesCharts");
+        const pyramids = document.getElementById("piramidesCharts");
         const transicion = document.getElementById("transicionCharts");
         const indices = document.getElementById("indicesCharts");
         const geo = document.getElementById("geoformasCharts");
@@ -3591,7 +3591,7 @@ require([
 
         if (panel) panel.style.display = show ? "block" : "none";
         if (single) single.style.display = show ? "none" : "block";
-        if (piramides) piramides.style.display = "none";
+        if (pyramids) pyramids.style.display = "none";
         if (transicion) transicion.style.display = "none";
         if (indices) indices.style.display = "none";
         if (geo) geo.style.display = "none";
@@ -3601,7 +3601,7 @@ require([
         if (csg) csg.style.display = "none";
     }
 
-    function destroyMigracionExternaCharts() {
+    function destroyExternalMigrationCharts() {
         if (mgeChartInstance) {
             mgeChartInstance.destroy();
             mgeChartInstance = null;
@@ -3611,7 +3611,7 @@ require([
 
     let mgiChartInstance = null;
 
-    function toggleMigracionInternaCharts(show) {
+    function toggleInternalMigrationCharts(show) {
         const ctxHist = document.getElementById("contextoHistoricoTimeline");
         if (ctxHist) ctxHist.style.display = "none";
         const ctxSlider = document.getElementById("periodoSliderContainer");
@@ -3619,7 +3619,7 @@ require([
 
         const panel = document.getElementById("migracionInternaCharts");
         const single = document.getElementById("chart");
-        const piramides = document.getElementById("piramidesCharts");
+        const pyramids = document.getElementById("piramidesCharts");
         const transicion = document.getElementById("transicionCharts");
         const indices = document.getElementById("indicesCharts");
         const geo = document.getElementById("geoformasCharts");
@@ -3630,7 +3630,7 @@ require([
 
         if (panel) panel.style.display = show ? "block" : "none";
         if (single) single.style.display = show ? "none" : "block";
-        if (piramides) piramides.style.display = "none";
+        if (pyramids) pyramids.style.display = "none";
         if (transicion) transicion.style.display = "none";
         if (indices) indices.style.display = "none";
         if (geo) geo.style.display = "none";
@@ -3640,7 +3640,7 @@ require([
         if (csg) csg.style.display = "none";
     }
 
-    function destroyMigracionInternaCharts() {
+    function destroyInternalMigrationCharts() {
         if (mgiChartInstance) {
             mgiChartInstance.destroy();
             mgiChartInstance = null;
@@ -3650,7 +3650,7 @@ require([
 
     let aeChartInstance = null;
 
-    function toggleAutoreconocimientoCharts(show) {
+    function toggleSelfRecognitionCharts(show) {
         const ctxHist = document.getElementById("contextoHistoricoTimeline");
         if (ctxHist) ctxHist.style.display = "none";
         const ctxSlider = document.getElementById("periodoSliderContainer");
@@ -3658,7 +3658,7 @@ require([
 
         const panel = document.getElementById("autoreconocimientoCharts");
         const single = document.getElementById("chart");
-        const piramides = document.getElementById("piramidesCharts");
+        const pyramids = document.getElementById("piramidesCharts");
         const transicion = document.getElementById("transicionCharts");
         const indices = document.getElementById("indicesCharts");
         const geo = document.getElementById("geoformasCharts");
@@ -3669,7 +3669,7 @@ require([
 
         if (panel) panel.style.display = show ? "block" : "none";
         if (single) single.style.display = show ? "none" : "block";
-        if (piramides) piramides.style.display = "none";
+        if (pyramids) pyramids.style.display = "none";
         if (transicion) transicion.style.display = "none";
         if (indices) indices.style.display = "none";
         if (geo) geo.style.display = "none";
@@ -3679,7 +3679,7 @@ require([
         if (csg) csg.style.display = "none";
     }
 
-    function destroyAutoreconocimientoCharts() {
+    function destroySelfRecognitionCharts() {
         if (aeChartInstance) {
             aeChartInstance.destroy();
             aeChartInstance = null;
@@ -3698,7 +3698,7 @@ require([
 
         const panel = document.getElementById("condicionesSeguridadCharts");
         const single = document.getElementById("chart");
-        const piramides = document.getElementById("piramidesCharts");
+        const pyramids = document.getElementById("piramidesCharts");
         const transicion = document.getElementById("transicionCharts");
         const indices = document.getElementById("indicesCharts");
         const geo = document.getElementById("geoformasCharts");
@@ -3709,7 +3709,7 @@ require([
 
         if (panel) panel.style.display = show ? "block" : "none";
         if (single) single.style.display = show ? "none" : "block";
-        if (piramides) piramides.style.display = "none";
+        if (pyramids) pyramids.style.display = "none";
         if (transicion) transicion.style.display = "none";
         if (indices) indices.style.display = "none";
         if (geo) geo.style.display = "none";
@@ -3727,7 +3727,7 @@ require([
         resetChartPanelCanvases("condicionesSeguridadCharts");
     }
 
-    function destroyIndicesCharts() {
+    function destroyIndexCharts() {
         [1, 2, 3].forEach(id => {
             if (indicesChartInstances[id]) {
                 indicesChartInstances[id].destroy();
@@ -3737,7 +3737,7 @@ require([
         resetChartPanelCanvases("indicesCharts");
     }
 
-    function crearGraficaIndices(canvasId, title, labels, datasets, yAxisTitle, isPercentage = false) {
+    function createIndexChart(canvasId, title, labels, datasets, yAxisTitle, isPercentage = false) {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return null;
 
@@ -4003,7 +4003,7 @@ require([
     }
 
 
-    function crearGraficaTransicion(labels, datasets) {
+    function createDemographicTransitionChart(labels, datasets) {
         // console.log(labels, datasets);
         const canvas = document.getElementById("tChart");
         if (!canvas) return;
@@ -4017,6 +4017,7 @@ require([
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: !window.matchMedia("(max-width: 768px)").matches,
                 interaction: {
                     mode: 'nearest',
                     intersect: true,
@@ -4058,7 +4059,7 @@ require([
         });
     }
 
-    function crearPiramidesChart(canvasId, year, edadLabels, hombresData, mujeresData) {
+    function createPyramidChart(canvasId, year, edadLabels, hombresData, mujeresData) {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
         const colorH = "rgba(79,129,189,0.85)";
@@ -4155,17 +4156,17 @@ require([
         });
     }
 
-    function crearCuatroPiramides({ edadLabels, censos }) {
-        togglePiramidesCharts(true);
-        destroyPiramidesCharts();
+    function createFourPyramids({ edadLabels, censos }) {
+        togglePyramidCharts(true);
+        destroyPyramidCharts();
         [1985, 1993, 2005, 2018].forEach(yr => {
             const d = censos[yr];
             if (!d) return;
-            pChartInstances[yr] = crearPiramidesChart(`pChart${yr}`, yr, edadLabels, d.hombres, d.mujeres);
+            pChartInstances[yr] = createPyramidChart(`pChart${yr}`, yr, edadLabels, d.hombres, d.mujeres);
         });
     }
 
-    function getEdadPiramideRank(edad) {
+    function getPyramidAgeRank(edad) {
         const label = String(edad || "").trim();
         if (!label) return 9999;
         if (/^100\+/.test(label)) return 100;
@@ -4173,31 +4174,31 @@ require([
         return match ? Number(match[0]) : 9999;
     }
 
-    function sortPiramideRowsByEdad(rows = []) {
+    function sortPyramidRowsByAge(rows = []) {
         return rows.slice().sort((a, b) => {
-            const rankDiff = getEdadPiramideRank(a.edad) - getEdadPiramideRank(b.edad);
+            const rankDiff = getPyramidAgeRank(a.edad) - getPyramidAgeRank(b.edad);
             if (rankDiff !== 0) return rankDiff;
             return String(a.edad || "").localeCompare(String(b.edad || ""), "es", { numeric: true });
         });
     }
     // ────────────────────────────────────────────────────────────────────
 
-    function crearGrafica(labels, values, colors, type = 'bar', isVertical = false, datasets = null, chartOptions = {}) {
+    function createChart(labels, values, colors, type = 'bar', isVertical = false, datasets = null, chartOptions = {}) {
 
         const layerConfig = getActiveLayerConfig();
         const valueSuffix = chartOptions.valueSuffix || (layerConfig?.id === "densidad_poblacion" ? " hab/ha" : "%");
-        const isDensidadBarChart = layerConfig?.id === "densidad_poblacion" && type === "bar";
-        const disconnectDensidadMapSync = isDensidadBarChart && filtroNivel === "MUNI";
+        const isDensityBarChart = layerConfig?.id === "densidad_poblacion" && type === "bar";
+        const disconnectDensityMapSync = isDensityBarChart && territoryLevel === "MUNI";
         const isPropiedadRuralBarChart = layerConfig?.id === "propiedad_rural" && type === "bar";
-        const isStyledVerticalBarChart = isDensidadBarChart || isPropiedadRuralBarChart;
-        if (typeof togglePiramidesCharts === 'function') togglePiramidesCharts(false);
-        if (typeof destroyPiramidesCharts === 'function') destroyPiramidesCharts();
+        const isStyledVerticalBarChart = isDensityBarChart || isPropiedadRuralBarChart;
+        if (typeof togglePyramidCharts === 'function') togglePyramidCharts(false);
+        if (typeof destroyPyramidCharts === 'function') destroyPyramidCharts();
         if (typeof toggleTransicionCharts === 'function') toggleTransicionCharts(false);
         if (typeof destroyTransicionCharts === 'function') destroyTransicionCharts();
-        if (typeof toggleMigracionExternaCharts === 'function') toggleMigracionExternaCharts(false);
-        if (typeof destroyMigracionExternaCharts === 'function') destroyMigracionExternaCharts();
-        if (typeof toggleMigracionInternaCharts === 'function') toggleMigracionInternaCharts(false);
-        if (typeof destroyMigracionInternaCharts === 'function') destroyMigracionInternaCharts();
+        if (typeof toggleExternalMigrationCharts === 'function') toggleExternalMigrationCharts(false);
+        if (typeof destroyExternalMigrationCharts === 'function') destroyExternalMigrationCharts();
+        if (typeof toggleInternalMigrationCharts === 'function') toggleInternalMigrationCharts(false);
+        if (typeof destroyInternalMigrationCharts === 'function') destroyInternalMigrationCharts();
         if (!layerConfig?.isComposicion && !layerConfig?.isContextoHistorico && !layerConfig?.isTasaCrecimiento && !layerConfig?.isMigracionExterna && !layerConfig?.isMigracionInterna && !layerConfig?.isIndicesComplementarios) {
             const slider = document.getElementById("periodoSliderContainer");
             if (slider) slider.style.display = "none";
@@ -4220,8 +4221,8 @@ require([
             borderWidth: type === "bar" ? 0 : 2,
             borderRadius: type === "bar" ? 7 : 0,
             borderSkipped: false,
-            barPercentage: isDensidadBarChart ? 0.58 : 0.72,
-            categoryPercentage: isDensidadBarChart ? 0.62 : 0.78,
+            barPercentage: isDensityBarChart ? 0.58 : 0.72,
+            categoryPercentage: isDensityBarChart ? 0.62 : 0.78,
             hoverBorderColor: "rgba(0, 84, 112, 0.85)",
             hoverBorderWidth: type === "bar" ? 2 : 0
         }];
@@ -4242,7 +4243,7 @@ require([
                     easing: "easeOutQuart"
                 },
                 onClick: async (evt, elements) => {
-                    if (disconnectDensidadMapSync) return;
+                    if (disconnectDensityMapSync) return;
                     if (!elements.length) return;
 
                     const el = elements[0];
@@ -4287,7 +4288,7 @@ require([
                             },
                             label: function (context) {
                                 let label = context.dataset.label || '';
-                                if (!label && isDensidadBarChart) label = "Densidad";
+                                if (!label && isDensityBarChart) label = "Densidad";
                                 if (label) label += ': ';
 
                                 let value = null;
@@ -4469,7 +4470,7 @@ require([
                     const dynamicHeight = Math.max(base, 160 + (totalLabels * extraPerItem));
                     chartCanvas.style.height = `${dynamicHeight}px`;
                 } else {
-                    chartCanvas.style.height = isDensidadBarChart
+                    chartCanvas.style.height = isDensityBarChart
                         ? (isSmallScreen ? "390px" : "340px")
                         : isPropiedadRuralBarChart
                             ? (isSmallScreen ? "390px" : "340px")
@@ -4626,13 +4627,13 @@ require([
         }
 
         chartInstance = new Chart(ctx, config);
-        if (disconnectDensidadMapSync) {
+        if (disconnectDensityMapSync) {
             barChartSyncState = null;
         } else {
             registerSyncedBarChart(chartInstance, labels, { codes: chartOptions.codes });
         }
 
-        chartCanvas.ondblclick = disconnectDensidadMapSync ? null : async (evt) => {
+        chartCanvas.ondblclick = disconnectDensityMapSync ? null : async (evt) => {
             const clickedBars = chartInstance.getElementsAtEventForMode(evt, "nearest", { intersect: true }, false);
             if (!clickedBars.length) {
                 await clearLegendSelection({ zoom: true });
@@ -4641,13 +4642,13 @@ require([
     }
 
 
-    function actualizarTituloGrafico(config, mpnombre, dpnombre) {
+    function updateChartTitle(config, mpnombre, dpnombre) {
         const titleElement = document.getElementById("chartTitle");
         if (!titleElement) return;
 
         let titulo = "Distribución (%)";
-        if (filtroNivel === "DEPTO" && deptoActual) {
-            const depName = diccionarioDepartamentos[deptoActual] || deptoActual;
+        if (territoryLevel === "DEPTO" && currentDepartmentId) {
+            const depName = departmentNames[currentDepartmentId] || currentDepartmentId;
 
 
             titleElement.textContent = `Distribución (%)`;
@@ -4902,7 +4903,7 @@ require([
         };
     }
 
-    const contextoHistoricoPeriodos = ["Todos", "Prehispánico", "Colonial", "Republicano", "Contemporáneo"];
+    const historicalContextPeriods = ["Todos", "Prehispánico", "Colonial", "Republicano", "Contemporáneo"];
     const contextoHistoricoLegendPeriodOrder = [
         "Prehisp\u00e1nico",
         "Colonial",
@@ -4910,7 +4911,7 @@ require([
         "Contempor\u00e1neo"
     ];
 
-    const contextoHistoricoTimelineToPeriodo = {
+    const historicalContextTimelineToPeriod = {
         perpreh: "Prehispánico",
         percol: "Colonial",
         perrep: "Republicano",
@@ -4918,20 +4919,20 @@ require([
         permod: "Republicano",
         percont: "Contemporáneo"
     };
-    const contextoHistoricoPeriodoToTimeline = {
+    const historicalContextPeriodToTimeline = {
         "Prehispánico": "perpreh",
         Colonial: "percol",
         Republicano: "perrep",
         "Contemporáneo": "percont"
     };
 
-    function getContextoHistoricoPeriodoQueryValue(periodo) {
+    function getHistoricalContextPeriodQueryValue(periodo) {
         return periodo === "Republicano" ? "República" : periodo;
     }
 
-    function getContextoHistoricoPeriodoWhere(periodo) {
+    function getHistoricalContextPeriodWhere(periodo) {
         if (!periodo || periodo === "Todos") return "1=1";
-        return `periodo = '${getContextoHistoricoPeriodoQueryValue(periodo)}'`;
+        return `periodo = '${getHistoricalContextPeriodQueryValue(periodo)}'`;
     }
 
     function normalizeContextoHistoricoLegendPeriod(periodo, categoryLabel = "") {
@@ -4961,12 +4962,12 @@ require([
     function getContextoHistoricoTerritoryWhereForLayer(layer) {
         const fields = (layer?.fields || []).map(field => String(field.name || "").toLowerCase());
 
-        if (municipioActual && fields.includes("mpcodigo")) {
-            return `mpcodigo = '${String(municipioActual).replace(/'/g, "''")}'`;
+        if (currentMunicipalityId && fields.includes("mpcodigo")) {
+            return `mpcodigo = '${String(currentMunicipalityId).replace(/'/g, "''")}'`;
         }
 
-        if (deptoActual && fields.includes("dpcodigo")) {
-            return `dpcodigo = '${String(deptoActual).replace(/'/g, "''")}'`;
+        if (currentDepartmentId && fields.includes("dpcodigo")) {
+            return `dpcodigo = '${String(currentDepartmentId).replace(/'/g, "''")}'`;
         }
 
         return "";
@@ -5018,12 +5019,12 @@ require([
     }
 
     function getCurrentTerritoryWhere() {
-        if (municipioActual) {
-            return `mpcodigo = '${String(municipioActual).replace(/'/g, "''")}'`;
+        if (currentMunicipalityId) {
+            return `mpcodigo = '${String(currentMunicipalityId).replace(/'/g, "''")}'`;
         }
 
-        if (filtroNivel === "DEPTO" && deptoActual) {
-            return `dpcodigo = '${String(deptoActual).replace(/'/g, "''")}'`;
+        if (territoryLevel === "DEPTO" && currentDepartmentId) {
+            return `dpcodigo = '${String(currentDepartmentId).replace(/'/g, "''")}'`;
         }
 
         return "1=1";
@@ -5056,15 +5057,15 @@ require([
     }
 
     function getCurrentTerritoryLabel(attrs = {}) {
-        if (municipioActual) {
-            const mpNombre = diccionarioMunicipios?.[municipioActual] || attrs.mpnombre || municipioActual;
-            const dpCode = deptoActual || String(municipioActual).slice(0, 2);
-            const dpNombre = diccionarioDepartamentos?.[dpCode] || attrs.dpnombre || dpCode;
-            return `${mpNombre}, ${dpNombre}`;
+        if (currentMunicipalityId) {
+            const municipalityName = municipalityNames?.[currentMunicipalityId] || attrs.mpnombre || currentMunicipalityId;
+            const dpCode = currentDepartmentId || String(currentMunicipalityId).slice(0, 2);
+            const departmentName = departmentNames?.[dpCode] || attrs.dpnombre || dpCode;
+            return `${municipalityName}, ${departmentName}`;
         }
 
-        if (filtroNivel === "DEPTO" && deptoActual) {
-            return diccionarioDepartamentos?.[deptoActual] || attrs.dpnombre || deptoActual;
+        if (territoryLevel === "DEPTO" && currentDepartmentId) {
+            return departmentNames?.[currentDepartmentId] || attrs.dpnombre || currentDepartmentId;
         }
 
         return "Colombia";
@@ -5084,9 +5085,9 @@ require([
             return;
         }
 
-        const shouldZoomDepartment = zoomDepartmentWhenMunicipal && municipioActual && deptoActual;
+        const shouldZoomDepartment = zoomDepartmentWhenMunicipal && currentMunicipalityId && currentDepartmentId;
         const zoomWhere = shouldZoomDepartment
-            ? `dpcodigo = '${String(deptoActual).replace(/'/g, "''")}'`
+            ? `dpcodigo = '${String(currentDepartmentId).replace(/'/g, "''")}'`
             : getCurrentTerritoryWhere();
         const drawWhere = getCurrentTerritoryWhere();
         const where = zoomWhere;
@@ -5111,7 +5112,7 @@ require([
         }
 
         try {
-            const zoomLayerUrl = (shouldZoomDepartment || (filtroNivel === "DEPTO" && deptoActual && !municipioActual))
+            const zoomLayerUrl = (shouldZoomDepartment || (territoryLevel === "DEPTO" && currentDepartmentId && !currentMunicipalityId))
                 ? "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componenteocupacion/MapServer/1"
                 : "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componenteocupacion/MapServer/2";
             const zoomLayer = getOrCreateFeatureLayer({
@@ -5124,7 +5125,7 @@ require([
             if (request && !isCurrentRequest(request)) return;
 
             if (res?.extent) {
-                const margin = shouldZoomDepartment || (filtroNivel === "DEPTO" && deptoActual && !municipioActual) ? 1.12 : 1.18;
+                const margin = shouldZoomDepartment || (territoryLevel === "DEPTO" && currentDepartmentId && !currentMunicipalityId) ? 1.12 : 1.18;
                 await view.goTo(res.extent.expand(margin), {
                     duration,
                     easing: "ease-in-out"
@@ -5132,7 +5133,7 @@ require([
             }
 
             if (drawTerritory) {
-                const drawLayerUrl = municipioActual
+                const drawLayerUrl = currentMunicipalityId
                     ? "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componenteocupacion/MapServer/2"
                     : zoomLayerUrl;
                 const drawLayer = drawLayerUrl === zoomLayerUrl
@@ -5182,19 +5183,19 @@ require([
     }
 
     function updateContextoHistoricoPeriodControls(periodo, timelineKey = null) {
-        contextoHistoricoPeriodoActivo = periodo || "Todos";
-        contextoHistoricoTimelineKeyActivo = timelineKey || contextoHistoricoPeriodoToTimeline[contextoHistoricoPeriodoActivo] || null;
+        activeHistoricalContextPeriod = periodo || "Todos";
+        contextoHistoricoTimelineKeyActivo = timelineKey || historicalContextPeriodToTimeline[activeHistoricalContextPeriod] || null;
 
-        const slider = document.getElementById("periodoSlider");
-        const sliderLabel = document.getElementById("periodoSliderLabel");
+        const slider = document.getElementById("periodSlider");
+        const sliderLabel = document.getElementById("periodSliderLabel");
         const mapSliderLabel = document.getElementById("mapSliderLabel");
         const timeSliderLabel = document.getElementById("timeSliderLabel");
-        const idx = contextoHistoricoPeriodos.indexOf(contextoHistoricoPeriodoActivo);
+        const idx = historicalContextPeriods.indexOf(activeHistoricalContextPeriod);
 
         if (slider && idx >= 0) slider.value = idx;
-        if (sliderLabel) sliderLabel.textContent = "Periodo: " + contextoHistoricoPeriodoActivo;
-        if (mapSliderLabel) mapSliderLabel.textContent = "Periodo: " + contextoHistoricoPeriodoActivo;
-        if (timeSliderLabel) timeSliderLabel.textContent = "Periodo: " + contextoHistoricoPeriodoActivo;
+        if (sliderLabel) sliderLabel.textContent = "Periodo: " + activeHistoricalContextPeriod;
+        if (mapSliderLabel) mapSliderLabel.textContent = "Periodo: " + activeHistoricalContextPeriod;
+        if (timeSliderLabel) timeSliderLabel.textContent = "Periodo: " + activeHistoricalContextPeriod;
 
         document.querySelectorAll(".timeline-item").forEach(item => {
             const key = item.getAttribute("data-periodo");
@@ -5203,12 +5204,12 @@ require([
     }
 
     async function applyContextoHistoricoPeriodSelection(periodo = "Todos", { timelineKey = null, refreshLegend = true } = {}) {
-        const selectedPeriodo = periodo || "Todos";
-        const periodWhere = getContextoHistoricoPeriodoWhere(selectedPeriodo);
+        const selectedPeriod = periodo || "Todos";
+        const periodWhere = getHistoricalContextPeriodWhere(selectedPeriod);
 
-        updateContextoHistoricoPeriodControls(selectedPeriodo, timelineKey);
+        updateContextoHistoricoPeriodControls(selectedPeriod, timelineKey);
         state.merge({
-            contextoHistoricoPeriodo: selectedPeriodo,
+            contextoHistoricoPeriodo: selectedPeriod,
             contextoHistoricoPeriodoWhere: periodWhere
         });
 
@@ -5219,19 +5220,19 @@ require([
             const hplWhere = combineWhereClauses(getContextoHistoricoTerritoryWhereForLayer(l_hpl), periodWhere);
             const hlnWhere = combineWhereClauses(getContextoHistoricoTerritoryWhereForLayer(l_hln), periodWhere);
 
-            if (selectedPeriodo === "Todos") {
+            if (selectedPeriod === "Todos") {
                 l_hpl.visible = true;
                 l_hln.visible = true;
                 l_hpl.definitionExpression = hplWhere;
                 l_hln.definitionExpression = hlnWhere;
                 activeFeatureLayer = l_hpl;
-            } else if (selectedPeriodo === "Contemporáneo") {
+            } else if (selectedPeriod === "Contemporáneo") {
                 l_hpl.visible = true;
                 l_hln.visible = true;
                 l_hpl.definitionExpression = hplWhere;
                 l_hln.definitionExpression = hlnWhere;
                 activeFeatureLayer = l_hpl;
-            } else if (selectedPeriodo === "Republicano") {
+            } else if (selectedPeriod === "Republicano") {
                 l_hpl.visible = false;
                 l_hln.visible = true;
                 l_hln.definitionExpression = hlnWhere;
@@ -5282,7 +5283,7 @@ require([
             const isLineLayer = String(layer?.geometryType || "").toLowerCase().includes("polyline");
             const cat = String(attrs["categoria"] ?? "").trim();
             const desc = String(attrs["descripcion"] ?? "").trim();
-            const periodo = normalizeContextoHistoricoLegendPeriod(attrs["periodo"], cat || desc);
+            const period = normalizeContextoHistoricoLegendPeriod(attrs["periodo"], cat || desc);
 
             let label = normalizeContextoHistoricoLabel(cat, desc);
             let colorCode = label;
@@ -5341,9 +5342,9 @@ require([
             };
 
             const spec = getContextoHistoricoSpec(label);
-            const dictColor = (typeof coloresAreasOcupacion !== "undefined") ? coloresAreasOcupacion[colorCode]?.color : null;
+            const dictColor = (typeof occupationAreaColors !== "undefined") ? occupationAreaColors[colorCode]?.color : null;
             const finalColor = spec?.color || dictColor || defaultColors[label] || "#999";
-            const finalStyle = spec?.style || ((typeof coloresAreasOcupacion !== "undefined") ? coloresAreasOcupacion[colorCode]?.style : null);
+            const finalStyle = spec?.style || ((typeof occupationAreaColors !== "undefined") ? occupationAreaColors[colorCode]?.style : null);
 
             if (!label) return null;
 
@@ -5352,7 +5353,7 @@ require([
                 color: finalColor,
                 style: isLineLayer ? "line" : finalStyle,
                 code: label,
-                period: periodo
+                period
             };
         }
 
@@ -5380,18 +5381,18 @@ require([
             if (config.isPropiedadRural) {
                 const legendData = buildLegendFromRenderer(layer);
                 if (legendData?.labels?.length) {
-                    actualizarLeyenda(legendData.labels, legendData.colors, legendData.codes, legendData.styles);
+                    updateLegend(legendData.labels, legendData.colors, legendData.codes, legendData.styles);
                 }
                 return;
             }
 
             // Índices complementarios: filtrar leyenda por datos presentes
             if (config.isIndicesComplementarios) {
-                const activeField = layer?.renderer?.field || indiceComplementarioCampoActivo;
+                const activeField = layer?.renderer?.field || activeComplementaryIndexField;
                 const baseWhere = legendState?.field === activeField
                     ? (legendState.baseWhere || whereBase || "1=1")
                     : (whereBase || layer.definitionExpression || "1=1");
-                await refreshIndiceComplementarioMapAndLegend({
+                await refreshComplementaryIndexMapAndLegend({
                     where: baseWhere,
                     field: activeField,
                     layer
@@ -5451,7 +5452,7 @@ require([
             if (!features || !Array.isArray(features)) return;
 
             if (!features.length) {
-                actualizarLeyenda([], []);
+                updateLegend([], []);
                 return;
             }
 
@@ -5487,7 +5488,7 @@ require([
                 })
                 : sortLegendEntries(config, entries);
 
-            actualizarLeyenda(
+            updateLegend(
                 ordered.map(e => e.label),
                 ordered.map(e => e.color),
                 ordered.map(e => String(e.code ?? e.label)),
@@ -5524,19 +5525,19 @@ require([
             layer,
             lyr,
             config,
-            filtroNivel,
+            territoryLevel,
             whereBase: (typeof whereBase !== "undefined" && whereBase && String(whereBase).trim()) ? whereBase : "1=1",
-            deptoActual,
-            municipioActual,
-            diccionarioDepartamentos,
-            diccionarioMunicipios,
+            currentDepartmentId,
+            currentMunicipalityId,
+            departmentNames,
+            municipalityNames,
             arcRestQuery,
-            crearGrafica,
-            actualizarLeyenda: (...args) => {
+            createChart,
+            updateLegend: (...args) => {
                 if (renderCycleId !== ctxCycleId) return;
-                actualizarLeyenda(...args);
+                updateLegend(...args);
             },
-            actualizarTituloGrafico,
+            updateChartTitle,
             destroyChart: () => {
                 destroyMainChartCanvas();
             },
@@ -5579,17 +5580,17 @@ require([
     /* =======================
     HANDLERS
     ======================= */
-    function estructuraPiramidesHandler() {
+    function pyramidStructureHandler() {
         return {
             name: "estructuraPiramides",
             when: (ctx) => ctx.config?.isPiramides === true,
             run: async (ctx) => {
-                destroyPiramidesCharts();
+                destroyPyramidCharts();
 
-                const mpCode = ctx.municipioActual;
+                const mpCode = ctx.currentMunicipalityId;
                 if (!mpCode) {
-                    togglePiramidesCharts(false);
-                    ctx.actualizarLeyenda([], []);
+                    togglePyramidCharts(false);
+                    ctx.updateLegend([], []);
                     return;
                 }
 
@@ -5633,8 +5634,8 @@ require([
                     const features = (json.features || []).map(f => f.attributes);
 
                     if (!features.length) {
-                        togglePiramidesCharts(false);
-                        ctx.actualizarLeyenda([], []);
+                        togglePyramidCharts(false);
+                        ctx.updateLegend([], []);
                         return;
                     }
 
@@ -5649,15 +5650,15 @@ require([
                     });
 
                     // ── 4) Título ──────────────────────────────────────────────
-                    const mpNombre = ctx.diccionarioMunicipios?.[mpCode] || mpCode;
-                    const dpNombre = ctx.diccionarioDepartamentos?.[deptoActual] || ctx.deptoActual;
-                    ctx.setTitle(`Estructura poblacional del municipio ${mpNombre}, ${dpNombre}`);
+                    const municipalityName = ctx.municipalityNames?.[mpCode] || mpCode;
+                    const departmentName = ctx.departmentNames?.[currentDepartmentId] || ctx.currentDepartmentId;
+                    ctx.setTitle(`Estructura poblacional del municipio ${municipalityName}, ${departmentName}`);
 
                     // ── 5) Renderizar 4 pirámides ──────────────────────────────
-                    crearCuatroPiramides({ edadLabels, censos });
+                    createFourPyramids({ edadLabels, censos });
 
                     // ── 6) Leyenda simple ──────────────────────────────────────
-                    ctx.actualizarLeyenda(
+                    ctx.updateLegend(
                         ["% Hombres", "% Mujeres"],
                         ["rgba(79,129,189,0.85)", "rgba(255,35,196,0.90)"]
                     );
@@ -5685,9 +5686,9 @@ require([
                     }
 
                 } catch (e) {
-                    console.error("estructuraPiramidesHandler error:", e);
-                    togglePiramidesCharts(false);
-                    ctx.actualizarLeyenda([], []);
+                    console.error("pyramidStructureHandler error:", e);
+                    togglePyramidCharts(false);
+                    ctx.updateLegend([], []);
                 }
             }
         };
@@ -5755,21 +5756,21 @@ require([
             run: async (ctx) => {
                 ctx.destroyChart();
 
-                const mpCode = ctx.municipioActual;
-                const dpCode = ctx.deptoActual || deptoActual;
+                const mpCode = ctx.currentMunicipalityId;
+                const dpCode = ctx.currentDepartmentId || currentDepartmentId;
                 const isMunicipal = !!mpCode;
                 const isDepartmental = !isMunicipal && !!dpCode;
                 const isNational = !isMunicipal && !isDepartmental;
-                const propMpNombre = isMunicipal ? (ctx.diccionarioMunicipios?.[mpCode] || mpCode) : "";
-                const propDpNombre = isDepartmental
-                    ? (ctx.diccionarioDepartamentos?.[dpCode] || dpCode)
+                const municipalityNameProperty = isMunicipal ? (ctx.municipalityNames?.[mpCode] || mpCode) : "";
+                const departmentNameProperty = isDepartmental
+                    ? (ctx.departmentNames?.[dpCode] || dpCode)
                     : isMunicipal
-                        ? (ctx.diccionarioDepartamentos?.[deptoActual] || deptoActual)
+                        ? (ctx.departmentNames?.[currentDepartmentId] || currentDepartmentId)
                         : "";
                 const titleText = isMunicipal
-                    ? `Distribuci\u00f3n del tama\u00f1o de la propiedad rural en el municipio de ${propMpNombre}, ${propDpNombre}`
+                    ? `Distribuci\u00f3n del tama\u00f1o de la propiedad rural en el municipio de ${municipalityNameProperty}, ${departmentNameProperty}`
                     : isDepartmental
-                        ? `Distribuci\u00f3n del tama\u00f1o de la propiedad rural en ${propDpNombre}`
+                        ? `Distribuci\u00f3n del tama\u00f1o de la propiedad rural en ${departmentNameProperty}`
                         : "Distribuci\u00f3n del tama\u00f1o de la propiedad rural en Colombia";
 
                 try {
@@ -5808,7 +5809,7 @@ require([
                         ctx.destroyChart();
                         ctx.setTitle("Sin datos para Tama\u00f1o y distribuci\u00f3n rural");
                         updateMapViewBadge("Sin datos");
-                        ctx.actualizarLeyenda([], []);
+                        ctx.updateLegend([], []);
                         const sumDiv = document.getElementById("summaryDiv");
                         if (sumDiv) sumDiv.innerHTML = "Sin datos disponibles para la consulta.";
                         return;
@@ -5855,7 +5856,7 @@ require([
                     });
 
                     // 3) Renderizar gráfico de barras verticales sin esperar al zoom del mapa.
-                    ctx.crearGrafica(labels, values, colors, "bar", true);
+                    ctx.createChart(labels, values, colors, "bar", true);
 
                     // Ajustar tooltip
                     if (chartInstance) {
@@ -5875,7 +5876,7 @@ require([
                         baseWhere: where,
                         itemWheres: Object.fromEntries(codes.map(code => [String(code), propiedadRuralWhereFor(code)]))
                     });
-                    ctx.actualizarLeyenda(
+                    ctx.updateLegend(
                         labels,
                         colors,
                         codes,
@@ -5899,17 +5900,17 @@ require([
 
                 } catch (e) {
                     console.error("propiedadRuralHandler error:", e);
-                    ctx.actualizarLeyenda([], []);
+                    ctx.updateLegend([], []);
                     ctx.destroyChart();
                 }
             }
         };
     }
 
-    const COMPOSICION_MAP_FIELDS = ["nm", "nf", "jm", "jf", "am", "af", "amm", "amf"];
-    const COMPOSICION_GEOMETRY_LAYER_URL = "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componenteocupacion/MapServer/11";
-    const COMPOSICION_DATA_LAYER_URL = "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componenteocupacion/MapServer/15";
-    const COMPOSICION_PROPORTIONS_LAYER_URL = "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componenteocupacion/MapServer/26";
+    const COMPOSITION_MAP_FIELDS = ["nm", "nf", "jm", "jf", "am", "af", "amm", "amf"];
+    const COMPOSITION_GEOMETRY_LAYER_URL = "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componenteocupacion/MapServer/11";
+    const COMPOSITION_DATA_LAYER_URL = "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componenteocupacion/MapServer/15";
+    const COMPOSITION_PROPORTIONS_LAYER_URL = "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componenteocupacion/MapServer/26";
 
     async function arcRestQueryAllFeatures(layerUrl, params = {}, options = {}) {
         const pageSize = Number(params.resultRecordCount) || 2000;
@@ -5942,7 +5943,7 @@ require([
         };
     }
 
-    function aggregateComposicionProportions(features = []) {
+    function aggregateCompositionProportions(features = []) {
         let pnm = 0;
         let pnf = 0;
         let pjm = 0;
@@ -5976,7 +5977,7 @@ require([
         return { pnm, pnf, pjm, pjf, pam, paf, pamm, pamf };
     }
 
-    function buildRuralComposicionAttributes(totalRuralPop, proportions = {}) {
+    function buildRuralCompositionAttributes(totalRuralPop, proportions = {}) {
         const { pnm, pnf, pjm, pjf, pam, paf, pamm, pamf } = proportions;
         return {
             tzn: 3,
@@ -5991,20 +5992,20 @@ require([
         };
     }
 
-    async function buildRuralComposicionLookup(territoryWhere = "1=1", options = {}) {
+    async function buildRuralCompositionLookup(territoryWhere = "1=1", options = {}) {
         const ruralWhere = territoryWhere && territoryWhere !== "1=1"
             ? `(${territoryWhere}) AND tzn = 3`
             : "tzn = 3";
 
         const [ruralPopResult, proportionsResult] = await Promise.all([
-            arcRestQueryAllFeatures(COMPOSICION_GEOMETRY_LAYER_URL, {
+            arcRestQueryAllFeatures(COMPOSITION_GEOMETRY_LAYER_URL, {
                 f: "json",
                 where: ruralWhere,
                 outFields: "mpcodigo,pob2018",
                 returnGeometry: "false",
                 resultRecordCount: 2000
             }, options),
-            arcRestQueryAllFeatures(COMPOSICION_PROPORTIONS_LAYER_URL, {
+            arcRestQueryAllFeatures(COMPOSITION_PROPORTIONS_LAYER_URL, {
                 f: "json",
                 where: territoryWhere || "1=1",
                 outFields: "edad,h2018,m2018,mpcodigo",
@@ -6030,20 +6031,20 @@ require([
             const proportions = proportionsByMuni.get(mpcodigo);
             if (!proportions?.length) return;
 
-            lookup.set(mpcodigo, buildRuralComposicionAttributes(
+            lookup.set(mpcodigo, buildRuralCompositionAttributes(
                 totalRuralPop,
-                aggregateComposicionProportions(proportions)
+                aggregateCompositionProportions(proportions)
             ));
         });
 
         return lookup;
     }
 
-    async function createComposicionMapLayer({
+    async function createCompositionMapLayer({
         territoryWhere = "1=1",
         isNational = false,
-        deptoCode = "",
-        field = composicionCampoActivo,
+        departmentCode = "",
+        field = activeCompositionField,
         signal = null
     } = {}) {
         const geometryWhere = territoryWhere && String(territoryWhere).trim()
@@ -6055,7 +6056,7 @@ require([
         const queryOptions = { signal: signal || getActiveRequestSignal() };
 
         const [geometryResult, urbanAttrsResult, ruralLookup] = await Promise.all([
-            arcRestQueryAllFeatures(COMPOSICION_GEOMETRY_LAYER_URL, {
+            arcRestQueryAllFeatures(COMPOSITION_GEOMETRY_LAYER_URL, {
                 f: "json",
                 where: geometryWhere,
                 outFields: "mpcodigo,dpcodigo,tzn",
@@ -6063,14 +6064,14 @@ require([
                 outSR: view.spatialReference?.wkid || view.spatialReference?.latestWkid || 102100,
                 resultRecordCount: 2000
             }, queryOptions),
-            arcRestQueryAllFeatures(COMPOSICION_DATA_LAYER_URL, {
+            arcRestQueryAllFeatures(COMPOSITION_DATA_LAYER_URL, {
                 f: "json",
                 where: geometryWhere,
-                outFields: ["mpcodigo", "tzn", ...COMPOSICION_MAP_FIELDS].join(","),
+                outFields: ["mpcodigo", "tzn", ...COMPOSITION_MAP_FIELDS].join(","),
                 returnGeometry: "false",
                 resultRecordCount: 2000
             }, queryOptions),
-            buildRuralComposicionLookup(geometryWhere, queryOptions)
+            buildRuralCompositionLookup(geometryWhere, queryOptions)
         ]);
 
         const urbanLookup = new Map();
@@ -6092,15 +6093,15 @@ require([
             if (!geometryJson?.rings?.length && !geometryJson?.paths?.length) return [];
 
             const key = `${mpcodigo}_${tzn}`;
-            let composicionSource = urbanLookup.get(key);
+            let compositionSource = urbanLookup.get(key);
 
-            if (!composicionSource && tzn === 3) {
-                composicionSource = ruralLookup.get(mpcodigo);
+            if (!compositionSource && tzn === 3) {
+                compositionSource = ruralLookup.get(mpcodigo);
             }
 
-            const composicionAttrs = {};
-            COMPOSICION_MAP_FIELDS.forEach((fieldName) => {
-                composicionAttrs[fieldName] = Number(composicionSource?.[fieldName]) || 0;
+            const compositionAttributes = {};
+            COMPOSITION_MAP_FIELDS.forEach((fieldName) => {
+                compositionAttributes[fieldName] = Number(compositionSource?.[fieldName]) || 0;
             });
 
             return [new Graphic({
@@ -6114,7 +6115,7 @@ require([
                     mpcodigo,
                     dpcodigo: attrs.dpcodigo || "",
                     tzn,
-                    ...composicionAttrs
+                    ...compositionAttributes
                 }
             })];
         });
@@ -6123,10 +6124,10 @@ require([
             throw new Error("No se encontraron geometrías para composición poblacional.");
         }
 
-        const buildComposicionRendererFn = ocupacionGlobal("buildComposicionRenderer");
-        const activeField = ocupacionGlobal("ordenComposicion")?.includes(field) ? field : "nm";
-        const renderer = typeof buildComposicionRendererFn === "function"
-            ? buildComposicionRendererFn(activeField, { national: isNational, deptoCode })
+        const buildCompositionRendererFunction = globalOccupation("buildCompositionRenderer");
+        const activeField = globalOccupation("compositionOrder")?.includes(field) ? field : "nm";
+        const renderer = typeof buildCompositionRendererFunction === "function"
+            ? buildCompositionRendererFunction(activeField, { national: isNational, departmentCode })
             : undefined;
 
         return new FeatureLayer({
@@ -6136,7 +6137,7 @@ require([
                 { name: "mpcodigo", type: "string" },
                 { name: "dpcodigo", type: "string" },
                 { name: "tzn", type: "integer" },
-                ...COMPOSICION_MAP_FIELDS.map((name) => ({ name, type: "integer" }))
+                ...COMPOSITION_MAP_FIELDS.map((name) => ({ name, type: "integer" }))
             ],
             objectIdField: "objectid",
             geometryType: "polygon",
@@ -6149,7 +6150,7 @@ require([
         });
     }
 
-    function buildComposicionLegendWhere(item, field, isNational) {
+    function buildCompositionLegendWhere(item, field, isNational) {
         const maxClause = `${field} <= ${Number(item.max)}`;
         const minClause = item.min == null ? "" : ` AND ${field} > ${Number(item.min)}`;
         if (isNational) return `${maxClause}${minClause}`;
@@ -6157,19 +6158,19 @@ require([
         return `${zoneClause} AND ${maxClause}${minClause}`;
     }
 
-    async function refreshComposicionMapAndLegend({ isNational = false, deptoCode = "", where = "1=1", field = composicionCampoActivo, layer = layerGlobal } = {}) {
-        const buildComposicionRendererFn = ocupacionGlobal("buildComposicionRenderer");
-        const getComposicionLegendItemsFn = ocupacionGlobal("getComposicionLegendItems");
-        const ordenComposicionList = ocupacionGlobal("ordenComposicion");
-        if (!layer || typeof buildComposicionRendererFn !== "function") return;
-        const activeField = (Array.isArray(ordenComposicionList) && ordenComposicionList.includes(field)) ? field : "nm";
-        composicionCampoActivo = activeField;
-        layer.renderer = buildComposicionRendererFn(activeField, { national: isNational, deptoCode });
+    async function refreshCompositionMapAndLegend({ isNational = false, departmentCode = "", where = "1=1", field = activeCompositionField, layer = layerGlobal } = {}) {
+        const buildCompositionRendererFunction = globalOccupation("buildCompositionRenderer");
+        const getCompositionLegendItemsFunction = globalOccupation("getCompositionLegendItems");
+        const compositionOrderList = globalOccupation("compositionOrder");
+        if (!layer || typeof buildCompositionRendererFunction !== "function") return;
+        const activeField = (Array.isArray(compositionOrderList) && compositionOrderList.includes(field)) ? field : "nm";
+        activeCompositionField = activeField;
+        layer.renderer = buildCompositionRendererFunction(activeField, { national: isNational, departmentCode });
         try { layer.refresh?.(); } catch (_) { }
 
-        if (typeof getComposicionLegendItemsFn !== "function") return;
-        const candidateItems = getComposicionLegendItemsFn(activeField, { national: isNational, deptoCode });
-        const candidateWheres = candidateItems.map(item => buildComposicionLegendWhere(item, activeField, isNational));
+        if (typeof getCompositionLegendItemsFunction !== "function") return;
+        const candidateItems = getCompositionLegendItemsFunction(activeField, { national: isNational, departmentCode });
+        const candidateWheres = candidateItems.map(item => buildCompositionLegendWhere(item, activeField, isNational));
         const { items: legendItems, wheres: legendWheres } = await filterLegendItemsWithLayerData({
             layer,
             baseWhere: where,
@@ -6188,7 +6189,7 @@ require([
             itemWheres: Object.fromEntries(legendCodes.map((code, index) => [String(code), legendWheres[index]]))
         });
 
-        actualizarLeyenda(
+        updateLegend(
             legendItems.map(item => item.label),
             legendItems.map(item => item.color),
             legendCodes,
@@ -6198,12 +6199,12 @@ require([
         );
     }
 
-    function ensureComposicionUi({ isNational = false, deptoCode = "", where = "1=1", layer = layerGlobal } = {}) {
-        setupComposicionSlider({ isNational, deptoCode, where });
-        refreshComposicionMapAndLegend({ isNational, deptoCode, where, field: composicionCampoActivo, layer });
+    function ensureCompositionUi({ isNational = false, departmentCode = "", where = "1=1", layer = layerGlobal } = {}) {
+        setupCompositionSlider({ isNational, departmentCode, where });
+        refreshCompositionMapAndLegend({ isNational, departmentCode, where, field: activeCompositionField, layer });
     }
 
-    function buildAutoreconocimientoLegendWhere(item, field = "pobtet") {
+    function buildSelfRecognitionLegendWhere(item, field = "pobtet") {
         const maxClause = `${field} <= ${Number(item.max)}`;
         const minClause = item.min == null ? "" : ` AND ${field} > ${Number(item.min)}`;
         return `${maxClause}${minClause}`;
@@ -6213,9 +6214,9 @@ require([
         return `clasisus = ${Number(item.value)}`;
     }
 
-    async function refreshAutoreconocimientoMapAndLegend({ where = "1=1", layer = layerGlobal } = {}) {
-        const buildRendererFn = ocupacionGlobal("buildAutoreconocimientoRenderer");
-        const getLegendItemsFn = ocupacionGlobal("getAutoreconocimientoLegendItems");
+    async function refreshSelfRecognitionMapAndLegend({ where = "1=1", layer = layerGlobal } = {}) {
+        const buildRendererFn = globalOccupation("buildSelfRecognitionRenderer");
+        const getLegendItemsFn = globalOccupation("getSelfRecognitionLegendItems");
         if (!layer || typeof buildRendererFn !== "function") return;
 
         layer.renderer = buildRendererFn();
@@ -6223,7 +6224,7 @@ require([
 
         if (typeof getLegendItemsFn !== "function") return;
         const candidateItems = getLegendItemsFn();
-        const candidateWheres = candidateItems.map(item => buildAutoreconocimientoLegendWhere(item, "pobtet"));
+        const candidateWheres = candidateItems.map(item => buildSelfRecognitionLegendWhere(item, "pobtet"));
         const { items: legendItems, wheres: legendWheres } = await filterLegendItemsWithLayerData({
             layer,
             baseWhere: where,
@@ -6242,7 +6243,7 @@ require([
             itemWheres: Object.fromEntries(legendCodes.map((code, index) => [String(code), legendWheres[index]]))
         });
 
-        actualizarLeyenda(
+        updateLegend(
             legendItems.map(item => item.label),
             legendItems.map(item => item.color),
             legendCodes,
@@ -6250,12 +6251,12 @@ require([
             null,
             legendWheres
         );
-        appendLineaNegraLegendItems();
+        appendBlackLineLegendItems();
     }
 
     async function refreshCondicionesSeguridadMapAndLegend({ where = "1=1", layer = layerGlobal } = {}) {
-        const buildRendererFn = ocupacionGlobal("buildCondicionesSeguridadRenderer");
-        const getLegendItemsFn = ocupacionGlobal("getCondicionesSeguridadLegendItems");
+        const buildRendererFn = globalOccupation("buildCondicionesSeguridadRenderer");
+        const getLegendItemsFn = globalOccupation("getCondicionesSeguridadLegendItems");
         if (!layer || typeof buildRendererFn !== "function") return;
 
         layer.renderer = buildRendererFn();
@@ -6282,7 +6283,7 @@ require([
             itemWheres: Object.fromEntries(legendCodes.map((code, index) => [String(code), legendWheres[index]]))
         });
 
-        actualizarLeyenda(
+        updateLegend(
             legendItems.map(item => item.label),
             legendItems.map(item => item.color),
             legendCodes,
@@ -6292,11 +6293,11 @@ require([
         );
     }
 
-    function ensureAutoreconocimientoUi({ where = "1=1", layer = layerGlobal } = {}) {
-        return refreshAutoreconocimientoMapAndLegend({ where, layer });
+    function ensureSelfRecognitionUi({ where = "1=1", layer = layerGlobal } = {}) {
+        return refreshSelfRecognitionMapAndLegend({ where, layer });
     }
 
-    const LINEA_NEGRA_LAYER_CONFIGS = [
+    const BLACK_LINE_LAYER_CONFIGS = [
         {
             id: "espacios_sagrados",
             label: "Espacios sagrados",
@@ -6348,36 +6349,36 @@ require([
             color: "#FFBEE8"
         }
     ];
-    const LINEA_NEGRA_TERRITORY_MUNI_LAYER_URL = "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componenteocupacion/MapServer/2";
-    const LINEA_NEGRA_TERRITORY_DEPT_LAYER_URL = "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componenteocupacion/MapServer/1";
-    const LINEA_NEGRA_DEPTO_CODES = new Set(["20", "44", "47"]);
-    const LINEA_NEGRA_LABELS = {
+    const BLACK_LINE_TERRITORY_MUNICIPALITY_LAYER_URL = "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componenteocupacion/MapServer/2";
+    const BLACK_LINE_TERRITORY_DEPARTMENT_LAYER_URL = "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componenteocupacion/MapServer/1";
+    const BLACK_LINE_DEPARTMENT_CODES = new Set(["20", "44", "47"]);
+    const BLACK_LINE_LABELS = {
         espacios_sagrados: "Espacios sagrados",
         area_maritima: "Área Marítima",
         area_terrestre: "Área terrestre",
         territorio_ancestral: "Territorio Ancestral"
     };
 
-    function getLineaNegraLabel(item) {
-        return LINEA_NEGRA_LABELS[item?.id] || item?.label || "";
+    function getBlackLineLabel(item) {
+        return BLACK_LINE_LABELS[item?.id] || item?.label || "";
     }
 
-    function isLineaNegraContextActive({ cycleId = renderCycleId, configId = "" } = {}) {
+    function isBlackLineContextActive({ cycleId = renderCycleId, configId = "" } = {}) {
         const activeConfig = getActiveLayerConfig();
         return cycleId === renderCycleId &&
             activeConfig?.isAutoreconocimientoEtnico === true &&
             (!configId || activeConfig.id === configId);
     }
 
-    async function getLineaNegraTerritoryGeometry({ isMunicipal = false, isDepartmental = false, mpCode = "", dpCode = "" } = {}) {
+    async function getBlackLineTerritoryGeometry({ isMunicipal = false, isDepartmental = false, mpCode = "", dpCode = "" } = {}) {
         const escapeSql = value => String(value || "").replace(/'/g, "''");
         let where = "";
-        let layerUrl = LINEA_NEGRA_TERRITORY_MUNI_LAYER_URL;
+        let layerUrl = BLACK_LINE_TERRITORY_MUNICIPALITY_LAYER_URL;
 
         if (isMunicipal && mpCode) {
             where = `mpcodigo = '${escapeSql(mpCode)}'`;
         } else if (isDepartmental && dpCode) {
-            layerUrl = LINEA_NEGRA_TERRITORY_DEPT_LAYER_URL;
+            layerUrl = BLACK_LINE_TERRITORY_DEPARTMENT_LAYER_URL;
             where = `dpcodigo = '${escapeSql(dpCode)}'`;
         } else {
             return null;
@@ -6401,7 +6402,7 @@ require([
         return features[0].geometry || null;
     }
 
-    async function lineaNegraLayerIntersectsTerritory(layer, territoryGeometry) {
+    async function blackLineLayerIntersectsTerritory(layer, territoryGeometry) {
         if (!layer || !territoryGeometry) return false;
         try {
             const query = layer.createQuery();
@@ -6416,15 +6417,15 @@ require([
         }
     }
 
-    async function applyLineaNegraTerritoryFilter({ isMunicipal = false, isDepartmental = false, mpCode = "", dpCode = "", token = lineaNegraLoadToken } = {}) {
-        lineaNegraTerritoryGeometry = await getLineaNegraTerritoryGeometry({ isMunicipal, isDepartmental, mpCode, dpCode });
-        if (token !== lineaNegraLoadToken) return;
-        if (!lineaNegraTerritoryGeometry || !lineNegraLayers.length || !view) return;
+    async function applyBlackLineTerritoryFilter({ isMunicipal = false, isDepartmental = false, mpCode = "", dpCode = "", token = blackLineLoadToken } = {}) {
+        blackLineTerritoryGeometry = await getBlackLineTerritoryGeometry({ isMunicipal, isDepartmental, mpCode, dpCode });
+        if (token !== blackLineLoadToken) return;
+        if (!blackLineTerritoryGeometry || !lineNegraLayers.length || !view) return;
 
         await Promise.all(lineNegraLayers.map(async layer => {
-            if (token !== lineaNegraLoadToken) return;
-            const intersects = await lineaNegraLayerIntersectsTerritory(layer, lineaNegraTerritoryGeometry);
-            if (token !== lineaNegraLoadToken) return;
+            if (token !== blackLineLoadToken) return;
+            const intersects = await blackLineLayerIntersectsTerritory(layer, blackLineTerritoryGeometry);
+            if (token !== blackLineLoadToken) return;
             layer.__lineaNegraVisibleInTerritory = intersects;
             if (!intersects) {
                 layer.visible = false;
@@ -6435,22 +6436,22 @@ require([
             try {
                 const layerView = await view.whenLayerView(layer);
                 layerView.filter = {
-                    geometry: lineaNegraTerritoryGeometry,
+                    geometry: blackLineTerritoryGeometry,
                     spatialRelationship: "intersects"
                 };
             } catch (_) { }
         }));
-        if (token === lineaNegraLoadToken) appendLineaNegraLegendItems();
+        if (token === blackLineLoadToken) appendBlackLineLegendItems();
     }
 
-    function getLineaNegraLegendSymbol(config, layer) {
+    function getBlackLineLegendSymbol(config, layer) {
         const rendererSymbol = layer?.renderer?.symbol;
         if (rendererSymbol) return rendererSymbol;
         return config?.symbol || null;
     }
 
-    function buildLineaNegraLegendSwatch(config, layer) {
-        const symbol = getLineaNegraLegendSymbol(config, layer);
+    function buildBlackLineLegendSwatch(config, layer) {
+        const symbol = getBlackLineLegendSymbol(config, layer);
         if (!symbol) {
             return {
                 className: `legend-color${config.legendStyle === "line" ? " legend-line-symbol" : ""}`,
@@ -6517,18 +6518,18 @@ require([
         };
     }
 
-    function sortLineaNegraLegendItems(items) {
+    function sortBlackLineLegendItems(items) {
         return [...items].sort((a, b) => (a.legendOrder ?? 99) - (b.legendOrder ?? 99));
     }
 
-    function appendLineaNegraLegendItems() {
+    function appendBlackLineLegendItems() {
         const content = document.getElementById("legendContent");
         if (!content || !lineNegraLayers.length) return;
 
         content.querySelector(".legend-linea-negra-group")?.remove();
         const layersById = new Map(lineNegraLayers.map(layer => [String(layer.__lineaNegraId || ""), layer]));
-        const legendItemsOrdered = sortLineaNegraLegendItems(
-            LINEA_NEGRA_LAYER_CONFIGS.filter(item => {
+        const legendItemsOrdered = sortBlackLineLegendItems(
+            BLACK_LINE_LAYER_CONFIGS.filter(item => {
                 const layer = layersById.get(item.id);
                 return layer && layer.__lineaNegraVisibleInTerritory !== false;
             })
@@ -6540,11 +6541,11 @@ require([
         orderedWrapper.innerHTML = `
             <div class="legend-linea-negra-title">Cobertura Línea Negra</div>
             ${legendItemsOrdered.map(item => {
-                const swatch = buildLineaNegraLegendSwatch(item, layersById.get(item.id));
+                const swatch = buildBlackLineLegendSwatch(item, layersById.get(item.id));
                 return `
-                <div class="legend-item legend-linea-negra-item" data-linea-negra-id="${item.id}" title="Activar/desactivar ${getLineaNegraLabel(item)}">
+                <div class="legend-item legend-linea-negra-item" data-linea-negra-id="${item.id}" title="Activar/desactivar ${getBlackLineLabel(item)}">
                     <span class="${swatch.className} oot-linea-negra-swatch" data-swatch-style="${swatch.style}"></span>
-                    <span class="legend-label">${getLineaNegraLabel(item)}</span>
+                    <span class="legend-label">${getBlackLineLabel(item)}</span>
                 </div>
             `;
             }).join("")}
@@ -6570,7 +6571,7 @@ require([
         content.appendChild(orderedWrapper);
     }
 
-    async function loadLineaNegraLayersForAutoreconocimiento({
+    async function loadBlackLineLayersForSelfRecognition({
         isMunicipal = false,
         isDepartmental = false,
         dpCode = "",
@@ -6578,21 +6579,21 @@ require([
         cycleId = renderCycleId,
         configId = ""
     } = {}) {
-        clearLineaNegraLayers({ destroy: false });
-        const token = ++lineaNegraLoadToken;
-        const appliesToTerritory = (isMunicipal || isDepartmental) && LINEA_NEGRA_DEPTO_CODES.has(String(dpCode || "").padStart(2, "0"));
-        if (!appliesToTerritory || !map || !isLineaNegraContextActive({ cycleId, configId })) return [];
+        clearBlackLineLayers({ destroy: false });
+        const token = ++blackLineLoadToken;
+        const appliesToTerritory = (isMunicipal || isDepartmental) && BLACK_LINE_DEPARTMENT_CODES.has(String(dpCode || "").padStart(2, "0"));
+        if (!appliesToTerritory || !map || !isBlackLineContextActive({ cycleId, configId })) return [];
 
-        const orderedConfigs = LINEA_NEGRA_LAYER_CONFIGS
+        const orderedConfigs = BLACK_LINE_LAYER_CONFIGS
             .map((config, originalIndex) => ({ ...config, originalIndex }))
             .sort((a, b) => (a.drawOrder ?? 1) - (b.drawOrder ?? 1) || a.originalIndex - b.originalIndex);
 
         lineNegraLayers = orderedConfigs.map(config => {
-            let layer = lineaNegraLayerCache.get(config.id);
+            let layer = blackLineLayerCache.get(config.id);
             if (!layer) {
                 const layerOptions = {
                     url: config.url,
-                    title: getLineaNegraLabel(config),
+                    title: getBlackLineLabel(config),
                     outFields: ["*"],
                     visible: true,
                     opacity: 1,
@@ -6606,31 +6607,31 @@ require([
                 }
                 layer = new FeatureLayer(layerOptions);
                 layer.__lineaNegraId = config.id;
-                lineaNegraLayerCache.set(config.id, layer);
+                blackLineLayerCache.set(config.id, layer);
             }
             layer.__lineaNegraVisibleInTerritory = true;
             layer.visible = true;
             return layer;
         });
 
-        if (token !== lineaNegraLoadToken || !isLineaNegraContextActive({ cycleId, configId })) {
-            clearLineaNegraLayers({ destroy: false });
+        if (token !== blackLineLoadToken || !isBlackLineContextActive({ cycleId, configId })) {
+            clearBlackLineLayers({ destroy: false });
             return [];
         }
 
         lineNegraLayers.forEach(layer => {
             if (!map.findLayerById?.(layer.id)) map.add(layer);
         });
-        appendLineaNegraLegendItems();
+        appendBlackLineLegendItems();
 
         Promise.resolve()
             .then(() => Promise.all(lineNegraLayers.map(layer => layer.load().catch(() => null))))
             .then(() => {
-                if (token !== lineaNegraLoadToken || !isLineaNegraContextActive({ cycleId, configId })) return null;
-                return applyLineaNegraTerritoryFilter({ isMunicipal, isDepartmental, mpCode, dpCode, token });
+                if (token !== blackLineLoadToken || !isBlackLineContextActive({ cycleId, configId })) return null;
+                return applyBlackLineTerritoryFilter({ isMunicipal, isDepartmental, mpCode, dpCode, token });
             })
             .then(() => {
-                if (token !== lineaNegraLoadToken || !isLineaNegraContextActive({ cycleId, configId })) return;
+                if (token !== blackLineLoadToken || !isBlackLineContextActive({ cycleId, configId })) return;
                 lineNegraLayers.forEach(layer => {
                     try { layer.refresh?.(); } catch (_) { }
                 });
@@ -6643,17 +6644,17 @@ require([
         return refreshCondicionesSeguridadMapAndLegend({ where, layer });
     }
 
-    function getComposicionMapContext() {
+    function getCompositionMapContext() {
         const config = getActiveLayerConfig();
-        const isNational = !municipioActual && !(filtroNivel === "DEPTO" && deptoActual);
-        const deptoCode = deptoActual || "";
-        const mapWhere = municipioActual && deptoActual && config
-            ? buildDepartmentMapWhereForConfig(config, deptoActual)
+        const isNational = !currentMunicipalityId && !(territoryLevel === "DEPTO" && currentDepartmentId);
+        const departmentCode = currentDepartmentId || "";
+        const mapWhere = currentMunicipalityId && currentDepartmentId && config
+            ? buildDepartmentMapWhereForConfig(config, currentDepartmentId)
             : (whereBase || "1=1");
-        return { config, isNational, deptoCode, mapWhere };
+        return { config, isNational, departmentCode, mapWhere };
     }
 
-    function getComposicionZoneGroupFromChartLabel(zoneLabel) {
+    function getCompositionZoneGroupFromChartLabel(zoneLabel) {
         const groupMap = {
             "Rural": "Rural disperso",
             "Cabecera": "Cabecera y centros poblados",
@@ -6663,15 +6664,15 @@ require([
         return groupMap[zoneLabel] || null;
     }
 
-    function syncComposicionLegendToZoneGroup(zoneLabel) {
-        const targetGroup = getComposicionZoneGroupFromChartLabel(zoneLabel);
+    function syncCompositionLegendToZoneGroup(zoneLabel) {
+        const targetGroup = getCompositionZoneGroupFromChartLabel(zoneLabel);
         if (!targetGroup || !legendState?.allCodes?.length) return;
 
-        const getComposicionLegendItemsFn = ocupacionGlobal("getComposicionLegendItems");
-        if (typeof getComposicionLegendItemsFn !== "function") return;
+        const getCompositionLegendItemsFunction = globalOccupation("getCompositionLegendItems");
+        if (typeof getCompositionLegendItemsFunction !== "function") return;
 
-        const { isNational, deptoCode } = getComposicionMapContext();
-        const allItems = getComposicionLegendItemsFn(composicionCampoActivo, { isNational, deptoCode });
+        const { isNational, departmentCode } = getCompositionMapContext();
+        const allItems = getCompositionLegendItemsFunction(activeCompositionField, { isNational, departmentCode });
         const codeToGroup = new Map(allItems.map(item => [String(item.code), item.group]));
 
         const activeCodes = (legendState.allCodes || [])
@@ -6689,66 +6690,66 @@ require([
         }
     }
 
-    async function syncComposicionSliderToField(fieldKey, { isNational = false, deptoCode = "", where = "1=1" } = {}) {
-        const ordenComposicionList = ocupacionGlobal("ordenComposicion");
-        const coloresComposicionMap = ocupacionGlobal("coloresComposicion");
-        const slider = document.getElementById("periodoSlider");
-        const label = document.getElementById("periodoSliderLabel");
+    async function syncCompositionSliderToField(fieldKey, { isNational = false, departmentCode = "", where = "1=1" } = {}) {
+        const compositionOrderList = globalOccupation("compositionOrder");
+        const compositionMapColors = globalOccupation("compositionColors");
+        const slider = document.getElementById("periodSlider");
+        const label = document.getElementById("periodSliderLabel");
 
-        if (!Array.isArray(ordenComposicionList)) return;
+        if (!Array.isArray(compositionOrderList)) return;
 
-        composicionCampoActivo = ordenComposicionList.includes(fieldKey) ? fieldKey : "nm";
+        activeCompositionField = compositionOrderList.includes(fieldKey) ? fieldKey : "nm";
 
         if (slider) {
-            slider.value = Math.max(0, ordenComposicionList.indexOf(composicionCampoActivo));
+            slider.value = Math.max(0, compositionOrderList.indexOf(activeCompositionField));
         }
         if (label) {
-            const text = coloresComposicionMap?.[composicionCampoActivo]?.label || composicionCampoActivo;
+            const text = compositionMapColors?.[activeCompositionField]?.label || activeCompositionField;
             label.textContent = `Categoria: ${text}`;
         }
 
-        await refreshComposicionMapAndLegend({
+        await refreshCompositionMapAndLegend({
             isNational,
-            deptoCode,
+            departmentCode,
             where,
-            field: composicionCampoActivo,
+            field: activeCompositionField,
             layer: layerGlobal
         });
     }
 
-    function setupComposicionSlider({ isNational = false, deptoCode = "", where = "1=1" } = {}) {
+    function setupCompositionSlider({ isNational = false, departmentCode = "", where = "1=1" } = {}) {
         const sliderContainer = document.getElementById("periodoSliderContainer");
-        const slider = document.getElementById("periodoSlider");
-        const label = document.getElementById("periodoSliderLabel");
-        const ordenComposicionList = ocupacionGlobal("ordenComposicion");
-        const coloresComposicionMap = ocupacionGlobal("coloresComposicion");
-        if (!sliderContainer || !slider || !label || !Array.isArray(ordenComposicionList)) return;
+        const slider = document.getElementById("periodSlider");
+        const label = document.getElementById("periodSliderLabel");
+        const compositionOrderList = globalOccupation("compositionOrder");
+        const compositionMapColors = globalOccupation("compositionColors");
+        if (!sliderContainer || !slider || !label || !Array.isArray(compositionOrderList)) return;
 
         sliderContainer.style.display = "flex";
         slider.min = 0;
-        slider.max = Math.max(ordenComposicionList.length - 1, 0);
+        slider.max = Math.max(compositionOrderList.length - 1, 0);
         slider.step = 1;
-        const currentIndex = Math.max(0, ordenComposicionList.indexOf(composicionCampoActivo));
+        const currentIndex = Math.max(0, compositionOrderList.indexOf(activeCompositionField));
         slider.value = currentIndex;
 
         const updateLabel = () => {
-            const field = ordenComposicionList[Number(slider.value)] || "nm";
-            const text = coloresComposicionMap?.[field]?.label || field;
+            const field = compositionOrderList[Number(slider.value)] || "nm";
+            const text = compositionMapColors?.[field]?.label || field;
             label.textContent = `Categoria: ${text}`;
         };
 
         slider.oninput = () => {
-            composicionCampoActivo = ordenComposicionList[Number(slider.value)] || "nm";
+            activeCompositionField = compositionOrderList[Number(slider.value)] || "nm";
             updateLabel();
-            refreshComposicionMapAndLegend({ isNational, deptoCode, where, field: composicionCampoActivo, layer: layerGlobal });
+            refreshCompositionMapAndLegend({ isNational, departmentCode, where, field: activeCompositionField, layer: layerGlobal });
         };
 
         updateLabel();
     }
 
-    async function applyComposicionChartSelection(fieldKey, zoneLabel) {
-        const { isNational, deptoCode, mapWhere } = getComposicionMapContext();
-        await syncComposicionSliderToField(fieldKey, { isNational, deptoCode, where: mapWhere });
+    async function applyCompositionChartSelection(fieldKey, zoneLabel) {
+        const { isNational, departmentCode, mapWhere } = getCompositionMapContext();
+        await syncCompositionSliderToField(fieldKey, { isNational, departmentCode, where: mapWhere });
 
         const tznCode = { "Cabecera": 1, "Centro poblado": 2, "Rural": 3 }[zoneLabel];
         const where = tznCode != null ? `${mapWhere} AND tzn = ${tznCode}` : mapWhere;
@@ -6758,7 +6759,7 @@ require([
             if (res?.extent) view.goTo(res.extent.expand(1.5));
         });
 
-        syncComposicionLegendToZoneGroup(zoneLabel);
+        syncCompositionLegendToZoneGroup(zoneLabel);
     }
 
     function buildTasaCrecimientoLegendWhere(item, field) {
@@ -6769,9 +6770,9 @@ require([
     }
 
     async function refreshTasaCrecimientoMapAndLegend({ where = "1=1", field = tasaCrecimientoCampoActivo, layer = layerGlobal } = {}) {
-        const buildTasaCrecimientoRendererFn = ocupacionGlobal("buildTasaCrecimientoRenderer");
-        const getTasaCrecimientoFieldInfoFn = ocupacionGlobal("getTasaCrecimientoFieldInfo");
-        const getTasaCrecimientoLegendItemsFn = ocupacionGlobal("getTasaCrecimientoLegendItems");
+        const buildTasaCrecimientoRendererFn = globalOccupation("buildTasaCrecimientoRenderer");
+        const getTasaCrecimientoFieldInfoFn = globalOccupation("getTasaCrecimientoFieldInfo");
+        const getTasaCrecimientoLegendItemsFn = globalOccupation("getTasaCrecimientoLegendItems");
         if (!layer || typeof buildTasaCrecimientoRendererFn !== "function") return;
         const activeField = (typeof getTasaCrecimientoFieldInfoFn === "function")
             ? getTasaCrecimientoFieldInfoFn(field).field
@@ -6803,7 +6804,7 @@ require([
                 baseWhere,
                 itemWheres: {}
             });
-            actualizarLeyenda([], []);
+            updateLegend([], []);
             return;
         }
 
@@ -6817,7 +6818,7 @@ require([
             itemWheres: Object.fromEntries(legendCodes.map((code, index) => [String(code), legendWheres[index]]))
         });
 
-        actualizarLeyenda(
+        updateLegend(
             legendItems.map(item => item.label),
             legendItems.map(item => item.color),
             legendCodes,
@@ -6839,9 +6840,9 @@ require([
 
     function setupTasaCrecimientoSlider({ where = "1=1" } = {}) {
         const sliderContainer = document.getElementById("periodoSliderContainer");
-        const slider = document.getElementById("periodoSlider");
-        const label = document.getElementById("periodoSliderLabel");
-        const tasaCrecimientoCamposList = ocupacionGlobal("tasaCrecimientoCampos");
+        const slider = document.getElementById("periodSlider");
+        const label = document.getElementById("periodSliderLabel");
+        const tasaCrecimientoCamposList = globalOccupation("tasaCrecimientoCampos");
         if (!sliderContainer || !slider || !label || !Array.isArray(tasaCrecimientoCamposList) || !tasaCrecimientoCamposList.length) return;
 
         sliderContainer.style.display = "flex";
@@ -6911,19 +6912,19 @@ require([
         ]
     };
 
-    function getIndiceComplementarioInfo(field = indiceComplementarioCampoActivo) {
+    function getComplementaryIndexInfo(field = activeComplementaryIndexField) {
         return indicesComplementariosCampos.find(item => item.field === field) || indicesComplementariosCampos[0];
     }
 
-    function getIndiceComplementarioMapField(field = indiceComplementarioCampoActivo) {
-        const info = getIndiceComplementarioInfo(field);
+    function getComplementaryIndexMapField(field = activeComplementaryIndexField) {
+        const info = getComplementaryIndexInfo(field);
         return info.mapField || info.field;
     }
 
-    function getIndiceComplementarioLegendItems(field = indiceComplementarioCampoActivo) {
-        const info = getIndiceComplementarioInfo(field);
+    function getComplementaryIndexLegendItems(field = activeComplementaryIndexField) {
+        const info = getComplementaryIndexInfo(field);
         const activeField = info.field;
-        const mapField = getIndiceComplementarioMapField(field);
+        const mapField = getComplementaryIndexMapField(field);
         const breaks = indicesComplementariosBreaks[activeField] || [];
         return breaks.map((item, index) => ({
             ...item,
@@ -6935,10 +6936,10 @@ require([
         }));
     }
 
-    function buildIndiceComplementarioRenderer(field = indiceComplementarioCampoActivo) {
-        const info = getIndiceComplementarioInfo(field);
-        const mapField = getIndiceComplementarioMapField(info.field);
-        const legendItems = getIndiceComplementarioLegendItems(info.field);
+    function buildComplementaryIndexRenderer(field = activeComplementaryIndexField) {
+        const info = getComplementaryIndexInfo(field);
+        const mapField = getComplementaryIndexMapField(info.field);
+        const legendItems = getComplementaryIndexLegendItems(info.field);
         return {
             type: "class-breaks",
             field: mapField,
@@ -6961,7 +6962,7 @@ require([
         };
     }
 
-    async function highlightMunicipioOnMap(mpcodigo, { request = null } = {}) {
+    async function highlightMunicipalityOnMap(mpcodigo, { request = null } = {}) {
         if (!view || !mpcodigo) return;
 
         try {
@@ -6995,21 +6996,21 @@ require([
         }
     }
 
-    highlightMunicipioOnMapImpl = highlightMunicipioOnMap;
+    highlightMunicipalityOnMapImpl = highlightMunicipalityOnMap;
 
-    function getDensidadLegendApi() {
+    function getDensityLegendApi() {
         return {
-            getItems: globalThis.getDensidadLegendItems,
-            buildWhere: globalThis.buildDensidadLegendItemWhere,
-            buildRenderer: globalThis.buildDensidadPoblacionalRenderer
+            getItems: globalThis.getDensityLegendItems,
+            buildWhere: globalThis.buildDensityLegendItemWhere,
+            buildRenderer: globalThis.buildPopulationDensityRenderer
         };
     }
 
-    async function renderDensidadMapLegend({ deptoCode = null, where = "1=1", features = null, layer = layerGlobal } = {}) {
-        const { getItems, buildWhere } = getDensidadLegendApi();
+    async function renderDensityMapLegend({ departmentCode = null, where = "1=1", features = null, layer = layerGlobal } = {}) {
+        const { getItems, buildWhere } = getDensityLegendApi();
         if (typeof getItems !== "function") return false;
 
-        const candidateItems = getItems(deptoCode || null);
+        const candidateItems = getItems(departmentCode || null);
         if (!candidateItems.length) return false;
 
         const baseWhere = where || "1=1";
@@ -7043,7 +7044,7 @@ require([
             }
 
             if (sourceFeatures?.length) {
-                legendItems = candidateItems.filter(item => densidadLegendItemHasFeature(item, sourceFeatures));
+                legendItems = candidateItems.filter(item => densityLegendItemHasFeature(item, sourceFeatures));
                 legendWheres = typeof buildWhere === "function"
                     ? legendItems.map(item => buildWhere(item))
                     : [];
@@ -7060,7 +7061,7 @@ require([
                 baseWhere,
                 itemWheres: {}
             });
-            actualizarLeyenda([], []);
+            updateLegend([], []);
             return false;
         }
 
@@ -7078,7 +7079,7 @@ require([
                 : {}
         });
 
-        actualizarLeyenda(
+        updateLegend(
             legendItems.map(item => item.label),
             legendItems.map(item => item.color),
             legendCodes,
@@ -7089,21 +7090,21 @@ require([
         return true;
     }
 
-    async function configureDensidadVisualLegendForLayer(ctx, { where, deptoCode = "", layer = layerGlobal } = {}) {
-        const { buildRenderer } = getDensidadLegendApi();
+    async function configureDensityVisualLegendForLayer(ctx, { where, departmentCode = "", layer = layerGlobal } = {}) {
+        const { buildRenderer } = getDensityLegendApi();
         if (!layer) return;
 
         if (typeof buildRenderer === "function") {
-            layer.renderer = buildRenderer(deptoCode || null);
+            layer.renderer = buildRenderer(departmentCode || null);
         }
         layer.orderByFields = ["tzn"];
         try { layer.refresh?.(); } catch (_) { }
 
-        await renderDensidadMapLegend({ deptoCode, where, layer });
+        await renderDensityMapLegend({ departmentCode, where, layer });
     }
 
-    function buildIndiceComplementarioLegendWhere(item, field = indiceComplementarioCampoActivo) {
-        const mapField = item?.mapField || getIndiceComplementarioMapField(field);
+    function buildComplementaryIndexLegendWhere(item, field = activeComplementaryIndexField) {
+        const mapField = item?.mapField || getComplementaryIndexMapField(field);
         if (item?.openEnded || item?.isLast) {
             if (item.min == null) {
                 return `${mapField} IS NOT NULL`;
@@ -7115,13 +7116,13 @@ require([
         return `${mapField} IS NOT NULL AND ${maxClause}${minClause}`;
     }
 
-    async function refreshIndiceComplementarioMapAndLegend({ where = "1=1", field = indiceComplementarioCampoActivo, layer = layerGlobal } = {}) {
+    async function refreshComplementaryIndexMapAndLegend({ where = "1=1", field = activeComplementaryIndexField, layer = layerGlobal } = {}) {
         if (!layer) return;
-        const info = getIndiceComplementarioInfo(field);
+        const info = getComplementaryIndexInfo(field);
         const baseWhere = where || "1=1";
-        indiceComplementarioCampoActivo = info.field;
+        activeComplementaryIndexField = info.field;
         layer.definitionExpression = baseWhere;
-        layer.renderer = buildIndiceComplementarioRenderer(info.field);
+        layer.renderer = buildComplementaryIndexRenderer(info.field);
         try { layer.refresh?.(); } catch (_) { }
         try {
             if (view && typeof view.whenLayerView === "function") {
@@ -7130,8 +7131,8 @@ require([
             }
         } catch (_) { }
 
-        const candidateItems = getIndiceComplementarioLegendItems(info.field);
-        const candidateWheres = candidateItems.map(item => buildIndiceComplementarioLegendWhere(item, info.field));
+        const candidateItems = getComplementaryIndexLegendItems(info.field);
+        const candidateWheres = candidateItems.map(item => buildComplementaryIndexLegendWhere(item, info.field));
         const { items: legendItems, wheres: legendWheres } = await filterLegendItemsWithLayerData({
             layer,
             baseWhere,
@@ -7142,7 +7143,7 @@ require([
 
         if (!legendItems.length) {
             setLegendState({
-                field: getIndiceComplementarioMapField(info.field),
+                field: getComplementaryIndexMapField(info.field),
                 allCodes: [],
                 activeCodes: new Set(),
                 selectedCode: null,
@@ -7150,12 +7151,12 @@ require([
                 baseWhere,
                 itemWheres: {}
             });
-            actualizarLeyenda([], []);
+            updateLegend([], []);
             return;
         }
 
         setLegendState({
-            field: getIndiceComplementarioMapField(info.field),
+            field: getComplementaryIndexMapField(info.field),
             allCodes: legendCodes,
             activeCodes: new Set(legendCodes.map(String)),
             selectedCode: null,
@@ -7164,7 +7165,7 @@ require([
             itemWheres: Object.fromEntries(legendCodes.map((code, index) => [String(code), legendWheres[index]]))
         });
 
-        actualizarLeyenda(
+        updateLegend(
             legendItems.map(item => item.label),
             legendItems.map(item => item.color),
             legendCodes,
@@ -7174,17 +7175,17 @@ require([
         );
     }
 
-    function setupIndicesComplementariosSlider({ where = "1=1", layer = layerGlobal } = {}) {
+    function setupComplementaryIndicesSlider({ where = "1=1", layer = layerGlobal } = {}) {
         const sliderContainer = document.getElementById("periodoSliderContainer");
-        const slider = document.getElementById("periodoSlider");
-        const label = document.getElementById("periodoSliderLabel");
+        const slider = document.getElementById("periodSlider");
+        const label = document.getElementById("periodSliderLabel");
         if (!sliderContainer || !slider || !label) return;
 
         sliderContainer.style.display = "flex";
         slider.min = 0;
         slider.max = Math.max(indicesComplementariosCampos.length - 1, 0);
         slider.step = 1;
-        const currentIndex = Math.max(0, indicesComplementariosCampos.findIndex(item => item.field === indiceComplementarioCampoActivo));
+        const currentIndex = Math.max(0, indicesComplementariosCampos.findIndex(item => item.field === activeComplementaryIndexField));
         slider.value = currentIndex;
 
         const updateLabel = () => {
@@ -7194,9 +7195,9 @@ require([
 
         slider.oninput = () => {
             const info = indicesComplementariosCampos[Number(slider.value)] || indicesComplementariosCampos[0];
-            indiceComplementarioCampoActivo = info.field;
+            activeComplementaryIndexField = info.field;
             updateLabel();
-            refreshIndiceComplementarioMapAndLegend({ where, field: indiceComplementarioCampoActivo, layer });
+            refreshComplementaryIndexMapAndLegend({ where, field: activeComplementaryIndexField, layer });
         };
 
         updateLabel();
@@ -7210,9 +7211,9 @@ require([
                 toggleTransicionCharts(true);
                 destroyTransicionCharts();
 
-                const mpCode = ctx.municipioActual;
+                const mpCode = ctx.currentMunicipalityId;
                 if (!mpCode) {
-                    ctx.actualizarLeyenda([], []);
+                    ctx.updateLegend([], []);
                     return;
                 }
 
@@ -7226,7 +7227,7 @@ require([
                         if (ctx.cycleId !== renderCycleId || !getActiveLayerConfig()?.isTasaCrecimiento) return;
                         if (res?.extent) {
                             view.goTo(res.extent.expand(1.12)).then(() => {
-                                if (isMunicipal) highlightMunicipioOnMap(mpCode);
+                                if (isMunicipal) highlightMunicipalityOnMap(mpCode);
                             });
                         }
                     });
@@ -7239,7 +7240,7 @@ require([
 
                     if (!features.length) {
                         toggleTransicionCharts(false);
-                        ctx.actualizarLeyenda([], []);
+                        ctx.updateLegend([], []);
                         return;
                     }
 
@@ -7289,19 +7290,19 @@ require([
                     });
 
                     // ── 4) Título ──────────────────────────────────────────────
-                    const mpNombre = isMunicipal ? (ctx.diccionarioMunicipios?.[mpCode] || feat.mpnombre || mpCode) : "";
-                    const dpNombre = isDepartmental
-                        ? (ctx.diccionarioDepartamentos?.[dpCode] || feat.dpnombre || dpCode)
+                    const municipalityName = isMunicipal ? (ctx.municipalityNames?.[mpCode] || feat.mpnombre || mpCode) : "";
+                    const departmentName = isDepartmental
+                        ? (ctx.departmentNames?.[dpCode] || feat.dpnombre || dpCode)
                         : isMunicipal
-                            ? (ctx.diccionarioDepartamentos?.[deptoActual] || feat.dpnombre || deptoActual)
+                            ? (ctx.departmentNames?.[currentDepartmentId] || feat.dpnombre || currentDepartmentId)
                             : "";
-                    ctx.setTitle(`Transición demográfica de Municipio ${mpNombre}, ${dpNombre}`);
+                    ctx.setTitle(`Transición demográfica de Municipio ${municipalityName}, ${departmentName}`);
 
                     // ── 5) Renderizar ──────────────────────────────────────────
-                    crearGraficaTransicion(labels, datasets);
+                    createDemographicTransitionChart(labels, datasets);
 
                     // ── 6) Leyenda ─────────────────────────────────────────────
-                    ctx.actualizarLeyenda(
+                    ctx.updateLegend(
                         datasets.map(d => d.label),
                         datasets.map(d => d.borderColor)
                     );
@@ -7322,27 +7323,27 @@ require([
                 } catch (e) {
                     console.error("transicionDemograficaHandler error:", e);
                     toggleTransicionCharts(false);
-                    ctx.actualizarLeyenda([], []);
+                    ctx.updateLegend([], []);
                 }
             }
         };
     }
 
-    function estructuraPiramidesHandler() {
+    function pyramidStructureHandler() {
         return {
             name: "estructuraPiramides",
             when: (ctx) => ctx.config?.isPiramides === true,
             run: async (ctx) => {
-                destroyPiramidesCharts();
+                destroyPyramidCharts();
 
-                const mpCode = ctx.municipioActual;
-                const dpCode = ctx.deptoActual || deptoActual || (mpCode ? String(mpCode).slice(0, 2) : "");
+                const mpCode = ctx.currentMunicipalityId;
+                const dpCode = ctx.currentDepartmentId || currentDepartmentId || (mpCode ? String(mpCode).slice(0, 2) : "");
                 const isMunicipal = !!mpCode;
                 const isDepartmental = !isMunicipal && !!dpCode;
 
                 if (!isMunicipal && !isDepartmental) {
-                    togglePiramidesCharts(false);
-                    ctx.actualizarLeyenda([], []);
+                    togglePyramidCharts(false);
+                    ctx.updateLegend([], []);
                     return;
                 }
 
@@ -7355,12 +7356,12 @@ require([
                         : where;
 
                     applyWhereToActiveLayers(mapWhere);
-                    await configureDensidadVisualLegendForLayer(ctx, { where: mapWhere, deptoCode: dpCode, layer: layerGlobal });
+                    await configureDensityVisualLegendForLayer(ctx, { where: mapWhere, departmentCode: dpCode, layer: layerGlobal });
                     layerGlobal?.queryExtent({ where: mapWhere }).then(res => {
                         if (ctx.cycleId !== renderCycleId || !getActiveLayerConfig()?.isPiramides) return;
                         if (res?.extent) {
                             view.goTo(res.extent.expand(1.12)).then(() => {
-                                if (isMunicipal) highlightMunicipioOnMap(mpCode);
+                                if (isMunicipal) highlightMunicipalityOnMap(mpCode);
                             });
                         }
                     }).catch(() => { });
@@ -7371,7 +7372,7 @@ require([
                     const features = (json.features || []).map(f => f.attributes);
 
                     if (!features.length) {
-                        togglePiramidesCharts(false);
+                        togglePyramidCharts(false);
                         return;
                     }
 
@@ -7387,7 +7388,7 @@ require([
                         groupedByEdad.set(key, row);
                     });
 
-                    const aggregatedFeatures = sortPiramideRowsByEdad(Array.from(groupedByEdad.values()));
+                    const aggregatedFeatures = sortPyramidRowsByAge(Array.from(groupedByEdad.values()));
                     const edadLabels = aggregatedFeatures.map(f => f.edad).reverse();
                     const censos = {};
                     [1985, 1993, 2005, 2018].forEach(yr => {
@@ -7397,13 +7398,13 @@ require([
                         };
                     });
 
-                    const mpNombre = isMunicipal ? (ctx.diccionarioMunicipios?.[mpCode] || mpCode) : "";
-                    const dpNombre = ctx.diccionarioDepartamentos?.[dpCode] || dpCode;
+                    const municipalityName = isMunicipal ? (ctx.municipalityNames?.[mpCode] || mpCode) : "";
+                    const departmentName = ctx.departmentNames?.[dpCode] || dpCode;
                     ctx.setTitle(isMunicipal
-                        ? `Estructura poblacional del municipio ${mpNombre}, ${dpNombre}`
-                        : `Estructura poblacional de ${dpNombre}`);
+                        ? `Estructura poblacional del municipio ${municipalityName}, ${departmentName}`
+                        : `Estructura poblacional de ${departmentName}`);
 
-                    crearCuatroPiramides({ edadLabels, censos });
+                    createFourPyramids({ edadLabels, censos });
 
                     if (isMunicipal && ctx.config.summaryTableUrl && ctx.config.summaryField) {
                         try {
@@ -7423,9 +7424,9 @@ require([
                         } catch (_) { }
                     }
                 } catch (e) {
-                    console.error("estructuraPiramidesHandler error:", e);
-                    togglePiramidesCharts(false);
-                    ctx.actualizarLeyenda([], []);
+                    console.error("pyramidStructureHandler error:", e);
+                    togglePyramidCharts(false);
+                    ctx.updateLegend([], []);
                 }
             }
         };
@@ -7439,13 +7440,13 @@ require([
                 toggleTransicionCharts(true);
                 destroyTransicionCharts();
 
-                const mpCode = ctx.municipioActual;
-                const dpCode = ctx.deptoActual || deptoActual || (mpCode ? String(mpCode).slice(0, 2) : "");
+                const mpCode = ctx.currentMunicipalityId;
+                const dpCode = ctx.currentDepartmentId || currentDepartmentId || (mpCode ? String(mpCode).slice(0, 2) : "");
                 const isMunicipal = !!mpCode;
                 const isDepartmental = !isMunicipal && !!dpCode;
 
                 if (!isMunicipal && !isDepartmental) {
-                    ctx.actualizarLeyenda([], []);
+                    ctx.updateLegend([], []);
                     return;
                 }
 
@@ -7458,12 +7459,12 @@ require([
                         : where;
 
                     applyWhereToActiveLayers(mapWhere);
-                    await configureDensidadVisualLegendForLayer(ctx, { where: mapWhere, deptoCode: dpCode, layer: layerGlobal });
+                    await configureDensityVisualLegendForLayer(ctx, { where: mapWhere, departmentCode: dpCode, layer: layerGlobal });
                     layerGlobal?.queryExtent({ where: mapWhere }).then(res => {
                         if (ctx.cycleId !== renderCycleId || !getActiveLayerConfig()?.isTransicion) return;
                         if (res?.extent) {
                             view.goTo(res.extent.expand(1.12)).then(() => {
-                                if (isMunicipal) highlightMunicipioOnMap(mpCode);
+                                if (isMunicipal) highlightMunicipalityOnMap(mpCode);
                             });
                         }
                     }).catch(() => { });
@@ -7514,13 +7515,13 @@ require([
                         };
                     });
 
-                    const mpNombre = isMunicipal ? (ctx.diccionarioMunicipios?.[mpCode] || mpCode) : "";
-                    const dpNombre = ctx.diccionarioDepartamentos?.[dpCode] || dpCode;
+                    const municipalityName = isMunicipal ? (ctx.municipalityNames?.[mpCode] || mpCode) : "";
+                    const departmentName = ctx.departmentNames?.[dpCode] || dpCode;
                     ctx.setTitle(isMunicipal
-                        ? `Transición demográfica de Municipio ${mpNombre}, ${dpNombre}`
-                        : `Transición demográfica de ${dpNombre}`);
+                        ? `Transición demográfica de Municipio ${municipalityName}, ${departmentName}`
+                        : `Transición demográfica de ${departmentName}`);
 
-                    crearGraficaTransicion(labels, datasets);
+                    createDemographicTransitionChart(labels, datasets);
 
                     if (isMunicipal && ctx.config.summaryTableUrl && ctx.config.summaryField) {
                         try {
@@ -7536,22 +7537,22 @@ require([
                 } catch (e) {
                     console.error("transicionDemograficaHandler error:", e);
                     toggleTransicionCharts(false);
-                    ctx.actualizarLeyenda([], []);
+                    ctx.updateLegend([], []);
                 }
             }
         };
     }
 
-    function composicionPoblacionHandler() {
+    function populationCompositionHandler() {
         return {
             name: "composicionPoblacion",
             when: (ctx) => ctx.config?.isComposicion === true,
             run: async (ctx) => {
                 ctx.destroyChart();
-                prepareComposicionChartPanel();
+                prepareCompositionChartPanel();
 
-                const mpCode = ctx.municipioActual;
-                const dpCode = ctx.deptoActual || deptoActual;
+                const mpCode = ctx.currentMunicipalityId;
+                const dpCode = ctx.currentDepartmentId || currentDepartmentId;
                 const isMunicipal = !!mpCode;
                 const isDepartmental = !isMunicipal && !!dpCode;
                 const isNational = !isMunicipal && !isDepartmental;
@@ -7572,7 +7573,7 @@ require([
 
                     // ── 2) Completar zona rural ausente en la capa 15 ─────────────
                     try {
-                        const ruralLookup = await buildRuralComposicionLookup(where);
+                        const ruralLookup = await buildRuralCompositionLookup(where);
                         ruralLookup.forEach((attrs, mpcodigo) => {
                             const alreadyHasRural = features.some(
                                 (feature) => String(feature.attributes?.mpcodigo) === String(mpcodigo)
@@ -7593,13 +7594,13 @@ require([
 
                     if (!features.length) {
                         ctx.destroyChart();
-                        ctx.actualizarLeyenda([], []);
+                        ctx.updateLegend([], []);
                         return;
                     }
 
                     // ── 3) Preparar datos para el gráfico agrupado ────────────────
                     const labels = isNational ? ["Nacional"] : ["Centro poblado", "Cabecera", "Rural"];
-                    const datasetKeys = (typeof ordenComposicion !== "undefined") ? ordenComposicion : ["amf", "amm", "af", "am", "jf", "jm", "nf", "nm"];
+                    const datasetKeys = (typeof compositionOrder !== "undefined") ? compositionOrder : ["amf", "amm", "af", "am", "jf", "jm", "nf", "nm"];
                     const datasetData = {};
 
                     // Inicializar cada dataset con 3 ceros
@@ -7625,7 +7626,7 @@ require([
                     });
 
                     const datasets = datasetKeys.map(k => {
-                        const info = (typeof coloresComposicion !== "undefined") ? coloresComposicion[k] : { label: k, color: "#999" };
+                        const info = (typeof compositionColors !== "undefined") ? compositionColors[k] : { label: k, color: "#999" };
                         return {
                             label: info.label,
                             data: datasetData[k],
@@ -7637,25 +7638,25 @@ require([
 
                     // ── 4) Título dinámico ──────────────────────────────────────
                     const firstFeat = features.find(f => f.attributes.mpnombre || f.attributes.dpnombre) || features[0];
-                    //const dpNombre = firstFeat.attributes.dpnombre || ctx.diccionarioDepartamentos?.[mpCode.substring(0, 2)] || "";
-                    const mpNombre = isMunicipal ? (ctx.diccionarioMunicipios?.[mpCode] || firstFeat?.attributes?.mpnombre || mpCode) : "";
-                    const dpNombre = isDepartmental
-                        ? (ctx.diccionarioDepartamentos?.[dpCode] || firstFeat?.attributes?.dpnombre || dpCode)
+                    //const departmentName = firstFeat.attributes.dpnombre || ctx.departmentNames?.[mpCode.substring(0, 2)] || "";
+                    const municipalityName = isMunicipal ? (ctx.municipalityNames?.[mpCode] || firstFeat?.attributes?.mpnombre || mpCode) : "";
+                    const departmentName = isDepartmental
+                        ? (ctx.departmentNames?.[dpCode] || firstFeat?.attributes?.dpnombre || dpCode)
                         : isMunicipal
-                            ? (ctx.diccionarioDepartamentos?.[dpCode] || firstFeat?.attributes?.dpnombre || dpCode)
+                            ? (ctx.departmentNames?.[dpCode] || firstFeat?.attributes?.dpnombre || dpCode)
                             : "";
 
-                    ctx.setTitle(`Estructura población Edad y áreas – ${mpNombre}`);
+                    ctx.setTitle(`Estructura población Edad y áreas – ${municipalityName}`);
 
                     // ── 5) Renderizar gráfico ───────────────────────────────────
                     ctx.setTitle(isNational
                         ? "Estructura población edad y áreas - Colombia"
                         : isDepartmental
-                            ? `Estructura población edad y áreas - ${dpNombre}`
-                            : `Estructura población edad y áreas - ${mpNombre}, ${dpNombre}`);
+                            ? `Estructura población edad y áreas - ${departmentName}`
+                            : `Estructura población edad y áreas - ${municipalityName}, ${departmentName}`);
                     const axisTitles = { xTitle: "Población", yTitle: "Tipo zona" };
                     if (ctx.cycleId !== renderCycleId || !getActiveLayerConfig()?.isComposicion) return;
-                    crearGraficaComposicion(labels, datasets, axisTitles, ctx);
+                    createCompositionChart(labels, datasets, axisTitles, ctx);
 
                     // ── 6) Filtrar mapa y leyenda ─────────────────────────────
                     const mapWhere = isMunicipal
@@ -7670,14 +7671,14 @@ require([
                         if (ctx.cycleId !== renderCycleId || !getActiveLayerConfig()?.isComposicion) return;
                         if (res?.extent) {
                             view.goTo(res.extent.expand(1.12)).then(() => {
-                                if (isMunicipal) highlightMunicipioOnMap(mpCode);
+                                if (isMunicipal) highlightMunicipalityOnMap(mpCode);
                             });
                         }
                     });
 
                     if (ctx.cycleId !== renderCycleId || !getActiveLayerConfig()?.isComposicion) return;
-                    setupComposicionSlider({ isNational, deptoCode: dpCode, where: mapWhere });
-                    refreshComposicionMapAndLegend({ isNational, deptoCode: dpCode, where: mapWhere, field: composicionCampoActivo });
+                    setupCompositionSlider({ isNational, departmentCode: dpCode, where: mapWhere });
+                    refreshCompositionMapAndLegend({ isNational, departmentCode: dpCode, where: mapWhere, field: activeCompositionField });
 
                     // ── 7) Texto descriptivo ──────────────────────────────────
                     if (isMunicipal && ctx.config.summaryTableUrl && ctx.config.summaryFields) {
@@ -7700,8 +7701,8 @@ require([
 
                 } catch (e) {
                     if (e?.name === "AbortError" || String(e?.message || "").toLowerCase().includes("aborted")) return;
-                    console.error("composicionPoblacionHandler error:", e);
-                    ctx.actualizarLeyenda([], []);
+                    console.error("populationCompositionHandler error:", e);
+                    ctx.updateLegend([], []);
                     ctx.destroyChart();
                 }
             }
@@ -7717,8 +7718,8 @@ require([
                 ctx.destroyChart();
                 destroyTasaCrecimientoCharts();
 
-                const mpCode = ctx.municipioActual;
-                const dpCode = ctx.deptoActual || deptoActual;
+                const mpCode = ctx.currentMunicipalityId;
+                const dpCode = ctx.currentDepartmentId || currentDepartmentId;
                 const isMunicipal = !!mpCode;
                 const isDepartmental = !isMunicipal && !!dpCode;
                 const isNational = !isMunicipal && !isDepartmental;
@@ -7744,7 +7745,7 @@ require([
                         if (ctx.cycleId !== renderCycleId || !getActiveLayerConfig()?.isTasaCrecimiento) return;
                         if (res?.extent) {
                             view.goTo(res.extent.expand(1.12)).then(() => {
-                                if (isMunicipal) highlightMunicipioOnMap(mpCode);
+                                if (isMunicipal) highlightMunicipalityOnMap(mpCode);
                             });
                         }
                     });
@@ -7760,13 +7761,13 @@ require([
                     const rows = (json.features || []).map(feature => feature.attributes || {});
                     if (ctx.cycleId !== renderCycleId || !getActiveLayerConfig()?.isTasaCrecimiento) return;
 
-                    const dpNombre = (isDepartmental || isMunicipal)
-                        ? (ctx.diccionarioDepartamentos?.[dpCode] || rows[0]?.dpnombre || dpCode)
+                    const departmentName = (isDepartmental || isMunicipal)
+                        ? (ctx.departmentNames?.[dpCode] || rows[0]?.dpnombre || dpCode)
                         : "";
 
                     ctx.setTitle(isNational
                         ? "Tasa de crecimiento intercensal - Colombia"
-                        : `Tasa de crecimiento intercensal - ${dpNombre}`);
+                        : `Tasa de crecimiento intercensal - ${departmentName}`);
 
                     if (!rows.length) {
                         return;
@@ -7780,7 +7781,7 @@ require([
 
                     // 3) Renderizar gráfico de línea
                     if (ctx.cycleId !== renderCycleId || !getActiveLayerConfig()?.isTasaCrecimiento) return;
-                    crearGraficaTasaCrecimiento(labels, values, ctx);
+                    createGrowthRateChart(labels, values, ctx);
                     refreshTasaCrecimientoMapAndLegend({ where: mapWhere, field: tasaCrecimientoCampoActivo, layer: layerGlobal });
 
                     // 4) Texto descriptivo (facpob de Capa 25)
@@ -7804,17 +7805,17 @@ require([
         };
     }
 
-    function migracionExternaHandler() {
+    function externalMigrationHandler() {
         return {
             name: "migracionExterna",
             when: (ctx) => ctx.config?.isMigracionExterna === true,
             run: async (ctx) => {
-                toggleMigracionExternaCharts(true);
-                destroyMigracionExternaCharts();
+                toggleExternalMigrationCharts(true);
+                destroyExternalMigrationCharts();
                 ctx.destroyChart();
 
-                const mpCode = ctx.municipioActual;
-                const dpCode = ctx.deptoActual || deptoActual || (mpCode ? String(mpCode).slice(0, 2) : "");
+                const mpCode = ctx.currentMunicipalityId;
+                const dpCode = ctx.currentDepartmentId || currentDepartmentId || (mpCode ? String(mpCode).slice(0, 2) : "");
                 const isMunicipal = !!mpCode;
                 const isDepartmental = !isMunicipal && !!dpCode;
                 const dataWhere = getCurrentTerritoryWhere();
@@ -7828,7 +7829,7 @@ require([
                     layerGlobal?.queryExtent({ where: mapWhere }).then(res => {
                         if (res?.extent) {
                             view.goTo(res.extent.expand(1.12)).then(() => {
-                                if (isMunicipal) highlightMunicipioOnMap(mpCode);
+                                if (isMunicipal) highlightMunicipalityOnMap(mpCode);
                             });
                         }
                     });
@@ -7853,24 +7854,24 @@ require([
                             { label: "En otro país", data: [0, 0, 0], backgroundColor: "#e6e6e6", borderColor: "#e6e6e6" },
                             { label: "No informa", data: [0, 0, 0], backgroundColor: "#4bc0c0", borderColor: "#4bc0c0" }
                         ];
-                        crearGraficaMigracionExterna(labels, emptyDatasets, "No hay información disponible para Migración Externa en esta consulta.");
+                        createExternalMigrationChart(labels, emptyDatasets, "No hay información disponible para Migración Externa en esta consulta.");
                         const sumDiv = document.getElementById("summaryDiv");
                         if (sumDiv) sumDiv.innerHTML = "No hay información disponible para Migración Externa.";
                         return;
                     }
 
                     const firstRow = rows.find(row => row.mpnombre || row.dpnombre) || rows[0] || {};
-                    const mpNombre = isMunicipal ? (ctx.diccionarioMunicipios?.[mpCode] || firstRow.mpnombre || mpCode) : "";
-                    const dpNombre = isDepartmental
-                        ? (ctx.diccionarioDepartamentos?.[dpCode] || firstRow.dpnombre || dpCode)
+                    const municipalityName = isMunicipal ? (ctx.municipalityNames?.[mpCode] || firstRow.mpnombre || mpCode) : "";
+                    const departmentName = isDepartmental
+                        ? (ctx.departmentNames?.[dpCode] || firstRow.dpnombre || dpCode)
                         : isMunicipal
-                            ? (ctx.diccionarioDepartamentos?.[dpCode] || firstRow.dpnombre || dpCode)
+                            ? (ctx.departmentNames?.[dpCode] || firstRow.dpnombre || dpCode)
                             : "";
 
                     ctx.setTitle(isMunicipal
-                        ? `Migración Externa en el municipio de ${mpNombre}, ${dpNombre}`
+                        ? `Migración Externa en el municipio de ${municipalityName}, ${departmentName}`
                         : isDepartmental
-                            ? `Migración Externa en ${dpNombre}`
+                            ? `Migración Externa en ${departmentName}`
                             : "Migración Externa en Colombia");
 
                     const normalizeZone = (value) => String(value || "")
@@ -7930,7 +7931,7 @@ require([
                         ? (!hasData ? "No hay registros numéricos para graficar en esta consulta." : "")
                         : "El servicio publicado para Migración Externa no contiene los campos requeridos: zonatipo, menonacido, memimp, meotmp, meotps y menoinf.";
 
-                    crearGraficaMigracionExterna(labels, datasets, chartNotice);
+                    createExternalMigrationChart(labels, datasets, chartNotice);
 
                     if (ctx.config.summaryTableUrl && ctx.config.summaryFields) {
                         try {
@@ -7954,24 +7955,24 @@ require([
                     await refreshTasaCrecimientoMapAndLegend({ where: mapWhere, field: tasaCrecimientoCampoActivo, layer: layerGlobal });
                 } catch (e) {
                     if (e?.name === "AbortError" || String(e?.message || "").toLowerCase().includes("aborted")) return;
-                    console.error("migracionExternaHandler error:", e);
-                    toggleMigracionExternaCharts(false);
+                    console.error("externalMigrationHandler error:", e);
+                    toggleExternalMigrationCharts(false);
                 }
             }
         };
     }
 
-    function migracionInternaHandler() {
+    function internalMigrationHandler() {
         return {
             name: "migracionInterna",
             when: (ctx) => ctx.config?.isMigracionInterna === true,
             run: async (ctx) => {
-                toggleMigracionInternaCharts(true);
-                destroyMigracionInternaCharts();
+                toggleInternalMigrationCharts(true);
+                destroyInternalMigrationCharts();
                 ctx.destroyChart();
 
-                const mpCode = ctx.municipioActual;
-                const dpCode = ctx.deptoActual || deptoActual || (mpCode ? String(mpCode).slice(0, 2) : "");
+                const mpCode = ctx.currentMunicipalityId;
+                const dpCode = ctx.currentDepartmentId || currentDepartmentId || (mpCode ? String(mpCode).slice(0, 2) : "");
                 const isMunicipal = !!mpCode;
                 const isDepartmental = !isMunicipal && !!dpCode;
                 const dataWhere = getCurrentTerritoryWhere();
@@ -7985,10 +7986,10 @@ require([
                     layerGlobal?.queryExtent({ where: mapWhere }).then(res => {
                         if (res?.extent) {
                             view.goTo(res.extent.expand(1.12)).then(() => {
-                                if (isMunicipal) highlightMunicipioOnMap(mpCode);
+                                if (isMunicipal) highlightMunicipalityOnMap(mpCode);
                             });
                         } else if (isMunicipal) {
-                            highlightMunicipioOnMap(mpCode);
+                            highlightMunicipalityOnMap(mpCode);
                         }
                     });
 
@@ -8004,17 +8005,17 @@ require([
                     if (ctx.cycleId !== renderCycleId || !getActiveLayerConfig()?.isMigracionInterna) return;
 
                     const firstRow = rows.find(row => row.mpnombre || row.dpnombre) || rows[0] || {};
-                    const mpNombre = isMunicipal ? (ctx.diccionarioMunicipios?.[mpCode] || firstRow.mpnombre || mpCode) : "";
-                    const dpNombre = isDepartmental
-                        ? (ctx.diccionarioDepartamentos?.[dpCode] || firstRow.dpnombre || dpCode)
+                    const municipalityName = isMunicipal ? (ctx.municipalityNames?.[mpCode] || firstRow.mpnombre || mpCode) : "";
+                    const departmentName = isDepartmental
+                        ? (ctx.departmentNames?.[dpCode] || firstRow.dpnombre || dpCode)
                         : isMunicipal
-                            ? (ctx.diccionarioDepartamentos?.[dpCode] || firstRow.dpnombre || dpCode)
+                            ? (ctx.departmentNames?.[dpCode] || firstRow.dpnombre || dpCode)
                             : "";
 
                     ctx.setTitle(isMunicipal
-                        ? `Migración Interna en el municipio de ${mpNombre}, ${dpNombre}`
+                        ? `Migración Interna en el municipio de ${municipalityName}, ${departmentName}`
                         : isDepartmental
-                            ? `Migración Interna en ${dpNombre}`
+                            ? `Migración Interna en ${departmentName}`
                             : "Migración Interna en Colombia");
 
                     const metrics = [
@@ -8030,7 +8031,7 @@ require([
                     ];
                     const totals = metrics.map(metric => rows.reduce((sum, row) => sum + (Number(row[metric.field]) || 0), 0));
                     const hasData = totals.some(value => value > 0);
-                    crearGraficaMigracionInterna(metrics.map(metric => metric.label), totals, metrics.map(metric => metric.color), hasData ? "" : "No hay información disponible para Migración Interna en esta consulta.");
+                    createInternalMigrationChart(metrics.map(metric => metric.label), totals, metrics.map(metric => metric.color), hasData ? "" : "No hay información disponible para Migración Interna en esta consulta.");
 
                     if (ctx.config.summaryTableUrl && ctx.config.summaryField) {
                         try {
@@ -8049,28 +8050,28 @@ require([
                     await refreshTasaCrecimientoMapAndLegend({ where: mapWhere, field: tasaCrecimientoCampoActivo, layer: layerGlobal });
                 } catch (e) {
                     if (e?.name === "AbortError" || String(e?.message || "").toLowerCase().includes("aborted")) return;
-                    console.error("migracionInternaHandler error:", e);
-                    toggleMigracionInternaCharts(false);
+                    console.error("internalMigrationHandler error:", e);
+                    toggleInternalMigrationCharts(false);
                 }
             }
         };
     }
 
-    function autoreconocimientoEtnicoHandler() {
+    function ethnicSelfRecognitionHandler() {
         return {
             name: "autoreconocimientoEtnico",
             when: (ctx) => ctx.config?.isAutoreconocimientoEtnico === true,
             run: async (ctx) => {
-                const isActive = () => isLineaNegraContextActive({
+                const isActive = () => isBlackLineContextActive({
                     cycleId: ctx.cycleId,
                     configId: ctx.config?.id
                 });
                 if (!isActive()) return;
-                toggleAutoreconocimientoCharts(true);
-                destroyAutoreconocimientoCharts();
+                toggleSelfRecognitionCharts(true);
+                destroySelfRecognitionCharts();
 
-                const mpCode = ctx.municipioActual;
-                const dpCode = ctx.deptoActual || deptoActual || (mpCode ? String(mpCode).slice(0, 2) : "");
+                const mpCode = ctx.currentMunicipalityId;
+                const dpCode = ctx.currentDepartmentId || currentDepartmentId || (mpCode ? String(mpCode).slice(0, 2) : "");
                 const isMunicipal = !!mpCode;
                 const isDepartmental = !isMunicipal && !!dpCode;
                 const where = getCurrentTerritoryWhere();
@@ -8082,16 +8083,16 @@ require([
                     const url = ctx.config.url;
 
                     applyWhereToActiveLayers(mapWhere);
-                    const autoreconocimientoLayer = ctx.layer || layerGlobal;
-                    autoreconocimientoLayer?.queryExtent({ where: mapWhere }).then(res => {
+                    const selfRecognitionLayer = ctx.layer || layerGlobal;
+                    selfRecognitionLayer?.queryExtent({ where: mapWhere }).then(res => {
                         if (!isActive()) return;
                         if (res?.extent) {
                             view.goTo(res.extent.expand(1.12)).then(() => {
-                                if (isActive() && isMunicipal) highlightMunicipioOnMap(mpCode);
+                                if (isActive() && isMunicipal) highlightMunicipalityOnMap(mpCode);
                             });
                         }
                     });
-                    loadLineaNegraLayersForAutoreconocimiento({
+                    loadBlackLineLayersForSelfRecognition({
                         isMunicipal,
                         isDepartmental,
                         dpCode,
@@ -8111,24 +8112,24 @@ require([
                     const rows = (json.features || []).map(feature => feature.attributes || {});
 
                     if (!rows.length) {
-                        toggleAutoreconocimientoCharts(false);
-                        ctx.actualizarLeyenda([], []);
-                        appendLineaNegraLegendItems();
+                        toggleSelfRecognitionCharts(false);
+                        ctx.updateLegend([], []);
+                        appendBlackLineLegendItems();
                         return;
                     }
 
                     const firstRow = rows.find(row => row.mpnombre || row.dpnombre) || rows[0] || {};
-                    const mpNombre = isMunicipal ? (ctx.diccionarioMunicipios?.[mpCode] || firstRow.mpnombre || mpCode) : "";
-                    const dpNombre = isDepartmental
-                        ? (ctx.diccionarioDepartamentos?.[dpCode] || firstRow.dpnombre || dpCode)
+                    const municipalityName = isMunicipal ? (ctx.municipalityNames?.[mpCode] || firstRow.mpnombre || mpCode) : "";
+                    const departmentName = isDepartmental
+                        ? (ctx.departmentNames?.[dpCode] || firstRow.dpnombre || dpCode)
                         : isMunicipal
-                            ? (ctx.diccionarioDepartamentos?.[dpCode] || firstRow.dpnombre || dpCode)
+                            ? (ctx.departmentNames?.[dpCode] || firstRow.dpnombre || dpCode)
                             : "";
 
                     ctx.setTitle(isMunicipal
-                        ? `Autoreconocimiento étnico de ${mpNombre}, ${dpNombre}`
+                        ? `Autoreconocimiento étnico de ${municipalityName}, ${departmentName}`
                         : isDepartmental
-                            ? `Autoreconocimiento étnico de ${dpNombre}`
+                            ? `Autoreconocimiento étnico de ${departmentName}`
                             : "Autoreconocimiento étnico de Colombia");
 
                     const labels = [
@@ -8149,7 +8150,7 @@ require([
 
                     if (ctx.cycleId !== renderCycleId || !getActiveLayerConfig()?.isAutoreconocimientoEtnico) return;
 
-                    crearGraficaAutoreconocimiento(labels, values, ctx);
+                    createSelfRecognitionChart(labels, values, ctx);
 
                     // Descriptive text from service 25
                     if (ctx.config.summaryTableUrl && ctx.config.summaryFields) {
@@ -8170,14 +8171,14 @@ require([
                     }
 
                     if (!isActive()) return;
-                    await refreshAutoreconocimientoMapAndLegend({ where: mapWhere, layer: autoreconocimientoLayer });
+                    await refreshSelfRecognitionMapAndLegend({ where: mapWhere, layer: selfRecognitionLayer });
                     if (!isActive()) return;
-                    appendLineaNegraLegendItems();
+                    appendBlackLineLegendItems();
 
                 } catch (e) {
                     if (e?.name === "AbortError" || String(e?.message || "").toLowerCase().includes("aborted")) return;
-                    console.error("autoreconocimientoEtnicoHandler error:", e);
-                    if (isActive()) toggleAutoreconocimientoCharts(false);
+                    console.error("ethnicSelfRecognitionHandler error:", e);
+                    if (isActive()) toggleSelfRecognitionCharts(false);
                 }
             }
         };
@@ -8191,8 +8192,8 @@ require([
                 toggleCondicionesSeguridadCharts(true);
                 destroyCondicionesSeguridadCharts();
 
-                const mpCode = ctx.municipioActual;
-                const dpCode = ctx.deptoActual || deptoActual || (mpCode ? String(mpCode).slice(0, 2) : "");
+                const mpCode = ctx.currentMunicipalityId;
+                const dpCode = ctx.currentDepartmentId || currentDepartmentId || (mpCode ? String(mpCode).slice(0, 2) : "");
                 const isMunicipal = !!mpCode;
                 const isDepartmental = !isMunicipal && !!dpCode;
                 const where = getCurrentTerritoryWhere();
@@ -8207,7 +8208,7 @@ require([
                     layerGlobal?.queryExtent({ where: mapWhere }).then(res => {
                         if (res?.extent) {
                             view.goTo(res.extent.expand(1.12)).then(() => {
-                                if (isMunicipal) highlightMunicipioOnMap(mpCode);
+                                if (isMunicipal) highlightMunicipalityOnMap(mpCode);
                             });
                         }
                     });
@@ -8223,22 +8224,22 @@ require([
 
                     if (!rows.length) {
                         toggleCondicionesSeguridadCharts(false);
-                        ctx.actualizarLeyenda([], []);
+                        ctx.updateLegend([], []);
                         return;
                     }
 
                     const firstRow = rows.find(row => row.mpnombre || row.dpnombre) || rows[0] || {};
-                    const mpNombre = isMunicipal ? (ctx.diccionarioMunicipios?.[mpCode] || firstRow.mpnombre || mpCode) : "";
-                    const dpNombre = isDepartmental
-                        ? (ctx.diccionarioDepartamentos?.[dpCode] || firstRow.dpnombre || dpCode)
+                    const municipalityName = isMunicipal ? (ctx.municipalityNames?.[mpCode] || firstRow.mpnombre || mpCode) : "";
+                    const departmentName = isDepartmental
+                        ? (ctx.departmentNames?.[dpCode] || firstRow.dpnombre || dpCode)
                         : isMunicipal
-                            ? (ctx.diccionarioDepartamentos?.[dpCode] || firstRow.dpnombre || dpCode)
+                            ? (ctx.departmentNames?.[dpCode] || firstRow.dpnombre || dpCode)
                             : "";
 
                     ctx.setTitle(isMunicipal
-                        ? `Susceptibilidad asociada a las Condiciones de Seguridad de ${mpNombre}, ${dpNombre}`
+                        ? `Susceptibilidad asociada a las Condiciones de Seguridad de ${municipalityName}, ${departmentName}`
                         : isDepartmental
-                            ? `Susceptibilidad asociada a las Condiciones de Seguridad de ${dpNombre}`
+                            ? `Susceptibilidad asociada a las Condiciones de Seguridad de ${departmentName}`
                             : "Susceptibilidad asociada a las Condiciones de Seguridad de Colombia");
 
                     const labels = [
@@ -8268,7 +8269,7 @@ require([
 
                     if (ctx.cycleId !== renderCycleId || !getActiveLayerConfig()?.isCondicionesSeguridad) return;
 
-                    crearGraficaCondicionesSeguridad(labels, values, ctx);
+                    createSafetyConditionsChart(labels, values, ctx);
 
                     // Descriptive text from service 25
                     if (isMunicipal && ctx.config.summaryTableUrl && ctx.config.summaryField) {
@@ -8304,10 +8305,10 @@ require([
                 toggleContextoHistoricoCharts(true);
                 ctx.setTitle(ctx.config?.title || "Contexto Histórico");
 
-                const slider = document.getElementById("periodoSlider");
-                const label = document.getElementById("periodoSliderLabel");
+                const slider = document.getElementById("periodSlider");
+                const label = document.getElementById("periodSliderLabel");
                 const sumDiv = document.getElementById("summaryDiv");
-                const periodos = contextoHistoricoPeriodos;
+                const periods = historicalContextPeriods;
                 let contextoHistoricoSummaryAttrs = null;
                 let contextoHistoricoSummaryLoaded = false;
 
@@ -8337,7 +8338,7 @@ require([
                     return String(itemLabel || periodo || "").replace("\n", " ").trim();
                 }
 
-                function updateSummaryText(periodo = contextoHistoricoPeriodoActivo || "Todos", timelineKey = null) {
+                function updateSummaryText(periodo = activeHistoricalContextPeriod || "Todos", timelineKey = null) {
                     if (!sumDiv) return;
 
                     if (isDepartmentOnlySelection()) {
@@ -8355,7 +8356,7 @@ require([
                         return;
                     }
 
-                    const field = timelineKey || contextoHistoricoPeriodoToTimeline[periodo] || null;
+                    const field = timelineKey || historicalContextPeriodToTimeline[periodo] || null;
                     const title = getSummaryTitle(field, periodo);
                     const text = field && contextoHistoricoSummaryAttrs[field]
                         ? contextoHistoricoSummaryAttrs[field]
@@ -8366,14 +8367,14 @@ require([
 
                 if (slider && label) {
                     slider.min = 0;
-                    slider.max = periodos.length - 1;
+                    slider.max = periods.length - 1;
                     slider.step = 1;
-                    if (Number(slider.value) > periodos.length - 1) slider.value = 0;
-                    label.textContent = "Periodo: " + (periodos[Number(slider.value) || 0] || "Todos");
+                    if (Number(slider.value) > periods.length - 1) slider.value = 0;
+                    label.textContent = "Periodo: " + (periods[Number(slider.value) || 0] || "Todos");
                     slider.oninput = async function () {
                         const val = Number(this.value) || 0;
-                        const perName = periodos[val] || "Todos";
-                        const timelineKey = contextoHistoricoPeriodoToTimeline[perName] || null;
+                        const perName = periods[val] || "Todos";
+                        const timelineKey = historicalContextPeriodToTimeline[perName] || null;
                         await applyContextoHistoricoPeriodSelection(perName, { timelineKey });
                         updateSummaryText(perName, timelineKey);
                     };
@@ -8388,7 +8389,7 @@ require([
 
                 try {
                     await applyContextoHistoricoPeriodSelection(
-                        contextoHistoricoPeriodoActivo || "Todos",
+                        activeHistoricalContextPeriod || "Todos",
                         { timelineKey: contextoHistoricoTimelineKeyActivo, refreshLegend: true }
                     );
 
@@ -8408,14 +8409,14 @@ require([
                         contextoHistoricoSummaryLoaded = true;
                     }
 
-                    updateSummaryText(contextoHistoricoPeriodoActivo, contextoHistoricoTimelineKeyActivo);
+                    updateSummaryText(activeHistoricalContextPeriod, contextoHistoricoTimelineKeyActivo);
 
                     document.querySelectorAll(".timeline-item").forEach(item => {
                         item.onclick = async function () {
                             const key = this.getAttribute("data-periodo");
-                            const timelinePeriodo = contextoHistoricoTimelineToPeriodo[key] || "Todos";
-                            await applyContextoHistoricoPeriodSelection(timelinePeriodo, { timelineKey: key });
-                            updateSummaryText(timelinePeriodo, key);
+                            const timelinePeriod = historicalContextTimelineToPeriod[key] || "Todos";
+                            await applyContextoHistoricoPeriodSelection(timelinePeriod, { timelineKey: key });
+                            updateSummaryText(timelinePeriod, key);
                         };
                     });
                 } catch (error) {
@@ -8448,7 +8449,7 @@ require([
         if (chartTitle) chartTitle.style.display = "";
     }
 
-    function densidadLegendItemHasFeature(item, features = []) {
+    function densityLegendItemHasFeature(item, features = []) {
         return features.some(feature => {
             const attrs = feature.attributes || {};
             const density = Number(attrs.denpobha);
@@ -8469,7 +8470,7 @@ require([
         });
     }
 
-    const CONCENTRACION_NACIONAL_LEGEND = [
+    const NATIONAL_CONCENTRATION_LEGEND = [
         ["0,001 - 1", "#F6FD96"],
         ["1,001 - 2,706", "#F6F287"],
         ["2,707 - 7,323", "#F6E578"],
@@ -8484,14 +8485,14 @@ require([
         ["21.063,117 - 57.000", "#7F0D05"]
     ];
 
-    function renderConcentracionLegend({ isNational = false } = {}) {
+    function renderConcentrationLegend({ isNational = false } = {}) {
         const title = document.getElementById("legendTitle");
         const content = document.getElementById("legendContent");
         if (!content) return;
 
         if (isNational) {
             if (title) title.textContent = "Concentración de población. Valor de personas por km²";
-            content.innerHTML = CONCENTRACION_NACIONAL_LEGEND.map(([label, color]) => `
+            content.innerHTML = NATIONAL_CONCENTRATION_LEGEND.map(([label, color]) => `
                 <div class="legend-item">
                     <span class="legend-color" data-swatch-color="${color}"></span>
                     <span>${label}</span>
@@ -8513,15 +8514,15 @@ require([
         `;
     }
 
-    function setConcentracionSource({ isNational = false } = {}) {
-        const fuenteDiv = document.getElementById("mapSource");
-        if (!fuenteDiv) return;
-        fuenteDiv.textContent = isNational
+    function setConcentrationSource({ isNational = false } = {}) {
+        const sourceElement = document.getElementById("mapSource");
+        if (!sourceElement) return;
+        sourceElement.textContent = isNational
             ? "Fuente: IGAC, 2026; DANE, 2024"
             : "Fuente: IGAC, 2026; Invías, 2024";
     }
 
-    function buildConcentracionSummary({ isNational = false, isMunicipal = false, attrs = {} } = {}) {
+    function buildConcentrationSummary({ isNational = false, isMunicipal = false, attrs = {} } = {}) {
         if (isNational) {
             return `
                 <b>Concentración de la población</b><br><br>
@@ -8545,7 +8546,7 @@ require([
         `;
     }
 
-    function buildConcentracionRoadWhere(layer, { mpCode = "", dpCode = "", isMunicipal = false, isDepartmental = false } = {}) {
+    function buildConcentrationRoadWhere(layer, { mpCode = "", dpCode = "", isMunicipal = false, isDepartmental = false } = {}) {
         const fields = (layer?.fields || []).map(field => String(field.name || "").toLowerCase());
         const escapeSql = value => String(value || "").replace(/'/g, "''");
         if (isMunicipal && mpCode && fields.includes("mpcodigo")) return `mpcodigo = '${escapeSql(mpCode)}'`;
@@ -8555,7 +8556,7 @@ require([
         return "1=1";
     }
 
-    async function loadConcentracionRoadLayers(config, territory) {
+    async function loadConcentrationRoadLayers(config, territory) {
         const urls = Array.isArray(config.roadLayerUrls) ? config.roadLayerUrls : [];
         if (!urls.length || (!territory.isDepartmental && !territory.isMunicipal)) return [];
 
@@ -8570,14 +8571,14 @@ require([
         await Promise.all(layers.map(async layer => {
             try {
                 await layer.load();
-                layer.definitionExpression = buildConcentracionRoadWhere(layer, territory);
+                layer.definitionExpression = buildConcentrationRoadWhere(layer, territory);
             } catch (_) { }
         }));
 
         return layers;
     }
 
-    async function resolveConcentracionRoadSource(layer) {
+    async function resolveConcentrationRoadSource(layer) {
         if (!layer || typeof layer.queryFeatures !== "function") return "";
         const sourceField = (layer.fields || []).find(field => String(field.name || "").toLowerCase() === "fuente")?.name;
         if (!sourceField) return "";
@@ -8595,15 +8596,15 @@ require([
         }
     }
 
-    async function concentracionPoblacionHandlerRun(ctx) {
+    async function runPopulationConcentrationHandler(ctx) {
         ctx.destroyChart();
         hideMainChartCanvasDuringLoad();
-        setConcentracionSummaryPanelActive(true);
+        setConcentrationSummaryPanelActive(true);
         hideTimeSlider();
         clearLayers();
 
-        const mpCode = ctx.municipioActual;
-        const dpCode = ctx.deptoActual || deptoActual || (mpCode ? String(mpCode).slice(0, 2) : "");
+        const mpCode = ctx.currentMunicipalityId;
+        const dpCode = ctx.currentDepartmentId || currentDepartmentId || (mpCode ? String(mpCode).slice(0, 2) : "");
         const isMunicipal = !!mpCode;
         const isDepartmental = !isMunicipal && !!dpCode;
         const isNational = !isMunicipal && !isDepartmental;
@@ -8631,7 +8632,7 @@ require([
         layersGlobal = [imageLayer];
         map.add(imageLayer);
 
-        const roadLayers = await loadConcentracionRoadLayers(ctx.config, { mpCode, dpCode, isMunicipal, isDepartmental });
+        const roadLayers = await loadConcentrationRoadLayers(ctx.config, { mpCode, dpCode, isMunicipal, isDepartmental });
         roadLayers.forEach(layer => {
             map.add(layer);
             layersGlobal.push(layer);
@@ -8639,21 +8640,21 @@ require([
 
         updateMapViewBadge(ctx.config.title || "Concentración de la población");
         ctx.setTitle("Concentración de la población");
-        renderConcentracionLegend({ isNational });
-        setConcentracionSource({ isNational });
+        renderConcentrationLegend({ isNational });
+        setConcentrationSource({ isNational });
         resetLegendFilterState();
         if (!isNational && roadLayers[0]) {
-            const roadSource = await resolveConcentracionRoadSource(roadLayers[0]);
-            const fuenteDiv = document.getElementById("mapSource");
-            if (fuenteDiv && roadSource) {
-                fuenteDiv.textContent = `Fuente: IGAC, 2026; ${roadSource}`;
+            const roadSource = await resolveConcentrationRoadSource(roadLayers[0]);
+            const sourceElement = document.getElementById("mapSource");
+            if (sourceElement && roadSource) {
+                sourceElement.textContent = `Fuente: IGAC, 2026; ${roadSource}`;
             }
         }
 
         const summaryDiv = document.getElementById("summaryDiv");
         if (summaryDiv) {
             summaryDiv.style.display = "";
-            summaryDiv.innerHTML = buildConcentracionSummary({ isNational, isMunicipal });
+            summaryDiv.innerHTML = buildConcentrationSummary({ isNational, isMunicipal });
         }
 
         if (isMunicipal && ctx.config.summaryTableUrl && Array.isArray(ctx.config.summaryFields)) {
@@ -8664,7 +8665,7 @@ require([
                 const sJson = await fetchJsonCached(sUrl, { cacheKey: buildQueryCacheKey("json", sUrl) });
                 const attrs = sJson.features?.[0]?.attributes || {};
                 if (summaryDiv) {
-                    summaryDiv.innerHTML = buildConcentracionSummary({ isNational, isMunicipal, attrs });
+                    summaryDiv.innerHTML = buildConcentrationSummary({ isNational, isMunicipal, attrs });
                 }
             } catch (_) { }
         }
@@ -8676,11 +8677,11 @@ require([
         });
     }
 
-    function concentracionPoblacionHandler() {
+    function populationConcentrationHandler() {
         return {
             name: "concentracionPoblacion",
             when: (ctx) => ctx.config?.isConcentracionPoblacion === true,
-            run: concentracionPoblacionHandlerRun
+            run: runPopulationConcentrationHandler
         };
     }
 
@@ -8691,8 +8692,8 @@ require([
             run: async (ctx) => {
                 ctx.destroyChart();
 
-                const mpCode = ctx.municipioActual;
-                const dpCode = ctx.deptoActual || deptoActual || (mpCode ? String(mpCode).slice(0, 2) : "");
+                const mpCode = ctx.currentMunicipalityId;
+                const dpCode = ctx.currentDepartmentId || currentDepartmentId || (mpCode ? String(mpCode).slice(0, 2) : "");
                 const isMunicipal = !!mpCode;
                 const isDepartmental = !isMunicipal && !!dpCode;
                 const isNational = !isMunicipal && !isDepartmental;
@@ -8716,14 +8717,14 @@ require([
 
                     if (!features.length) {
                         ctx.destroyChart();
-                        ctx.actualizarLeyenda([], []);
+                        ctx.updateLegend([], []);
                         return;
                     }
 
                     let labels = [];
                     let values = [];
                     let colors = [];
-                    const getDensidadZoneLabel = (tzn) => {
+                    const getDensityZoneLabel = (tzn) => {
                         if (Number(tzn) === 3) return "Rural disperso";
                         return (typeof tznLabels !== "undefined")
                             ? (tznLabels[tzn] || `Zona ${tzn}`)
@@ -8736,7 +8737,7 @@ require([
 
                         // Label por zona (tzn), color por rango de densidad (denpobha)
                         // → coincide con el renderer classBreaks del mapa
-                        const zoneLabel = getDensidadZoneLabel(tzn);
+                        const zoneLabel = getDensityZoneLabel(tzn);
                         const zoneColors = {
                             1: "#c7a4b6", // Cabecera Municipal
                             2: "#d3d0a8", // Centros Poblados
@@ -8770,14 +8771,14 @@ require([
                         }));
                     const maxAvg = Math.max(...rows.map(row => row.avg), 0);
 
-                    labels = rows.map(row => getDensidadZoneLabel(row.tzn));
+                    labels = rows.map(row => getDensityZoneLabel(row.tzn));
                     values = rows.map(row => isDepartmental && maxAvg > 0 ? (row.avg / maxAvg) * 100 : row.avg);
-                    colors = rows.map(row => getDensidadOriginalColor(row.avg, layerGlobal, row.tzn));
+                    colors = rows.map(row => getOriginalDensityColor(row.avg, layerGlobal, row.tzn));
                     const codes = rows.map(row => String(row.tzn));
                     const valueSuffix = isDepartmental ? "%" : " hab/ha";
 
                     // ── 2) Renderer del mapa (cabecera vs centro poblado vs rural) ──
-                    const { buildRenderer } = getDensidadLegendApi();
+                    const { buildRenderer } = getDensityLegendApi();
                     if (layerGlobal && typeof buildRenderer === "function") {
                         layerGlobal.renderer = buildRenderer(
                             isAggregatedView && isDepartmental ? dpCode : (dpCode || null)
@@ -8791,10 +8792,10 @@ require([
                         layerGlobal?.queryExtent({ where: mapWhere }).then(res => {
                             if (res?.extent) {
                                 view.goTo(res.extent.expand(isMunicipal ? 1.12 : 1.3)).then(() => {
-                                    if (isMunicipal) highlightMunicipioOnMap(mpCode);
+                                    if (isMunicipal) highlightMunicipalityOnMap(mpCode);
                                 });
                             } else if (isMunicipal) {
-                                highlightMunicipioOnMap(mpCode);
+                                highlightMunicipalityOnMap(mpCode);
                             }
                         });
                     }
@@ -8805,11 +8806,11 @@ require([
                     } else {
                         setDistribucionChartPanelState("chart");
 
-                        const mpNombre = ctx.diccionarioMunicipios?.[mpCode] || mpCode;
-                        const dpNombre = ctx.diccionarioDepartamentos?.[deptoActual] || ctx.deptoActual;
-                        ctx.setTitle(`Densidad de población por zona municipio de ${mpNombre}, ${dpNombre}`);
+                        const municipalityName = ctx.municipalityNames?.[mpCode] || mpCode;
+                        const departmentName = ctx.departmentNames?.[currentDepartmentId] || ctx.currentDepartmentId;
+                        ctx.setTitle(`Densidad de población por zona municipio de ${municipalityName}, ${departmentName}`);
 
-                        ctx.crearGrafica(labels, values, colors, "bar", true, null, {
+                        ctx.createChart(labels, values, colors, "bar", true, null, {
                             codes,
                             valueSuffix
                         });
@@ -8822,14 +8823,14 @@ require([
 
                     // ── 5) Leyenda interactiva con los mismos colores del mapa ────────────
                     if (isMunicipal) {
-                        await configureDensidadVisualLegendForLayer(ctx, {
+                        await configureDensityVisualLegendForLayer(ctx, {
                             where: mapWhere,
-                            deptoCode: dpCode,
+                            departmentCode: dpCode,
                             layer: layerGlobal
                         });
                     } else if (isAggregatedView) {
-                        await renderDensidadMapLegend({
-                            deptoCode: isDepartmental ? dpCode : null,
+                        await renderDensityMapLegend({
+                            departmentCode: isDepartmental ? dpCode : null,
                             where,
                             features,
                             layer: layerGlobal
@@ -8844,7 +8845,7 @@ require([
                             baseWhere: where,
                             itemWheres: null
                         });
-                        ctx.actualizarLeyenda(labels, colors, codes);
+                        ctx.updateLegend(labels, colors, codes);
                     }
 
                     // ── 6) Resumen textual ───────────────────────────────
@@ -8862,8 +8863,8 @@ require([
                     if (e?.name === "AbortError" || String(e?.message || "").toLowerCase().includes("aborted")) return;
                     console.error("distribucionPoblacionHandler error:", e);
                     if (isAggregatedView || isMunicipal) {
-                        await renderDensidadMapLegend({
-                            deptoCode: (isDepartmental || isMunicipal) ? dpCode : null,
+                        await renderDensityMapLegend({
+                            departmentCode: (isDepartmental || isMunicipal) ? dpCode : null,
                             where: isMunicipal
                                 ? buildDepartmentMapWhereForConfig(ctx.config, dpCode)
                                 : isDepartmental
@@ -8872,7 +8873,7 @@ require([
                             layer: layerGlobal
                         });
                     } else {
-                        ctx.actualizarLeyenda([], []);
+                        ctx.updateLegend([], []);
                     }
                     ctx.destroyChart();
                 }
@@ -8880,99 +8881,99 @@ require([
         };
     }
 
-    function gini(datos) {
-        const data = Number(datos) || 0;
-        let texto = '';
+    function gini(input) {
+        const data = Number(input) || 0;
+        let text = '';
 
         if (data <= 0.30) {
-            texto = 'Desigualdad Muy Baja | <= 0.30';
+            text = 'Desigualdad Muy Baja | <= 0.30';
         } else if (data > 0.30 && data <= 0.45) {
-            texto = 'Desigualdad Baja | >0.30 <= 0.45';
+            text = 'Desigualdad Baja | >0.30 <= 0.45';
         } else if (data > 0.45 && data <= 0.60) {
-            texto = 'Desigualdad Media | >0.45 <= 0.60';
+            text = 'Desigualdad Media | >0.45 <= 0.60';
         } else if (data > 0.60 && data <= 0.75) {
-            texto = 'Desigualdad Alta | >0.60 <= 0.75';
+            text = 'Desigualdad Alta | >0.60 <= 0.75';
         } else if (data > 0.75 && data <= 1.0) {
-            texto = 'Desigualdad Muy Alta | >0.75 <= 1.0';
+            text = 'Desigualdad Muy Alta | >0.75 <= 1.0';
         }
 
-        return texto;
+        return text;
     }
 
-    function theil(datos) {
-        const data = Number(datos) || 0;
-        let texto = '';
+    function theil(input) {
+        const data = Number(input) || 0;
+        let text = '';
 
         if (data <= 0.06) {
-            texto = 'Dispersión Muy Baja - Muy alta igualdad | <= 0.06';
+            text = 'Dispersión Muy Baja - Muy alta igualdad | <= 0.06';
         } else if (data > 0.06 && data <= 0.10) {
-            texto = 'Dispersión baja - Alta igualdad | >0.06 <= 0.10';
+            text = 'Dispersión baja - Alta igualdad | >0.06 <= 0.10';
         } else if (data > 0.10 && data <= 0.18) {
-            texto = 'Dispersión media - Igualdad moderada | >0.10 <= 0.18';
+            text = 'Dispersión media - Igualdad moderada | >0.10 <= 0.18';
         } else if (data > 0.18 && data <= 0.30) {
-            texto = 'Dispersión alta - Desigualdad moderada | >0.18 <= 0.30';
+            text = 'Dispersión alta - Desigualdad moderada | >0.18 <= 0.30';
         } else if (data > 0.30 && data <= 1.0) {
-            texto = 'Dispersión muy alta - Alta desigualdad | >0.30 <= 1.0';
+            text = 'Dispersión muy alta - Alta desigualdad | >0.30 <= 1.0';
         }
 
-        return texto;
+        return text;
     }
 
-    function disparidadSuperior(datos) {
-        const data = Number(datos) || 0;
-        let texto = '';
+    function upperDisparity(input) {
+        const data = Number(input) || 0;
+        let text = '';
 
         if (data <= 2.7) {
-            texto = 'Disparidad superior baja | <= 2.7';
+            text = 'Disparidad superior baja | <= 2.7';
         } else if (data > 2.7 && data <= 5.2) {
-            texto = 'Disparidad superior media | >2.7 <= 5.2';
+            text = 'Disparidad superior media | >2.7 <= 5.2';
         } else if (data > 5.2 && data <= 7.0) {
-            texto = 'Disparidad superior alta | >5.2 <= 7.0';
+            text = 'Disparidad superior alta | >5.2 <= 7.0';
         } else if (data > 7.0 && data <= 8.5) {
-            texto = 'Muy alta disparidad superior | >7.0 <= 8.5';
+            text = 'Muy alta disparidad superior | >7.0 <= 8.5';
         } else if (data > 8.5) {
-            texto = 'Disparidad superior extrema | >8.5';
+            text = 'Disparidad superior extrema | >8.5';
         }
 
-        return texto;
+        return text;
     }
 
-    function disparidadInferior(datos) {
-        const data = Number(datos) || 0;
-        let texto = '';
+    function lowerDisparity(input) {
+        const data = Number(input) || 0;
+        let text = '';
 
         if (data <= 0.01) {
-            texto = 'Disparidad inferior muy alta | <= 0.01';
+            text = 'Disparidad inferior muy alta | <= 0.01';
         } else if (data > 0.01 && data <= 0.02) {
-            texto = 'Disparidad inferior alta | >0.01 <= 0.02';
+            text = 'Disparidad inferior alta | >0.01 <= 0.02';
         } else if (data > 0.02 && data <= 0.055) {
-            texto = 'Disparidad inferior moderada | >0.02 <= 0.055';
+            text = 'Disparidad inferior moderada | >0.02 <= 0.055';
         } else if (data > 0.055 && data <= 0.231) {
-            texto = 'Disparidad inferior media | >0.055 <= 0.231';
+            text = 'Disparidad inferior media | >0.055 <= 0.231';
         } else if (data > 0.231 && data <= 1.0) {
-            texto = 'Disparidad inferior baja | >0.231 <= 1.0';
+            text = 'Disparidad inferior baja | >0.231 <= 1.0';
         }
 
-        return texto;
+        return text;
     }
 
-    function informalidad(datos) {
-        const data = Number(datos) || 0;
-        let texto = '';
+    function informality(input) {
+        const data = Number(input) || 0;
+        let text = '';
 
         if (data <= 10) {
-            texto = 'Nivel muy bajo de informalidad | <= 10';
+            text = 'Nivel muy bajo de informalidad | <= 10';
         } else if (data > 10 && data <= 30) {
-            texto = 'Nivel bajo de informalidad | >10 <= 30';
+            text = 'Nivel bajo de informalidad | >10 <= 30';
         } else if (data > 30 && data <= 50) {
-            texto = 'Nivel medio de informalidad | >30 <= 50';
+            text = 'Nivel medio de informalidad | >30 <= 50';
         } else if (data > 50 && data <= 70) {
-            texto = 'Nivel alto de informalidad | >50 <= 70';
+            text = 'Nivel alto de informalidad | >50 <= 70';
         } else if (data > 70 && data <= 100) {
-            texto = 'Nivel muy alto de informalidad | >70 <= 100';
+            text = 'Nivel muy alto de informalidad | >70 <= 100';
         }
 
-        return texto;
+        return text;
     }
 
     function indicesComplementariosHandler() {
@@ -8980,11 +8981,11 @@ require([
             name: "indicesComplementarios",
             when: (ctx) => ctx.config?.isIndicesComplementarios === true,
             run: async (ctx) => {
-                toggleIndicesCharts(true);
-                destroyIndicesCharts();
+                toggleIndexCharts(true);
+                destroyIndexCharts();
 
-                const mpCode = ctx.municipioActual;
-                const dpCode = ctx.deptoActual || deptoActual;
+                const mpCode = ctx.currentMunicipalityId;
+                const dpCode = ctx.currentDepartmentId || currentDepartmentId;
                 const isMunicipal = !!mpCode;
                 const isDepartmental = !isMunicipal && !!dpCode;
                 const isNational = !isMunicipal && !isDepartmental;
@@ -9005,12 +9006,12 @@ require([
                     layerGlobal?.queryExtent({ where: mapWhere }).then(res => {
                         if (res?.extent) {
                             view.goTo(res.extent.expand(1.12)).then(() => {
-                                if (isMunicipal) highlightMunicipioOnMap(mpCode);
+                                if (isMunicipal) highlightMunicipalityOnMap(mpCode);
                             });
                         }
                     });
-                    setupIndicesComplementariosSlider({ where: mapWhere, layer: layerGlobal });
-                    await refreshIndiceComplementarioMapAndLegend({ where: mapWhere, field: indiceComplementarioCampoActivo, layer: layerGlobal });
+                    setupComplementaryIndicesSlider({ where: mapWhere, layer: layerGlobal });
+                    await refreshComplementaryIndexMapAndLegend({ where: mapWhere, field: activeComplementaryIndexField, layer: layerGlobal });
 
                     // 2) Consultar datos
                     const fields = "icmgini,icmtheil,icmdispsup,icmdispinf,icminformal,icminformalporc,mpnombre,dpnombre,dpcodigo";
@@ -9020,7 +9021,7 @@ require([
                     const feat = rows[0];
 
                     if (!feat) {
-                        ctx.actualizarLeyenda([], []);
+                        ctx.updateLegend([], []);
                         return;
                     }
 
@@ -9040,23 +9041,23 @@ require([
                         icminformal: avg("icminformal", "icminformalporc")
                     };
 
-                    // const mpNombre = feat.mpnombre || ctx.diccionarioMunicipios?.[mpCode] || mpCode;
-                    // const dpNombre = feat.dpnombre || ctx.diccionarioDepartamentos?.[deptoActual] || deptoActual;
-                    const mpNombre = isMunicipal ? (ctx.diccionarioMunicipios?.[mpCode] || feat.mpnombre || mpCode) : "";
-                    const dpNombre = isDepartmental
-                        ? (ctx.diccionarioDepartamentos?.[dpCode] || feat.dpnombre || dpCode)
+                    // const municipalityName = feat.mpnombre || ctx.municipalityNames?.[mpCode] || mpCode;
+                    // const departmentName = feat.dpnombre || ctx.departmentNames?.[currentDepartmentId] || currentDepartmentId;
+                    const municipalityName = isMunicipal ? (ctx.municipalityNames?.[mpCode] || feat.mpnombre || mpCode) : "";
+                    const departmentName = isDepartmental
+                        ? (ctx.departmentNames?.[dpCode] || feat.dpnombre || dpCode)
                         : isMunicipal
-                            ? (ctx.diccionarioDepartamentos?.[deptoActual] || feat.dpnombre || deptoActual)
+                            ? (ctx.departmentNames?.[currentDepartmentId] || feat.dpnombre || currentDepartmentId)
                             : "";
 
                     ctx.setTitle(isNational
                         ? "Índices Complementarios en Colombia"
                         : isDepartmental
-                            ? `Índices Complementarios en ${dpNombre}`
-                            : `Índices Complementarios en el municipio de ${mpNombre}, ${dpNombre}`);
+                            ? `Índices Complementarios en ${departmentName}`
+                            : `Índices Complementarios en el municipio de ${municipalityName}, ${departmentName}`);
 
                     // Gráfico 1: Gini, Theil, Disparidad Superior
-                    indicesChartInstances[1] = crearGraficaIndices("chartIndices1", "", ["Gini", "Theil", "Disparidad Superior"], [
+                    indicesChartInstances[1] = createIndexChart("chartIndices1", "", ["Gini", "Theil", "Disparidad Superior"], [
                         {
                             label: "Índice",
                             data: [
@@ -9068,30 +9069,30 @@ require([
                             datalabels: [
                                 gini(chartValues.icmgini),
                                 theil(chartValues.icmtheil),
-                                disparidadSuperior(chartValues.icmdispsup)
+                                upperDisparity(chartValues.icmdispsup)
                             ],
                             hideLegend: true
                         }
                     ], "Rango numérico del índice");
 
                     // Gráfico 2: Disparidad Inferior
-                    indicesChartInstances[2] = crearGraficaIndices("chartIndices2", "", ["Disparidad Inferior"], [
+                    indicesChartInstances[2] = createIndexChart("chartIndices2", "", ["Disparidad Inferior"], [
                         {
                             label: "Índice",
                             data: [chartValues.icmdispinf],
                             backgroundColor: ["#efc000"],
-                            datalabels: [disparidadInferior(chartValues.icmdispinf)],
+                            datalabels: [lowerDisparity(chartValues.icmdispinf)],
                             hideLegend: true
                         }
                     ], "Rango numérico del índice");
 
                     // Gráfico 3: Informalidad (%)
-                    indicesChartInstances[3] = crearGraficaIndices("chartIndices3", "", ["Informalidad"], [
+                    indicesChartInstances[3] = createIndexChart("chartIndices3", "", ["Informalidad"], [
                         {
                             label: "Índice",
                             data: [chartValues.icminformal],
                             backgroundColor: ["#004A69"],
-                            datalabels: [informalidad(chartValues.icminformal)],
+                            datalabels: [informality(chartValues.icminformal)],
                             hideLegend: true
                         }
                     ], "Porcentaje (%)", true);
@@ -9119,11 +9120,11 @@ require([
                     }
 
                     // 4) Mantener leyenda y mapa sincronizados con el índice activo del slider.
-                    await refreshIndiceComplementarioMapAndLegend({ where: mapWhere, field: indiceComplementarioCampoActivo, layer: layerGlobal });
+                    await refreshComplementaryIndexMapAndLegend({ where: mapWhere, field: activeComplementaryIndexField, layer: layerGlobal });
 
                 } catch (e) {
                     console.error("indicesComplementariosHandler error:", e);
-                    toggleIndicesCharts(false);
+                    toggleIndexCharts(false);
                 }
             }
         };
@@ -9135,23 +9136,23 @@ require([
     function getHandlers() {
         return [
             contextoHistoricoHandler(),
-            composicionPoblacionHandler(),
+            populationCompositionHandler(),
             tasaCrecimientoHandler(),
-            migracionExternaHandler(),
-            migracionInternaHandler(),
-            autoreconocimientoEtnicoHandler(),
+            externalMigrationHandler(),
+            internalMigrationHandler(),
+            ethnicSelfRecognitionHandler(),
             condicionesSeguridadHandler(),
             indicesComplementariosHandler(),
             propiedadRuralHandler(),
-            estructuraPiramidesHandler(),
+            pyramidStructureHandler(),
             transicionDemograficaHandler(),
-            concentracionPoblacionHandler(),
+            populationConcentrationHandler(),
             distribucionPoblacionHandler()
         ];
     }
 
 
-    function crearGraficaMigracionExterna(labels, datasets, notice = "") {
+    function createExternalMigrationChart(labels, datasets, notice = "") {
         const canvas = document.getElementById("mgeChart");
         if (!canvas) return;
         const panel = canvas.parentElement;
@@ -9367,7 +9368,7 @@ require([
         });
     }
 
-    function crearGraficaMigracionInterna(labels, data, colors, notice = "") {
+    function createInternalMigrationChart(labels, data, colors, notice = "") {
         const canvas = document.getElementById("mgiChart");
         if (!canvas) return;
         const panel = canvas.parentElement;
@@ -9587,7 +9588,7 @@ require([
         });
     }
 
-    function crearGraficaAutoreconocimientoLegacy(labels, data, ctx_parent) {
+    function createLegacySelfRecognitionChart(labels, data, ctx_parent) {
         const canvas = document.getElementById("aeChart");
         if (!canvas) return;
         const isSmallScreen = window.innerWidth <= 768;
@@ -9721,7 +9722,7 @@ require([
         canvas.style.height = `400px`;
     }
 
-    function crearGraficaAutoreconocimiento(labels, data, ctx_parent) {
+    function createSelfRecognitionChart(labels, data, ctx_parent) {
         const canvas = document.getElementById("aeChart");
         if (!canvas) return;
 
@@ -9966,7 +9967,7 @@ require([
         canvas.style.height = `${isSmallScreen ? 380 : 420}px`;
     }
 
-    function crearGraficaCondicionesSeguridad(labels, data, ctx_parent) {
+    function createSafetyConditionsChart(labels, data, ctx_parent) {
         const canvas = document.getElementById("csChart");
         if (!canvas) return;
         const ctx = canvas.getContext("2d");
@@ -10138,7 +10139,7 @@ require([
         canvas.style.maxHeight = `${chartHeight}px`;
     }
 
-    function crearGraficaComposicion(labels, datasets, axisTitles, ctx_parent) {
+    function createCompositionChart(labels, datasets, axisTitles, ctx_parent) {
         const canvas = showMainChartCanvasForRender();
         if (!canvas) return;
         canvas.closest(".chart-card")?.classList.add("composicion-chart-active");
@@ -10168,7 +10169,7 @@ require([
             return datasets.reduce((sum, ds) => sum + (ds.data[i] || 0), 0);
         });
 
-        const composicionZoneSeparatorPlugin = {
+        const compositionZoneSeparatorPlugin = {
             id: "composicionZoneSeparators",
             beforeDatasetsDraw(chart) {
                 const { ctx, chartArea, scales } = chart;
@@ -10342,23 +10343,23 @@ require([
                     if (!elements.length) return;
                     const el = elements[0];
                     const zoneLabel = labels[el.index];
-                    const datasetKeys = ocupacionGlobal("ordenComposicion") || ["amf", "amm", "af", "am", "jf", "jm", "nf", "nm"];
+                    const datasetKeys = globalOccupation("compositionOrder") || ["amf", "amm", "af", "am", "jf", "jm", "nf", "nm"];
                     const fieldKey = datasetKeys[el.datasetIndex];
                     if (!fieldKey) return;
 
-                    applyComposicionChartSelection(fieldKey, zoneLabel).catch(error => {
-                        console.warn("applyComposicionChartSelection error:", error);
+                    applyCompositionChartSelection(fieldKey, zoneLabel).catch(error => {
+                        console.warn("applyCompositionChartSelection error:", error);
                     });
                 }
             },
-            plugins: [composicionZoneSeparatorPlugin]
+            plugins: [compositionZoneSeparatorPlugin]
         });
 
         // Ajustar altura dinámica para que las barras agrupadas no se vean amontonadas
         chartInstance.resize();
     }
 
-    function crearGraficaTasaCrecimiento(labels, data, ctx_parent) {
+    function createGrowthRateChart(labels, data, ctx_parent) {
         const canvas = document.getElementById("tcChart");
         if (!canvas) return;
         const ctx = canvas.getContext("2d");
@@ -10445,7 +10446,7 @@ require([
                     view.openPopup({
                         location: view.center,
                         title: `Población ${year}`,
-                        content: `Municipio: ${ctx_parent.diccionarioMunicipios?.[ctx_parent.municipioActual] || ctx_parent.municipioActual}<br>Población DANE ${year}: ${data[yearIdx].toLocaleString()}`
+                        content: `Municipio: ${ctx_parent.municipalityNames?.[ctx_parent.currentMunicipalityId] || ctx_parent.currentMunicipalityId}<br>Población DANE ${year}: ${data[yearIdx].toLocaleString()}`
                     });
                 }
             }
@@ -10455,7 +10456,7 @@ require([
 
 
 
-    async function actualizarGrafica(layer, config, options = {}) {
+    async function updateChart(layer, config, options = {}) {
         const ctx = buildCtx(layer, config, options);
 
         if (!ctx.skipSyncMap) {
@@ -10470,21 +10471,23 @@ require([
         for (const h of getHandlers()) {
             if (h.when(ctx)) {
                 await h.run(ctx);
-                if (filtroNivel === "DEPTO" && !municipioActual && !ctx.config?.isConcentracionPoblacion) {
-                    actualizarResumen();
+                if (territoryLevel === "DEPTO" && !currentMunicipalityId && !ctx.config?.isConcentracionPoblacion) {
+                    updateSummary();
                 }
                 return;
             }
         }
     }
-    window.actualizarGrafica = actualizarGrafica;
+    window.updateChart = updateChart;
+    // Legacy integration point retained for scripts loaded outside this module.
+    window.actualizarGrafica = updateChart;
 
     function applyWhereToActiveLayers(where) {
         let finalWhere = where;
         const config = getActiveLayerConfig();
 
-        if (config && config.id === "densidad_poblacion" && filtroNivel === "DEPTO" && !municipioActual && deptoActual && finalWhere && finalWhere.includes("mpcodigo =")) {
-            finalWhere = finalWhere.replace(/mpcodigo\s*=\s*'[^']+'/, `dpcodigo = '${deptoActual}'`);
+        if (config && config.id === "densidad_poblacion" && territoryLevel === "DEPTO" && !currentMunicipalityId && currentDepartmentId && finalWhere && finalWhere.includes("mpcodigo =")) {
+            finalWhere = finalWhere.replace(/mpcodigo\s*=\s*'[^']+'/, `dpcodigo = '${currentDepartmentId}'`);
         }
         state.set("activeFilter", finalWhere || "");
 
@@ -10554,8 +10557,8 @@ require([
         let where = "";
 
         if (config.isDistribucion) {
-            const tznCode = (typeof densidadLabelToTzn !== "undefined")
-                ? densidadLabelToTzn[val]
+            const tznCode = (typeof densityLabelToTzn !== "undefined")
+                ? densityLabelToTzn[val]
                 : { "Cabecera Municipal": 1, "Centros Poblados": 2, "Rural Disperso": 3 }[val];
 
             if (tznCode != null) {
@@ -10614,12 +10617,12 @@ require([
     }
 
 
-    function resolveOcupacionModeFromTab(tabUrl) {
+    function resolveOccupationModeFromTab(tabUrl) {
         return ModeConfig.fromTabLabel(tabUrl);
     }
 
-    function applyOcupacionTabFromUrl(tabUrl) {
-        const mode = resolveOcupacionModeFromTab(tabUrl);
+    function applyOccupationTabFromUrl(tabUrl) {
+        const mode = resolveOccupationModeFromTab(tabUrl);
         if (mode && typeof window.setMode === "function") {
             window.setMode(mode);
         }
@@ -10633,23 +10636,23 @@ require([
 
     ModuleNavigation.applyTerritorySelectionFromUrl({
         onTab(tabUrl) {
-            if (!urlContext.municipioId && !urlContext.deptoId) {
-                applyOcupacionTabFromUrl(tabUrl);
+            if (!urlContext.municipalityId && !urlContext.departmentId) {
+                applyOccupationTabFromUrl(tabUrl);
             }
         },
         onApplied({ tab }) {
             if (tab) {
-                applyOcupacionTabFromUrl(tab);
+                applyOccupationTabFromUrl(tab);
             }
         },
-        prepareTerritorySelection({ municipioId, deptoId, selectDepto, selectMuni }) {
-            if (deptoId && Array.from(selectDepto?.options || []).some(option => option.value === deptoId)) {
-                renderizarMunicipios(deptoId);
+        prepareTerritorySelection({ municipalityId, departmentId, departmentSelect, selectMuni }) {
+            if (departmentId && Array.from(departmentSelect?.options || []).some(option => option.value === departmentId)) {
+                renderMunicipalities(departmentId);
                 return;
             }
 
-            if (municipioId && !Array.from(selectMuni?.options || []).some(option => option.value === municipioId)) {
-                renderizarMunicipios();
+            if (municipalityId && !Array.from(selectMuni?.options || []).some(option => option.value === municipalityId)) {
+                renderMunicipalities();
             }
         }
     });

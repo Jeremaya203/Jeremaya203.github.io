@@ -6,14 +6,14 @@
 (function () {
   'use strict';
 
-  var root = null;
-  var auth = null;
-  var authUi = null;
-  var lastFocused = null;
-  var required = false;
+  let root = null;
+  let auth = null;
+  let authUi = null;
+  let lastFocused = null;
+  let required = false;
 
   function element(tag, className, text) {
-    var node = document.createElement(tag);
+    const node = document.createElement(tag);
     if (className) node.className = className;
     if (text != null) node.textContent = text;
     return node;
@@ -27,34 +27,34 @@
     root.hidden = true;
     root.setAttribute('role', 'presentation');
 
-    var backdrop = element('button', 'oot-auth-modal__backdrop');
+    const backdrop = element('button', 'oot-auth-modal__backdrop');
     backdrop.type = 'button';
     backdrop.setAttribute('aria-label', 'Cerrar ventana de inicio de sesión');
 
-    var dialog = element('section', 'oot-auth-modal__dialog');
+    const dialog = element('section', 'oot-auth-modal__dialog');
     dialog.setAttribute('role', 'dialog');
     dialog.setAttribute('aria-modal', 'true');
     dialog.setAttribute('aria-labelledby', 'oot-auth-modal-title');
 
-    var header = element('header', 'oot-auth-modal__header');
+    const header = element('header', 'oot-auth-modal__header');
     var title = element('h2', 'oot-auth-modal__title', 'Iniciar sesión');
     title.id = 'oot-auth-modal-title';
-    var closeButton = element('button', 'oot-auth-modal__close', '×');
+    const closeButton = element('button', 'oot-auth-modal__close', '×');
     closeButton.type = 'button';
     closeButton.setAttribute('aria-label', 'Cerrar');
 
-    var body = element('div', 'oot-auth-modal__body');
-    var intro = element('p', 'oot-auth-modal__intro', 'Selecciona una opción para acceder a Colombia OT.');
-    var loginContainer = element('div', 'oot-auth-modal__login');
+    const body = element('div', 'oot-auth-modal__body');
+    const intro = element('p', 'oot-auth-modal__intro', 'Selecciona una opción para acceder a Colombia OT.');
+    const loginContainer = element('div', 'oot-auth-modal__login');
     loginContainer.id = 'oot-auth-container';
 
-    var session = element('div', 'oot-auth-modal__session');
+    const session = element('div', 'oot-auth-modal__session');
     session.hidden = true;
-    var avatar = element('img', 'oot-auth-modal__avatar');
+    const avatar = element('img', 'oot-auth-modal__avatar');
     avatar.alt = 'Imagen de usuario';
-    var name = element('p', 'oot-auth-modal__name');
-    var email = element('p', 'oot-auth-modal__email');
-    var logout = element('button', 'oot-auth-modal__logout', 'Cerrar sesión');
+    const name = element('p', 'oot-auth-modal__name');
+    const email = element('p', 'oot-auth-modal__email');
+    const logout = element('button', 'oot-auth-modal__logout', 'Cerrar sesión');
     logout.type = 'button';
 
     session.appendChild(avatar);
@@ -114,8 +114,9 @@
       },
       signInOptions: [
         {
+          // Sin scopes extra: 'plus.login' apuntaba a la API de Google+, apagada en
+          // marzo de 2019. Pedir un scope inexistente solo puede romper el consentimiento.
           provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-          scopes: ['https://www.googleapis.com/auth/plus.login'],
           customParameters: { prompt: 'select_account' }
         },
         {
@@ -138,13 +139,15 @@
 
   function showUser(user) {
     var modal = ensureModal();
-    var parts = modal._elements;
+    const parts = modal._elements;
     parts.loginContainer.hidden = Boolean(user);
     parts.intro.hidden = Boolean(user);
     parts.session.hidden = !user;
     if (!user) return;
 
-    parts.avatar.src = user.photoURL || '/images/iconos/User.png';
+    // Contra OOT_BASE, no contra la raiz del host: publicado bajo un subpath
+    // (usuario.github.io/repo/) una ruta absoluta apunta fuera del sitio.
+    parts.avatar.src = user.photoURL || ((window.OOT_BASE || '') + '/images/iconos/User.png');
     parts.name.textContent = user.displayName || user.email || 'Usuario';
     parts.email.textContent = user.email || '';
   }

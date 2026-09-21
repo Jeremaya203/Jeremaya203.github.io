@@ -18,21 +18,23 @@ function getSessionId() {
 }
 
 async function verificarConexion() {
+  // Guardas: este metodo corre en un setInterval indefinido; si algun nodo no esta en el
+  // DOM, un TypeError dentro del catch quedaba sin capturar y mataba el temporizador.
+  const _set = (id, prop, val) => { const el = document.getElementById(id); if (el) el[prop] = val; };
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 5000);
   try {
     const r = await fetch(`${API_BASE}/api/health`, { signal: ctrl.signal });
     clearTimeout(timer);
-    if (r.ok) {
-      document.getElementById('status-dot').className = 'dot';
-      document.getElementById('status-text').textContent = 'IA activa';
-      document.getElementById('sidebar-status').textContent = 'Conectado';
-    } else throw new Error();
+    if (!r.ok) throw new Error();
+    _set('status-dot', 'className', 'dot');
+    _set('status-text', 'textContent', 'IA activa');
+    _set('sidebar-status', 'textContent', 'Conectado');
   } catch {
     clearTimeout(timer);
-    document.getElementById('status-dot').className = 'dot offline';
-    document.getElementById('status-text').textContent = 'Sin conexión';
-    document.getElementById('sidebar-status').textContent = 'Desconectado';
+    _set('status-dot', 'className', 'dot offline');
+    _set('status-text', 'textContent', 'Sin conexión');
+    _set('sidebar-status', 'textContent', 'Desconectado');
   }
 }
 
@@ -48,9 +50,11 @@ function usarSugerencia(texto) {
   document.getElementById('input-pregunta').focus();
 }
 
-function escapeHtml(t) {
-  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+// Delega en OOT.escapeHtml (config.js), que ademas escapa comillas simples y dobles.
+// Una sola implementacion de escape en todo el sitio: config.js -> OOT.escapeHtml.
+// Las copias locales de esta funcion (habia cinco) divergian entre si; una solo
+// cubria & < > y dejaba pasar comillas, que es exactamente lo que rompe un atributo.
+const escapeHtml = (t) => window.OOT.escapeHtml(t);
 
 function agregarMensajeUsuario(texto) {
   const container = document.getElementById('messages');
@@ -134,7 +138,7 @@ function _agregarBotonDescargaNormas(mensajeDiv, textoRespuesta, pregunta) {
   btn.innerHTML = '<span class="material-symbols-outlined oot-js-chatnorm-2">download</span>Descargar fuentes (PDF)';
   btn.onclick = async function() {
     if (!pregunta) { window.OOT.notify('No se puede identificar la consulta de esta respuesta.', 'warn'); return; }
-    var orig = btn.innerHTML;
+    const orig = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<span class="material-symbols-outlined oot-js-chatnorm-2">hourglass_top</span>Preparando ZIP...';
     try {
@@ -144,7 +148,7 @@ function _agregarBotonDescargaNormas(mensajeDiv, textoRespuesta, pregunta) {
         body: JSON.stringify({pregunta: pregunta})
       });
       if (!r.ok) {
-        var err = await r.json().catch(function(){ return {detail: 'Error ' + r.status}; });
+        let err = await r.json().catch(function(){ return {detail: 'Error ' + r.status}; });
         throw new Error(err.detail || ('Error ' + r.status));
       }
       var blob = await r.blob();
@@ -426,3 +430,26 @@ function _mobChatSidebar(mostrar) {
   if (infoTab) infoTab.classList.toggle('active', mostrar);
   if (convTab) convTab.classList.toggle('active', !mostrar);
 }
+
+/* ── Registro de manejadores (ver oot.js) ─────────────────────────────────────
+   Los data-oot-click del HTML se resuelven contra este registro. Mientras exista el
+   respaldo por `window` esto es redundante, pero es lo que permite que estas funciones
+   dejen de ser globales sin que los botones se queden mudos. */
+(function registrarHandlers() {
+  const mapa = {
+    enviarPregunta,
+    usarSugerencia,
+    nuevaConsulta,
+    exportarChat,
+    manejarTecla,
+    _mobChatSidebar,
+  };
+  const registrar = () => {
+    if (!(window.OOT && window.OOT.registrarTodos)) return false;
+    window.OOT.registrarTodos(mapa);
+    return true;
+  };
+  // oot.js se carga antes que este archivo en todas las paginas; el listener es la red
+  // por si alguna pagina futura invierte el orden.
+  if (!registrar()) document.addEventListener('DOMContentLoaded', registrar);
+})();

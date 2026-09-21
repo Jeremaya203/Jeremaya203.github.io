@@ -52,3 +52,12 @@
 .oot-js-determinantes-47 { display:flex;align-items:center;gap:8px;margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--oot-b2); }
 .oot-js-determinantes-48 { font-weight:700;font-size:14px;margin-bottom:12px;margin-top:16px; }
 .oot-js-determinantes-49 { display:flex;align-items:center;gap:10px;padding:10px;margin-bottom:8px;background:var(--oot-s2);border-radius:8px;border-left-width:3px;border-left-style:solid; }
+
+/* Semaforo de viabilidad. Antes eran emojis en el JS: el veredicto dependia de que el
+   sistema tuviera la fuente de color instalada, y sin ella el usuario veia un cuadrito
+   vacio en lugar de "no viable". */
+.oot-viab-dot { display:inline-block;width:10px;height:10px;border-radius:50%;flex-shrink:0; }
+.oot-viab--compatible  { background:#27a880; }
+.oot-viab--condicionado{ background:#f4a833; }
+.oot-viab--no-viable   { background:#e05252; }
+.oot-viab--sin-info    { background:#7a9cc0; }

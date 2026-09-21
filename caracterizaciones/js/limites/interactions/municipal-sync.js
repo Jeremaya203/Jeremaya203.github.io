@@ -1,4 +1,4 @@
-import { getChartInstance } from "../chart/chart.core.js";
+import { getChartInstance } from "../chart/chart-core.js";
 
 let state = {
     view: null,

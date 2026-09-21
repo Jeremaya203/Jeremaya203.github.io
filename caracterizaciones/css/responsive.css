@@ -39,7 +39,7 @@
   --ct-module-soft: #faf1e2;
 }
 
-@media (min-width: 769px) and (max-width: 1280px) {
+@media (min-width: 769px) and (max-width: 1515px) {
   .barra_gov {
     height: 42px !important;
     min-height: 42px !important;
@@ -479,7 +479,7 @@
   }
 }
 
-@media (min-width: 1025px) and (max-width: 1280px) {
+@media (min-width: 1025px) and (max-width: 1515px) {
   .territorial-toolbar {
     order: 20 !important;
     flex: 1 1 640px !important;
@@ -668,7 +668,7 @@
   }
 }
 
-@media (min-width: 1180px) and (max-width: 1280px) {
+@media (min-width: 1180px) and (max-width: 1515px) {
   .titulo-app {
     max-width: none;
     white-space: nowrap !important;
@@ -721,7 +721,7 @@
   }
 }
 
-@media (max-width: 1280px) {
+@media (max-width: 1515px) {
   .modulos-scroll {
     overflow-x: visible;
     overflow-y: visible;
@@ -1059,7 +1059,6 @@
   .subtabs-controls,
   .tabs-container,
   .carousel-container,
-  .carousel-controls,
   .submenu-carousel,
   .submenus-container {
     overflow-x: auto !important;
@@ -1072,7 +1071,6 @@
   .subtabs-controls > *,
   .tabs-container > *,
   .carousel-container > *,
-  .carousel-controls > *,
   .submenu-carousel > *,
   .submenus-container > * {
     flex-wrap: nowrap !important;
@@ -2451,7 +2449,6 @@
     scroll-snap-align: start;
   }
 
-  .panel-topbar,
   .chart-side-panel,
   .info-panel {
     max-width: 100% !important;
@@ -2586,10 +2583,10 @@
 
 /* --------------------------------------------------------------------------
    Ajuste final: identidad cromática original y acciones realmente centradas.
-   En escritorio grande (>1280px) no se aplica ninguna de estas reglas.
+   En escritorio grande (>1515px) no se aplica ninguna de estas reglas.
    -------------------------------------------------------------------------- */
 
-@media (min-width: 769px) and (max-width: 1280px) {
+@media (min-width: 769px) and (max-width: 1515px) {
   .barra_gov {
     background: #3366cc !important;
   }
@@ -2670,7 +2667,7 @@
   }
 }
 
-@media (min-width: 1025px) and (max-width: 1280px) {
+@media (min-width: 1025px) and (max-width: 1515px) {
   .territorial-toolbar {
     flex: 1 1 640px !important;
     width: auto !important;
@@ -2742,7 +2739,7 @@
 }
 
 /* Consulta territorial más próxima a la navegación y sin cubrir el título. */
-@media (min-width: 769px) and (max-width: 1280px) {
+@media (min-width: 769px) and (max-width: 1515px) {
   .modulos-container {
     row-gap: 5px !important;
     padding-bottom: 9px !important;
@@ -2855,7 +2852,7 @@
 }
 
 /* Navegación de módulos: misma paleta, acabado más limpio y texto completo. */
-@media (min-width: 769px) and (max-width: 1280px) {
+@media (min-width: 769px) and (max-width: 1515px) {
   .modulo-card,
   .modulo-card-trigger {
     height: 48px !important;
@@ -2906,7 +2903,7 @@
   }
 }
 
-@media (min-width: 850px) and (max-width: 1280px) {
+@media (min-width: 850px) and (max-width: 1515px) {
   .modulo-dropdown,
   .modulo-card,
   .modulo-card-trigger {
@@ -2970,7 +2967,7 @@
 
 /* En portátiles con espacio suficiente, las acciones ocupan el extremo derecho
    de la fila de módulos; la consulta territorial queda completa debajo. */
-@media (min-width: 1080px) and (max-width: 1280px) {
+@media (min-width: 1080px) and (max-width: 1515px) {
   .territorial-toolbar {
     order: 20 !important;
     flex: 1 0 100% !important;
@@ -3077,7 +3074,7 @@
 }
 
 /* Ajuste final del espacio señalado: navegación y consulta quedan contiguas. */
-@media (min-width: 769px) and (max-width: 1280px) {
+@media (min-width: 769px) and (max-width: 1515px) {
   .modulos-container {
     row-gap: 8px !important;
     padding-bottom: 5px !important;
@@ -3093,7 +3090,7 @@
   }
 }
 
-@media (min-width: 1025px) and (max-width: 1280px) {
+@media (min-width: 1025px) and (max-width: 1515px) {
   .territorial-toolbar-right {
     width: min(100%, 780px) !important;
     min-height: 44px !important;
@@ -3224,7 +3221,7 @@
   }
 }
 
-@media (min-width: 769px) and (max-width: 1280px) {
+@media (min-width: 769px) and (max-width: 1515px) {
   .territorial-toolbar .toolbar-refresh,
   .territorial-toolbar .toolbar-refresh:hover,
   .territorial-toolbar .toolbar-refresh:focus-visible,
@@ -3793,5 +3790,65 @@
 
   .ct-mobile-controls--collapsed .ct-mobile-controls-toggle {
     margin-left: auto;
+  }
+}
+
+/*
+ * Distribución mapa / gráfico en pantallas intermedias.
+ * Los seis componentes comparten #container, #mapDiv y #chartDiv.
+ * Por debajo de 1100 px cada hoja conserva su disposición móvil apilada;
+ * por encima de 1515 px se mantiene intacto el reparto de escritorio 70/30.
+ */
+@media (min-width: 1101px) and (max-width: 1350px) {
+  #container > #mapDiv {
+    flex: 0 0 60%;
+    width: 60%;
+  }
+
+  #container > #chartDiv {
+    flex: 0 0 40%;
+    width: 40%;
+  }
+}
+
+@media (min-width: 1351px) and (max-width: 1515px) {
+  #container > #mapDiv {
+    flex: 0 0 64%;
+    width: 64%;
+  }
+
+  #container > #chartDiv {
+    flex: 0 0 36%;
+    width: 36%;
+  }
+}
+
+/* Enlace compartido a la documentación en los seis componentes. */
+.main-header-nav .documentation-nav-item a {
+  color: #ffffff !important;
+  white-space: nowrap;
+}
+
+.main-header-nav .documentation-nav-item a:visited {
+  color: #ffffff !important;
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .main-header-nav #link-list .documentation-nav-item a {
+    padding-inline: 7px !important;
+    font-size: 0.76rem !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1515px) {
+  .main-header-nav #loginBtn .auth-user-email,
+  .main-header-nav #userEmail {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .ct-mobile-drawer #link-list .auth-nav-item {
+    grid-column: 1 / -1;
   }
 }

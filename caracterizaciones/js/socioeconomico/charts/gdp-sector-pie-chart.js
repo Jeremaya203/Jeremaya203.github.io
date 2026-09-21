@@ -1,0 +1,370 @@
+import { PIB_VALUE_ADDED_PIE_CHART_CONFIG } from "./configs/dynamics-charts-config.js?v=global-municipality-required-state-20260604";
+import { renderPieChart } from "./renderers/pie-chart-renderer.js?v=adaptive-internal-pie-labels-20260724";
+import { colorToCss } from "./core/chart-symbol-utils.js?v=travel-time-pie-20260511";
+import { toNum } from "../utils/shared.js?v=pib-number-parser-20260506";
+import { ECONOMIC_SECTOR_COLOR_PALETTE } from "./configs/economic-sector-colors.js?v=economic-sector-shared-colors-20260603";
+
+export function createPibSectorPieChartController({
+    getCurrentMunicipalityId,
+    getCurrentDepartmentId,
+    getTerritoryLevel,
+    getWhereBase,
+    getActiveMapLayer,
+    getView,
+    getHighlightHandle,
+    setHighlightHandle,
+    onSectorHover,
+    onSectorLeave
+} = {}) {
+    let pieInstance = null;
+    let metadataPromise = null;
+    let activeSectorKey = "";
+
+    function getElements() {
+        return {
+            panel: document.getElementById("pibSectorPiePanel"),
+            title: document.getElementById("pibSectorPieTitle"),
+            canvas: document.getElementById("pibSectorPieChart"),
+            status: document.getElementById("pibSectorPieStatus"),
+            mainTitle: document.getElementById("chartTitle"),
+            mainCanvas: document.getElementById("chart")
+        };
+    }
+
+    function destroyPieChart() {
+        const canvas = getElements().canvas;
+        if (canvas?.__pibSectorPointerHandlers) {
+            canvas.removeEventListener("pointermove", canvas.__pibSectorPointerHandlers.pointermove);
+            canvas.removeEventListener("pointerleave", canvas.__pibSectorPointerHandlers.pointerleave);
+            canvas.__pibSectorPointerHandlers = null;
+        }
+        pieInstance?.destroy?.();
+        pieInstance = null;
+        activeSectorKey = "";
+    }
+
+    function clearMunicipalityHighlight() {
+        const currentHighlight = getHighlightHandle?.();
+        currentHighlight?.remove?.();
+        setHighlightHandle?.(null);
+    }
+
+    function hidePieChart() {
+        destroyPieChart();
+        const { panel, status, title, canvas } = getElements();
+        if (panel) panel.hidden = true;
+        if (canvas) canvas.style.display = "none";
+        if (status) {
+            status.hidden = true;
+            status.textContent = "";
+        }
+        if (title) title.textContent = "";
+    }
+
+    function showStatus(message) {
+        const { panel, status } = getElements();
+        if (panel) panel.hidden = false;
+        if (!status) return;
+        status.hidden = !message;
+        status.textContent = message || "";
+    }
+
+    async function getLayerMetadata() {
+        if (!metadataPromise) {
+            metadataPromise = fetch(`${PIB_VALUE_ADDED_PIE_CHART_CONFIG.serviceUrl}?f=json`)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return response.json();
+                });
+        }
+        return metadataPromise;
+    }
+
+    async function getRendererPalette() {
+        return ECONOMIC_SECTOR_COLOR_PALETTE;
+    }
+
+    async function syncRendererLegend() {
+        const layer = getActiveMapLayer?.();
+        const metadata = await getLayerMetadata().catch(() => null);
+        const infos = layer?.renderer?.classBreakInfos || metadata?.drawingInfo?.renderer?.classBreakInfos || [];
+        if (!infos.length || typeof window.updateLegend !== "function") return;
+
+        const labels = infos.map(info => String(info.label || "").trim()).filter(Boolean);
+        const colors = infos.map(info => colorToCss(info?.symbol?.color || info?.symbol?.outline?.color) || "#999");
+        const codes = infos.map((info, index) => `${info.minValue ?? index}-${info.maxValue ?? index}`);
+        window.__chartLegendOrder = [];
+        window.updateLegend(labels, colors, codes, {
+            field: layer?.renderer?.field || PIB_VALUE_ADDED_PIE_CHART_CONFIG.rendererField || "pvagregadokmcop",
+            baseWhere: String(layer?.definitionExpression || getWhereBase?.() || "1=1").trim() || "1=1",
+            layers: [layer].filter(Boolean),
+            preserveOrder: true
+        });
+    }
+
+    function domainLabel(fieldInfo, value) {
+        const codedValues = fieldInfo?.domain?.codedValues || [];
+        const hit = codedValues.find(item => String(item.code) === String(value));
+        return String(hit?.name ?? value ?? "").trim();
+    }
+
+    function selectOptionLabel(selectId, value) {
+        const option = document.querySelector(`#${selectId} option[value="${CSS.escape(String(value ?? ""))}"]`);
+        return option?.textContent?.trim() || "";
+    }
+
+    function selectedDepartmentLabel() {
+        const deptCode = getCurrentDepartmentId?.();
+        return selectOptionLabel("departamentos", deptCode) || "";
+    }
+
+    function departmentTitle() {
+        const department = selectedDepartmentLabel();
+        return department
+            ? `Sectores económicos del departamento de ${department}`
+            : PIB_VALUE_ADDED_PIE_CHART_CONFIG.title;
+    }
+
+    function departmentLabel(fieldInfo, attrs) {
+        const rawValue = attrs?.dpnombre;
+        const metadataLabel = domainLabel(fieldInfo, rawValue);
+        const code = String(rawValue ?? "").trim();
+        if (/^\d{2}$/.test(code)) {
+            return selectOptionLabel("departamentos", code) || metadataLabel || selectedDepartmentLabel();
+        }
+        return metadataLabel
+            || selectedDepartmentLabel()
+            || selectOptionLabel("departamentos", String(attrs?.mpcodigo || "").slice(0, 2));
+    }
+
+    async function buildReadableTitle(attrs) {
+        const metadata = await getLayerMetadata().catch(() => null);
+        const fields = metadata?.fields || [];
+        const fieldInfo = name => fields.find(field => String(field.name).toLowerCase() === String(name).toLowerCase());
+        const municipality = domainLabel(fieldInfo("mpnombre"), attrs.mpnombre);
+        const department = departmentLabel(fieldInfo("dpnombre"), attrs);
+
+        if (!municipality) return PIB_VALUE_ADDED_PIE_CHART_CONFIG.title;
+        return department
+            ? `Sectores económicos del Municipio de ${municipality}, ${department}`
+            : `Sectores económicos del Municipio de ${municipality}`;
+    }
+
+    async function queryMunicipalityRows(municipalityCode) {
+        const fields = [
+            PIB_VALUE_ADDED_PIE_CHART_CONFIG.filterField,
+            ...PIB_VALUE_ADDED_PIE_CHART_CONFIG.titleFields,
+            ...PIB_VALUE_ADDED_PIE_CHART_CONFIG.fields.map(item => item.field)
+        ];
+        const params = new URLSearchParams({
+            f: "json",
+            where: `${PIB_VALUE_ADDED_PIE_CHART_CONFIG.filterField} = '${String(municipalityCode).replace(/'/g, "''")}'`,
+            outFields: [...new Set(fields)].join(","),
+            returnGeometry: "false",
+            returnDomainNames: "true",
+            resultRecordCount: "1"
+        });
+
+        const response = await fetch(`${PIB_VALUE_ADDED_PIE_CHART_CONFIG.serviceUrl}/query?${params.toString()}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const json = await response.json();
+        if (json.error) throw new Error(json.error.message || "Error consultando sectores económicos");
+        return json.features || [];
+    }
+
+    function formatPercent(value) {
+        const n = Number(value);
+        return `${Number.isFinite(n) ? n.toFixed(1) : "0.0"}%`;
+    }
+
+    function normalizeSectorLabel(label) {
+        const text = String(label ?? "").toLowerCase();
+        if (text.includes("primaria")) return "primarias";
+        if (text.includes("secundaria")) return "secundarias";
+        if (text.includes("terciaria")) return "terciarias";
+        return text;
+    }
+
+    function highlightSector(sector) {
+        if (!pieInstance) return;
+        const requested = normalizeSectorLabel(sector);
+        if (requested === activeSectorKey) return;
+        const labels = pieInstance.data?.labels || [];
+        const activeIndex = labels.findIndex(label => normalizeSectorLabel(label) === requested);
+        const dataset = pieInstance.data?.datasets?.[0];
+        if (!dataset) return;
+        activeSectorKey = activeIndex >= 0 ? requested : "";
+        pieInstance.stop?.();
+        dataset.borderColor = labels.map((_, index) => index === activeIndex ? "#064e3b" : "#ffffff");
+        dataset.borderWidth = labels.map((_, index) => index === activeIndex ? 1.5 : 1);
+        dataset.offset = labels.map(() => 0);
+        pieInstance.update("none");
+    }
+
+    function clearSectorHighlight() {
+        if (!pieInstance || !activeSectorKey) return;
+        const labels = pieInstance.data?.labels || [];
+        const dataset = pieInstance.data?.datasets?.[0];
+        if (!dataset) return;
+        activeSectorKey = "";
+        pieInstance.stop?.();
+        dataset.borderColor = labels.map(() => "#ffffff");
+        dataset.borderWidth = labels.map(() => 1);
+        dataset.offset = labels.map(() => 0);
+        pieInstance.update("none");
+    }
+
+    function bindPreciseSectorPointer(canvas) {
+        if (!canvas || !pieInstance) return;
+        if (canvas.__pibSectorPointerHandlers) {
+            canvas.removeEventListener("pointermove", canvas.__pibSectorPointerHandlers.pointermove);
+            canvas.removeEventListener("pointerleave", canvas.__pibSectorPointerHandlers.pointerleave);
+        }
+
+        const pointermove = event => {
+            const elements = pieInstance?.getElementsAtEventForMode?.(
+                event,
+                "nearest",
+                { intersect: true },
+                false
+            ) || [];
+            const index = elements[0]?.index;
+            if (index == null) {
+                clearSectorHighlight();
+                onSectorLeave?.();
+                return;
+            }
+            const sector = pieInstance.data?.labels?.[index];
+            highlightSector(sector);
+            onSectorHover?.(sector);
+        };
+        const pointerleave = () => {
+            clearSectorHighlight();
+            onSectorLeave?.();
+        };
+
+        canvas.__pibSectorPointerHandlers = { pointermove, pointerleave };
+        canvas.addEventListener("pointermove", pointermove);
+        canvas.addEventListener("pointerleave", pointerleave);
+    }
+
+    async function highlightMunicipalityOnMap() {
+        const layer = getActiveMapLayer?.();
+        const view = getView?.();
+        const where = getWhereBase?.();
+        if (!layer || !view || !where) return;
+
+        try {
+            clearMunicipalityHighlight();
+            const query = layer.createQuery();
+            query.where = where;
+            query.outFields = [layer.objectIdField || "OBJECTID"];
+            query.returnGeometry = false;
+            const result = await layer.queryFeatures(query);
+            const objectIds = (result?.features || [])
+                .map(feature => feature.attributes?.[layer.objectIdField || "OBJECTID"])
+                .filter(value => value != null);
+            if (!objectIds.length) return;
+
+            const layerView = await view.whenLayerView(layer);
+            const handle = layerView.highlight(objectIds);
+            setHighlightHandle?.(handle);
+        } catch (error) {
+            console.warn("No se pudo iluminar el municipio para valor agregado:", error);
+        }
+    }
+
+    async function renderForSelectedMunicipality() {
+        const municipalityCode = getCurrentMunicipalityId?.();
+        const { panel, title, canvas, mainTitle, mainCanvas } = getElements();
+        if (!panel || !canvas) return;
+
+        if (!municipalityCode || getTerritoryLevel?.() !== "MUNI") {
+            destroyPieChart();
+            panel.hidden = false;
+            canvas.style.display = "none";
+            if (mainTitle) mainTitle.textContent = "";
+            if (mainCanvas) mainCanvas.style.display = "none";
+            if (title) {
+                title.textContent = getTerritoryLevel?.() === "DEPTO"
+                    ? departmentTitle()
+                    : PIB_VALUE_ADDED_PIE_CHART_CONFIG.title;
+            }
+            await syncRendererLegend();
+            showStatus("Seleccione un municipio para ver la información.");
+            return;
+        }
+
+        panel.hidden = false;
+        showStatus("Cargando sectores económicos...");
+
+        try {
+            const features = await queryMunicipalityRows(municipalityCode);
+            const attrs = features[0]?.attributes || null;
+            if (!attrs) {
+            destroyPieChart();
+            canvas.style.display = "none";
+            if (mainTitle) mainTitle.textContent = "";
+            if (mainCanvas) mainCanvas.style.display = "none";
+            if (title) title.textContent = PIB_VALUE_ADDED_PIE_CHART_CONFIG.title;
+            showStatus("No hay datos de sectores económicos para el municipio seleccionado.");
+            return;
+        }
+
+            const labels = PIB_VALUE_ADDED_PIE_CHART_CONFIG.fields.map(item => item.label);
+            const values = PIB_VALUE_ADDED_PIE_CHART_CONFIG.fields.map(item => toNum(attrs[item.field]) ?? 0);
+            if (!values.some(value => Number.isFinite(value) && value > 0)) {
+                destroyPieChart();
+                canvas.style.display = "none";
+                if (mainTitle) mainTitle.textContent = "";
+                if (mainCanvas) mainCanvas.style.display = "none";
+                if (title) title.textContent = await buildReadableTitle(attrs);
+                showStatus("Los sectores económicos no tienen valores disponibles para este municipio.");
+                return;
+            }
+
+            destroyPieChart();
+            if (title) title.textContent = await buildReadableTitle(attrs);
+            showStatus("");
+            if (mainTitle) mainTitle.textContent = "";
+            if (mainCanvas) mainCanvas.style.display = "none";
+
+            canvas.style.display = "block";
+            canvas.style.width = "100%";
+            canvas.style.height = "295px";
+            canvas.height = 295;
+
+            pieInstance = renderPieChart({
+                canvas,
+                labels,
+                values,
+                title: PIB_VALUE_ADDED_PIE_CHART_CONFIG.title,
+                type: "pie",
+                colors: await getRendererPalette(),
+                formatValue: formatPercent,
+                hoverOffset: 0
+            });
+            bindPreciseSectorPointer(canvas);
+            await syncRendererLegend();
+        } catch (error) {
+            destroyPieChart();
+            canvas.style.display = "none";
+            showStatus(`No se pudo cargar sectores económicos: ${String(error?.message || error)}`);
+        }
+    }
+
+    async function handleMapClick(event) {
+        return;
+    }
+
+    return {
+        destroyPieChart,
+        clearSectorHighlight,
+        clearMunicipalityHighlight,
+        handleMapClick,
+        highlightMunicipalityOnMap,
+        highlightSector,
+        hidePieChart,
+        renderForSelectedMunicipality
+    };
+}

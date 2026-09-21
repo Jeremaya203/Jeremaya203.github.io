@@ -1,43 +1,43 @@
-import { createMunicipiosLayer, createDepartamentosLayer, hideAllLimitesLayers } from "./map/layer-loader.js?v=depto-area-km2-20260716";
+import { createMunicipalitiesLayer, createDepartmentsLayer, hideAllBoundaryLayers } from "./map/layer-loader.js?v=depto-area-km2-20260716";
 import { initOverview } from "./map/overview.js";
 import { initScaleBar } from "./map/scale.js";
-import { initMapControls } from "./map/map.controls.js";
+import { initMapControls } from "./map/map-controls.js";
 import { initModuleDropdown, initDropdownDescargables } from "./ui/dropdowns.js";
-import { updateMapViewBadge, setLegendLayerTitle } from "./ui/ui.helpers.js";
+import { updateMapViewBadge, setLegendLayerTitle } from "./ui/ui-helpers.js";
 import { AppState } from "./app/state.js";
 import { clearLayers as clearMapLayers } from "./map/layers.js";
-import { createMainMap } from "./map/map.core.js";
-import { LIMITES_CONFIG } from "./config.js?v=depto-area-km2-20260716";
-import { sqlEquals, sqlStartsWith, sqlContains, normalizeCode, getMunicipioDisplayName, getDepartamentoDisplayName } from "./utils.js?v=depto-area-km2-20260716";
-import { actualizarLeyendaLimitesMunicipales } from "./legend.js?v=municipal-coastal-group-20260618";
-import { actualizarLeyendaDepartamentosLimites, toggleLegend } from "./ui/legend.ui.js";
-import { actualizarResumen } from "./ui/summary.js";
-import { cargarDiccionarioDesdeApi } from "./data/territorial.js";
+import { createMainMap } from "./map/map-core.js";
+import { BOUNDARIES_CONFIG } from "./config.js?v=code-quality-20260727";
+import { sqlEquals, sqlStartsWith, sqlContains, normalizeCode, getMunicipalityDisplayName, getDepartmentDisplayName } from "./utils.js?v=code-quality-20260727";
+import { updateMunicipalBoundaryLegend } from "./legend.js?v=code-quality-20260727";
+import { updateDepartmentBoundaryLegend, toggleLegend } from "./ui/legend-ui.js";
+import { updateSummary } from "./ui/summary.js";
+import { loadTerritorialCatalog } from "../shared/territorial-catalog.js";
 import { renderChart as renderChartMunicipios } from "./chart/municipios/chart.js?v=municipal-axis-labels-20260716d";
 import { renderStatusDoughnut, destroyStatusDoughnut, resolveStatusLabel, resolveStatusCode, getLlidsForStatusLabel, getLlidsForStatusCode, getStatusCodeForLabel, filterFeaturesByStatusLabel, filterFeaturesByStatusCode } from "./chart/municipios/status-doughnut.js?v=other-status-20260722";
-import { renderChart as renderChartDepartamentos, highlightDeptoChartBar, highlightDeptoChartByCode, clearDeptoChartHighlight } from "./chart/departamentales/chart.js?v=depto-area-km2-20260716";
-import { destroyChart, resetChartLayout } from "./chart/chart.core.js";
-import { getColorForLinea } from "./colors.js";
+import { renderChart as renderChartDepartamentos, highlightDepartmentChartBar, highlightDepartmentChartByCode, clearDepartmentChartHighlight } from "./chart/departamentales/chart.js?v=depto-area-km2-20260716";
+import { destroyChart, resetChartLayout } from "./chart/chart-core.js";
+import { getBoundaryLineColor } from "./colors.js";
 import { fetchTimelineData, renderTimeline } from "./data/timeline.js?v=municipal-performance-20260618";
 import { setupMunicipalSync, clearMunicipalSync } from "./interactions/municipal-sync.js?v=border-legend-unified-20260722";
-import { initializeInternationalBorder, showInternationalBorder, clearInternationalBorder } from "./map/international-border.js?v=border-legend-unified-20260722";
+import { initializeInternationalBorder, showInternationalBorder, clearInternationalBorder } from "./map/international-border.js?v=border-country-labels-v2-20260813";
 
 // ── Estado de tab ──
-var currentLimitesTab = "DEPARTAMENTOS";
+var currentBoundariesTab = "DEPARTAMENTOS";
 var layerGlobal = null;
 var whereBase = "";
-var municipioActual = "";
-var diccionarioMunicipios = {};
-var diccionarioDepartamentos = {};
-var todosMunicipios = [];
+var currentMunicipalityId = "";
+var municipalityNames = {};
+var departmentNames = {};
+var municipalities = [];
 var map = null;
 var view = null;
-var deptoActual = "";
-var filtroNivel = "";
+var currentDepartmentId = "";
+var territoryLevel = "";
 var highlightHandle = null;
 var extentInicial = null;
 var renderCycleId = 0;
-var deptoLayerRef = null;
+var departmentLayerRef = null;
 var auxiliaryTerritoryLayer = null;
 
 window.__legendState = { activeCodes: new Set(), field: null, layer: null, baseWhere: "1=1" };
@@ -51,24 +51,24 @@ function isRenderCycleCurrent(cycleId) {
     return cycleId === renderCycleId;
 }
 
-function syncDeptoFromSelect() {
+function syncDepartmentFromSelect() {
     var ds = document.getElementById("departamentos");
     if (!ds) return;
     var val = ds.value;
     if (val && val !== "0" && val !== "COL") {
-        deptoActual = val;
+        currentDepartmentId = val;
         return;
     }
-    if (!deptoActual || deptoActual === "0" || deptoActual === "COL") {
-        deptoActual = "";
+    if (!currentDepartmentId || currentDepartmentId === "0" || currentDepartmentId === "COL") {
+        currentDepartmentId = "";
     }
 }
 
-function escapeLimitesSql(value) {
+function escapeBoundarySql(value) {
     return String(value ?? "").replace(/'/g, "''");
 }
 
-function getLimitesServiceRoot(layerUrl) {
+function getBoundaryServiceRoot(layerUrl) {
     return String(layerUrl || "").replace(/\/\d+\/?$/, "");
 }
 
@@ -78,12 +78,12 @@ var BOGOTA_DEPARTMENT_CODE = "11";
 var URIBIA_MUNICIPALITY_CODE = "44847";
 var COASTAL_CARTOGRAPHIC_WHERE = "(LLIdentif = '1111111111' OR LLJerarqui = 5)";
 
-function getDepartmentCodeForMunicipalContext(deptoCode, municipioCode) {
-    var depto = String(deptoCode || "").trim();
-    if (depto && depto !== "0" && depto !== "COL") return depto.slice(0, 2);
+function getDepartmentCodeForMunicipalContext(departmentCode, municipalityCode) {
+    var department = String(departmentCode || "").trim();
+    if (department && department !== "0" && department !== "COL") return department.slice(0, 2);
 
-    var municipio = String(municipioCode || "").trim();
-    return municipio.length >= 2 ? municipio.slice(0, 2) : "";
+    var normalizedMunicipalityCode = String(municipalityCode || "").trim();
+    return normalizedMunicipalityCode.length >= 2 ? normalizedMunicipalityCode.slice(0, 2) : "";
 }
 
 function isLaGuajiraMunicipalContext(deptoCode, municipioCode) {
@@ -228,8 +228,8 @@ function filterLaGuajiraMunicipalCoastalFeatures(coastalFeatures, municipioGeome
     if (!coastalFeatures?.length || !municipioGeometry) return coastalFeatures || [];
 
     var tolerance = 0.00001;
-    var municipioCenter = getAveragePoint(getGeometryPoints(municipioGeometry));
-    if (!municipioCenter) return coastalFeatures || [];
+    var municipalityCenter = getAveragePoint(getGeometryPoints(municipioGeometry));
+    if (!municipalityCenter) return coastalFeatures || [];
 
     var normalEndpoints = [];
     (normalFeatures || []).forEach(function(feature) {
@@ -254,7 +254,7 @@ function filterLaGuajiraMunicipalCoastalFeatures(coastalFeatures, municipioGeome
         if (!touchedEndpoints.length) return true;
 
         return touchedEndpoints.some(function(endpoint) {
-            return pointDirectionScore(endpoint, municipioCenter, coastalCenter) >= 0;
+            return pointDirectionScore(endpoint, municipalityCenter, coastalCenter) >= 0;
         });
     });
 
@@ -325,18 +325,18 @@ async function buildMunicipalCoastalWhere(FeatureLayerCtor, config, baseWhere, d
     }
 
     try {
-        var serviceRoot = getLimitesServiceRoot(config.url);
+        var serviceRoot = getBoundaryServiceRoot(config.url);
         if (!serviceRoot) return "";
 
-        var isMunicipio = !!municipioCode;
+        var isMunicipality = !!municipioCode;
         var territoryLayer = new FeatureLayerCtor({
-            url: serviceRoot + "/" + (isMunicipio ? "1" : "2"),
-            outFields: [isMunicipio ? "MpCodigo" : "DeCodigo"],
+            url: serviceRoot + "/" + (isMunicipality ? "1" : "2"),
+            outFields: [isMunicipality ? "MpCodigo" : "DeCodigo"],
             popupEnabled: false
         });
 
-        var codeField = isMunicipio ? "MpCodigo" : "DeCodigo";
-        var territoryWhere = codeField + " = '" + escapeLimitesSql(code) + "'";
+        var codeField = isMunicipality ? "MpCodigo" : "DeCodigo";
+        var territoryWhere = codeField + " = '" + escapeBoundarySql(code) + "'";
         var territoryResult = await territoryLayer.queryFeatures({
             where: territoryWhere,
             outFields: [codeField],
@@ -455,17 +455,17 @@ function showAuxiliaryTerritoryLayer(FeatureLayerCtor, config, type, code) {
         return null;
     }
 
-    var serviceRoot = getLimitesServiceRoot(config.url);
+    var serviceRoot = getBoundaryServiceRoot(config.url);
     if (!serviceRoot) {
         return null;
     }
 
-    var isMunicipio = type === "municipio";
-    var layerId = isMunicipio ? "1" : "2";
-    var field = isMunicipio ? "MpCodigo" : "DeCodigo";
-    var definitionExpression = field + " = '" + escapeLimitesSql(code) + "'";
-    var fillColor = isMunicipio ? [0, 0, 0, 0] : [76, 0, 115, 0.08];
-    var outlineColor = isMunicipio ? [214, 112, 54, 0.75] : [76, 0, 115, 0.65];
+    var isMunicipality = type === "municipio";
+    var layerId = isMunicipality ? "1" : "2";
+    var field = isMunicipality ? "MpCodigo" : "DeCodigo";
+    var definitionExpression = field + " = '" + escapeBoundarySql(code) + "'";
+    var fillColor = isMunicipality ? [0, 0, 0, 0] : [76, 0, 115, 0.08];
+    var outlineColor = isMunicipality ? [214, 112, 54, 0.75] : [76, 0, 115, 0.65];
 
     auxiliaryTerritoryLayer = new FeatureLayerCtor({
         url: serviceRoot + "/" + layerId,
@@ -495,11 +495,11 @@ function showAuxiliaryTerritoryLayer(FeatureLayerCtor, config, type, code) {
     return auxiliaryTerritoryLayer;
 }
 
-function limpiarVistaLimites(options) {
+function clearBoundaryView(options) {
     options = options || {};
     var cycleId = nextRenderCycle();
 
-    hideAllLimitesLayers();
+    hideAllBoundaryLayers();
     clearAuxiliaryTerritoryLayer();
     clearInternationalBorder();
     if (window._departamentosLayerGlobal) window._departamentosLayerGlobal.visible = false;
@@ -554,35 +554,35 @@ function limpiarVistaLimites(options) {
 function setLayerGlobal(layer) { layerGlobal = layer; }
 function setWhereBase(value) { whereBase = value; }
 
-function getLimitesTerritoryContext() {
-    if (municipioActual) {
-        var municipio = todosMunicipios.find(function(m) { return String(m.codigo) === String(municipioActual); });
-        var municipioNombre = getMunicipioDisplayName(municipio || municipioActual, diccionarioMunicipios);
-        var deptoCodigo = (municipio && municipio.depto) || String(municipioActual).substring(0, 2);
-        var deptoNombre = getDepartamentoDisplayName(deptoCodigo, diccionarioDepartamentos);
-        return municipioNombre + ", " + deptoNombre;
+function getBoundaryTerritoryContext() {
+    if (currentMunicipalityId) {
+        var municipality = municipalities.find(function(m) { return String(m.codigo) === String(currentMunicipalityId); });
+        var municipalityName = getMunicipalityDisplayName(municipality || currentMunicipalityId, municipalityNames);
+        var departmentCode = (municipality && municipality.depto) || String(currentMunicipalityId).substring(0, 2);
+        var departmentName = getDepartmentDisplayName(departmentCode, departmentNames);
+        return municipalityName + ", " + departmentName;
     }
-    if (deptoActual && deptoActual !== "0" && deptoActual !== "COL") {
-        return diccionarioDepartamentos[deptoActual] || deptoActual;
+    if (currentDepartmentId && currentDepartmentId !== "0" && currentDepartmentId !== "COL") {
+        return departmentNames[currentDepartmentId] || currentDepartmentId;
     }
     return "Colombia";
 }
 
-function buildLimitesChartTitle(baseTitle) {
+function buildBoundaryChartTitle(baseTitle) {
     var cleanBase = String(baseTitle || "Distribuci\u00f3n")
         .replace(/\s+en\s+.+,\s*.+$/i, "")
         .replace(/\s+en\s+Colombia$/i, "")
         .trim();
-    return cleanBase + " en " + getLimitesTerritoryContext();
+    return cleanBase + " en " + getBoundaryTerritoryContext();
 }
 
 function buildStatusChartTitle() {
     var baseTitle = "Estado de las líneas limítrofes";
-    if (municipioActual) {
-        return baseTitle + " en " + getLimitesTerritoryContext();
+    if (currentMunicipalityId) {
+        return baseTitle + " en " + getBoundaryTerritoryContext();
     }
-    if (deptoActual && deptoActual !== "0" && deptoActual !== "COL") {
-        return baseTitle + " en " + (diccionarioDepartamentos[deptoActual] || deptoActual);
+    if (currentDepartmentId && currentDepartmentId !== "0" && currentDepartmentId !== "COL") {
+        return baseTitle + " en " + (departmentNames[currentDepartmentId] || currentDepartmentId);
     }
     return baseTitle;
 }
@@ -602,7 +602,7 @@ function setMunicipalServiceMessage(visible, error) {
 
         var chartTitle = document.getElementById("chartTitle");
         if (chartTitle) {
-            chartTitle.textContent = buildLimitesChartTitle("L\u00edneas lim\u00edtrofes");
+            chartTitle.textContent = buildBoundaryChartTitle("L\u00edneas lim\u00edtrofes");
         }
 
         var timeline = document.getElementById("timelineDiv");
@@ -691,7 +691,7 @@ function restoreMunicipalStatusFilter() {
     setLegendActiveCodes(municipalActiveCodes);
 
     renderChartMunicipios(savedChartLayer, savedChartConfig, savedChartWhere, {
-        title: buildLimitesChartTitle(savedChartConfig.title || "L\u00edmites municipales"),
+        title: buildBoundaryChartTitle(savedChartConfig.title || "L\u00edmites municipales"),
         prefilteredFeatures: savedChartFeatures
     });
     renderStatusDoughnut(savedChartFeatures, { title: buildStatusChartTitle() });
@@ -776,7 +776,7 @@ function applyMunicipalStatusFilter(statusLabel, llids, statusCode) {
     }
 
     renderChartMunicipios(savedChartLayer, savedChartConfig, savedChartWhere, {
-        title: buildLimitesChartTitle(savedChartConfig.title || "L\u00edmites municipales"),
+        title: buildBoundaryChartTitle(savedChartConfig.title || "L\u00edmites municipales"),
         prefilteredFeatures: filteredFeatures
     });
     renderStatusDoughnut(savedChartFeatures, {
@@ -837,7 +837,7 @@ function handleLegendClick(e) {
             if (cv) { cv.style.height = "60px"; cv.style.maxHeight = "60px"; cv.style.minHeight = "60px"; }
         } else {
             renderChartMunicipios(savedChartLayer, savedChartConfig, savedChartWhere, {
-                title: buildLimitesChartTitle(savedChartConfig.title || "L\u00edmites municipales"),
+                title: buildBoundaryChartTitle(savedChartConfig.title || "L\u00edmites municipales"),
                 prefilteredFeatures: filteredFeatures
             });
             renderStatusDoughnut(filteredFeatures, { title: buildStatusChartTitle() });
@@ -868,7 +868,7 @@ function setupChartSync() {
     chartSyncAttached = true;
 
     document.addEventListener("limites:status-select", function(e) {
-        if (currentLimitesTab !== "MUNICIPIOS") return;
+        if (currentBoundariesTab !== "MUNICIPIOS") return;
         var detail = e.detail || {};
         var statusCode = detail.selectedStatusCode || detail.statusCode || "";
         var statusLabel = detail.selectedStatusLabel || detail.statusLabel || "";
@@ -880,79 +880,79 @@ function setupChartSync() {
     });
 
     document.addEventListener("limites:status-restore", function() {
-        if (currentLimitesTab !== "MUNICIPIOS") return;
+        if (currentBoundariesTab !== "MUNICIPIOS") return;
         restoreMunicipalStatusFilter();
     });
 }
 
 // ── Sincronizacion grafico departamental → mapa (solo mapa, grafico nacional intacto) ──
-var deptoChartSyncAttached = false;
-function buildDeptoSelectionWhere(deCodigo) {
-    var config = LIMITES_CONFIG.DEPARTAMENTOS;
+var departmentChartSyncAttached = false;
+function buildDepartmentSelectionWhere(departmentCode) {
+    var config = BOUNDARIES_CONFIG.DEPARTAMENTOS;
     var filterField = config.filterField || "dpcodigo";
-    var codeWhere = filterField + " = '" + String(deCodigo).replace(/'/g, "''") + "'";
+    var codeWhere = filterField + " = '" + String(departmentCode).replace(/'/g, "''") + "'";
     var fixedWhere = config.fixedWhere || "1=1";
     return fixedWhere && fixedWhere !== "1=1"
         ? "(" + fixedWhere + ") AND (" + codeWhere + ")"
         : codeWhere;
 }
 
-function refreshMunicipioSelectForDepto(deCodigo) {
-    var municipioSelect = document.getElementById("municipios");
-    if (!municipioSelect) return;
+function refreshMunicipalitySelectForDepartment(departmentCode) {
+    var municipalitySelect = document.getElementById("municipios");
+    if (!municipalitySelect) return;
 
-    municipioSelect.innerHTML = '<option value="">Seleccione un municipio</option>';
-    var filtrados = todosMunicipios || [];
-    if (deCodigo && deCodigo !== "0" && deCodigo !== "COL") {
-        filtrados = filtrados.filter(function(municipio) {
-            return String(municipio && municipio.depto) === String(deCodigo);
+    municipalitySelect.innerHTML = '<option value="">Seleccione un municipio</option>';
+    var filtrados = municipalities || [];
+    if (departmentCode && departmentCode !== "0" && departmentCode !== "COL") {
+        filtrados = filtrados.filter(function(municipality) {
+            return String(municipality && municipality.depto) === String(departmentCode);
         });
     }
 
-    filtrados.forEach(function(municipio) {
+    filtrados.forEach(function(municipality) {
         var option = document.createElement("option");
-        option.value = municipio.codigo;
-        option.textContent = getMunicipioDisplayName(municipio, diccionarioMunicipios);
-        municipioSelect.appendChild(option);
+        option.value = municipality.codigo;
+        option.textContent = getMunicipalityDisplayName(municipality, municipalityNames);
+        municipalitySelect.appendChild(option);
     });
-    municipioSelect.value = "";
+    municipalitySelect.value = "";
 }
 
-function applyDeptoSelection(deCodigo, options) {
+function applyDepartmentSelection(departmentCode, options) {
     options = options || {};
-    var layer = deptoLayerRef || layerGlobal || window._departamentosLayerGlobal;
-    if (!layer || !deCodigo) return;
+    var layer = departmentLayerRef || layerGlobal || window._departamentosLayerGlobal;
+    if (!layer || !departmentCode) return;
 
-    var mapFilter = buildDeptoSelectionWhere(deCodigo);
+    var mapFilter = buildDepartmentSelectionWhere(departmentCode);
     layer.visible = true;
     layer.definitionExpression = mapFilter;
     setWhereBase(mapFilter);
 
-    deptoActual = String(deCodigo);
-    filtroNivel = "DEPTO";
-    municipioActual = "";
+    currentDepartmentId = String(departmentCode);
+    territoryLevel = "DEPTO";
+    currentMunicipalityId = "";
 
     if (options.updateSelect !== false) {
-        var deptoSelect = document.getElementById("departamentos");
-        if (deptoSelect && deptoSelect.value !== String(deCodigo)) {
-            deptoSelect.value = String(deCodigo);
+        var departmentSelect = document.getElementById("departamentos");
+        if (departmentSelect && departmentSelect.value !== String(departmentCode)) {
+            departmentSelect.value = String(departmentCode);
         }
-        refreshMunicipioSelectForDepto(String(deCodigo));
-        actualizarResumen({
-            municipioActual: municipioActual,
-            deptoActual: deptoActual,
-            filtroNivel: filtroNivel,
-            diccionarioMunicipios: diccionarioMunicipios,
-            diccionarioDepartamentos: diccionarioDepartamentos
+        refreshMunicipalitySelectForDepartment(String(departmentCode));
+        updateSummary({
+            currentMunicipalityId: currentMunicipalityId,
+            currentDepartmentId: currentDepartmentId,
+            territoryLevel: territoryLevel,
+            municipalityNames: municipalityNames,
+            departmentNames: departmentNames
         });
     }
 
     if (view && view.popup) view.popup.close();
 
     if (typeof options.index === "number") {
-        highlightDeptoChartBar(options.index);
+        highlightDepartmentChartBar(options.index);
     } else {
-        highlightDeptoChartByCode(deCodigo);
+        highlightDepartmentChartByCode(departmentCode);
     }
 
     if (options.zoom !== false) {
@@ -964,35 +964,35 @@ function applyDeptoSelection(deCodigo, options) {
     }
 }
 
-function setupDeptoChartSync() {
-    if (deptoChartSyncAttached) return;
-    deptoChartSyncAttached = true;
+function setupDepartmentChartSync() {
+    if (departmentChartSyncAttached) return;
+    departmentChartSyncAttached = true;
 
     document.addEventListener("limites:depto-chart-select", function(e) {
-        if (currentLimitesTab !== "DEPARTAMENTOS") return;
+        if (currentBoundariesTab !== "DEPARTAMENTOS") return;
 
-        var layer = deptoLayerRef || layerGlobal || window._departamentosLayerGlobal;
+        var layer = departmentLayerRef || layerGlobal || window._departamentosLayerGlobal;
         if (!layer) return;
 
-        var deCodigo = e.detail && e.detail.deCodigo;
+        var departmentCode = e.detail && e.detail.departmentCode;
         var index = e.detail && e.detail.index;
-        if (!deCodigo) return;
+        if (!departmentCode) return;
 
-        applyDeptoSelection(deCodigo, { index: index, updateSelect: true, zoom: true });
+        applyDepartmentSelection(departmentCode, { index: index, updateSelect: true, zoom: true });
     });
 
     document.addEventListener("limites:depto-chart-restore", function() {
-        if (currentLimitesTab !== "DEPARTAMENTOS") return;
+        if (currentBoundariesTab !== "DEPARTAMENTOS") return;
 
-        var layer = deptoLayerRef || layerGlobal || window._departamentosLayerGlobal;
+        var layer = departmentLayerRef || layerGlobal || window._departamentosLayerGlobal;
         if (!layer) return;
 
-        var restoreWhere = LIMITES_CONFIG.DEPARTAMENTOS.fixedWhere || "1=1";
-        deptoActual = "";
-        filtroNivel = "";
+        var restoreWhere = BOUNDARIES_CONFIG.DEPARTAMENTOS.fixedWhere || "1=1";
+        currentDepartmentId = "";
+        territoryLevel = "";
         whereBase = restoreWhere;
-        var deptoSelect = document.getElementById("departamentos");
-        if (deptoSelect) deptoSelect.value = "COL";
+        var departmentSelect = document.getElementById("departamentos");
+        if (departmentSelect) departmentSelect.value = "COL";
 
         layer.definitionExpression = restoreWhere;
         layer.visible = true;
@@ -1005,8 +1005,8 @@ function setupDeptoChartSync() {
             }
         }).catch(function() {});
 
-        clearDeptoChartHighlight();
-        cargarLimitesDepartamentos();
+        clearDepartmentChartHighlight();
+        loadDepartmentBoundaries();
     });
 }
 
@@ -1054,71 +1054,71 @@ window.require([
     view = mainMap.view;
     initializeInternationalBorder({ map: map, GraphicsLayer: GraphicsLayer, Graphic: Graphic });
 
-    function handleLimitesTabChange(target) {
+    function handleBoundaryTabChange(target) {
         var ds = document.getElementById("departamentos");
         var ms = document.getElementById("municipios");
 
         if (target === "Municipios") {
-            currentLimitesTab = "MUNICIPIOS";
-            syncDeptoFromSelect();
-            municipioActual = "";
-            filtroNivel = deptoActual ? "DEPTO" : "";
+            currentBoundariesTab = "MUNICIPIOS";
+            syncDepartmentFromSelect();
+            currentMunicipalityId = "";
+            territoryLevel = currentDepartmentId ? "DEPTO" : "";
             whereBase = "";
 
-            if (deptoActual && deptoActual !== "0" && deptoActual !== "COL") {
-                if (ds) ds.value = deptoActual;
+            if (currentDepartmentId && currentDepartmentId !== "0" && currentDepartmentId !== "COL") {
+                if (ds) ds.value = currentDepartmentId;
                 if (ms) {
                     ms.innerHTML = '<option value="">Seleccione un municipio</option>';
-                    renderizarMunicipios(deptoActual);
+                    renderMunicipalities(currentDepartmentId);
                     ms.value = "";
                 }
             } else {
-                deptoActual = "";
+                currentDepartmentId = "";
                 if (ds) ds.value = "0";
                 if (ms) {
                     ms.innerHTML = '<option value="">Seleccione un municipio</option>';
-                    renderizarMunicipios();
+                    renderMunicipalities();
                     ms.value = "";
                 }
             }
 
-            limpiarVistaLimites({
+            clearBoundaryView({
                 chartTitle: "L\u00edmites Municipales",
-                legendMessage: deptoActual
+                legendMessage: currentDepartmentId
                     ? '<p class="oot-js-limites-main-1">Cargando l\u00edmites municipales\u2026</p>'
                     : '<p class="oot-js-limites-main-1">Seleccione un departamento o municipio para visualizar los l\u00edmites municipales</p>'
             });
 
-            actualizarResumen({
-                municipioActual: municipioActual,
-                deptoActual: deptoActual,
-                filtroNivel: filtroNivel,
-                diccionarioMunicipios: diccionarioMunicipios,
-                diccionarioDepartamentos: diccionarioDepartamentos
+            updateSummary({
+                currentMunicipalityId: currentMunicipalityId,
+                currentDepartmentId: currentDepartmentId,
+                territoryLevel: territoryLevel,
+                municipalityNames: municipalityNames,
+                departmentNames: departmentNames
             });
             updateMapViewBadge("L\u00edmites Municipales");
-            cargarLimitesMunicipales();
+            loadMunicipalBoundaries();
             return;
         }
 
         if (target === "Departamentos") {
-            currentLimitesTab = "DEPARTAMENTOS";
-            municipioActual = "";
-            filtroNivel = deptoActual ? "DEPTO" : "";
+            currentBoundariesTab = "DEPARTAMENTOS";
+            currentMunicipalityId = "";
+            territoryLevel = currentDepartmentId ? "DEPTO" : "";
 
-            limpiarVistaLimites({
+            clearBoundaryView({
                 chartTitle: "L\u00edmites Departamentales",
                 legendMessage: '<p class="oot-js-limites-main-1">Cargando l\u00edmites departamentales\u2026</p>'
             });
 
-            var sdDepto = document.getElementById("summaryDiv");
-            if (sdDepto) sdDepto.textContent = "Cargando informaci\u00f3n\u2026";
+            var departmentStandardDeviation = document.getElementById("summaryDiv");
+            if (departmentStandardDeviation) departmentStandardDeviation.textContent = "Cargando informaci\u00f3n\u2026";
             updateMapViewBadge("L\u00edmites Departamentales");
-            cargarLimitesDepartamentos();
+            loadDepartmentBoundaries();
         }
     }
 
-    initAllDropdowns(handleLimitesTabChange);
+    initAllDropdowns(handleBoundaryTabChange);
     initDropdownDescargables();
     initMapControls({ view: view, Home: Home, Locate: Locate, BasemapGallery: BasemapGallery });
     initScaleBar({ view: view, ScaleBar: ScaleBar });
@@ -1135,12 +1135,12 @@ window.require([
 
     initOverview({ EsriMap: EsriMap, MapView: MapView, GraphicsLayer: GraphicsLayer, Graphic: Graphic, Extent: Extent, basemap: mainMap.basemap });
 
-    function reiniciarConsultaActual() {
+    function restartCurrentQuery() {
         var hasSelectedTerritory = Boolean(
-            municipioActual || (filtroNivel === "DEPTO" && deptoActual && deptoActual !== "0" && deptoActual !== "COL")
+            currentMunicipalityId || (territoryLevel === "DEPTO" && currentDepartmentId && currentDepartmentId !== "0" && currentDepartmentId !== "COL")
         );
 
-        if (currentLimitesTab === "MUNICIPIOS" && !hasSelectedTerritory) return;
+        if (currentBoundariesTab === "MUNICIPIOS" && !hasSelectedTerritory) return;
 
         if (highlightHandle) {
             try { highlightHandle.remove(); } catch (e) {}
@@ -1148,69 +1148,69 @@ window.require([
         }
         if (view && view.popup) view.popup.close();
 
-        clearDeptoChartHighlight();
+        clearDepartmentChartHighlight();
 
-        if (currentLimitesTab === "DEPARTAMENTOS") {
-            limpiarVistaLimites({
+        if (currentBoundariesTab === "DEPARTAMENTOS") {
+            clearBoundaryView({
                 chartTitle: "L\u00edmites Departamentales",
                 legendMessage: '<p class="oot-js-limites-main-1">Cargando l\u00edmites departamentales\u2026</p>'
             });
 
-            var sdDepto = document.getElementById("summaryDiv");
-            if (sdDepto) sdDepto.textContent = "Cargando informaci\u00f3n\u2026";
+            var departmentStandardDeviation = document.getElementById("summaryDiv");
+            if (departmentStandardDeviation) departmentStandardDeviation.textContent = "Cargando informaci\u00f3n\u2026";
             updateMapViewBadge("L\u00edmites Departamentales");
-            cargarLimitesDepartamentos();
+            loadDepartmentBoundaries();
             return;
         }
 
-        syncDeptoFromSelect();
-        municipioActual = municipioActual || "";
-        filtroNivel = municipioActual ? "MUNI" : (deptoActual ? "DEPTO" : filtroNivel);
+        syncDepartmentFromSelect();
+        currentMunicipalityId = currentMunicipalityId || "";
+        territoryLevel = currentMunicipalityId ? "MUNI" : (currentDepartmentId ? "DEPTO" : territoryLevel);
 
-        limpiarVistaLimites({
+        clearBoundaryView({
             chartTitle: "L\u00edmites Municipales",
-            legendMessage: deptoActual
+            legendMessage: currentDepartmentId
                 ? '<p class="oot-js-limites-main-1">Cargando l\u00edmites municipales\u2026</p>'
                 : '<p class="oot-js-limites-main-1">Seleccione un departamento o municipio para visualizar los l\u00edmites municipales</p>'
         });
 
-        actualizarResumen({
-            municipioActual: municipioActual,
-            deptoActual: deptoActual,
-            filtroNivel: filtroNivel,
-            diccionarioMunicipios: diccionarioMunicipios,
-            diccionarioDepartamentos: diccionarioDepartamentos
+        updateSummary({
+            currentMunicipalityId: currentMunicipalityId,
+            currentDepartmentId: currentDepartmentId,
+            territoryLevel: territoryLevel,
+            municipalityNames: municipalityNames,
+            departmentNames: departmentNames
         });
         updateMapViewBadge("L\u00edmites Municipales");
-        cargarLimitesMunicipales();
+        loadMunicipalBoundaries();
     }
 
     init();
 
     function init() {
-        var btnRefreshBusqueda = document.getElementById("btnRefreshBusqueda");
-        if (btnRefreshBusqueda) btnRefreshBusqueda.onclick = limpiarBusqueda;
+        var refreshSearchButton = document.getElementById("refreshSearchButton");
+        if (refreshSearchButton) refreshSearchButton.onclick = clearSearch;
 
-        var btnReiniciarConsulta = document.getElementById("btnReiniciarConsulta");
-        if (btnReiniciarConsulta) {
-            btnReiniciarConsulta.onclick = function() {
-                reiniciarConsultaActual();
+        var restartQueryButton = document.getElementById("restartQueryButton");
+        if (restartQueryButton) {
+            restartQueryButton.onclick = function() {
+                restartCurrentQuery();
             };
         }
 
         document.getElementById("legendToggle").onclick = toggleLegend;
         setupChartSync();
-        setupDeptoChartSync();
-        cargarMunicipios();
-        cargarLimitesActivos();
+        setupDepartmentChartSync();
+        loadMunicipalities();
+        loadActiveBoundaries();
     }
 
-    function limpiarBusqueda() {
+    function clearSearch() {
         var sd = document.getElementById("departamentos");
         var sm = document.getElementById("municipios");
         if (sd) sd.value = "0";
-        if (sm) { sm.innerHTML = '<option value="">Seleccione un municipio</option>'; renderizarMunicipios(); sm.value = ""; }
-        municipioActual = ""; deptoActual = ""; filtroNivel = ""; whereBase = "";
+        if (sm) { sm.innerHTML = '<option value="">Seleccione un municipio</option>'; renderMunicipalities(); sm.value = ""; }
+        currentMunicipalityId = ""; currentDepartmentId = ""; territoryLevel = ""; whereBase = "";
         selectedStatusLabel = "";
         if (highlightHandle) { try { highlightHandle.remove(); } catch(e) {} highlightHandle = null; }
         destroyChart();
@@ -1225,20 +1225,20 @@ window.require([
         if (lt) lt.textContent = "Leyenda";
         if (lc) { lc.innerHTML = '<p class="oot-js-limites-main-1">Seleccione un departamento o municipio</p>'; lc.classList.remove("collapsed"); }
         window.__legendState = { allCodes: [], activeCodes: new Set(), field: null, layer: null };
-        actualizarResumen({ municipioActual: "", deptoActual: "", filtroNivel: "", diccionarioMunicipios: diccionarioMunicipios, diccionarioDepartamentos: diccionarioDepartamentos });
+        updateSummary({ currentMunicipalityId: "", currentDepartmentId: "", territoryLevel: "", municipalityNames: municipalityNames, departmentNames: departmentNames });
         if (view && view.popup) view.popup.close();
         if (extentInicial) view.goTo(extentInicial, { duration: 400, easing: "ease-in-out" });
         else view.goTo({ center: [-74.3, 4.6], zoom: 6 }, { duration: 400, easing: "ease-in-out" });
-        setTimeout(function() { cargarLimitesActivos(); }, 350);
+        setTimeout(function() { loadActiveBoundaries(); }, 350);
     }
 
     // ── cargarMunicipios ──
-    function cargarMunicipios() {
+    function loadMunicipalities() {
         var ds = document.getElementById("departamentos");
         if (!ds) return;
         ds.innerHTML = '<option value="">Cargando...</option>';
-        cargarDiccionarioDesdeApi().then(function(data) {
-            if (!data || !Array.isArray(data.todosMunicipios) || data.todosMunicipios.length === 0) {
+        loadTerritorialCatalog().then(function(data) {
+            if (!data || !Array.isArray(data.municipalities) || data.municipalities.length === 0) {
                 ds.innerHTML = '<option value="">Error al cargar</option>';
                 var selectMuniError = document.getElementById("municipios");
                 if (selectMuniError) {
@@ -1246,22 +1246,22 @@ window.require([
                 }
                 return;
             }
-            diccionarioMunicipios = data.diccionarioMunicipios;
-            diccionarioDepartamentos = data.diccionarioDepartamentos;
-            todosMunicipios = data.todosMunicipios;
-            poblarSelectDepartamentos(ds);
-            renderizarMunicipios();
+            municipalityNames = data.municipalityNames;
+            departmentNames = data.departmentNames;
+            municipalities = data.municipalities;
+            populateDepartmentSelect(ds);
+            renderMunicipalities();
         }).catch(function() { ds.innerHTML = '<option value="">Error al cargar</option>'; });
 
         ds.onchange = function() {
             var cod = this.value;
             if (cod === "0") return;
             if (cod === "COL") {
-                var colombiaWhere = LIMITES_CONFIG.DEPARTAMENTOS.fixedWhere || "1=1";
+                var colombiaWhere = BOUNDARIES_CONFIG.DEPARTAMENTOS.fixedWhere || "1=1";
                 nextRenderCycle();
-                deptoActual = ""; filtroNivel = ""; municipioActual = ""; whereBase = colombiaWhere;
+                currentDepartmentId = ""; territoryLevel = ""; currentMunicipalityId = ""; whereBase = colombiaWhere;
                 selectedStatusLabel = "";
-                var colombiaLayer = deptoLayerRef || layerGlobal || window._departamentosLayerGlobal;
+                var colombiaLayer = departmentLayerRef || layerGlobal || window._departamentosLayerGlobal;
                 if (colombiaLayer) {
                     colombiaLayer.definitionExpression = colombiaWhere;
                     colombiaLayer.visible = true;
@@ -1273,54 +1273,54 @@ window.require([
                 clearInternationalBorder();
                 var td2 = document.getElementById("timelineDiv"); if (td2) { td2.style.display = "none"; td2.innerHTML = ""; }
                 var ld2 = document.getElementById("lineDescriptionsDiv"); if (ld2) { ld2.style.display = "none"; ld2.innerHTML = ""; }
-                var ms2 = document.getElementById("municipios"); if (ms2) { ms2.innerHTML = '<option value="">Seleccione un municipio</option>'; renderizarMunicipios(); ms2.value = ""; }
+                var ms2 = document.getElementById("municipios"); if (ms2) { ms2.innerHTML = '<option value="">Seleccione un municipio</option>'; renderMunicipalities(); ms2.value = ""; }
                 var lt2 = document.getElementById("legendTitle"); var lc2 = document.getElementById("legendContent");
                 if (lt2) lt2.textContent = "Leyenda"; if (lc2) { lc2.innerHTML = '<p class="oot-js-limites-main-1">Seleccione un departamento o municipio</p>'; lc2.classList.remove("collapsed"); }
                 window.__legendState = { allCodes: [], activeCodes: new Set(), field: null, layer: null };
-                actualizarResumen({ municipioActual: "", deptoActual: "", filtroNivel: "", diccionarioMunicipios: diccionarioMunicipios, diccionarioDepartamentos: diccionarioDepartamentos });
+                updateSummary({ currentMunicipalityId: "", currentDepartmentId: "", territoryLevel: "", municipalityNames: municipalityNames, departmentNames: departmentNames });
                 if (view && view.popup) view.popup.close();
                 if (extentInicial) view.goTo(extentInicial, { duration: 400, easing: "ease-in-out" });
                 else view.goTo({ center: [-74.3, 4.6], zoom: 6 }, { duration: 400, easing: "ease-in-out" });
                 ds.value = "COL";
-                setTimeout(function() { cargarLimitesActivos(); }, 350);
+                setTimeout(function() { loadActiveBoundaries(); }, 350);
                 return;
             }
-            deptoActual = cod; filtroNivel = "DEPTO"; municipioActual = "";
+            currentDepartmentId = cod; territoryLevel = "DEPTO"; currentMunicipalityId = "";
             document.getElementById("municipios").innerHTML = '<option value="">Seleccione un municipio</option>';
-            renderizarMunicipios(cod);
-            actualizarResumen({ municipioActual: municipioActual, deptoActual: deptoActual, filtroNivel: filtroNivel, diccionarioMunicipios: diccionarioMunicipios, diccionarioDepartamentos: diccionarioDepartamentos });
-            cargarLimitesActivos();
+            renderMunicipalities(cod);
+            updateSummary({ currentMunicipalityId: currentMunicipalityId, currentDepartmentId: currentDepartmentId, territoryLevel: territoryLevel, municipalityNames: municipalityNames, departmentNames: departmentNames });
+            loadActiveBoundaries();
         };
 
         var ms = document.getElementById("municipios");
         if (ms) {
             ms.onchange = function() {
                 var cod = this.value;
-                municipioActual = cod || ""; filtroNivel = municipioActual ? "MUNI" : (deptoActual ? "DEPTO" : "");
-                if (!municipioActual) { limpiarBusqueda(); return; }
+                currentMunicipalityId = cod || ""; territoryLevel = currentMunicipalityId ? "MUNI" : (currentDepartmentId ? "DEPTO" : "");
+                if (!currentMunicipalityId) { clearSearch(); return; }
                 whereBase = sqlContains("mpcodigo", cod);
-                actualizarResumen({ municipioActual: municipioActual, deptoActual: deptoActual, filtroNivel: filtroNivel, diccionarioMunicipios: diccionarioMunicipios, diccionarioDepartamentos: diccionarioDepartamentos });
-                cargarLimitesActivos();
+                updateSummary({ currentMunicipalityId: currentMunicipalityId, currentDepartmentId: currentDepartmentId, territoryLevel: territoryLevel, municipalityNames: municipalityNames, departmentNames: departmentNames });
+                loadActiveBoundaries();
             };
         }
     }
 
-    function obtenerCodigosDepartamentoDisponibles() {
-        var codigos = Array.from(new Set(
-            (todosMunicipios || [])
-                .map(function(municipio) { return String(municipio && municipio.depto || "").trim(); })
+    function getAvailableDepartmentCodes() {
+        var codes = Array.from(new Set(
+            (municipalities || [])
+                .map(function(municipality) { return String(municipality && municipality.depto || "").trim(); })
                 .filter(function(codigo) { return /^\d{2}$/.test(codigo); })
         ));
 
-        return codigos.sort(function(a, b) {
-            var nombreA = getDepartamentoDisplayName(a, diccionarioDepartamentos);
-            var nombreB = getDepartamentoDisplayName(b, diccionarioDepartamentos);
-            return String(nombreA).localeCompare(String(nombreB), "es", { sensitivity: "base" })
+        return codes.sort(function(a, b) {
+            var firstDepartmentName = getDepartmentDisplayName(a, departmentNames);
+            var secondDepartmentName = getDepartmentDisplayName(b, departmentNames);
+            return String(firstDepartmentName).localeCompare(String(secondDepartmentName), "es", { sensitivity: "base" })
                 || String(a).localeCompare(String(b), "es", { sensitivity: "base" });
         });
     }
 
-    function poblarSelectDepartamentos(select) {
+    function populateDepartmentSelect(select) {
         if (!select) return;
 
         select.innerHTML = '<option value="0">Seleccione un departamento</option>';
@@ -1329,38 +1329,38 @@ window.require([
         optionColombia.textContent = "Colombia";
         select.appendChild(optionColombia);
 
-        obtenerCodigosDepartamentoDisponibles().forEach(function(cod) {
+        getAvailableDepartmentCodes().forEach(function(cod) {
             var option = document.createElement("option");
             option.value = cod;
-            option.textContent = getDepartamentoDisplayName(cod, diccionarioDepartamentos);
+            option.textContent = getDepartmentDisplayName(cod, departmentNames);
             select.appendChild(option);
         });
     }
 
-    function renderizarMunicipios(deptoFiltro) {
+    function renderMunicipalities(deptoFiltro) {
         var select = document.getElementById("municipios"); if (!select) return;
         select.innerHTML = '<option value="">Seleccione un municipio</option>';
-        var filtrados = todosMunicipios;
-        if (deptoFiltro && deptoFiltro !== "0" && deptoFiltro !== "COL") filtrados = todosMunicipios.filter(function(m) { return m.depto === deptoFiltro; });
-        filtrados.forEach(function(m) { var o = document.createElement("option"); o.value = m.codigo; o.textContent = getMunicipioDisplayName(m, diccionarioMunicipios); select.appendChild(o); });
+        var filtrados = municipalities;
+        if (deptoFiltro && deptoFiltro !== "0" && deptoFiltro !== "COL") filtrados = municipalities.filter(function(m) { return m.depto === deptoFiltro; });
+        filtrados.forEach(function(m) { var o = document.createElement("option"); o.value = m.codigo; o.textContent = getMunicipalityDisplayName(m, municipalityNames); select.appendChild(o); });
     }
 
-    function cargarLimitesActivos() {
-        if (currentLimitesTab === "DEPARTAMENTOS") return cargarLimitesDepartamentos();
-        return cargarLimitesMunicipales();
+    function loadActiveBoundaries() {
+        if (currentBoundariesTab === "DEPARTAMENTOS") return loadDepartmentBoundaries();
+        return loadMunicipalBoundaries();
     }
 
-    async function cargarLimitesMunicipales() {
+    async function loadMunicipalBoundaries() {
         var cycleId = nextRenderCycle();
 
-        hideAllLimitesLayers();
+        hideAllBoundaryLayers();
         clearAuxiliaryTerritoryLayer();
         clearInternationalBorder();
         if (window._departamentosLayerGlobal) window._departamentosLayerGlobal.visible = false;
         if (layerGlobal) layerGlobal.visible = false;
         setMunicipalServiceMessage(false);
 
-        if (!deptoActual && !municipioActual) {
+        if (!currentDepartmentId && !currentMunicipalityId) {
             if (!isRenderCycleCurrent(cycleId)) return;
             selectedStatusLabel = "";
             destroyChart();
@@ -1384,21 +1384,21 @@ window.require([
             return;
         }
 
-        createMunicipiosLayer({
-            FeatureLayer: FeatureLayer, map: map, LIMITES_CONFIG: LIMITES_CONFIG, deptoActual: deptoActual, municipioActual: municipioActual,
+        createMunicipalitiesLayer({
+            FeatureLayer: FeatureLayer, map: map, boundariesConfig: BOUNDARIES_CONFIG, currentDepartmentId: currentDepartmentId, currentMunicipalityId: currentMunicipalityId,
             onReady: async function(args) {
                 if (!isRenderCycleCurrent(cycleId)) return;
 
                 var layer = args.layer, config = args.config, whereClause = args.whereClause, reused = args.reused;
-                var enhancedWhereClause = await buildEnhancedMunicipalWhere(FeatureLayer, config, whereClause, deptoActual, municipioActual);
+                var enhancedWhereClause = await buildEnhancedMunicipalWhere(FeatureLayer, config, whereClause, currentDepartmentId, currentMunicipalityId);
                 if (!isRenderCycleCurrent(cycleId)) return;
 
-                hideAllLimitesLayers();
+                hideAllBoundaryLayers();
                 showAuxiliaryTerritoryLayer(
                     FeatureLayer,
                     config,
-                    municipioActual ? "municipio" : "departamento",
-                    municipioActual || deptoActual
+                    currentMunicipalityId ? "municipio" : "departamento",
+                    currentMunicipalityId || currentDepartmentId
                 );
                 layer.definitionExpression = enhancedWhereClause;
                 setLayerGlobal(layer);
@@ -1428,9 +1428,9 @@ window.require([
 
                 var renderer = new UniqueValueRenderer({ field: "LLIdentif", defaultSymbol: { type: "simple-line", color: [180,180,180,255], width: 2.5 } });
                 features.forEach(function(f) {
-                    var llIdentif = f.attributes["LLIdentif"], llNombre = f.attributes["LLNombre"] || llIdentif || "Sin nombre";
-                    var c = getColorForLinea(llIdentif);
-                    renderer.addUniqueValueInfo({ value: String(llIdentif || ""), label: String(llNombre), symbol: { type: "simple-line", color: [c[0],c[1],c[2],255], width: 3 } });
+                    var llIdentif = f.attributes["LLIdentif"], boundaryName = f.attributes["LLNombre"] || llIdentif || "Sin nombre";
+                    var c = getBoundaryLineColor(llIdentif);
+                    renderer.addUniqueValueInfo({ value: String(llIdentif || ""), label: String(boundaryName), symbol: { type: "simple-line", color: [c[0],c[1],c[2],255], width: 3 } });
                 });
                 layer.renderer = renderer;
 
@@ -1440,10 +1440,10 @@ window.require([
                 }
 
                 layer.visible = true;
-                actualizarLeyendaLimitesMunicipales(features);
+                updateMunicipalBoundaryLegend(features);
                 await showInternationalBorder({
-                    municipalityCode: municipioActual,
-                    departmentCode: deptoActual
+                    municipalityCode: currentMunicipalityId,
+                    departmentCode: currentDepartmentId
                 });
                 if (!isRenderCycleCurrent(cycleId)) {
                     clearInternationalBorder();
@@ -1466,7 +1466,7 @@ window.require([
                 selectedStatusLabel = "";
 
                 renderChartMunicipios(layer, config, enhancedWhereClause, {
-                    title: buildLimitesChartTitle(config.title || "L\u00edmites municipales"),
+                    title: buildBoundaryChartTitle(config.title || "L\u00edmites municipales"),
                     prefilteredFeatures: features
                 });
                 setupMunicipalSync({
@@ -1478,14 +1478,14 @@ window.require([
                 renderStatusDoughnut(features, { title: buildStatusChartTitle() });
                 if (!isRenderCycleCurrent(cycleId)) return;
 
-                if (municipioActual) {
+                if (currentMunicipalityId) {
                     var llIdentifs = features.map(function(f) { return f.attributes["LLIdentif"]; }).filter(Boolean);
-                    var municipioNombre = getLimitesTerritoryContext();
+                    var municipalityName = getBoundaryTerritoryContext();
                     var timelineData = await fetchTimelineData(llIdentifs, { lineNames: lineNameLookup });
                     if (!isRenderCycleCurrent(cycleId)) return;
                     var timelineDiv = document.getElementById("timelineDiv");
                     if (timelineDiv) {
-                        renderTimeline(timelineData, municipioNombre, function(evento) {
+                        renderTimeline(timelineData, municipalityName, function(evento) {
                             var llidWhere = "LLIdentif = '" + String(evento.llid).replace(/'/g, "''") + "'";
                             layer.queryExtent({ where: llidWhere }).then(function(res) {
                                 if (res && res.extent && view) view.goTo(res.extent.expand(1.5), { duration: 400, easing: "ease-in-out" });
@@ -1499,12 +1499,12 @@ window.require([
                     if (lineDescriptionsEmpty) { lineDescriptionsEmpty.style.display = "none"; lineDescriptionsEmpty.innerHTML = ""; }
                 }
 
-                actualizarResumen({
-                    municipioActual: municipioActual,
-                    deptoActual: deptoActual,
-                    filtroNivel: filtroNivel,
-                    diccionarioMunicipios: diccionarioMunicipios,
-                    diccionarioDepartamentos: diccionarioDepartamentos
+                updateSummary({
+                    currentMunicipalityId: currentMunicipalityId,
+                    currentDepartmentId: currentDepartmentId,
+                    territoryLevel: territoryLevel,
+                    municipalityNames: municipalityNames,
+                    departmentNames: departmentNames
                 });
 
             },
@@ -1515,34 +1515,34 @@ window.require([
         });
     }
 
-    async function cargarLimitesDepartamentos() {
+    async function loadDepartmentBoundaries() {
         // Cada carga invalida callbacks anteriores para que una selección vieja
         // no vuelva a filtrar el mapa después de regresar a Colombia.
         var cycleId = nextRenderCycle();
-        var selectedDepto = (deptoActual && deptoActual !== "0" && deptoActual !== "COL")
-            ? String(deptoActual)
+        var selectedDepartment = (currentDepartmentId && currentDepartmentId !== "0" && currentDepartmentId !== "COL")
+            ? String(currentDepartmentId)
             : "";
 
-        hideAllLimitesLayers();
+        hideAllBoundaryLayers();
         clearAuxiliaryTerritoryLayer();
         clearInternationalBorder();
         destroyStatusDoughnut();
         setMunicipalServiceMessage(false);
         if (layerGlobal) layerGlobal.visible = false;
 
-        createDepartamentosLayer({
-            FeatureLayer: FeatureLayer, map: map, LIMITES_CONFIG: LIMITES_CONFIG, deptoActual: "",
+        createDepartmentsLayer({
+            FeatureLayer: FeatureLayer, map: map, boundariesConfig: BOUNDARIES_CONFIG, currentDepartmentId: "",
             onReady: async function(args) {
                 if (!isRenderCycleCurrent(cycleId)) return;
 
                 var layer = args.layer, config = args.config, whereClause = args.whereClause, reused = args.reused;
-                hideAllLimitesLayers();
+                hideAllBoundaryLayers();
                 layer.visible = true;
                 setLayerGlobal(layer);
                 setWhereBase(whereClause);
                 setLegendLayerTitle(config.title);
                 updateMapViewBadge("L\u00edmites departamentales");
-                deptoLayerRef = layer;
+                departmentLayerRef = layer;
                 window._departamentosLayerGlobal = layer;
 
                 var lc = document.getElementById("legendContent");
@@ -1555,32 +1555,32 @@ window.require([
                 if (!isRenderCycleCurrent(cycleId)) return;
 
                 var extentResult = results[0];
-                if (selectedDepto) {
-                    applyDeptoSelection(selectedDepto, { updateSelect: false, zoom: true });
+                if (selectedDepartment) {
+                    applyDepartmentSelection(selectedDepartment, { updateSelect: false, zoom: true });
                 } else if (extentResult && extentResult.extent && shouldZoom(extentResult.extent)) {
                     await zoomToExtent(extentResult.extent, reused ? 0 : 400);
-                    clearDeptoChartHighlight();
+                    clearDepartmentChartHighlight();
                 }
 
-                actualizarLeyendaDepartamentosLimites();
+                updateDepartmentBoundaryLegend();
 
                 var legendContentEl = document.getElementById("legendContent");
                 if (legendContentEl && !legendContentEl._deptoLegendBound) {
                     legendContentEl._deptoLegendBound = true;
                     legendContentEl.addEventListener("click", function(e) {
                         var btn = e.target.closest(".limites-depto-legend-toggle");
-                        if (!btn || !deptoLayerRef) return;
+                        if (!btn || !departmentLayerRef) return;
                         var isActive = btn.getAttribute("aria-pressed") === "true";
                         if (isActive) {
                             btn.setAttribute("aria-pressed", "false");
                             btn.classList.add("inactive");
                             btn.style.opacity = "0.42";
-                            deptoLayerRef.visible = false;
+                            departmentLayerRef.visible = false;
                         } else {
                             btn.setAttribute("aria-pressed", "true");
                             btn.classList.remove("inactive");
                             btn.style.opacity = "1";
-                            deptoLayerRef.visible = true;
+                            departmentLayerRef.visible = true;
                         }
                     });
                 }
@@ -1588,17 +1588,19 @@ window.require([
         });
     }
 
-    window.cargarLimitesMunicipales = cargarLimitesMunicipales;
-    window.cargarLimitesDepartamentos = cargarLimitesDepartamentos;
+    window.loadMunicipalBoundaries = loadMunicipalBoundaries;
+    window.loadDepartmentBoundaries = loadDepartmentBoundaries;
+    window.cargarLimitesMunicipales = loadMunicipalBoundaries;
+    window.cargarLimitesDepartamentos = loadDepartmentBoundaries;
 
     document.getElementById("btnVerTodo").onclick = function() {
         if (!layerGlobal) return;
         layerGlobal.definitionExpression = whereBase;
-        if (typeof actualizarLeyendaLimitesMunicipales === "function") actualizarLeyendaLimitesMunicipales();
+        if (typeof updateMunicipalBoundaryLegend === "function") updateMunicipalBoundaryLegend();
         layerGlobal.queryExtent({ where: whereBase }).then(function(res) { if (res.extent) view.goTo(res.extent.expand(1.2), { duration: 400, easing: "ease-in-out" }); });
     };
 
-    function markLimitesDropdownActive(target) {
+    function markBoundaryDropdownActive(target) {
         var dropdown = document.getElementById("limitesDropdown");
         if (!dropdown) return;
         dropdown.querySelectorAll(".dropdown-item").forEach(function(item) {
@@ -1606,57 +1608,57 @@ window.require([
         });
     }
 
-    function resolveLimitesTabFromUrl(ctx) {
+    function resolveBoundaryTabFromUrl(ctx) {
         var tab = String((ctx && ctx.tab) || "");
         if (tab === "Departamentos" || tab === "Municipios") return tab;
         if (ctx && ctx.municipioId) return "Municipios";
         return null;
     }
 
-    function activateLimitesTabFromUrl(tabUrl) {
+    function activateBoundaryTabFromUrl(tabUrl) {
         var tab = String(tabUrl || "");
         if (tab !== "Departamentos" && tab !== "Municipios") return;
-        markLimitesDropdownActive(tab);
-        handleLimitesTabChange(tab);
+        markBoundaryDropdownActive(tab);
+        handleBoundaryTabChange(tab);
     }
 
     var urlContext = globalThis.ModuleNavigation && globalThis.ModuleNavigation.parseComponentUrlParams
         ? globalThis.ModuleNavigation.parseComponentUrlParams()
-        : { tab: null, municipioId: "", deptoId: "" };
+        : { tab: null, municipioId: "", departmentId: "" };
 
     if (globalThis.ModuleNavigation && globalThis.ModuleNavigation.applyTerritorySelectionFromUrl) {
         globalThis.ModuleNavigation.applyTerritorySelectionFromUrl({
             onTab: function(tabUrl) {
-                if (!urlContext.municipioId && !urlContext.deptoId) {
-                    activateLimitesTabFromUrl(tabUrl);
+                if (!urlContext.municipioId && !urlContext.departmentId) {
+                    activateBoundaryTabFromUrl(tabUrl);
                 }
             },
             prepareTerritorySelection: function(ctx) {
-                var municipioId = ctx.municipioId;
-                var deptoId = ctx.deptoId;
-                var selectDepto = ctx.selectDepto;
+                var municipalityId = ctx.municipioId;
+                var departmentId = ctx.departmentId;
+                var departmentSelect = ctx.departmentSelect;
                 var selectMuni = ctx.selectMuni;
-                var tabToApply = resolveLimitesTabFromUrl({
+                var tabToApply = resolveBoundaryTabFromUrl({
                     tab: ctx.tab || urlContext.tab,
-                    municipioId: municipioId,
-                    deptoId: deptoId
+                    municipioId: municipalityId,
+                    departmentId: departmentId
                 });
 
-                if (deptoId && deptoId !== "0" && deptoId !== "COL") {
-                    deptoActual = deptoId;
+                if (departmentId && departmentId !== "0" && departmentId !== "COL") {
+                    currentDepartmentId = departmentId;
                 }
 
                 if (tabToApply) {
-                    activateLimitesTabFromUrl(tabToApply);
+                    activateBoundaryTabFromUrl(tabToApply);
                 }
 
-                if (deptoId && selectDepto && selectDepto.querySelector('option[value="' + deptoId + '"]')) {
-                    renderizarMunicipios(deptoId);
+                if (departmentId && departmentSelect && departmentSelect.querySelector('option[value="' + departmentId + '"]')) {
+                    renderMunicipalities(departmentId);
                     return;
                 }
 
-                if (municipioId && selectMuni && !selectMuni.querySelector('option[value="' + municipioId + '"]')) {
-                    renderizarMunicipios(deptoId || undefined);
+                if (municipalityId && selectMuni && !selectMuni.querySelector('option[value="' + municipalityId + '"]')) {
+                    renderMunicipalities(departmentId || undefined);
                 }
             }
         });
@@ -1671,7 +1673,7 @@ window.require([
                 document.getElementById("departamentos"),
                 document.getElementById("municipios")
             )
-            : { municipioId: "", deptoId: "" };
+            : { municipioId: "", departmentId: "" };
 
         window.location.href = globalThis.ModuleNavigation && globalThis.ModuleNavigation.mergeHrefWithTerritory
             ? globalThis.ModuleNavigation.mergeHrefWithTerritory(href, territory)

@@ -26,7 +26,7 @@ export function pctOfTotal(value, total) {
 export function ensureNonEmptyOrExit(ctx, rows) {
     if (rows && rows.length) return true;
     ctx.destroyChart();
-    ctx.actualizarLeyenda?.([], []);
+    ctx.updateLegend?.([], []);
     return false;
     }
 
@@ -77,7 +77,7 @@ export function escapeSqlString(s){
 }
 
 
-export function ordenarMeses(meses) {
+export function sortMonths(meses) {
     const ordenMeses = {
         'Enero': 1, 'Febrero': 2, 'Marzo': 3, 'Abril': 4,
         'Mayo': 5, 'Junio': 6, 'Julio': 7, 'Agosto': 8,
@@ -109,27 +109,27 @@ export function normKey(x){
     return String(x ?? "").trim().toLowerCase();
 }
 
-export function getDepartamentoDisplayName(codigoDepto, diccionarioDepartamentos = {}) {
-    const codigo = String(codigoDepto ?? "").trim();
-    if (codigo === "00") return "Área en litigio";
-    return diccionarioDepartamentos[codigo] || codigo;
+export function getDepartmentDisplayName(departmentCode, departmentNames = {}) {
+    const code = String(departmentCode ?? "").trim();
+    if (code === "00") return "Área en litigio";
+    return departmentNames[code] || code;
 }
 
-export function getMunicipioDisplayName(municipio, diccionarioMunicipios = {}) {
-    const codigo = String(municipio?.codigo ?? municipio ?? "").trim();
-    const nombre = String(municipio?.nombre ?? diccionarioMunicipios[codigo] ?? "").trim();
+export function getMunicipalityDisplayName(municipality, municipalityNames = {}) {
+    const code = String(municipality?.codigo ?? municipality ?? "").trim();
+    const name = String(municipality?.nombre ?? municipalityNames[code] ?? "").trim();
 
-    if (codigo === "00000" || nombre === "00000") {
+    if (code === "00000" || name === "00000") {
         return "Área en litigio";
     }
 
-    return nombre || codigo;
+    return name || code;
 }
 
-export function sortDepartamentoCodesAlphabetically(codigos, diccionarioDepartamentos = {}) {
-    return [...new Set(codigos)].sort((codigoA, codigoB) =>
-        getDepartamentoDisplayName(codigoA, diccionarioDepartamentos).localeCompare(
-            getDepartamentoDisplayName(codigoB, diccionarioDepartamentos),
+export function sortDepartmentCodesAlphabetically(municipalityCodes, departmentNames = {}) {
+    return [...new Set(municipalityCodes)].sort((codigoA, codigoB) =>
+        getDepartmentDisplayName(codigoA, departmentNames).localeCompare(
+            getDepartmentDisplayName(codigoB, departmentNames),
             "es",
             { sensitivity: "base" }
         )

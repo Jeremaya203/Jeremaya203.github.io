@@ -456,3 +456,14 @@ select option { background: var(--oot-s2); color: var(--oot-tx); }
 }
 
 .mob-backdrop { display: none; }
+
+/* ===========================================================================
+   CORRECIONES COLOMBIA OT 2.0 — documento recibido 2026-08-31.
+   Tamano y color por elemento tal como los especifica el documento. Van al
+   final del archivo a proposito: sobrescriben la regla original sin tocarla,
+   asi el cambio es trazable y reversible de un vistazo.
+   =========================================================================== */
+
+.rule-desc         { font-size: 10px; color: #7a9cc0; }
+.tab               { font-size: 12px; color: #FFFFFF; }
+.result-card-label { font-size: 10px; color: #c1dfff; }

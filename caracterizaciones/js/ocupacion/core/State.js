@@ -3,9 +3,9 @@ export class State {
         this._data = {
             currentMode: "CONTEXTO_HISTORICO",
             currentSubLayerIndex: 0,
-            municipioActual: "",
-            deptoActual: "",
-            filtroNivel: "",
+            currentMunicipalityId: "",
+            currentDepartmentId: "",
+            territoryLevel: "",
             whereBase: "",
             activeSelection: null,
             activeFilter: "",

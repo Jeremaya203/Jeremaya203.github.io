@@ -54,7 +54,7 @@ function hashString(str) {
  * @param {string} llIdentif - Valor del campo LLIdentif
  * @returns {number[]} Array [r, g, b]
  */
-export function getColorForLinea(llIdentif) {
+export function getBoundaryLineColor(llIdentif) {
     if (llIdentif === null || llIdentif === undefined || llIdentif === "") {
         return [180, 180, 180]; // gris para valores nulos
     }
@@ -70,7 +70,7 @@ export function getColorForLinea(llIdentif) {
  * Retorna el color en formato CSS `rgb(r, g, b)`.
  */
 export function getColorCSS(llIdentif) {
-    const [r, g, b] = getColorForLinea(llIdentif);
+    const [r, g, b] = getBoundaryLineColor(llIdentif);
     return `rgb(${r},${g},${b})`;
 }
 
@@ -78,6 +78,6 @@ export function getColorCSS(llIdentif) {
  * Retorna el color en formato hex.
  */
 export function getColorHex(llIdentif) {
-    const [r, g, b] = getColorForLinea(llIdentif);
+    const [r, g, b] = getBoundaryLineColor(llIdentif);
     return '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
 }

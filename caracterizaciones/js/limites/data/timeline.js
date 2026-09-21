@@ -5,7 +5,7 @@
  */
 
 const TIMELINE_URL = "https://sigi.igac.gov.co/geografia/rest/services/ordenamiento/componentelineaslimitrofes/MapServer/3";
-const LINEAS_URL = "https://mapas2.igac.gov.co/server/rest/services/limites/limites/MapServer/0";
+const BOUNDARY_LINES_URL = "https://mapas2.igac.gov.co/server/rest/services/limites/limites/MapServer/0";
 
 const TIMELINE_FIELDS = [
     "llid",
@@ -92,7 +92,7 @@ async function fetchLineNames(llIdentifs) {
     const where = buildWhereIn("LLIdentif", llIdentifs);
     if (!where) return {};
 
-    const url = `${LINEAS_URL}/query?where=${encodeURIComponent(where)}` +
+    const url = `${BOUNDARY_LINES_URL}/query?where=${encodeURIComponent(where)}` +
         "&outFields=LLIdentif,LLNombre&returnGeometry=false&f=json";
 
     try {
@@ -210,298 +210,6 @@ function eventHtml(event, year) {
     `;
 }
 
-function installTimelineStyles() {
-    if (document.getElementById("limitesTimelineChevronStyles")) return;
-
-    const style = document.createElement("style");
-    style.id = "limitesTimelineChevronStyles";
-    style.textContent = `
-        #timelineDiv {
-            margin-top: 14px;
-            font-family: "Outfit", sans-serif;
-        }
-
-        #timelineDiv .timeline-container {
-            width: 100%;
-            box-sizing: border-box;
-            background: #fffaf0;
-            border: 1px solid #d9d3c8;
-            border-radius: 12px;
-            padding: 16px 12px 14px;
-        }
-
-        #timelineDiv .timeline-header {
-            text-align: center;
-            margin-bottom: 14px;
-        }
-
-        #timelineDiv .timeline-title {
-            margin: 0;
-            color: #151515;
-            font-size: 16px;
-            font-weight: 700;
-            line-height: 1.2;
-        }
-
-        #timelineDiv .timeline-subtitle {
-            margin: 5px 0 0;
-            color: #6f4c33;
-            font-size: 12px;
-            font-weight: 500;
-            line-height: 1.25;
-        }
-
-        #timelineDiv .timeline-chevron-scroll {
-            overflow-x: auto;
-            overflow-y: visible;
-            padding: 8px 4px 18px;
-        }
-
-        #timelineDiv .timeline-chevron-track {
-            display: flex;
-            align-items: flex-start;
-            min-width: max-content;
-        }
-
-        #timelineDiv .timeline-year-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 72px;
-        }
-
-        #timelineDiv .timeline-year {
-            position: relative;
-            width: 78px;
-            height: 28px;
-            border: 0;
-            background: #8f9dff;
-            color: #111;
-            clip-path: polygon(0 0, calc(100% - 13px) 0, 100% 50%, calc(100% - 13px) 100%, 0 100%, 13px 50%);
-            cursor: pointer;
-            font-size: 10px;
-            font-weight: 700;
-            transition: transform 0.16s ease, filter 0.16s ease;
-        }
-
-        #timelineDiv .timeline-year:hover,
-        #timelineDiv .timeline-year.active {
-            transform: translateY(-1px) scale(1.04);
-            filter: brightness(1.05);
-        }
-
-        #timelineDiv .timeline-year-label {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-            padding-left: 8px;
-            box-sizing: border-box;
-        }
-
-        #timelineDiv .timeline-eventos-container {
-            display: none;
-            flex-direction: column;
-            gap: 7px;
-            align-items: stretch;
-            width: 150px;
-            margin-top: 10px;
-        }
-
-        #timelineDiv .timeline-eventos-container.open {
-            display: flex;
-        }
-
-        #timelineDiv .timeline-evento {
-            position: relative;
-            border: 1px solid #d8b99d;
-            border-radius: 8px;
-            background: #fff;
-            padding: 7px 8px;
-            cursor: pointer;
-            text-align: left;
-            box-shadow: 0 2px 6px rgba(94, 56, 29, 0.08);
-        }
-
-        #timelineDiv .timeline-evento:hover,
-        #timelineDiv .timeline-evento.active {
-            border-color: #d67036;
-            box-shadow: 0 4px 10px rgba(94, 56, 29, 0.16);
-        }
-
-        #timelineDiv .timeline-evento-label {
-            display: block;
-            color: #3b2416;
-            font-size: 11px;
-            font-weight: 700;
-            line-height: 1.2;
-        }
-
-        #timelineDiv .timeline-evento-fuente {
-            display: block;
-            margin-top: 2px;
-            color: #7a4826;
-            font-size: 10px;
-            line-height: 1.15;
-        }
-
-        #timelineDiv .timeline-popup {
-            display: none;
-            position: absolute;
-            left: 50%;
-            bottom: calc(100% + 8px);
-            transform: translateX(-50%);
-            min-width: 190px;
-            max-width: 260px;
-            background: #fff;
-            border: 1px solid #d8b99d;
-            border-radius: 8px;
-            padding: 8px 10px;
-            box-shadow: 0 8px 18px rgba(94, 56, 29, 0.18);
-            z-index: 30;
-            color: #3b2416;
-            font-size: 11px;
-            line-height: 1.3;
-        }
-
-        #timelineDiv .timeline-evento:hover .timeline-popup,
-        #timelineDiv .timeline-evento:focus .timeline-popup {
-            display: block;
-        }
-
-        #timelineDiv .timeline-popup small {
-            display: block;
-            margin-top: 6px;
-            color: #6f4c33;
-        }
-
-        #timelineDiv .timeline-popup-scroll {
-            max-height: 92px;
-            overflow-y: auto;
-        }
-
-        #timelineDiv .timeline-footer {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-top: 8px;
-            border-top: 1px solid #ead7c6;
-            padding-top: 8px;
-        }
-
-        #timelineDiv .timeline-fuente-label {
-            margin: 0;
-            color: #6f4c33;
-            font-size: 11px;
-            font-weight: 700;
-        }
-
-        #timelineDiv .timeline-fuentes {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-        }
-
-        #timelineDiv .timeline-fuente-tag {
-            border-radius: 999px;
-            background: #fff4e8;
-            border: 1px solid #ead7c6;
-            padding: 3px 7px;
-            color: #5e381d;
-            font-size: 10px;
-        }
-
-        #summaryDiv .oficio-title {
-            margin: 0 0 6px;
-            color: #9a5a23;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        #summaryDiv .oficio-year {
-            margin-bottom: 8px;
-            color: #6f4c33;
-            font-size: 12px;
-        }
-
-        #summaryDiv .oficio-list {
-            display: grid;
-            gap: 8px;
-        }
-
-        #summaryDiv .oficio-card {
-            border: 1px solid #ead7c6;
-            border-radius: 8px;
-            background: #fff;
-            padding: 8px;
-        }
-
-        #summaryDiv .oficio-row {
-            color: #3b2416;
-            font-size: 12px;
-            line-height: 1.35;
-            margin-bottom: 4px;
-        }
-
-        #summaryDiv .oficio-row:last-child {
-            margin-bottom: 0;
-        }
-
-        #lineDescriptionsDiv {
-            margin-top: 12px;
-            font-family: "Outfit", sans-serif;
-        }
-
-        #lineDescriptionsDiv .line-desc-container {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 0;
-        }
-
-        #lineDescriptionsDiv .line-desc-title {
-            margin: 0 0 8px;
-            color: #9a5a23;
-            font-size: 14px;
-            font-weight: 700;
-            line-height: 1.25;
-        }
-
-        #lineDescriptionsDiv .line-desc-list {
-            display: grid;
-            gap: 0;
-        }
-
-        #lineDescriptionsDiv .line-desc-card {
-            border-top: 1px solid #ead7c6;
-            padding: 8px 0;
-        }
-
-        #lineDescriptionsDiv .line-desc-card:first-child {
-            border-top: 0;
-            padding-top: 0;
-        }
-
-        #lineDescriptionsDiv .line-desc-name {
-            margin: 0 0 4px;
-            color: #3b2416;
-            font-size: 12px;
-            font-weight: 700;
-            line-height: 1.25;
-        }
-
-        #lineDescriptionsDiv .line-desc-text {
-            margin: 0;
-            color: #4c3a2b;
-            font-size: 12px;
-            line-height: 1.4;
-            white-space: pre-line;
-        }
-    `;
-
-    document.head.appendChild(style);
-}
-
 function yearColor(index, total) {
     if (total <= 1) return "#8f9dff";
     const colors = ["#a7a9ff", "#8fa1ff", "#9fb2ff", "#a78dff", "#d9a3ff"];
@@ -596,13 +304,12 @@ function renderLineDescriptions(groupedByYear) {
 /**
  * Construye la linea de tiempo HTML en #timelineDiv.
  */
-export function renderTimeline(groupedByYear, municipioNombre, onSelectEvent) {
+export function renderTimeline(groupedByYear, municipalityName, onSelectEvent) {
     const timelineDiv = document.getElementById("timelineDiv");
     if (!timelineDiv) return;
     const summaryDiv = document.getElementById("summaryDiv");
     const lineDescriptionsDiv = document.getElementById("lineDescriptionsDiv");
 
-    installTimelineStyles();
     timelineDiv.style.display = "block";
     if (lineDescriptionsDiv) {
         lineDescriptionsDiv.style.display = "none";
@@ -620,7 +327,7 @@ export function renderTimeline(groupedByYear, municipioNombre, onSelectEvent) {
             <div class="timeline-container">
                 <div class="timeline-header">
                     <h3 class="timeline-title">L\u00ednea del tiempo</h3>
-                    <p class="timeline-subtitle">${esc(municipioNombre)}</p>
+                    <p class="timeline-subtitle">${esc(municipalityName)}</p>
                 </div>
                 <p class="oot-js-limites-timeline-1">No se encontraron oficios o documentos para este municipio.</p>
             </div>
@@ -653,7 +360,7 @@ export function renderTimeline(groupedByYear, municipioNombre, onSelectEvent) {
         <div class="timeline-container">
             <div class="timeline-header">
                 <h3 class="timeline-title">L\u00ednea del tiempo</h3>
-                <p class="timeline-subtitle">${esc(municipioNombre)}</p>
+                <p class="timeline-subtitle">${esc(municipalityName)}</p>
             </div>
             <div class="timeline-chevron-scroll">
                 <div class="timeline-chevron-track">

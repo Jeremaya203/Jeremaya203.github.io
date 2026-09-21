@@ -1,6 +1,6 @@
 export const AppState = {
     // Módulo activo
-    currentLimitesTab: "DEPARTAMENTOS",
+    currentBoundariesTab: "DEPARTAMENTOS",
 
     // ArcGIS
     map: null,
@@ -15,14 +15,14 @@ export const AppState = {
 
     // Filtros territoriales
     whereBase: "",
-    municipioActual: "",
-    deptoActual: "",
-    filtroNivel: "",
+    currentMunicipalityId: "",
+    currentDepartmentId: "",
+    territoryLevel: "",
 
     // Diccionarios
-    diccionarioMunicipios: {},
-    diccionarioDepartamentos: {},
-    todosMunicipios: [],
+    municipalityNames: {},
+    departmentNames: {},
+    municipalities: [],
 
     // Render/control
     renderCycleId: 0,

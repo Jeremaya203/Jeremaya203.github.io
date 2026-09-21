@@ -18,8 +18,18 @@ var tablePot;
 var cacheUnidades;
 var cacheUnidadesFiltro;
 
-var web_service = window.OOT_COT_API_BASE || "https://serviciosgeovisor.igac.gov.co:8080/Geovisor";
-var web_service_proxy = window.OOT_COT_API_BASE || "https://serviciosgeovisor.igac.gov.co:8080/Geovisor";
+// A.6 — Lectura por el PROXY del backend (/api/igac/*): llamar directamente a
+// serviciosgeovisor.igac.gov.co:8080 desde el navegador solo funciona dentro de la red
+// del IGAC (dominio ajeno -> CORS, y el puerto 8080 no esta expuesto).
+var web_service = window.OOT_COT_API_BASE || ((window.OOT_API_BASE || '') + '/api/igac');
+var web_service_proxy = web_service;
+
+// ESCRITURA (cargueDocumentos / cargueRecursos / carguePot / pot): NO se proxyan a
+// proposito — son operaciones sobre un sistema que no es del Observatorio. Siguen
+// saliendo directo, asi que este bloque del modulo SOLO funciona dentro de la red del
+// IGAC. _ootAvisarCargueFueraDeRed() lo dice en pantalla en vez de dejar formularios
+// que fallan en silencio.
+var web_service_cargue = window.OOT_COT_CARGUE_BASE || "https://serviciosgeovisor.igac.gov.co:8080/Geovisor";
 
 var spanishDataTable = {
     "sProcessing": "Procesando...",
@@ -49,11 +59,18 @@ var spanishDataTable = {
 $(document).ready(function () {
     $("[data-toggle='popover']").popover();
     toggleMenu(currentEstado);
-    var config = {
+    // La configuracion vive en `config.js` (window.OOT_FIREBASE), que esta pagina carga;
+    // el literal queda de respaldo. Antes era una cuarta copia de los mismos valores.
+    const config = window.OOT_FIREBASE || {
         apiKey: "AIzaSyCLSp_Qbaohj8owxrpZxvrmxUSkVw0ukig",
         authDomain: "geovisor-igac.firebaseapp.com"
     };
-    firebase.initializeApp(config);
+    // La guarda NO es cosmetica: `cargue/index.html` carga tambien `../config.js`, cuya
+    // barrera de acceso ya pudo crear la app [DEFAULT]. Un initializeApp incondicional
+    // lanza `app/duplicate-app`, que aborta TODO este $(document).ready: sin login, sin
+    // toggleMenu y sin el resto del modulo. Es el mismo fallo que `js/maestra.js` ya
+    // documenta haber corregido; aqui seguia sin guarda y era una carrera entre los dos.
+    if (!firebase.apps.length) firebase.initializeApp(config);
     firebase.auth().onAuthStateChanged(function (user) {
         if (user) {
             currentUser = user;
@@ -670,7 +687,7 @@ function initData(data) {
     $("#recursosTematicaField,#recursosTematica2Field").select2({
         language: "es",
         ajax: {
-            url: web_service + "/cargueRecursos?cmd=query_tematicas&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
+            url: web_service_cargue + "/cargueRecursos?cmd=query_tematicas&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
             dataType: "json",
             type: "GET",
             data: function (params) {
@@ -694,7 +711,7 @@ function initData(data) {
     $("#recursosEntidadField").select2({
         language: "es",
         ajax: {
-            url: web_service + "/cargueRecursos?cmd=query_entidades&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
+            url: web_service_cargue + "/cargueRecursos?cmd=query_entidades&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
             dataType: "json",
             type: "GET",
             data: function (params) {
@@ -719,7 +736,7 @@ function initData(data) {
         minimumInputLength: 2,
         language: "es",
         ajax: {
-            url: web_service + "/cargueRecursos?cmd=query_codigos&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
+            url: web_service_cargue + "/cargueRecursos?cmd=query_codigos&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
             dataType: "json",
             type: "GET",
             data: function (params) {
@@ -761,7 +778,7 @@ function initData(data) {
         processing: true,
         serverSide: true,
         ajax: {
-            url: web_service + "/cargueRecursos",
+            url: web_service_cargue + "/cargueRecursos",
             data: function (d) {
                 d.cmd = "list";
                 d.token = currentAccessToken;
@@ -989,7 +1006,7 @@ function updateDocs(){
             processing: true,
             serverSide: true,
             ajax: {
-                url: web_service + "/cargueDocumentos",
+                url: web_service_cargue + "/cargueDocumentos",
                 data: function (d) {
                     d.cmd = "list";
                     d.token = currentAccessToken;
@@ -1282,7 +1299,7 @@ function optionsDocumentosNombre(){
 function detailDocumentos(id) {
     currentDocumento = id;
     $.ajax({
-        url: web_service + "/cargueDocumentos?cmd=get&ID_DOCUMENTO=" + currentDocumento + "&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
+        url: web_service_cargue + "/cargueDocumentos?cmd=get&ID_DOCUMENTO=" + currentDocumento + "&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
         type: 'GET',
         dataType: 'json',
         success: function (data) {
@@ -1485,7 +1502,7 @@ function salvarDocumentos() {
             content: function () {
                 var self = this;
                 return $.ajax({
-                    url: web_service + "/cargueDocumentos?" + params,
+                    url: web_service_cargue + "/cargueDocumentos?" + params,
                     type: "POST",
                     data: formData,
                     cache: false,
@@ -1516,7 +1533,7 @@ function salvarDocumentos() {
             content: function () {
                 var self = this;
                 return $.ajax({
-                    url: web_service + "/cargueDocumentos?" + params,
+                    url: web_service_cargue + "/cargueDocumentos?" + params,
                     type: "POST",
                     data: formData,
                     cache: false,
@@ -1549,7 +1566,7 @@ function borrarDocumentos() {
         buttons: {
             Si: function () {
                 $.ajax({
-                    url: web_service + "/cargueDocumentos?cmd=delete&ID_DOCUMENTO=" + currentDocumento + "&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
+                    url: web_service_cargue + "/cargueDocumentos?cmd=delete&ID_DOCUMENTO=" + currentDocumento + "&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
                     type: 'GET',
                     dataType: 'json',
                     success: function (data) {
@@ -1891,7 +1908,7 @@ function detailRecursos(id) {
     $("#recursosDetailHeader").html("Editar recurso");
     currentRecurso = id;
     $.ajax({
-        url: web_service + "/cargueRecursos?cmd=get&ID_RECURSO=" + currentRecurso + "&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
+        url: web_service_cargue + "/cargueRecursos?cmd=get&ID_RECURSO=" + currentRecurso + "&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
         type: 'GET',
         dataType: 'json',
         success: function (data) {
@@ -2024,7 +2041,7 @@ function salvarRecursos() {
             content: function () {
                 var self = this;
                 return $.ajax({
-                    url: web_service + "/cargueRecursos",
+                    url: web_service_cargue + "/cargueRecursos",
                     type: "POST",
                     data: params,
                     dataType: "json"
@@ -2053,7 +2070,7 @@ function salvarRecursos() {
             content: function () {
                 var self = this;
                 return $.ajax({
-                    url: web_service + "/cargueRecursos",
+                    url: web_service_cargue + "/cargueRecursos",
                     type: "POST",
                     data: params,
                     dataType: "json"
@@ -2083,7 +2100,7 @@ function borrarRecursos() {
         buttons: {
             Si: function () {
                 $.ajax({
-                    url: web_service + "/cargueRecursos?cmd=delete&ID_RECURSO=" + currentRecurso + "&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
+                    url: web_service_cargue + "/cargueRecursos?cmd=delete&ID_RECURSO=" + currentRecurso + "&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
                     type: 'GET',
                     dataType: 'json',
                     success: function (data) {
@@ -2155,7 +2172,7 @@ function detailPot(id) {
     $("#potDetailHeader").html("Editar POT");
     currentPot = id;
     $.ajax({
-        url: web_service + "/carguePot?cmd=get&ID_POT=" + currentPot + "&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
+        url: web_service_cargue + "/carguePot?cmd=get&ID_POT=" + currentPot + "&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
         type: 'GET',
         dataType: 'json',
         success: function (data) {
@@ -2191,7 +2208,7 @@ function salvarPot() {
             content: function () {
                 var self = this;
                 return $.ajax({
-                    url: web_service + "/carguePot",
+                    url: web_service_cargue + "/carguePot",
                     type: "POST",
                     data: params,
                     dataType: "json"
@@ -2220,7 +2237,7 @@ function salvarPot() {
             content: function () {
                 var self = this;
                 return $.ajax({
-                    url: web_service + "/carguePot",
+                    url: web_service_cargue + "/carguePot",
                     type: "POST",
                     data: params,
                     dataType: "json"
@@ -2250,7 +2267,7 @@ function borrarPot() {
         buttons: {
             Si: function () {
                 $.ajax({
-                    url: web_service + "/pot?cmd=delete&ID_POT=" + currentPot + "&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
+                    url: web_service_cargue + "/pot?cmd=delete&ID_POT=" + currentPot + "&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
                     type: 'GET',
                     dataType: 'json',
                     success: function (data) {
@@ -2286,7 +2303,7 @@ function validarPot() {
     $("#potFileValidateResult").html("");
 
     $.ajax({
-        url: web_service + "/pot?cmd=validar_xtf" + "&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
+        url: web_service_cargue + "/pot?cmd=validar_xtf" + "&token=" + currentAccessToken + "&t=" + (new Date()).getTime(),
         type: 'POST',
         data: formData,
         success: function (data) {
@@ -2387,3 +2404,27 @@ function getDeptoByMuni(id) {
     }
     return null;
 }
+
+// ── Aviso de alcance real del modulo (A.6) ───────────────────────────────────
+// Las operaciones de carga salen directo a serviciosgeovisor.igac.gov.co:8080, que solo
+// responde dentro de la red del IGAC. Fuera de ella los formularios fallaban en silencio
+// (CORS) y el usuario no tenia forma de saber por que. Se sondea una vez al abrir y, si
+// no hay ruta, se dice en pantalla.
+(function _ootAvisarCargueFueraDeRed() {
+    if (String(web_service_cargue).indexOf('serviciosgeovisor') === -1) return;  // override activo
+    function mostrar() {
+        if (document.getElementById('oot-cargue-aviso')) return;
+        var aviso = document.createElement('div');
+        aviso.id = 'oot-cargue-aviso';
+        aviso.className = 'oot-cargue-aviso';
+        aviso.setAttribute('role', 'status');
+        aviso.textContent = 'El cargue de documentos, recursos y POT solo esta disponible '
+            + 'desde la red interna del IGAC. La consulta y los filtros si funcionan desde aqui.';
+        if (document.body) document.body.insertBefore(aviso, document.body.firstChild);
+    }
+    var ctrl = new AbortController();
+    var t = setTimeout(function () { ctrl.abort(); }, 6000);
+    fetch(web_service_cargue + '/config?cmd=config_buscador', { signal: ctrl.signal })
+        .then(function () { clearTimeout(t); })
+        .catch(function () { clearTimeout(t); mostrar(); });
+})();

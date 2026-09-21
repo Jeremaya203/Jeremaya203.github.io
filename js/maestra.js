@@ -1,10 +1,10 @@
-var currentUser;
-var firebase_ui;
-var currentScreen;
-var currentSearch = "all";
-var firstExpand = true;
-var firstParameters = true;
-var cacheUnidadesFiltro;
+let currentUser;
+let firebase_ui;
+let currentScreen;
+const currentSearch = "all";
+const firstExpand = true;
+const firstParameters = true;
+let cacheUnidadesFiltro;
 
 // A.6 — Por defecto se sale por el PROXY del backend (/api/igac/*), no directo al
 // Geovisor: llamar a serviciosgeovisor.igac.gov.co:8080 desde el navegador solo funciona
@@ -13,9 +13,9 @@ var cacheUnidadesFiltro;
 // (web_service + "/documentos?cmd=..." → /api/igac/documentos?cmd=...).
 // OOT_COT_API_BASE se conserva como override para volver a apuntar directo si hiciera falta.
 var web_service = window.OOT_COT_API_BASE || ((window.OOT_API_BASE || '') + '/api/igac');
-var web_service_proxy = web_service;
+const web_service_proxy = web_service;
 
-var spanishDataTable = {
+const spanishDataTable = {
     "sProcessing": "Procesando...",
     "sLengthMenu": "_MENU_",
     "sZeroRecords": "No se encontraron resultados",
@@ -40,25 +40,25 @@ var spanishDataTable = {
     }
 }
 
-var tableDocumentos;
-var cacheDocumentos;
-var cacheResumen;
-var cacheResumenTags;
-var currentDocumento;
-var currentEtapa;
-var currentTipo;
+let tableDocumentos;
+let cacheDocumentos;
+let cacheResumen;
+let cacheResumenTags;
+let currentDocumento;
+let currentEtapa;
+let currentTipo;
 
-var tableRecursos;
-var cacheRecursos;
+let tableRecursos;
+let cacheRecursos;
 
-var cacheUnidades = [];
-var cacheTematicas = [];
-var cacheEntidades = [];
+let cacheUnidades = [];
+const cacheTematicas = [];
+const cacheEntidades = [];
 
-var cacheTags = [];
-var cacheTags2 = [];
+let cacheTags = [];
+let cacheTags2 = [];
 
-var color_tags = [{
+const color_tags = [{
         "color": "6BDBB7"
     },
     {
@@ -158,11 +158,18 @@ var color_tags = [{
 
 $(document).ready(function () {
     $("[data-toggle='popover']").popover();
-    var config = {
+    // La configuracion vive en `config.js` (window.OOT_FIREBASE), que esta pagina carga.
+    // El literal de respaldo es por si alguien sirve este archivo sin el: antes era la
+    // unica fuente aqui y cambiar de proyecto obligaba a acordarse de este sitio.
+    const config = window.OOT_FIREBASE || {
         apiKey: "AIzaSyCLSp_Qbaohj8owxrpZxvrmxUSkVw0ukig",
         authDomain: "geovisor-igac.firebaseapp.com"
     };
-    firebase.initializeApp(config);
+    // config.js (barrera de acceso) ya pudo crear la app [DEFAULT] en esta misma pagina.
+    // Un initializeApp incondicional lanza app/duplicate-app y aborta TODO este
+    // $(document).ready: sin signIn(), sin tooltips y sin la peticion config_buscador
+    // -> el buscador POT quedaba con los filtros vacios.
+    if (!firebase.apps.length) firebase.initializeApp(config);
     firebase.auth().onAuthStateChanged(function (user) {
         if (user) {
             currentUser = user;
@@ -173,10 +180,10 @@ $(document).ready(function () {
                 if (user.photoURL != "") {
                     $("#userPhoto,#userPhoto2").attr("src", user.photoURL);
                 } else {
-                    $("#userPhoto,#userPhoto2").attr("src", "/images/iconos/User.png");
+                    $("#userPhoto,#userPhoto2").attr("src", ((window.OOT_BASE || "") + "/images/iconos/User.png"));
                 }
             } else {
-                $("#userPhoto,#userPhoto2").attr("src", "/images/iconos/User.png");
+                $("#userPhoto,#userPhoto2").attr("src", ((window.OOT_BASE || "") + "/images/iconos/User.png"));
             }
             validate();
         } else {
@@ -186,12 +193,14 @@ $(document).ready(function () {
             $("#logoutContainer").hide();
             $("#loginContainer").show();
             $("#userName,#userName2").html("Iniciar sesion");
-            $("#userPhoto,#userPhoto2").attr("src", "/images/iconos/User.png");
+            $("#userPhoto,#userPhoto2").attr("src", ((window.OOT_BASE || "") + "/images/iconos/User.png"));
         }
     }, function (error) {
         console.log(error);
     });
-    firebase_ui = new firebaseui.auth.AuthUI(firebase.auth());
+    // Misma razon: FirebaseUI es un singleton por app. Si config.js ya instancio una,
+    // `new AuthUI` lanza "AuthUI instance already exists".
+    firebase_ui = firebaseui.auth.AuthUI.getInstance() || new firebaseui.auth.AuthUI(firebase.auth());
     signIn();
     $('[data-toggle="tooltip"]').tooltip();
 
@@ -257,7 +266,7 @@ function initDataMaestra(data) {
 function getParameterByName(name, url) {
     if (!url) url = window.location.href;
     name = name.replace(/[\[\]]/g, "\\$&");
-    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+    const regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
         results = regex.exec(url);
     if (!results) return null;
     if (!results[2]) return null;
@@ -279,40 +288,20 @@ function getDeptoByMuni(id) {
 }
 
 function reporteUso(funcionalidad, parametro) {
-    if (parametro == null) {
-        try {
-            amplitude.getInstance().logEvent(funcionalidad, null);
-        } catch (err) {
-            console.log(err);
-        }
-        try {
-            gtag('event', funcionalidad, {
-                'send_to': 'UA-177680669-1',
-                'event_category': funcionalidad
-            });
-        } catch (err) {
-            console.log(err);
-        }
-        return;
+    // Antes enviaba a 'UA-177680669-1' (Universal Analytics), propiedad que Google apago
+    // en julio de 2023: todos estos eventos se perdian. Ahora sale por OOT.track, que usa
+    // la propiedad GA4 configurada en config.js (window.OOT_GA4_ID).
+    // Tambien se retiro la llamada a amplitude: no esta cargado en ninguna pagina del
+    // sitio, asi que solo lanzaba y capturaba una excepcion en cada evento.
+    var params = { event_category: funcionalidad };
+    if (parametro) {
+        if (parametro.action != null) params.event_action = parametro.action;
+        if (parametro.unidad != null) params.event_label = parametro.unidad;
     }
     try {
-        amplitude.getInstance().logEvent(funcionalidad, parametro);
+        if (window.OOT && window.OOT.track) window.OOT.track(funcionalidad, params);
     } catch (err) {
-
-    }
-    var value = null;
-    if (parametro.unidad != null) {
-        value = parametro.unidad;
-    }
-    try {
-        gtag('event', funcionalidad, {
-            'send_to': 'UA-177680669-1',
-            'event_category': funcionalidad,
-            'event_action': parametro.action,
-            'event_label': value,
-        });
-    } catch (err) {
-
+        console.warn('[maestra] No se pudo registrar el evento', funcionalidad, err);
     }
 }
 
@@ -320,7 +309,7 @@ function signIn() {
     $("#logoutContainer").hide();
     $("#loginContainer").show();
 
-    var uiConfig = {
+    const uiConfig = {
         callbacks: {
             signInSuccess: function (_currentUser, _credential, _redirectUrl) {
                 closeLogin();
@@ -329,9 +318,9 @@ function signIn() {
         },
         signInOptions: [{
                 provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-                scopes: [
-                    'https://www.googleapis.com/auth/plus.login'
-                ],
+                // Se retiro el scope 'plus.login': la API de Google+ se apago en
+                // marzo de 2019 y pedir un scope inexistente solo puede romper el
+                // dialogo de consentimiento.
                 customParameters: {
                     prompt: 'select_account'
                 }
@@ -381,7 +370,7 @@ function closeLogin() {
 }
 
 function defaultUserPhoto() {
-    $("#userPhoto,#userPhoto2").attr("src", "/images/iconos/User.png");
+    $("#userPhoto,#userPhoto2").attr("src", ((window.OOT_BASE || "") + "/images/iconos/User.png"));
 }
 
 function validate() {
@@ -454,7 +443,7 @@ function getColorByTag2(tag) {
 }
 
 String.prototype.width = function (font) {
-    var f = font || '12px arial',
+    const f = font || '12px arial',
         o = $('<div></div>')
         .text(this)
         .css({

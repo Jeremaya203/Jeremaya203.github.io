@@ -1,6 +1,9 @@
 ﻿<!DOCTYPE html>
 <html lang="es">
 <head>
+<!-- CSP:BEGIN generado por scripts/aplicar_csp.py — no editar a mano -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://ajax.googleapis.com https://www.googletagmanager.com https://www.gstatic.com https://apis.google.com https://js.arcgis.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://fonts.googleapis.com https://pro.fontawesome.com https://www.gstatic.com https://js.arcgis.com; style-src-elem 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://fonts.googleapis.com https://pro.fontawesome.com https://www.gstatic.com https://js.arcgis.com; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://pro.fontawesome.com https://js.arcgis.com; connect-src 'self' https://*.trycloudflare.com http://localhost:8001 http://127.0.0.1:8001 https://*.igac.gov.co https://serviciosgeovisor.igac.gov.co:8080 https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://www.gstatic.com https://js.arcgis.com https://services.arcgisonline.com https://tiles.arcgis.com https://services2.arcgis.com https://tile.openstreetmap.org; worker-src 'self' blob: https://js.arcgis.com; child-src 'self' blob:; frame-src 'self' https://www.colombiaot.gov.co https://geovisor-igac.firebaseapp.com https://colombiaot2.firebaseapp.com https://apis.google.com; object-src 'none'; base-uri 'self'">
+<!-- CSP:END -->
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Análisis de Determinantes — Colombia OT 2.0</title>
@@ -94,7 +97,7 @@
         <input type="checkbox" id="regla-paramos">
         <div>
           <div class="rule-title">Páramos y Humedales</div>
-          <div class="rule-desc">Ecosistemas estratégicos</div>
+          <div class="rule-desc">Priorización compra de predios (1%)</div>
         </div>
       </label>
       <label id="ie-determinantes-22" class="rule-item">
@@ -109,6 +112,14 @@
         <div>
           <div class="rule-title">Centros Poblados</div>
           <div class="rule-desc">Densidad predial</div>
+        </div>
+      </label>
+      <!-- El backend evalua corredor_suburbano desde siempre; no habia casilla que lo pidiera. -->
+      <label class="rule-item">
+        <input type="checkbox" id="regla-corredor">
+        <div>
+          <div class="rule-title">Corredor Vial Suburbano</div>
+          <div class="rule-desc">Franjas sobre vías en suelo suburbano</div>
         </div>
       </label>
     </div>
@@ -223,7 +234,6 @@
       </div>
       <div>
         <div id="ie-determinantes-49">Resultados del Análisis</div>
-        <div id="ie-determinantes-50">IGAC · Colombia</div>
       </div>
     </div>
   </div>
@@ -418,6 +428,6 @@
 
 <script src="./config.js"></script>
 <script src="./oot.js"></script>
-<script src="./js/determinantes.js"></script>
+<script type="module" src="./js/determinantes/index.js"></script>
 </body>
 </html>

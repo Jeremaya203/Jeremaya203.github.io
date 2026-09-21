@@ -437,3 +437,28 @@
     #ind-aside  { width: 220px !important; }
     #ind-stats  { width: 280px !important; }
   }
+
+/* ===========================================================================
+   CORRECIONES COLOMBIA OT 2.0 — documento recibido 2026-08-31.
+   Tamano y color por elemento tal como los especifica el documento. Van al
+   final del archivo a proposito: sobrescriben la regla original sin tocarla,
+   asi el cambio es trazable y reversible de un vistazo.
+   =========================================================================== */
+
+/* `.asunto-title` (los rotulos de grupo de la barra izquierda) NO lleva regla del
+   encargo: el documento p.6 rotula la captura "Asentamientos Humanos" pero la linea de
+   DevTools de esa misma captura senala `#vp-asunto`, el asunto del indicador abierto en
+   el panel derecho. Se aplico primero aqui por error y la regla se quedo puesta al
+   corregirlo; se retira. La buena vive en inline-extracted.css. */
+#scope-label-text { font-size: 12px; color: #27a880; }
+
+/* Forma: misma queja que en Consulta Normativa. #ind-aside ya es overflow:hidden y
+   #lista-indicadores ya es flex:1 + overflow-y:auto, pero le faltaba min-height:0:
+   sin el, un hijo flex NO se encoge por debajo de su contenido y el overflow no
+   llega a activarse nunca. Determinantes lo tiene (determinantes.css:156). */
+#lista-indicadores { min-height: 0; }
+
+/* Documento p.6 — "Porcentajes: 12px, #7a9cc0". Etiqueta de las tarjetas de cifra
+   del panel derecho (Cob. Vegetal Natural, Ha vegetacion natural...). La regla
+   original (linea 206) esta en 10px con var(--oot-tx3). */
+.stat-label { font-size: 12px; color: #7a9cc0; }

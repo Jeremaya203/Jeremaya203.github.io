@@ -2,7 +2,7 @@ export const AppState = {
     // Módulo activo
     currentMode: "ORDENAMIENTO",
     currentMainModule: "ORDENAMIENTO",
-    currentOrdenamientoTab: "VIGENCIA",
+    currentLandUsePlanningTab: "VIGENCIA",
     currentRuralChartView: "CATEGORIA",
 
     // ArcGIS
@@ -19,9 +19,9 @@ export const AppState = {
 
     // Filtros territoriales
     whereBase: "",
-    municipioActual: "",
+    currentMunicipalityId: "",
     deptoActual: "",
-    filtroNivel: "",
+    territoryLevel: "",
 
     // Índices
     currentSubLayerIndex: 0,
@@ -32,9 +32,9 @@ export const AppState = {
     geoDonutChartInstance: null,
 
     // Diccionarios
-    diccionarioMunicipios: {},
-    diccionarioDepartamentos: {},
-    todosMunicipios: [],
+    municipalityNames: {},
+    departmentNames: {},
+    municipalities: [],
 
     // Render/control
     renderCycleId: 0,

@@ -923,3 +923,30 @@ body {
 .mob-chat-tab.active { color: var(--oot-teal); }
 .mob-chat-tab .material-symbols-outlined { font-size: 20px; }
 .mob-chat-backdrop { display: none; }
+
+/* ===========================================================================
+   CORRECIONES COLOMBIA OT 2.0 — documento recibido 2026-08-31.
+   Tamano y color por elemento tal como los especifica el documento. Van al
+   final del archivo a proposito: sobrescriben la regla original sin tocarla,
+   asi el cambio es trazable y reversible de un vistazo.
+   =========================================================================== */
+
+.sidebar-logo-text { font-size: 16px; color: #fff; }
+.sidebar-nav-title { font-size: 12px; color: #c1dfff; }
+
+/* Forma: "la barra izquierda no permite visualizar la informacion completa y no
+   muestra la opcion de scroll". .sidebar es flex column sin overflow ni altura
+   acotada, asi que el contenido desbordaba en vez de generar barra. Mismo patron
+   que .panel-left/.panel-right de Determinantes, que si funciona. */
+.sidebar { overflow-y: auto; min-height: 0; }
+.sidebar-nav { min-height: 0; }
+
+/* Forma: "la barra de consulta ocupa demasiado espacio y no permite ver las
+   respuestas". Se recorta el alto del area de entrada. */
+.input-area { padding-top: 10px; padding-bottom: 10px; }
+.input-textarea { max-height: 96px; }
+
+/* Documento p.3 — "Datos: 10px, #ffffff80". Es la fila de cifras del panel de
+   consultas frecuentes (LEYES / DECRETOS / RESOLUCIONES). La regla original
+   (linea 720) esta en 7px. */
+.faq-stat-label { font-size: 10px; color: #ffffff80; }

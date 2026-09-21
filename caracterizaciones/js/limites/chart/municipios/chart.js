@@ -1,5 +1,5 @@
-﻿import { createChart } from "../chart.core.js";
-import { buildDataset } from "../chart.helpers.js";
+﻿import { createChart } from "../chart-core.js";
+import { buildDataset } from "../chart-helpers.js";
 import { getColorCSS } from "../../colors.js";
 
 // Guardar todas las features para restaurar/refiltrar sin reconsultar

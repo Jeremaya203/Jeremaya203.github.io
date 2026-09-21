@@ -1,4 +1,12 @@
-﻿/* ============================================================
+/* AVISO — HOJA DUPLICADA Y DIVERGENTE
+   Existe otra copia de este archivo en `css/oot-complementario.css`, con contenido DISTINTO.
+   Esta la cargan los modulos del OOT (index, Modulo_*).
+   Un arreglo hecho aqui NO llega a la otra: revisa siempre las dos.
+   No se han fusionado porque la divergencia es bidireccional (cada una tiene
+   reglas que la otra no) y unificarlas sin comparar ambas familias de paginas
+   en el navegador romperia una de las dos. */
+
+/* ============================================================
    OOT MAGDALENA — Estilos complementarios para Colombia OT
    Diseño integrado, respetando la paleta y tipografía base
    ============================================================ */
@@ -159,7 +167,10 @@
 }
 .oot-modulos-destacados {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    /* Con cuatro modulos, 3 columnas dejaban el cuarto card solo en una segunda
+       fila, descolgado. auto-fit reparte: 4 en pantallas anchas, 2x2 en
+       intermedias y 1 en movil, sin reglas por cantidad de cards. */
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 24px;
 }
 .oot-modcard {

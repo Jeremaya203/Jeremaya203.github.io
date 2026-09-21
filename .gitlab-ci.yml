@@ -1,0 +1,125 @@
+# =============================================================================
+# TEMPORAL: diagnóstico de GitLab Runner (sin despliegue, sin SSH auth)
+# Job manual: test_runner
+# Cuando confirme el Runner adecuado, se restaurará el job de deploy.
+# =============================================================================
+
+stages:
+  - test
+
+# -----------------------------------------------------------------------------
+# test_runner
+# - Ejecución MANUAL (Play en la UI de GitLab)
+# - Sin tags: lo puede tomar cualquier Runner disponible del proyecto
+# - Solo lectura de info del Runner + prueba TCP a 172.19.3.199:22
+# - NO autentica SSH, NO escribe remoto, NO instala nada en el servidor
+# -----------------------------------------------------------------------------
+test_runner:
+  stage: test
+  tags:
+    - prueba-runner
+  rules:
+    - when: manual
+      allow_failure: true
+  script:
+    - |
+      set -eu
+      echo "========== INFO DEL RUNNER =========="
+      echo "CI_RUNNER_ID=${CI_RUNNER_ID:-n/a}"
+      echo "CI_RUNNER_DESCRIPTION=${CI_RUNNER_DESCRIPTION:-n/a}"
+      echo "CI_RUNNER_TAGS=${CI_RUNNER_TAGS:-n/a}"
+      echo "CI_RUNNER_EXECUTABLE_ARCH=${CI_RUNNER_EXECUTABLE_ARCH:-n/a}"
+      echo "CI_JOB_ID=${CI_JOB_ID:-n/a}"
+      echo "CI_JOB_NAME=${CI_JOB_NAME:-n/a}"
+      echo "CI_JOB_IMAGE=${CI_JOB_IMAGE:-n/a}"
+      echo "CI_SERVER_URL=${CI_SERVER_URL:-n/a}"
+      echo "CI_PROJECT_PATH=${CI_PROJECT_PATH:-n/a}"
+      echo "CI_COMMIT_REF_NAME=${CI_COMMIT_REF_NAME:-n/a}"
+      echo "hostname=$(hostname 2>/dev/null || echo n/a)"
+      echo "uname=$(uname -a 2>/dev/null || echo n/a)"
+      echo "whoami=$(whoami 2>/dev/null || echo n/a)"
+      echo "pwd=$(pwd)"
+      echo "shell=${SHELL:-n/a}"
+      echo "date_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date)"
+      echo ""
+      echo "========== PRUEBA TCP 172.19.3.199:22 =========="
+      echo "Solo conectividad de red (SYN/connect). SIN autenticación SSH."
+      echo "SIN modificar archivos remotos. SIN instalar nada en el servidor."
+      TARGET_HOST="172.19.3.199"
+      TARGET_PORT="22"
+      TCP_OK=0
+
+      # 1) bash /dev/tcp
+      if command -v bash >/dev/null 2>&1; then
+        echo "[try] bash /dev/tcp/${TARGET_HOST}/${TARGET_PORT}"
+        if bash -c "exec 3<>/dev/tcp/${TARGET_HOST}/${TARGET_PORT}" 2>/dev/null; then
+          echo "[result] bash /dev/tcp: OPEN"
+          TCP_OK=1
+          exec 3<&- 2>/dev/null || true
+          exec 3>&- 2>/dev/null || true
+        else
+          echo "[result] bash /dev/tcp: CLOSED_OR_UNREACHABLE"
+        fi
+      else
+        echo "[skip] bash no disponible"
+      fi
+
+      # 2) nc/ncat si ya existe (no se instala nada)
+      if [ "$TCP_OK" -ne 1 ]; then
+        if command -v nc >/dev/null 2>&1; then
+          echo "[try] nc -z -w 5 ${TARGET_HOST} ${TARGET_PORT}"
+          if nc -z -w 5 "${TARGET_HOST}" "${TARGET_PORT}" 2>/dev/null; then
+            echo "[result] nc: OPEN"
+            TCP_OK=1
+          else
+            echo "[result] nc: CLOSED_OR_UNREACHABLE"
+          fi
+        elif command -v ncat >/dev/null 2>&1; then
+          echo "[try] ncat -z -w 5 ${TARGET_HOST} ${TARGET_PORT}"
+          if ncat -z -w 5 "${TARGET_HOST}" "${TARGET_PORT}" 2>/dev/null; then
+            echo "[result] ncat: OPEN"
+            TCP_OK=1
+          else
+            echo "[result] ncat: CLOSED_OR_UNREACHABLE"
+          fi
+        else
+          echo "[skip] nc/ncat no disponible"
+        fi
+      fi
+
+      # 3) python -c (sin heredoc: los heredocs rompen el bloque literal YAML)
+      if [ "$TCP_OK" -ne 1 ]; then
+        PY_TCP='import socket,sys;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.settimeout(5);s.connect(("172.19.3.199",22));s.close()'
+        if command -v python3 >/dev/null 2>&1; then
+          echo "[try] python3 socket.connect((${TARGET_HOST}, ${TARGET_PORT}))"
+          if python3 -c "$PY_TCP" 2>/dev/null; then
+            echo "[result] python3: OPEN"
+            TCP_OK=1
+          else
+            echo "[result] python3: CLOSED_OR_UNREACHABLE"
+          fi
+        elif command -v python >/dev/null 2>&1; then
+          echo "[try] python socket.connect((${TARGET_HOST}, ${TARGET_PORT}))"
+          if python -c "$PY_TCP" 2>/dev/null; then
+            echo "[result] python: OPEN"
+            TCP_OK=1
+          else
+            echo "[result] python: CLOSED_OR_UNREACHABLE"
+          fi
+        else
+          echo "[skip] python/python3 no disponible"
+        fi
+      fi
+
+      echo ""
+      echo "========== VEREDICTO =========="
+      if [ "$TCP_OK" -eq 1 ]; then
+        echo "RUNNER_TCP_TO_SERVER=OK"
+        echo "Este Runner PUEDE alcanzar 172.19.3.199:22 (puerto SSH abierto desde su red)."
+        echo "Aún NO prueba login SSH ni permisos de escritura."
+        exit 0
+      fi
+      echo "RUNNER_TCP_TO_SERVER=FAIL"
+      echo "Este Runner NO alcanza 172.19.3.199:22 (timeout, filtrado o puerto cerrado)."
+      echo "No sirve para el despliegue SSH hasta que haya ruta de red o use otro Runner."
+      exit 1

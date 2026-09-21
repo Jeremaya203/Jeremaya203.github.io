@@ -1,28 +1,28 @@
-import { escapeHtml, getMunicipioDisplayName, getDepartamentoDisplayName } from "../utils.js";
+import { escapeHtml, getMunicipalityDisplayName, getDepartmentDisplayName } from "../utils.js";
 
-export function actualizarResumen({
-    municipioActual,
-    deptoActual,
-    filtroNivel,
-    diccionarioMunicipios,
-    diccionarioDepartamentos
+export function updateSummary({
+    currentMunicipalityId: currentMunicipalityId,
+    currentDepartmentId: currentDepartmentId,
+    territoryLevel: territoryLevel,
+    municipalityNames: municipalityNames,
+    departmentNames: departmentNames
 }) {
     const summaryDiv = document.getElementById("summaryDiv");
     if (!summaryDiv) return;
 
-    if (!municipioActual && filtroNivel !== "DEPTO") {
-        summaryDiv.innerHTML = deptoActual
+    if (!currentMunicipalityId && territoryLevel !== "DEPTO") {
+        summaryDiv.innerHTML = currentDepartmentId
             ? "Seleccione un municipio para ver el resumen."
             : "Seleccione un departamento o municipio para ver el resumen.";
         return;
     }
 
-    const nombreMuni = getMunicipioDisplayName(municipioActual, diccionarioMunicipios);
-    const nombreDepto = deptoActual ? getDepartamentoDisplayName(deptoActual, diccionarioDepartamentos) : "";
+    const municipalityName = getMunicipalityDisplayName(currentMunicipalityId, municipalityNames);
+    const departmentName = currentDepartmentId ? getDepartmentDisplayName(currentDepartmentId, departmentNames) : "";
 
-    let html = `<strong>Resumen</strong><br>`;
-    if (nombreDepto) html += `Departamento: ${escapeHtml(nombreDepto)}<br>`;
-    if (municipioActual && nombreMuni) html += `Municipio: ${escapeHtml(nombreMuni)}<br>`;
+    let summaryHtml = `<strong>Resumen</strong><br>`;
+    if (departmentName) summaryHtml += `Departamento: ${escapeHtml(departmentName)}<br>`;
+    if (currentMunicipalityId && municipalityName) summaryHtml += `Municipio: ${escapeHtml(municipalityName)}<br>`;
 
-    summaryDiv.innerHTML = html;
+    summaryDiv.innerHTML = summaryHtml;
 }

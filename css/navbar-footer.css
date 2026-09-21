@@ -1,3 +1,11 @@
+/* AVISO — HOJA DUPLICADA Y DIVERGENTE
+   Existe otra copia de este archivo en `navbar-footer.css`, con contenido DISTINTO.
+   Esta la cargan cargue/ y colombia-ot/pot/.
+   Un arreglo hecho aqui NO llega a la otra: revisa siempre las dos.
+   No se han fusionado porque la divergencia es bidireccional (cada una tiene
+   reglas que la otra no) y unificarlas sin comparar ambas familias de paginas
+   en el navegador romperia una de las dos. */
+
 
 @font-face {
     font-family: 'Tajawal-Regular';

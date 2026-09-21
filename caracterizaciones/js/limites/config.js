@@ -1,4 +1,4 @@
-export const LIMITES_CONFIG = {
+export const BOUNDARIES_CONFIG = {
     
     MUNICIPIOS: {
         id: "limites_municipios",

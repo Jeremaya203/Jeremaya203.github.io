@@ -14,16 +14,21 @@
 (function () {
     'use strict';
 
-    var FIREBASE_CONFIG = {
+    // La configuracion vive en `config.js` (window.OOT_FIREBASE); el literal es respaldo.
+    // Era la quinta copia de los mismos tres valores y ninguna sabia de las otras.
+    const FIREBASE_CONFIG = window.OOT_FIREBASE || {
         apiKey: 'AIzaSyCLSp_Qbaohj8owxrpZxvrmxUSkVw0ukig',
         authDomain: 'geovisor-igac.firebaseapp.com',
         projectId: 'geovisor-igac'
     };
-    // Backend legacy de permisos (Geovisor), el mismo que usa hoy js/maestra.js en producción.
-    var VALIDATE_URL = 'https://serviciosgeovisor.igac.gov.co:8080/Geovisor/validate';
+    // A.6 — Por el PROXY del backend, igual que js/maestra.js. Llamar directamente a
+    // serviciosgeovisor.igac.gov.co:8080 desde el navegador solo funciona dentro de la
+    // red del IGAC (dominio ajeno -> CORS, puerto 8080 no expuesto); fuera de ella
+    // OOT_authPermisos quedaba SIEMPRE vacio sin que nadie se enterara.
+    const VALIDATE_URL = (window.OOT_API_BASE || '') + '/api/igac/validate';
 
-    var initialized = false;
-    var currentUser = null;
+    let initialized = false;
+    let currentUser = null;
 
     function ensureInit() {
         if (initialized) return true;
@@ -62,7 +67,7 @@
     // conocidos — no bloquea el login, solo deja window.OOT_authPermisos vacío.
     function validatePermisos(user) {
         user.getIdToken().then(function (token) {
-            var url = VALIDATE_URL + '?token=' + encodeURIComponent(token) + '&t=' + Date.now();
+            const url = VALIDATE_URL + '?token=' + encodeURIComponent(token) + '&t=' + Date.now();
             fetch(url).then(function (r) {
                 return r.ok ? r.json() : null;
             }).then(function (data) {
@@ -85,11 +90,13 @@
         // Log deliberado para verificar herencia de sesión entre páginas: si al entrar a
         // esta página YA aparece un usuario aquí sin haber hecho clic en "Iniciar sesión",
         // la sesión se heredó correctamente desde otra página del mismo origen/Firebase.
-        console.log('[OOT.auth] Estado de sesión en', location.pathname, '→', currentUser ? ('logueado como ' + (currentUser.email || currentUser.uid)) : 'sin sesión');
+        // console.info/log estan anulados en produccion (config.js); esta traza es
+        // diagnostica y solo interesa con OOT_DEBUG activo.
+        if (window.OOT_DEBUG) console.error('[OOT.auth] Estado de sesión en', location.pathname, '→', currentUser ? ('logueado como ' + (currentUser.email || currentUser.uid)) : 'sin sesión');
 
         var loginBtn = document.getElementById('oot-login-btn');
         var logoutBtn = document.getElementById('oot-logout-btn');
-        var userLabel = document.getElementById('oot-user-label');
+        const userLabel = document.getElementById('oot-user-label');
 
         if (currentUser) {
             setText(userLabel, currentUser.displayName || currentUser.email || 'Usuario');

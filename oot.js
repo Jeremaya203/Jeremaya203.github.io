@@ -1,7 +1,13 @@
 // oot.js — Estado global OOT · sin variables sueltas en window
 'use strict';
 
-const OOT = {
+// El objeto se nombra _OOT y NO OOT a proposito: una declaracion `const OOT` en el
+// ambito global crea un binding lexico que TIENE PRECEDENCIA sobre la propiedad
+// window.OOT que ya creo config.js. Con `const OOT`, cualquier script posterior que
+// escriba `OOT.algo` (sin `window.`) resolvia a este objeto —que no tiene escapeHtml,
+// loadShell ni track— en vez de al fusionado. Por eso OOT.track() se descartaba en
+// silencio en chat-normativo.js, determinantes.js e indicadores.js.
+const _OOT = {
   // Configuración (se sobrescribe desde config.js)
   API_BASE: window.OOT_API_BASE || '',
 
@@ -49,10 +55,10 @@ const OOT = {
   },
 
   async get(path, params = {}, { retries = 2, timeoutMs = 20000 } = {}) {
-    const url = new URL(OOT.API_BASE + path, window.location.href);
+    const url = new URL(_OOT.API_BASE + path, window.location.href);
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
     try {
-      return await OOT._fetchJson(url.toString(), {}, timeoutMs, retries);
+      return await _OOT._fetchJson(url.toString(), {}, timeoutMs, retries);
     } catch (e) {
       console.error(`[OOT] GET ${path} falló:`, e.message);
       throw e;
@@ -66,7 +72,7 @@ const OOT = {
       body: JSON.stringify(body),
     };
     try {
-      return await OOT._fetchJson(OOT.API_BASE + path, opts, timeoutMs, retries);
+      return await _OOT._fetchJson(_OOT.API_BASE + path, opts, timeoutMs, retries);
     } catch (e) {
       console.error(`[OOT] POST ${path} falló:`, e.message);
       throw e;
@@ -99,9 +105,10 @@ const OOT = {
   // API sancionada para trazas: solo imprime si window.OOT_DEBUG === true. Es la vía
   // recomendada para código nuevo. Nota: config.js YA anula console.log/console.debug
   // globalmente en producción (!OOT_DEBUG), así que las trazas existentes tampoco
-  // contaminan la consola; OOT.log añade la intención explícita y sobrevive a esa anulación.
+  // contaminan la consola; OOT.log añade la intención explícita.
   log(...args) {
-    if (window.OOT_DEBUG) { try { console.info(...args); } catch (_) {} }
+    // console.error es el UNICO metodo que config.js no anula en produccion.
+    if (window.OOT_DEBUG) { try { console.error(...args); } catch (_) {} }
   },
 
   // ── Utilidades ────────────────────────────────────────────────────
@@ -119,7 +126,7 @@ const OOT = {
   },
 
   formatHa(n) {
-    return `${OOT.formatNumber(Math.round(n))} ha`;
+    return `${_OOT.formatNumber(Math.round(n))} ha`;
   },
 
   // ── localStorage helpers (H-13: guardas de esquema + tope de tamaño) ───────────
@@ -127,7 +134,7 @@ const OOT = {
   // Tope duro de 8 KB por clave para no llenar localStorage con datos corruptos.
   saveRecent(key, value, maxItems = 5) {
     try {
-      const prev = OOT.getRecent(key);   // ya validado como array
+      const prev = _OOT.getRecent(key);   // ya validado como array
       const nueva = [value, ...prev.filter(v => v !== value)].slice(0, maxItems);
       const serial = JSON.stringify(nueva);
       if (serial.length > 8192) return;  // descarta escrituras anómalas
@@ -145,7 +152,7 @@ const OOT = {
   },
 };
 
-window.OOT = Object.assign(window.OOT || {}, OOT);
+window.OOT = Object.assign(window.OOT || {}, _OOT);
 
 // ── Delegación de eventos (H-04 / CSP sin 'unsafe-inline') ────────────────────
 // Reemplaza los manejadores inline (onclick=""/onchange=""/…) para poder endurecer
@@ -156,7 +163,30 @@ window.OOT = Object.assign(window.OOT || {}, OOT);
 // keydown → el evento. La escucha vive en `document`, así que también funciona con
 // elementos inyectados por JS (mob bars, etc.). Resuelve rutas con punto (OOT.toggleNav).
 (function () {
+  // Registro explicito de manejadores. Antes esto resolvia el nombre contra `window`,
+  // lo que ataba el despachador a que TODA funcion de modulo fuera global: el dia que
+  // un modulo pase a ES modules o encapsule sus funciones, los data-oot-* dejan de
+  // encontrarlas y los botones quedan mudos, sin error visible.
+  //
+  // Ahora hay un registro propio y `window` queda como respaldo mientras los modulos
+  // migran. Cuando el registro este completo, ese respaldo se puede quitar y ese sera
+  // el momento en que el frontend deje de depender del ambito global.
+  const _handlers = Object.create(null);
+
+  window.OOT = window.OOT || {};
+  window.OOT.registrar = function (nombre, fn) {
+    if (typeof fn !== 'function') { console.warn('[OOT] registrar: no es funcion:', nombre); return; }
+    _handlers[nombre] = fn;
+  };
+  window.OOT.registrarTodos = function (mapa) {
+    Object.keys(mapa || {}).forEach((k) => window.OOT.registrar(k, mapa[k]));
+  };
+  window.OOT.handlers = _handlers;   // solo lectura de facto: para diagnostico
+
   function _resolve(name) {
+    const registrado = _handlers[name];
+    if (typeof registrado === 'function') return registrado;
+    // Respaldo: nombre global, con soporte de rutas con punto (OOT.toggleNav).
     return String(name).split('.').reduce((o, k) => (o == null ? o : o[k]), window);
   }
   function _coerce(v) {

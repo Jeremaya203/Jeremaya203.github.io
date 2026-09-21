@@ -132,7 +132,7 @@ export function sortLegendEntries(config, entries) {
         return entries.slice().sort((a,b)=>(inv.get(a.label) ?? 9999) - (inv.get(b.label) ?? 9999));
     }
 
-    const extraerValorOrden = (label) => {
+    const extractOrderValue = (label) => {
         const txt = String(label || "")
             .replace(/,/g, ".")
             .replace(/–/g, "-")
@@ -159,14 +159,14 @@ export function sortLegendEntries(config, entries) {
     // Precipitación: ordenar dinámicamente por el primer número del label
     if (config.isClima && config.climaType === "precip") {
         return entries.slice().sort((a, b) => {
-            return extraerValorOrden(a.label) - extraerValorOrden(b.label);
+            return extractOrderValue(a.label) - extractOrderValue(b.label);
         });
     }
 
     // Temperatura: ordenar dinámicamente por rango y mandar "> x" al final
     if (config.isClima && config.climaType === "temp") {
         return entries.slice().sort((a, b) => {
-            return extraerValorOrden(a.label) - extraerValorOrden(b.label);
+            return extractOrderValue(a.label) - extractOrderValue(b.label);
         });
     }
 
@@ -231,7 +231,7 @@ export function syncLegendToLabelSelection(clickedLabel){
     window.__legendState.activeCodes = new Set([String(hit.dataset.code)]);
 }
 
-export function actualizarLeyendaLimitesMunicipales() {
+export function updateMunicipalBoundariesLegend() {
     const title = document.getElementById("legendTitle");
     const content = document.getElementById("legendContent");
 
