@@ -15,3 +15,9 @@ Thumbs.db
 *.suo
 *.user
 .agents/
+
+# Worktrees y utilidades del agente del repo de trabajo. robocopy los arrastra
+# desde observatorio_ot_frontend; al hacer `git add -A` quedan registrados como
+# gitlink (modo 160000) sin entrada en .gitmodules, y el build de GitHub Pages
+# muere con "No url found for submodule path" / exit 128.
+.claude/
