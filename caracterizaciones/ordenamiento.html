@@ -1,10 +1,24 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'wasm-unsafe-eval' 'sha256-vvt4KWwuNr51XfE5m+hzeNEGhiOfZzG97ccfqGsPwvE=' https://js.arcgis.com https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com https://accounts.google.com https://www.googletagmanager.com; script-src-attr 'none'; style-src 'self' https://js.arcgis.com https://fonts.googleapis.com https://www.gstatic.com; style-src-attr 'unsafe-inline'; font-src 'self' data: https://fonts.gstatic.com https://js.arcgis.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.trycloudflare.com https://*.igac.gov.co https://serviciosgeovisor.igac.gov.co:8080 https://*.arcgis.com https://*.arcgisonline.com https://*.googleapis.com https://*.firebaseapp.com https://*.firebaseio.com https://accounts.google.com https://cdn.jsdelivr.net https://www.gstatic.com https://www.googletagmanager.com wss://*.firebaseio.com; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://apis.google.com https://www.facebook.com https://appleid.apple.com https://login.microsoftonline.com https://api.login.yahoo.com; form-action 'self' https://*.firebaseapp.com https://accounts.google.com https://www.facebook.com https://appleid.apple.com https://login.microsoftonline.com https://api.login.yahoo.com; manifest-src 'self'; media-src 'self' data: blob:; upgrade-insecure-requests" />
+    <!--
+      SIN `upgrade-insecure-requests` A PROPOSITO.
+      Esa directiva obliga al navegador a convertir toda peticion http:// en https://. En el
+      servidor de pruebas del IGAC el sitio se sirve por HTTP simple (http://172.19.3.81, sin
+      TLS: nginx no escucha en 443), asi que el navegador pedia https://172.19.3.81/... para
+      CSS, JS e imagenes, no obtenia respuesta, y estas paginas quedaban en HTML pelado.
+      No pasaba en local —los navegadores eximen localhost— ni en el sitio publicado, que ya
+      es HTTPS. Solo rompia en un origen HTTP con IP.
+      Lo que protegia: nada aqui. Estas paginas no tienen NI UNA URL absoluta http:// (0 en
+      HTML, 0 en CSS; las 3 de JS son espacios de nombres de w3.org). Todo recurso es relativo
+      o https absoluto, asi que en produccion —servida por HTTPS detras del WAF— las URLs ya
+      salen https sin necesidad de la directiva.
+      El resto de la politica se mantiene intacta.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'wasm-unsafe-eval' 'sha256-vvt4KWwuNr51XfE5m+hzeNEGhiOfZzG97ccfqGsPwvE=' https://js.arcgis.com https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com https://accounts.google.com https://www.googletagmanager.com; script-src-attr 'none'; style-src 'self' https://js.arcgis.com https://fonts.googleapis.com https://www.gstatic.com; style-src-attr 'unsafe-inline'; font-src 'self' data: https://fonts.gstatic.com https://js.arcgis.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.trycloudflare.com https://*.igac.gov.co https://serviciosgeovisor.igac.gov.co:8080 https://*.arcgis.com https://*.arcgisonline.com https://*.googleapis.com https://*.firebaseapp.com https://*.firebaseio.com https://accounts.google.com https://cdn.jsdelivr.net https://www.gstatic.com https://www.googletagmanager.com wss://*.firebaseio.com; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://apis.google.com https://www.facebook.com https://appleid.apple.com https://login.microsoftonline.com https://api.login.yahoo.com; form-action 'self' https://*.firebaseapp.com https://accounts.google.com https://www.facebook.com https://appleid.apple.com https://login.microsoftonline.com https://api.login.yahoo.com; manifest-src 'self'; media-src 'self' data: blob:" />
     <title>Caracterizaciones - Ordenamiento Territorial</title>
     <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
@@ -68,6 +82,13 @@
             </div>
 
             <ul class="pl-1" id="link-list">
+                <!-- Retorno al sitio principal. `caracterizaciones/` es un sub-proyecto con su
+                     propio navbar: sin este enlace no habia forma de volver a Colombia OT 2.0,
+                     porque su "Inicio" apunta al index de esta misma seccion. Ruta relativa para
+                     que siga funcionando si el sitio se despliega bajo una subcarpeta. -->
+                <li data-oot-volver>
+                  <a rel="noopener" href="../index.html">Colombia OT 2.0</a>
+                </li>
                 <li>
                     <a id="inicio" href="/#">Inicio</a>
                 </li>
@@ -75,14 +96,14 @@
                     <a href="https://colombia-ot.gitbook.io/colombia-ot" target="_blank" rel="noopener noreferrer">Tutorial y FAQ</a>
                 </li>
                 <li class="auth-nav-item">
-                    <a id="loginBtn" href="#" role="button" aria-label="Validando sesiÃ³n">
-                        <span id="userName">Validando sesiÃ³n...</span>
+                    <a id="loginBtn" href="#" role="button" aria-label="Validando sesión">
+                        <span id="userName">Validando sesión...</span>
                     </a>
-                    <button type="button" id="logoutBtn" class="auth-logout-btn" hidden aria-label="Cerrar sesiÃ³n">Cerrar sesiÃ³n</button>
+                    <button type="button" id="logoutBtn" class="auth-logout-btn" hidden aria-label="Cerrar sesión">Cerrar sesión</button>
                 </li>
             </ul>
 
-            <button class="nav-bar-toggle-igac" type="button" aria-label="Abrir menÃº de navegaciÃ³n" aria-expanded="false" aria-controls="link-list">
+            <button class="nav-bar-toggle-igac" type="button" aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="link-list">
                 <div class="icon-bar"></div>
                 <div class="icon-bar"></div>
                 <div class="icon-bar"></div>
@@ -95,11 +116,11 @@
 
 
 
-            <!-- LÃMITES MUNICIPALES -->
+            <!-- LÍMITES MUNICIPALES -->
             <div class="modulo-dropdown limites" id="limitesDropdown">
                 <div class="modulo-card-trigger" id="limitesTrigger">
-                    <img src="img/limites_municipales.png" alt="LÃ­mites Municipales">
-                    <span>LÃMITES MUNICIPALES</span>
+                    <img src="img/limites_municipales.png" alt="Límites Municipales">
+                    <span>LÍMITES MUNICIPALES</span>
                 </div>
 
                 <div class="dropdown-menu-custom" id="dropdownLimites">
@@ -117,9 +138,9 @@
 
                 <div class="dropdown-menu-custom" id="dropdownOrdenamiento">
                     <button class="dropdown-item active" data-target="Vigencia">Vigencia</button>
-                    <button class="dropdown-item" data-target="ClasificaciÃ³n del suelo">ClasificaciÃ³n del suelo</button>
-                    <button class="dropdown-item" data-target="Ãreas de actividad">Ãreas de actividad</button>
-                    <button class="dropdown-item" data-target="ZonificaciÃ³n de uso del suelo rural">ZonificaciÃ³n de uso del suelo rural</button>
+                    <button class="dropdown-item" data-target="Clasificación del suelo">Clasificación del suelo</button>
+                    <button class="dropdown-item" data-target="Áreas de actividad">Áreas de actividad</button>
+                    <button class="dropdown-item" data-target="Zonificación de uso del suelo rural">Zonificación de uso del suelo rural</button>
                 </div>
             </div>
 
@@ -135,70 +156,70 @@
                         <button class="dropdown-item" data-target="Determinantes">Determinantes</button>
                         <div class="dropdown-submenu">
                             <button class="dropdown-subitem" data-target="Ambientales">Ambientales</button>
-                            <button class="dropdown-subitem" data-target="SoberanÃ­a Alimentaria">SoberanÃ­a Alimentaria</button>
+                            <button class="dropdown-subitem" data-target="Soberanía Alimentaria">Soberanía Alimentaria</button>
                             <button class="dropdown-subitem" data-target="patrimoniales">Patrimoniales</button>
                             <button class="dropdown-subitem" data-target="infraestructura">Infraestructura</button>
-                            <button class="dropdown-subitem" data-target="areas_metropolitanas_suburbanizacion">Ãreas Metropolitanas SuburbanizaciÃ³n</button>
-                            <button class="dropdown-subitem" data-target="proyectos_turisticos_especiales_e_infraestructura_asociada">Proyectos TurÃ­sticos Especiales e infraestructura asociada</button>
+                            <button class="dropdown-subitem" data-target="areas_metropolitanas_suburbanizacion">Áreas Metropolitanas Suburbanización</button>
+                            <button class="dropdown-subitem" data-target="proyectos_turisticos_especiales_e_infraestructura_asociada">Proyectos Turísticos Especiales e infraestructura asociada</button>
                         </div>
                     </div>
                     <div class="dropdown-item-with-sub">
                         <button class="dropdown-item" data-target="Condicionantes">Condicionantes</button>
                         <div class="dropdown-submenu">
                             <button class="dropdown-subitem" data-target="territorios_colectivos">Territorios Colectivos</button>
-                            <button class="dropdown-subitem" data-target="exploracion_explotacion_recursos_no_renovables">ExploraciÃ³n y ExplotaciÃ³n de Recursos No Renovables</button>
+                            <button class="dropdown-subitem" data-target="exploracion_explotacion_recursos_no_renovables">Exploración y Explotación de Recursos No Renovables</button>
                             <button class="dropdown-subitem" data-target="acuerdo_final_paz">Acuerdo Final de Paz</button>
                             <button class="dropdown-subitem" data-target="planes_ordenamiento_social_propiedad_rural">Planes de Ordenamiento Social de la Propiedad Rural</button>
-                            <button class="dropdown-subitem" data-target="zonas_afectadas_conflicto_armado">Zonas mÃ¡s Afectadas por el Conflicto Armado</button>
+                            <button class="dropdown-subitem" data-target="zonas_afectadas_conflicto_armado">Zonas más Afectadas por el Conflicto Armado</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- PROCESOS BIOFÃSICOS -->
+            <!-- PROCESOS BIOFÍSICOS -->
             <div class="modulo-dropdown biofisico" id="biofisicoDropdown">
                 <div class="modulo-card-trigger" id="biofisicoTrigger">
-                    <img src="img/procesos_biofisicos.png" alt="Procesos BiofÃ­sicos">
-                    <span>PROCESOS BIOFÃSICOS</span>
+                    <img src="img/procesos_biofisicos.png" alt="Procesos Biofísicos">
+                    <span>PROCESOS BIOFÍSICOS</span>
                 </div>
 
                 <div class="dropdown-menu-custom" id="dropdownBiofisico">
                     <button class="dropdown-item" data-target="Relieve" id="itemRelieve">Relieve</button>
                     <button class="dropdown-item" data-target="Clima" id="itemClima">Clima</button>
-                    <button class="dropdown-item" data-target="HidrografÃ­a" id="itemHidrografia">HidrografÃ­a</button>
+                    <button class="dropdown-item" data-target="Hidrografía" id="itemHidrografia">Hidrografía</button>
                     <button class="dropdown-item" data-target="Ecosistemas" id="itemEcosistemas">Ecosistemas</button>
                     <button class="dropdown-item" data-target="Suelos" id="itemSuelos">Suelos</button>
-                    <button class="dropdown-item" data-target="FenÃ³menos Amenazantes" id="itemFenomenos">FenÃ³menos Amenazantes</button>
+                    <button class="dropdown-item" data-target="Fenómenos Amenazantes" id="itemFenomenos">Fenómenos Amenazantes</button>
                     <button class="dropdown-item" data-target="Relaciones Ambientales" id="itemRelaciones">Relaciones Ambientales</button>
                 </div>
             </div>
 
-            <!-- PROCESOS DE OCUPACIÃ“N -->
+            <!-- PROCESOS DE OCUPACIÓN -->
             <div class="modulo-dropdown ocupacion" id="ocupacionDropdown">
                 <div class="modulo-card-trigger" id="ocupacionTrigger">
-                    <img src="img/pro_ocupacion.png" alt="Procesos de OcupaciÃ³n">
-                    <span>PROCESOS DE OCUPACIÃ“N</span>
+                    <img src="img/pro_ocupacion.png" alt="Procesos de Ocupación">
+                    <span>PROCESOS DE OCUPACIÓN</span>
                 </div>
 
                 <div class="dropdown-menu-custom" id="dropdownOcupacion">
-                    <button class="dropdown-item" data-target="Contexto histÃ³rico">Contexto histÃ³rico</button>
-                    <button class="dropdown-item" data-target="DistribuciÃ³n de la poblaciÃ³n">DistribuciÃ³n de la poblaciÃ³n</button>
-                    <button class="dropdown-item" data-target="ComposiciÃ³n de la poblaciÃ³n">ComposiciÃ³n de la poblaciÃ³n</button>
-                    <button class="dropdown-item" data-target="TamaÃ±o y distribuciÃ³n de la propiedad rural">TamaÃ±o y distribuciÃ³n de la propiedad rural</button>
+                    <button class="dropdown-item" data-target="Contexto histórico">Contexto histórico</button>
+                    <button class="dropdown-item" data-target="Distribución de la población">Distribución de la población</button>
+                    <button class="dropdown-item" data-target="Composición de la población">Composición de la población</button>
+                    <button class="dropdown-item" data-target="Tamaño y distribución de la propiedad rural">Tamaño y distribución de la propiedad rural</button>
                 </div>
             </div>
 
-            <!-- PROCESOS SOCIOECONÃ“MICOS -->
+            <!-- PROCESOS SOCIOECONÓMICOS -->
             <div class="modulo-dropdown socioeconomico" id="socioeconomicoDropdown">
                 <div class="modulo-card-trigger" id="socioeconomicoTrigger">
-                    <img src="img/pro_socieconomicos.png" alt="Procesos SocioeconÃ³micos">
-                    <span>PROCESOS SOCIOECONÃ“MICOS</span>
+                    <img src="img/pro_socieconomicos.png" alt="Procesos Socioeconómicos">
+                    <span>PROCESOS SOCIOECONÓMICOS</span>
                 </div>
 
                 <div class="dropdown-menu-custom" id="dropdownSocioeconomico">
-                    <button class="dropdown-item" data-target="DinÃ¡micas SocioeconÃ³micas">DinÃ¡micas econÃ³micas</button>
+                    <button class="dropdown-item" data-target="Dinámicas Socioeconómicas">Dinámicas económicas</button>
                     <button class="dropdown-item" data-target="Infraestructura">Infraestructura</button>
-                    <button class="dropdown-item" data-target="Condiciones SocioeconÃ³micas">Condiciones SocioeconÃ³micas</button>
+                    <button class="dropdown-item" data-target="Condiciones Socioeconómicas">Condiciones Socioeconómicas</button>
                 </div>
             </div>
 
@@ -211,7 +232,7 @@
                     <select id="municipios" class="toolbar-select">
                         <option value="">municipio</option>
                     </select>
-                    <button id="btnRefreshBusqueda" class="toolbar-refresh" type="button" aria-label="Reiniciar bÃºsqueda" data-tooltip="Reiniciar bÃºsqueda">
+                    <button id="btnRefreshBusqueda" class="toolbar-refresh" type="button" aria-label="Reiniciar búsqueda" data-tooltip="Reiniciar búsqueda">
                         <img src="img/refrescar.png" alt="">
                     </button>
                 </div>
@@ -225,7 +246,7 @@
 
                     <div class="descargables-menu" id="descargablesMenu">
                         <button class="descargables-item" id="btnMemoriaTecnica" type="button">
-                            Memoria tÃ©cnica
+                            Memoria técnica
                         </button>
                         <!--
                         <button class="descargables-item" id="btnBaseDatosEspacial" type="button">
@@ -257,15 +278,15 @@
             <div id="mapLegend" class="map-legend">
                 <div class="legend-header">
                     <span id="legendTitle">Leyenda</span>
-                    <button id="legendToggle" class="legend-toggle">âˆ’</button>
+                    <button id="legendToggle" class="legend-toggle">−</button>
                 </div>
                 <div id="legendContent" class="legend-content">
-                    <!-- Contenido dinÃ¡mico de la leyenda -->
+                    <!-- Contenido dinámico de la leyenda -->
                 </div>
             </div>
             <!-- Minimap (overview) -->
             <div id="overviewDiv" class="overview-map">
-                <button id="overviewMiniToggle" class="overview-mini-toggle" title="Minimizar mapa">âˆ’</button>
+                <button id="overviewMiniToggle" class="overview-mini-toggle" title="Minimizar mapa">−</button>
                 <div id="overviewMap"></div>
             </div>
             <div id="zoomSliderContainer">
@@ -286,7 +307,7 @@
                     </div>
                 </div>
 
-                <button id="btnLocate" class="tool-btn" title="UbicaciÃ³n actual" aria-label="UbicaciÃ³n actual">
+                <button id="btnLocate" class="tool-btn" title="Ubicación actual" aria-label="Ubicación actual">
                     <img src="img/Center_1.png" alt="" />
                 </button>
 
@@ -345,25 +366,25 @@
 
                         <div class="rowf">
                             <div class="col-md-6f">
-                                <h2 class="footer-titulo">Instituto GeogrÃ¡fico AgustÃ­n Codazzi - IGAC</h2>
+                                <h2 class="footer-titulo">Instituto Geográfico Agustín Codazzi - IGAC</h2>
                             </div>
                             <div class="logos-footer col-md-6f">&nbsp;</div>
                         </div>
 
                         <div class="rowf">
                             <div class="col-md-6f">
-                                <h2 class="sub-titulo-sede-gov-co">InformaciÃ³n sede principal</h2>
+                                <h2 class="sub-titulo-sede-gov-co">Información sede principal</h2>
 
-                                <h3>DirecciÃ³n:</h3>
-                                <p>BogotÃ¡ D.C. - Carrera 30 # 48-51</p>
+                                <h3>Dirección:</h3>
+                                <p>Bogotá D.C. - Carrera 30 # 48-51</p>
 
-                                <h3>Horarios de atenciÃ³n al ciudadano:</h3>
+                                <h3>Horarios de atención al ciudadano:</h3>
                                 <p>
-                                    Abierto al pÃºblico de lunes a viernes de 9:00 a.m. a 4:00 p.m.
+                                    Abierto al público de lunes a viernes de 9:00 a.m. a 4:00 p.m.
                                     jornada continua Sede Central y territorial Cundinamarca
                                 </p>
 
-                                <h3>TelÃ©fono Conmutador:</h3>
+                                <h3>Teléfono Conmutador:</h3>
                                 <p><a href="tel:6016531888">+57 601 653 18 88</a></p>
 
                                 <h3>Correo de contacto:</h3>
@@ -373,11 +394,11 @@
                                 <p><a href="mailto:judiciales@igac.gov.co">judiciales@igac.gov.co</a></p>
 
                                 <p>NIT: 8999990049</p>
-                                <p>Â©Copyright 2021 - Todos los derechos reservados Gobierno de Colombia</p>
+                                <p>©Copyright 2021 - Todos los derechos reservados Gobierno de Colombia</p>
                             </div>
 
                             <div class="col-md-6f">
-                                <h3>ContÃ¡ctenos en nuestras redes sociales</h3>
+                                <h3>Contáctenos en nuestras redes sociales</h3>
 
                                 <div class="redes-sociales">
                                     <p>
@@ -403,9 +424,9 @@
                                 </div>
 
                                 <div class="footer-enlaces">
-                                    <a class="btn-low">PolÃ­ticas</a>
+                                    <a class="btn-low">Políticas</a>
                                     <a class="btn-low">Mapa del sitio</a>
-                                    <a class="btn-low">TÃ©rminos y condiciones</a>
+                                    <a class="btn-low">Términos y condiciones</a>
                                 </div>
 
                             </div>
@@ -422,7 +443,7 @@
                 <img class="gov-co-logo-pie-blanco" src="img/footer/marca_colombia.png">
                 <img class="gov-co-logo-pie-mesa" src="img/footer/header_govco.png">
                 <a class="text-white text-align-right" href="https://www.gov.co" target="_blank" rel="noopener noreferrer">
-                    Conoce GOV.CO aquÃ­
+                    Conoce GOV.CO aquí
                 </a>
             </div>
         </div>

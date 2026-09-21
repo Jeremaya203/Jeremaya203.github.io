@@ -1,12 +1,12 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-<!-- CSP:BEGIN generado por scripts/aplicar_csp.py â€” no editar a mano -->
+<!-- CSP:BEGIN generado por scripts/aplicar_csp.py — no editar a mano -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://ajax.googleapis.com https://www.googletagmanager.com https://www.gstatic.com https://apis.google.com https://js.arcgis.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://fonts.googleapis.com https://pro.fontawesome.com https://www.gstatic.com https://js.arcgis.com; style-src-elem 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://fonts.googleapis.com https://pro.fontawesome.com https://www.gstatic.com https://js.arcgis.com; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://pro.fontawesome.com https://js.arcgis.com; connect-src 'self' https://*.trycloudflare.com http://localhost:8001 http://127.0.0.1:8001 https://*.igac.gov.co https://serviciosgeovisor.igac.gov.co:8080 https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://www.gstatic.com https://js.arcgis.com https://services.arcgisonline.com https://tiles.arcgis.com https://services2.arcgis.com https://tile.openstreetmap.org; worker-src 'self' blob: https://js.arcgis.com; child-src 'self' blob:; frame-src 'self' https://www.colombiaot.gov.co https://geovisor-igac.firebaseapp.com https://colombiaot2.firebaseapp.com https://apis.google.com; object-src 'none'; base-uri 'self'">
 <!-- CSP:END -->
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Consulta de Uso del Suelo â€” Colombia OT 2.0</title>
+<title>Consulta de Uso del Suelo — Colombia OT 2.0</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 <link rel="stylesheet" href="./maestra.css">
 <link rel="stylesheet" href="./navbar-footer.css?v=ott-live-footer-20260721">
@@ -33,7 +33,7 @@
 
 <div id="module-wrap">
 
-  <!-- â•â• PANEL IZQUIERDO: el flujo de la consulta â•â• -->
+  <!-- ══ PANEL IZQUIERDO: el flujo de la consulta ══ -->
   <aside class="panel-left">
     <div class="header-left">
       <div class="header-left-fila">
@@ -42,7 +42,7 @@
         </div>
         <div>
           <a class="oot-backlink" href="./index.html">
-            <span class="material-symbols-outlined">arrow_back</span>MenÃº principal
+            <span class="material-symbols-outlined">arrow_back</span>Menú principal
           </a>
           <div class="header-left-titulo">Consulta de Uso del Suelo</div>
         </div>
@@ -69,7 +69,7 @@
         <details class="plegable" id="detalleValidacion">
           <summary>
             <span class="material-symbols-outlined">fact_check</span>
-            ValidaciÃ³n de estructura LADM-COL POT
+            Validación de estructura LADM-COL POT
             <span class="contador" id="contadorHallazgos" hidden>0</span>
           </summary>
           <div class="plegable-cuerpo" id="listaHallazgos"></div>
@@ -82,7 +82,7 @@
           <span class="paso-num">2</span>
           <h2>Localizar el predio</h2>
         </div>
-        <label class="etiqueta" for="txtPredial">NÃºmero predial o cÃ©dula catastral</label>
+        <label class="etiqueta" for="txtPredial">Número predial o cédula catastral</label>
         <div class="campo-busqueda">
           <span class="material-symbols-outlined">search</span>
           <input type="text" id="txtPredial" inputmode="numeric" autocomplete="off"
@@ -95,7 +95,7 @@
         <div class="coincidencias" id="coincidencias" role="listbox" aria-label="Coincidencias"></div>
         <p class="ayuda" id="ayudaBusqueda">
           <span class="material-symbols-outlined">touch_app</span>
-          TambiÃ©n puede hacer clic directamente sobre un predio en el mapa.
+          También puede hacer clic directamente sobre un predio en el mapa.
         </p>
       </section>
 
@@ -109,21 +109,21 @@
           <input type="checkbox" id="chkContexto" checked>
           <span>
             <span class="opcion-titulo">Contexto legal nacional</span>
-            <span class="opcion-desc">TÃ­tulos mineros y franjas de protecciÃ³n vial (Ley 1228 de 2008)</span>
+            <span class="opcion-desc">Títulos mineros y franjas de protección vial (Ley 1228 de 2008)</span>
           </span>
         </label>
         <p class="ayuda">
           <span class="material-symbols-outlined">info</span>
-          Los resultados del anÃ¡lisis espacial no se muestran en pantalla: hacen
+          Los resultados del análisis espacial no se muestran en pantalla: hacen
           parte exclusivamente del reporte descargable.
         </p>
       </section>
 
-      <!-- AdministraciÃ³n -->
+      <!-- Administración -->
       <details class="plegable plegable--admin">
         <summary>
           <span class="material-symbols-outlined">database_upload</span>
-          AdministraciÃ³n de insumos
+          Administración de insumos
         </summary>
         <div class="plegable-cuerpo">
           <p class="ayuda ayuda--suelta">
@@ -142,9 +142,9 @@
           <p class="estado" id="estadoCarga" role="status"></p>
           <p class="aviso">
             <span class="material-symbols-outlined">gpp_maybe</span>
-            <span>El backend no exige autenticaciÃ³n. Esto es una barrera de
+            <span>El backend no exige autenticación. Esto es una barrera de
             interfaz, no un control de acceso: no publique el servicio fuera de
-            una red controlada sin anteponerle autenticaciÃ³n.</span>
+            una red controlada sin anteponerle autenticación.</span>
           </p>
         </div>
       </details>
@@ -160,22 +160,22 @@
     </div>
   </aside>
 
-  <!-- â•â• MAPA â•â• -->
+  <!-- ══ MAPA ══ -->
   <main class="panel-centro">
     <div id="mapa"></div>
     <div class="pista" id="pista">
       <span class="material-symbols-outlined">arrow_upward</span>
-      Seleccione un municipio para ver la cartografÃ­a predial.
+      Seleccione un municipio para ver la cartografía predial.
     </div>
     <div class="selector-base" id="selectorBase" role="group" aria-label="Mapa base"></div>
     <div class="convenciones" id="convenciones" hidden>
       <div class="convenciones-titulo">Convenciones</div>
       <div class="fila"><span class="muestra muestra--predio"></span> Predio seleccionado</div>
-      <div class="fila"><span class="muestra muestra--capa"></span> CartografÃ­a predial</div>
+      <div class="fila"><span class="muestra muestra--capa"></span> Cartografía predial</div>
     </div>
   </main>
 
-  <!-- â•â• PANEL DERECHO: identificaciÃ³n del predio â•â• -->
+  <!-- ══ PANEL DERECHO: identificación del predio ══ -->
   <aside class="panel-right">
     <div class="header-right">
       <div class="chip-icono chip-icono--sm">
@@ -189,10 +189,10 @@
         <div class="vacio-icono">
           <span class="material-symbols-outlined">location_searching</span>
         </div>
-        <p class="vacio-titulo">NingÃºn predio seleccionado</p>
+        <p class="vacio-titulo">Ningún predio seleccionado</p>
         <p class="vacio-texto">
-          Localice el predio por su nÃºmero predial o haciendo clic sobre el mapa
-          para habilitar la generaciÃ³n del reporte.
+          Localice el predio por su número predial o haciendo clic sobre el mapa
+          para habilitar la generación del reporte.
         </p>
 
         <div class="pasos-guia">

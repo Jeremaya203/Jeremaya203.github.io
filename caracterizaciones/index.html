@@ -1,10 +1,24 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'wasm-unsafe-eval' 'sha256-vvt4KWwuNr51XfE5m+hzeNEGhiOfZzG97ccfqGsPwvE=' https://js.arcgis.com https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com https://accounts.google.com https://www.googletagmanager.com; script-src-attr 'none'; style-src 'self' https://js.arcgis.com https://fonts.googleapis.com https://www.gstatic.com; style-src-attr 'unsafe-inline'; font-src 'self' data: https://fonts.gstatic.com https://js.arcgis.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.trycloudflare.com https://*.igac.gov.co https://*.arcgis.com https://*.arcgisonline.com https://*.googleapis.com https://*.firebaseapp.com https://*.firebaseio.com https://accounts.google.com https://cdn.jsdelivr.net https://www.gstatic.com https://www.googletagmanager.com wss://*.firebaseio.com; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://apis.google.com https://www.facebook.com https://appleid.apple.com https://login.microsoftonline.com https://api.login.yahoo.com; form-action 'self' https://*.firebaseapp.com https://accounts.google.com https://www.facebook.com https://appleid.apple.com https://login.microsoftonline.com https://api.login.yahoo.com; manifest-src 'self'; media-src 'self' data: blob:; upgrade-insecure-requests" />
-  <title>Caracterizaciones Territoriales â€“ IGAC</title>
+  <!--
+    SIN `upgrade-insecure-requests` A PROPOSITO.
+    Esa directiva obliga al navegador a convertir toda peticion http:// en https://. En el
+    servidor de pruebas del IGAC el sitio se sirve por HTTP simple (http://172.19.3.81, sin
+    TLS: nginx no escucha en 443), asi que el navegador pedia https://172.19.3.81/... para
+    CSS, JS e imagenes, no obtenia respuesta, y estas paginas quedaban en HTML pelado.
+    No pasaba en local —los navegadores eximen localhost— ni en el sitio publicado, que ya
+    es HTTPS. Solo rompia en un origen HTTP con IP.
+    Lo que protegia: nada aqui. Estas paginas no tienen NI UNA URL absoluta http:// (0 en
+    HTML, 0 en CSS; las 3 de JS son espacios de nombres de w3.org). Todo recurso es relativo
+    o https absoluto, asi que en produccion —servida por HTTPS detras del WAF— las URLs ya
+    salen https sin necesidad de la directiva.
+    El resto de la politica se mantiene intacta.
+  -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'wasm-unsafe-eval' 'sha256-vvt4KWwuNr51XfE5m+hzeNEGhiOfZzG97ccfqGsPwvE=' https://js.arcgis.com https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com https://accounts.google.com https://www.googletagmanager.com; script-src-attr 'none'; style-src 'self' https://js.arcgis.com https://fonts.googleapis.com https://www.gstatic.com; style-src-attr 'unsafe-inline'; font-src 'self' data: https://fonts.gstatic.com https://js.arcgis.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.trycloudflare.com https://*.igac.gov.co https://*.arcgis.com https://*.arcgisonline.com https://*.googleapis.com https://*.firebaseapp.com https://*.firebaseio.com https://accounts.google.com https://cdn.jsdelivr.net https://www.gstatic.com https://www.googletagmanager.com wss://*.firebaseio.com; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://apis.google.com https://www.facebook.com https://appleid.apple.com https://login.microsoftonline.com https://api.login.yahoo.com; form-action 'self' https://*.firebaseapp.com https://accounts.google.com https://www.facebook.com https://appleid.apple.com https://login.microsoftonline.com https://api.login.yahoo.com; manifest-src 'self'; media-src 'self' data: blob:" />
+  <title>Caracterizaciones Territoriales – IGAC</title>
   <link rel="icon" href="img/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/index.css?v=compact-auth-email-20260728" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -27,9 +41,9 @@
 </head>
 <body>
 
-  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-       NAVBAR â€” dos filas
-  â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <!-- ══════════════════════════════════════════════
+       NAVBAR — dos filas
+  ══════════════════════════════════════════════ -->
   <header class="navbar" id="navbar">
     <!-- Fila 1: GOV.CO -->
     <div class="barra_gov">
@@ -48,23 +62,30 @@
           <span class="navbar__brand-text">CARACTERIZACIONES TERRITORIALES</span>
         </div>
         <ul id="link-list">
+          <!-- Retorno al sitio principal. `caracterizaciones/` es un sub-proyecto con su
+               propio navbar: sin este enlace no habia forma de volver a Colombia OT 2.0,
+               porque su "Inicio" apunta al index de esta misma seccion. Ruta relativa para
+               que siga funcionando si el sitio se despliega bajo una subcarpeta. -->
+          <li data-oot-volver>
+            <a rel="noopener" href="../index.html">Colombia OT 2.0</a>
+          </li>
           <li><a rel="noopener" href="index.html">Inicio</a></li>
-          <li><a rel="noopener" href="#tematicas">TemÃ¡ticas</a></li>
-          <li><a rel="noopener" href="#publico-objetivo">PÃºblico Objetivo</a></li>
-          <li><a rel="noopener" href="#estadisticas">EstadÃ­sticas</a></li>
+          <li><a rel="noopener" href="#tematicas">Temáticas</a></li>
+          <li><a rel="noopener" href="#publico-objetivo">Público Objetivo</a></li>
+          <li><a rel="noopener" href="#estadisticas">Estadísticas</a></li>
           <li><a href="https://colombia-ot.gitbook.io/colombia-ot" target="_blank" rel="noopener noreferrer">Tutorial y FAQ</a></li>
           <li class="auth-nav-item">
-            <a id="loginBtn" href="#" role="button" aria-label="Validando sesiÃ³n">
+            <a id="loginBtn" href="#" role="button" aria-label="Validando sesión">
               <span id="userName"></span>
             </a>
-            <button type="button" id="logoutBtn" class="auth-logout-btn" hidden aria-label="Cerrar sesiÃ³n">Cerrar sesiÃ³n</button>
+            <button type="button" id="logoutBtn" class="auth-logout-btn" hidden aria-label="Cerrar sesión">Cerrar sesión</button>
           </li>
         </ul>
-        <button type="button" id="mobileLoginBtn" class="mobile-auth-login-btn" hidden aria-label="Iniciar sesiÃ³n">
+        <button type="button" id="mobileLoginBtn" class="mobile-auth-login-btn" hidden aria-label="Iniciar sesión">
           <span class="mobile-auth-login-icon" aria-hidden="true"></span>
-          <span>Iniciar sesiÃ³n</span>
+          <span>Iniciar sesión</span>
         </button>
-        <button class="nav-bar-toggle-igac" aria-label="Abrir menÃº" aria-expanded="false">
+        <button class="nav-bar-toggle-igac" aria-label="Abrir menú" aria-expanded="false">
           <div class="icon-bar"></div>
           <div class="icon-bar"></div>
           <div class="icon-bar"></div>
@@ -76,9 +97,9 @@
 
   <main>
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-         HERO â€” mosaico de tiles
-    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ══════════════════════════════════════════════
+         HERO — mosaico de tiles
+    ══════════════════════════════════════════════ -->
     <section class="hero" id="hero">
       <img class="hero__banner" src="img/Banner.gif" alt="" aria-hidden="true"/>
       <div class="hero__content">
@@ -89,31 +110,31 @@
       </div>
     </section>
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-         Â¿QUÃ‰ SON?
-    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ══════════════════════════════════════════════
+         ¿QUÉ SON?
+    ══════════════════════════════════════════════ -->
     <section class="que-son reveal" id="que-son">
       <div class="que-son__grid">
         <div class="que-son__text">
-          <h2 class="section-title">Â¿QuÃ© son?</h2>
+          <h2 class="section-title">¿Qué son?</h2>
           <p class="que-son__body">
-            La caracterizaciÃ³n territorial es un anÃ¡lisis integral de los entes
-            territoriales en el cual se incluye informaciÃ³n relacionada con: su
-            localizaciÃ³n en el territorio nacional; estado de los lÃ­mites
+            La caracterización territorial es un análisis integral de los entes
+            territoriales en el cual se incluye información relacionada con: su
+            localización en el territorio nacional; estado de los límites
             municipales y fronteras; ordenamiento territorial, para conocer el
             estado de los POT; contexto legal relacionado con las determinantes
-            y condicionantes que definen el adecuado uso del suelo; tambiÃ©n
-            analiza los procesos biofÃ­sicos teniendo en cuenta variables como
+            y condicionantes que definen el adecuado uso del suelo; también
+            analiza los procesos biofísicos teniendo en cuenta variables como
             altitud, pendiente, relieve, clima, ecosistemas, cobertura vegetal,
             amenazas naturales, entre otros.
           </p>
           <p class="que-son__body">
-            AdemÃ¡s, se estudia el proceso relacionado con la poblaciÃ³n y su
-            territorio, la distribuciÃ³n, el crecimiento, Ã¡reas, tamaÃ±o de los
-            predios, condiciones de seguridad, asÃ­ mismo las actividades
-            econÃ³micas, infraestructura y el acceso a servicios bÃ¡sicos como
-            educaciÃ³n y salud. Lo anterior brinda elementos clave para los
-            procesos catastrales y de planificaciÃ³n territorial.
+            Además, se estudia el proceso relacionado con la población y su
+            territorio, la distribución, el crecimiento, áreas, tamaño de los
+            predios, condiciones de seguridad, así mismo las actividades
+            económicas, infraestructura y el acceso a servicios básicos como
+            educación y salud. Lo anterior brinda elementos clave para los
+            procesos catastrales y de planificación territorial.
           </p>
         </div>
         <div class="que-son__image-wrap">
@@ -121,12 +142,12 @@
         </div>
       </div>
     </section>
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-         TEMÃTICAS
-    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ══════════════════════════════════════════════
+         TEMÁTICAS
+    ══════════════════════════════════════════════ -->
     <section class="tematicas" id="tematicas">
       <div class="section-inner">
-        <h2 class="section-title section-title--dark tematicas__heading">TemÃ¡ticas</h2>
+        <h2 class="section-title section-title--dark tematicas__heading">Temáticas</h2>
         <div class="tematicas__bifocal">
         <div class="tematicas__diagram" role="list">          
           <!-- Center -->
@@ -134,14 +155,14 @@
           
           <button class="tematicas__bubble bubble--limites bubble--slot-0" data-topic="limites" role="listitem">
             <span class="bubble__inner">
-              <img class="bubble__icon" src="img/limites_municipales.png" alt="LÃ­mites Municipales"/>
-              <span class="bubble__label">LÃ­mites<br>Municipales</span>
+              <img class="bubble__icon" src="img/limites_municipales.png" alt="Límites Municipales"/>
+              <span class="bubble__label">Límites<br>Municipales</span>
             </span>
           </button>
           <button class="tematicas__bubble bubble--socioeconomicos bubble--slot-1" data-topic="socioeconomicos" role="listitem">
             <span class="bubble__inner">
-              <img class="bubble__icon" src="img/pro_socieconomicos.png" alt="SocioeconÃ³micos"/>
-              <span class="bubble__label"> Procesos<br>SocioeconÃ³micos</span>
+              <img class="bubble__icon" src="img/pro_socieconomicos.png" alt="Socioeconómicos"/>
+              <span class="bubble__label"> Procesos<br>Socioeconómicos</span>
             </span>
           </button>
           <button class="tematicas__bubble bubble--ordenamiento bubble--slot-2" data-topic="ordenamiento" role="listitem">
@@ -152,8 +173,8 @@
           </button>
           <button class="tematicas__bubble bubble--ocupacion bubble--slot-3" data-topic="ocupacion" role="listitem">
             <span class="bubble__inner">
-              <img class="bubble__icon" src="img/pro_ocupacion.png" alt="OcupaciÃ³n"/>
-              <span class="bubble__label">Procesos de<br>OcupaciÃ³n</span>
+              <img class="bubble__icon" src="img/pro_ocupacion.png" alt="Ocupación"/>
+              <span class="bubble__label">Procesos de<br>Ocupación</span>
             </span>
           </button>
           <button class="tematicas__bubble bubble--contexto bubble--slot-4" data-topic="contexto" role="listitem">
@@ -164,15 +185,15 @@
           </button>
           <button class="tematicas__bubble bubble--biofisicos bubble--slot-5" data-topic="biofisicos" role="listitem">
             <span class="bubble__inner">
-              <img class="bubble__icon" src="img/procesos_biofisicos.png" alt="Procesos BiofÃ­sicos"/>
-              <span class="bubble__label">Procesos<br>BiofÃ­sicos</span>
+              <img class="bubble__icon" src="img/procesos_biofisicos.png" alt="Procesos Biofísicos"/>
+              <span class="bubble__label">Procesos<br>Biofísicos</span>
             </span>
           </button>
         </div><!-- /.tematicas__diagram -->
         <aside class="tematicas__panel" id="tematicas-panel">
           <div class="tematicas__card">
             <span class="tematicas__card-accent"></span>
-            <button class="tematicas__card-close" aria-label="Cerrar">âœ•</button>
+            <button class="tematicas__card-close" aria-label="Cerrar">✕</button>
             <h3 class="tematicas__card-title"></h3>
             <p class="tematicas__card-desc"></p>
             <a class="tematicas__card-cta" href="#" target="_self">Visita el visor</a>
@@ -181,64 +202,64 @@
         </div><!-- /.tematicas__bifocal -->
       </div>
     </section>
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-         PÃšBLICO OBJETIVO
-    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ══════════════════════════════════════════════
+         PÚBLICO OBJETIVO
+    ══════════════════════════════════════════════ -->
     <section class="publico-objetivo reveal" id="publico-objetivo">
       <div class="publico-objetivo__overlay">
         <div class="section-inner publico-objetivo__inner">
-          <h2 class="publico-objetivo__tit">PÃºblico Objetivo</h2>
+          <h2 class="publico-objetivo__tit">Público Objetivo</h2>
           <p class="publico-objetivo__sub" id="po-sub">Entes Territoriales Municipales</p>
-          <div class="publico-objetivo__dots" role="list" aria-label="PÃºblico objetivo">
+          <div class="publico-objetivo__dots" role="list" aria-label="Público objetivo">
             <button class="dot dot--active" aria-label="Entes territoriales municipales"></button>
-            <button class="dot" aria-label="SecretarÃ­as y oficinas de planeaciÃ³n municipales"></button>
+            <button class="dot" aria-label="Secretarías y oficinas de planeación municipales"></button>
             <button class="dot" aria-label="Gestores catastrales"></button>
             <button class="dot" aria-label="Otras entidades de orden nacional y regional"></button>
           </div>
           <div class="publico-objetivo__stats" role="list">
             <div class="po-stat" role="listitem"><span class="po-stat__num">+525</span><span class="po-stat__lbl">Municipios<br>Caracterizados</span></div>
-            <div class="po-stat" role="listitem"><span class="po-stat__num">+825</span><span class="po-stat__lbl">Mapas<br>TemÃ¡ticos</span></div>
-            <div class="po-stat" role="listitem"><span class="po-stat__num">+965</span><span class="po-stat__lbl">Datos<br>EstadÃ­sticos</span></div>
+            <div class="po-stat" role="listitem"><span class="po-stat__num">+825</span><span class="po-stat__lbl">Mapas<br>Temáticos</span></div>
+            <div class="po-stat" role="listitem"><span class="po-stat__num">+965</span><span class="po-stat__lbl">Datos<br>Estadísticos</span></div>
             <div class="po-stat" role="listitem"><span class="po-stat__num">257</span><span class="po-stat__lbl">Base de Datos<br>Descargable</span></div>
           </div>
         </div>
       </div>
     </section>
   
-     <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-         ESTADÃSTICAS
-    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+     <!-- ══════════════════════════════════════════════
+         ESTADÍSTICAS
+    ══════════════════════════════════════════════ -->
     <section class="estadisticas" id="estadisticas"></section>
     
 
   </main>
 
-  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  <!-- ══════════════════════════════════════════════
        FOOTER
-  â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  ══════════════════════════════════════════════ -->
   <footer class="footer">
     <div class="section-inner footer__grid">
       <div class="footer__info">
-        <h3 class="footer__org">Instituto GeogrÃ¡fico AgustÃ­n Codazzi â€“ IGAC</h3>
-        <div class="footer__section-label">InformaciÃ³n sede principal</div>
-        <p><strong>DirecciÃ³n:</strong><br />BogotÃ¡ D.C. â€“ Carrera 30 # 48-51</p>
-        <p><strong>Horarios de atenciÃ³n al ciudadano:</strong><br />
-          Abierto al pÃºblico de lunes a viernes de 9:00 a.m. a 4:00 p.m. jornada continua
-          Sede Central y territorial Cundinamarca (Horario de atenciÃ³n temporal acatando las medidas
-          y demÃ¡s regulaciones de bioseguridad)
+        <h3 class="footer__org">Instituto Geográfico Agustín Codazzi – IGAC</h3>
+        <div class="footer__section-label">Información sede principal</div>
+        <p><strong>Dirección:</strong><br />Bogotá D.C. – Carrera 30 # 48-51</p>
+        <p><strong>Horarios de atención al ciudadano:</strong><br />
+          Abierto al público de lunes a viernes de 9:00 a.m. a 4:00 p.m. jornada continua
+          Sede Central y territorial Cundinamarca (Horario de atención temporal acatando las medidas
+          y demás regulaciones de bioseguridad)
         </p>
-        <p><strong>TelÃ©fono Conmutador:</strong><br />
+        <p><strong>Teléfono Conmutador:</strong><br />
           <a href="tel:+576016531888">+57 601 653 18 88</a></p>
         <p><strong>Correo de contacto:</strong><br />
           <a href="mailto:contactenos@igac.gov.co">contactenos@igac.gov.co</a></p>
         <p><strong>Correo de notificaciones judiciales:</strong><br />
           <a href="mailto:judiciales@igac.gov.co">judiciales@igac.gov.co</a></p>
         <p class="footer__nit">NIT: 8999990049</p>
-        <p class="footer__copy">Â©Copyright 2021 â€“ Todos los derechos reservados Gobierno de Colombia</p>
+        <p class="footer__copy">©Copyright 2021 – Todos los derechos reservados Gobierno de Colombia</p>
       </div>
 
       <div class="footer__social">
-        <div class="footer__section-label">ContÃ¡ctenos en nuestras redes sociales</div>
+        <div class="footer__section-label">Contáctenos en nuestras redes sociales</div>
         <a href="https://www.facebook.com/IgacColombia" target="_blank" rel="noopener" class="footer__social-link footer__social-link--fb">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
           Facebook IGAC
@@ -252,11 +273,11 @@
           Instagram IGAC
         </a>
         <div class="footer__legal">
-          <a href="#">PolÃ­ticas</a>
-          <span>Â·</span>
+          <a href="#">Políticas</a>
+          <span>·</span>
           <a href="#">Mapa del sitio</a>
-          <span>Â·</span>
-          <a href="#">TÃ©rminos y condiciones</a>
+          <span>·</span>
+          <a href="#">Términos y condiciones</a>
         </div>
       </div>
     </div>
