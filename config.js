@@ -79,7 +79,7 @@ window.OOT_ENV_API = window.OOT_ENV_API || {
   // esta URL en cada arranque, porque los tuneles gratuitos cambian de nombre.
   // Entra tambien en OOT_HOSTS_LOCALES: sin eso caeria al default remoto y
   // estariamos enseñando datos de OTRO backend sin notarlo.
-  'jeremaya203.github.io':          'https://evening-bid-opt-barrel.trycloudflare.com',
+  'jeremaya203.github.io':          'https://four-flush-marilyn-included.trycloudflare.com',
   // --- Ambientación institucional del IGAC ---
   'pruebas-colombiaot.igac.gov.co': 'https://api-pruebas-oot.igac.gov.co', // Ambiente de pruebas
   'colombiaot.igac.gov.co':         'https://api-oot.igac.gov.co',         // Ambiente de producción
@@ -91,7 +91,7 @@ window.OOT_ENV_API = window.OOT_ENV_API || {
 // apuntaria a un backend distinto del que se esta probando.
 window.OOT_HOSTS_LOCALES = ['localhost', '127.0.0.1', '172.19.3.81', 'jeremaya203.github.io'];
 // Override explícito SOLO para desarrollo (p.ej. exponer un backend local por túnel):
-// defina  window.OOT_API_REMOTE = 'https://xxxx.trycloudflare.com'  ANTES de este script.
+// defina  window.OOT_API_REMOTE = 'https://four-flush-marilyn-included.trycloudflare.com'  ANTES de este script.
 // NUNCA debe ser el default de producción → por eso ya no se hardcodea ninguna URL aquí.
 // Se guarda lo que definio el operador ANTES de aplicar el default: es la unica forma de
 // distinguir "me pidieron expresamente un remoto" de "nadie dijo nada y quedo el default".
